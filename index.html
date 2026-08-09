@@ -462,7 +462,7 @@
   }
   .priority-tag{
     display:inline-block; font-family:var(--mono); font-size:9.5px; color:var(--accent-signal); letter-spacing:0.04em; text-transform:uppercase;
-    border:1px solid var(--accent-signal); padding:2px 7px; margin-left:8px; vertical-align:middle; background:var(--tint-signal-soft);
+    border:1px solid var(--accent-signal); padding:2px 7px; margin:4px 6px 0 0; background:var(--tint-signal-soft);
   }
   .fw-card.fw-top-priority{ border-color:var(--accent-signal); background:var(--tint-signal-soft); }
   .q-badge{
@@ -471,6 +471,25 @@
     padding:2px 5px; margin-left:8px; vertical-align:middle;
   }
   .scope-hint{ font-size:12.5px; color:var(--text-muted); margin:-8px 0 20px; }
+
+  .region-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px; margin:14px 0 8px; }
+  .region-chip{
+    display:flex; align-items:center; gap:10px; padding:11px 14px; border:1px solid var(--line);
+    background:var(--surface-raised); cursor:pointer; font-size:13px; transition:border-color .15s ease, background .15s ease;
+  }
+  .region-chip:hover{ border-color:var(--accent-signal); }
+  .region-chip.selected{ border-color:var(--accent-secure); background:var(--tint-secure); }
+  .region-chip .checkbox{ flex-shrink:0; width:16px; height:16px; border:1.5px solid var(--text-muted); position:relative; }
+  .region-chip.selected .checkbox{ border-color:var(--accent-secure); background:var(--accent-secure); }
+  .region-chip.selected .checkbox::after{
+    content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:11px; color:var(--text-on-accent); font-weight:700;
+  }
+  .region-note{
+    font-size:12.5px; color:var(--text-muted); margin:8px 0 0; padding:10px 14px;
+    border-left:2px solid var(--accent-secure); background:var(--tint-secure); line-height:1.6;
+  }
+  .region-note b{ color:var(--text); }
 
   /* --- pre-assessment fields --- */
   .field{ margin-bottom:20px; }
@@ -499,6 +518,11 @@
     border:1px dashed var(--line); line-height:1.6;
   }
   .ot-skip-note b{ color:var(--text); }
+  .ot-likely-note{
+    font-size:12.5px; color:var(--text-muted); margin:-16px 0 24px; padding:12px 14px;
+    border-left:2px solid var(--accent-signal); background:var(--tint-signal-soft); line-height:1.6;
+  }
+  .ot-likely-note b{ color:var(--text); }
   .ot-override-label{
     display:flex; align-items:center; gap:8px; margin-top:10px; cursor:pointer;
     font-family:var(--mono); font-size:11px; letter-spacing:0.03em; color:var(--accent-secure);
@@ -1642,19 +1666,33 @@ const LEARNING_RESOURCES = {
 let current = 0;
 let phase = 'scope'; // 'scope' | 'pre' | 'wizard' | 'results' - scoped to the Assessment tab only
 const answers = {};
-const scope = { industry: null, iso27001:false, nis2:false, soc2:false, hipaa:false, gdpr:false, sox:false, cyberessentials:false, pcidss:false, otOverride:false };
+const scope = { industry: null, regions: [], iso27001:false, nis2:false, soc2:false, hipaa:false, gdpr:false, sox:false, cyberessentials:false, pcidss:false, otOverride:false };
 
 const INDUSTRIES = [
-  { id:"finance", label:"Financial Services", topPriority:"iso27001", otDefault:"ask" },
-  { id:"health", label:"Healthcare", topPriority:"hipaa", otDefault:"ask" },
-  { id:"energy", label:"Energy / Critical Infrastructure", topPriority:"nis2", otDefault:"ask" },
-  { id:"manufacturing", label:"Manufacturing / Industrial", topPriority:"iso27001", otDefault:"ask" },
-  { id:"retail", label:"Retail / E-commerce", topPriority:"pcidss", otDefault:"ask" },
-  { id:"saas", label:"SaaS / Technology", topPriority:"soc2", otDefault:"skip" },
-  { id:"itservices", label:"IT Services / Software Consulting", topPriority:"soc2", otDefault:"skip" },
-  { id:"marketing", label:"Digital Marketing / Marketing Agency", topPriority:"gdpr", otDefault:"skip" },
-  { id:"public", label:"Public Sector / Government", topPriority:"nis2", otDefault:"ask" },
-  { id:"other", label:"Other / Not listed", topPriority:null, otDefault:"ask" },
+  { id:"finance", label:"Financial Services", topPriority:"iso27001", alsoRelevant:["pcidss","sox"], otDefault:"ask" },
+  { id:"health", label:"Healthcare", topPriority:"hipaa", alsoRelevant:["iso27001"], otDefault:"likely" },
+  { id:"pharma", label:"Pharmaceuticals", topPriority:"iso27001", alsoRelevant:["gdpr"], otDefault:"likely" },
+  { id:"energy", label:"Energy / Critical Infrastructure", topPriority:"nis2", alsoRelevant:["iso27001"], otDefault:"likely" },
+  { id:"manufacturing", label:"Manufacturing / Industrial", topPriority:"iso27001", alsoRelevant:["nis2"], otDefault:"likely" },
+  { id:"retail", label:"Retail / E-commerce", topPriority:"pcidss", alsoRelevant:["gdpr"], otDefault:"ask" },
+  { id:"saas", label:"SaaS / Technology", topPriority:"soc2", alsoRelevant:["iso27001"], otDefault:"skip" },
+  { id:"itservices", label:"IT Services / Software Consulting", topPriority:"soc2", alsoRelevant:["iso27001"], otDefault:"skip" },
+  { id:"marketing", label:"Digital Marketing / Marketing Agency", topPriority:"gdpr", alsoRelevant:["soc2"], otDefault:"skip" },
+  { id:"public", label:"Public Sector / Government", topPriority:"nis2", alsoRelevant:["iso27001"], otDefault:"ask" },
+  { id:"other", label:"Other / Not listed", topPriority:null, alsoRelevant:[], otDefault:"ask" },
+];
+
+const REGIONS = [
+  { id:"eu", label:"European Union", frameworks:["nis2","gdpr"],
+    note:"NIS2 and GDPR are policy frameworks that companies registered or operating in EU regions are expected to adhere to." },
+  { id:"uk", label:"United Kingdom", frameworks:["cyberessentials"],
+    note:"Cyber Essentials is a UK government-backed baseline certification - especially relevant if you bid on UK government or public-sector contracts." },
+  { id:"us", label:"United States", frameworks:["sox","hipaa","pcidss"],
+    note:"SOX applies to US public companies (and their vendors/auditors); HIPAA applies specifically if you handle US health data; PCI DSS applies specifically if you handle payment card data - check which condition actually applies to your business." },
+  { id:"apac", label:"Asia-Pacific", frameworks:[],
+    note:"No single framework applies uniformly across Asia-Pacific - country-specific regimes exist instead (e.g., Singapore's PDPA, Japan's APPI, Australia's Privacy Act). ISO 27001 remains the most broadly recognized starting point across the region." },
+  { id:"global", label:"Global / Other", frameworks:[],
+    note:"Without a specific regional mandate, internationally recognized certifications such as ISO 27001 or SOC 2 are the most broadly applicable starting point." },
 ];
 
 const FRAMEWORKS = [
@@ -1940,47 +1978,77 @@ async function renderScope(){
     historyCount = (lr && lr.keys) ? lr.keys.length : 0;
   } catch(e){ /* storage unavailable - proceed without history */ }
 
-  const topPriority = scope.industry ? (INDUSTRIES.find(i=>i.id===scope.industry)?.topPriority || null) : null;
+  const ind = scope.industry ? INDUSTRIES.find(i=>i.id===scope.industry) : null;
+
+  // Build a reasons map: frameworkId -> array of badge reasons, from industry (top + also-relevant) and region
+  const reasons = {};
+  const addReason = (fid, r) => { reasons[fid] = reasons[fid] || []; reasons[fid].push(r); };
+  if(ind && ind.topPriority) addReason(ind.topPriority, { type:'top', label:`★ Top priority recommendation for ${ind.label}` });
+  if(ind && ind.alsoRelevant) ind.alsoRelevant.forEach(fid => addReason(fid, { type:'industry', label:`Commonly relevant for ${ind.label}` }));
+  scope.regions.forEach(rid=>{
+    const r = REGIONS.find(x=>x.id===rid);
+    if(r) r.frameworks.forEach(fid => addReason(fid, { type:'region', label:`Relevant for ${r.label} operations` }));
+  });
+  const highlightedIds = Object.keys(reasons);
+  const highlightedFw = FRAMEWORKS.filter(f => highlightedIds.includes(f.id))
+    .sort((a,b) => (a.id===ind?.topPriority ? -1 : 0) - (b.id===ind?.topPriority ? -1 : 0));
+  const otherFw = FRAMEWORKS.filter(f => !highlightedIds.includes(f.id));
+
   panel.innerHTML = `
     <div class="step-eyebrow">Scope</div>
     <h2 class="step-title">Before we start</h2>
-    <p class="step-sub">Every assessment includes the NIST CSF 2.0 + CIS Controls baseline. Add any compliance standards that apply to your organization - none are selected automatically, even if we flag one as a top priority for your industry.</p>
+    <p class="step-sub">Every assessment includes the NIST CSF 2.0 + CIS Controls baseline. Add any compliance standards that apply to your organization - none are selected automatically, even if we flag one as relevant for your industry or region.</p>
     ${historyCount ? `<p class="history-link" id="historyLink">You have ${historyCount} previous assessment${historyCount===1?'':'s'} saved on this account - <u>view history</u></p>` : ''}
 
     <div class="fw-section-label">Industry</div>
     <div class="industry-grid">
-      ${INDUSTRIES.map(ind => `
-        <div class="industry-card ${scope.industry===ind.id?'selected':''}" data-industry="${ind.id}">${ind.label}</div>
+      ${INDUSTRIES.map(i => `
+        <div class="industry-card ${scope.industry===i.id?'selected':''}" data-industry="${i.id}">${i.label}</div>
       `).join('')}
     </div>
 
     ${(() => {
-      const ind = INDUSTRIES.find(i=>i.id===scope.industry);
-      if(!ind || ind.otDefault !== 'skip') return '';
-      return `<div class="ot-skip-note">
+      if(!ind) return '';
+      if(ind.otDefault === 'skip') return `<div class="ot-skip-note">
         Based on <b>${ind.label}</b>, we've assumed no dedicated OT/ICS environment and will skip those questions.
         <label class="ot-override-label"><input type="checkbox" id="otOverrideCheck" ${scope.otOverride?'checked':''}> Include OT questions anyway</label>
       </div>`;
+      if(ind.otDefault === 'likely') return `<div class="ot-likely-note">
+        OT/ICS environments are common in <b>${ind.label}</b> - we've kept those questions in your assessment by default. Answer "No" on that step if it genuinely doesn't apply to you.
+      </div>`;
+      return '';
     })()}
+
+    <div class="fw-section-label">Where do you operate?</div>
+    <p class="scope-hint" style="margin-top:-6px;">Select every region your organization is registered or operating in - this surfaces the specific frameworks mandated there.</p>
+    <div class="region-grid">
+      ${REGIONS.map(r => `
+        <div class="region-chip ${scope.regions.includes(r.id)?'selected':''}" data-region="${r.id}">
+          <div class="checkbox"></div>${r.label}
+        </div>
+      `).join('')}
+    </div>
+    ${scope.regions.map(rid => {
+      const r = REGIONS.find(x=>x.id===rid);
+      return r ? `<div class="region-note"><b>${r.label}:</b> ${r.note}</div>` : '';
+    }).join('')}
 
     <div class="fw-section-label">Frameworks</div>
     <div class="fw-baseline"><b>Always included:</b> NIST CSF 2.0 + CIS Controls v8 (the baseline this instrument is built on)</div>
-    ${scope.industry ? `<p class="scope-hint" style="margin-top:-8px;">Does your organization carry any compliance obligation tied to your sector - HIPAA, GDPR, PCI DSS, or similar? Select any that genuinely apply below; nothing is assumed for you.</p>` : ''}
     ${(() => {
-      const topFw = FRAMEWORKS.find(f => f.id === topPriority);
-      const otherFw = FRAMEWORKS.filter(f => f.id !== topPriority);
       const hasOtherSelected = otherFw.some(f => scope[f.id]);
       const fwCardHtml = f => `
-        <div class="fw-card ${scope[f.id]?'selected':''} ${topPriority===f.id?'fw-top-priority':''}" data-fw="${f.id}">
+        <div class="fw-card ${scope[f.id]?'selected':''} ${reasons[f.id]?.some(r=>r.type==='top')?'fw-top-priority':''}" data-fw="${f.id}">
           <div>
-            <div class="fw-name">${f.name} ${topPriority===f.id ? '<span class="priority-tag">★ Top priority recommendation for this industry</span>' : ''}</div>
+            <div class="fw-name">${f.name}</div>
+            ${(reasons[f.id]||[]).map(r=>`<div class="priority-tag">${r.label}</div>`).join('')}
             <div class="fw-desc">${f.desc}</div>
           </div>
           <div class="checkbox"></div>
         </div>
       `;
       return `
-        ${topFw ? fwCardHtml(topFw) : ''}
+        ${highlightedFw.map(fwCardHtml).join('')}
         <div class="acc-card ${hasOtherSelected ? 'open' : ''}" style="margin-top:10px;">
           <div class="acc-head">
             <div class="icon-badge">${icon('register')}</div>
@@ -2004,6 +2072,14 @@ async function renderScope(){
   panel.querySelectorAll('.industry-card').forEach(el=>{
     el.addEventListener('click', ()=>{
       scope.industry = el.dataset.industry;
+      renderScope();
+    });
+  });
+  panel.querySelectorAll('.region-chip').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const rid = el.dataset.region;
+      const i = scope.regions.indexOf(rid);
+      if(i >= 0) scope.regions.splice(i,1); else scope.regions.push(rid);
       renderScope();
     });
   });
@@ -2731,6 +2807,7 @@ function renderTransformTab(container){
           if(!data.scsExport) throw new Error('not-recognized');
           Object.keys(scope).forEach(k=>delete scope[k]);
           Object.assign(scope, data.scope || {});
+          if(!Array.isArray(scope.regions)) scope.regions = [];
           Object.keys(answers).forEach(k=>delete answers[k]);
           Object.assign(answers, data.answers || {});
           const industryLabel = (INDUSTRIES.find(i=>i.id===data.scope?.industry)||{}).label || 'Not set';
