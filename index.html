@@ -460,9 +460,11 @@
     text-transform:uppercase; color:var(--accent-signal); border:1px solid var(--accent-signal);
     padding:2px 6px; margin-left:8px; vertical-align:middle;
   }
-  .recommended-tag{
-    font-family:var(--mono); font-size:9.5px; color:var(--accent-secure); letter-spacing:0.05em; text-transform:uppercase;
+  .priority-tag{
+    display:inline-block; font-family:var(--mono); font-size:9.5px; color:var(--accent-signal); letter-spacing:0.04em; text-transform:uppercase;
+    border:1px solid var(--accent-signal); padding:2px 7px; margin-left:8px; vertical-align:middle; background:var(--tint-signal-soft);
   }
+  .fw-card.fw-top-priority{ border-color:var(--accent-signal); background:var(--tint-signal-soft); }
   .q-badge{
     display:inline-block; font-family:var(--mono); font-size:9px; letter-spacing:0.05em;
     text-transform:uppercase; color:var(--text-muted); border:1px solid var(--line);
@@ -893,10 +895,10 @@
         <a href="#" class="link-pill" data-tab="about"><span class="link-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><path d="M3 19c0-3.3 2.5-5.5 5.5-5.5S14 15.7 14 19"/><circle cx="16.5" cy="9" r="2.4"/><path d="M14.8 19c0-2.6 1.8-4.4 3.9-4.4"/></svg></span>About</a>
       </div>
       <div class="footer-social">
-        <a class="footer-social-icon" href="https://www.linkedin.com/in/sarath-surendran" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn">
+        <a class="footer-social-icon" href="https://www.linkedin.com/in/sarath-surendran/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-.95 1.83-1.95 3.76-1.95 4.02 0 4.76 2.5 4.76 5.76V21h-4v-5.6c0-1.34-.03-3.07-1.9-3.07-1.9 0-2.2 1.46-2.2 2.97V21h-4z"/></svg>
         </a>
-        <a class="footer-social-icon" href="https://sarath-s-cs.github.io/sarath-s-portfolio" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">
+        <a class="footer-social-icon" href="https://sarath-s-cs.github.io/sarath-s-portfolio/" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.6 9.6 0 0 1 12 6.8c.85 0 1.71.11 2.51.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"/></svg>
         </a>
       </div>
@@ -976,6 +978,8 @@ const STEPS = [
         options:[ {v:0,t:"Ad hoc / manual"}, {v:1,t:"Scheduled but inconsistent"}, {v:2,t:"Automated, with an SLA"} ]},
       { id:"training", text:"Do employees receive security awareness training?",
         options:[ {v:0,t:"Never"}, {v:1,t:"Once, at onboarding"}, {v:2,t:"Ongoing, recurring"} ]},
+      { id:"phishingSim", text:"Do you run simulated phishing tests for employees?",
+        options:[ {v:0,t:"No"}, {v:1,t:"Yes, but infrequently (less than annually)"}, {v:2,t:"Yes, on a regular schedule"} ]},
       { id:"endpoint", text:"Is endpoint protection (EDR/antivirus) deployed on all devices?",
         options:[ {v:0,t:"No"}, {v:1,t:"Partial coverage"}, {v:2,t:"Yes, all devices"} ]},
       { id:"rdpExposed", text:"Is RDP or another remote-admin protocol reachable directly from the internet (not behind a VPN/ZTNA)?",
@@ -1632,25 +1636,30 @@ const LEARNING_RESOURCES = {
 let current = 0;
 let phase = 'scope'; // 'scope' | 'pre' | 'wizard' | 'results' - scoped to the Assessment tab only
 const answers = {};
-const scope = { industry: null, iso27001:false, nis2:false, soc2:false, otOverride:false };
+const scope = { industry: null, iso27001:false, nis2:false, soc2:false, hipaa:false, gdpr:false, sox:false, cyberessentials:false, pcidss:false, otOverride:false };
 
 const INDUSTRIES = [
-  { id:"finance", label:"Financial Services", recommend:["iso27001","soc2"], otDefault:"ask" },
-  { id:"health", label:"Healthcare", recommend:["iso27001","nis2"], otDefault:"ask" },
-  { id:"energy", label:"Energy / Critical Infrastructure", recommend:["nis2","iso27001"], otDefault:"ask" },
-  { id:"manufacturing", label:"Manufacturing / Industrial", recommend:["iso27001","nis2"], otDefault:"ask" },
-  { id:"retail", label:"Retail / E-commerce", recommend:["iso27001"], otDefault:"ask" },
-  { id:"saas", label:"SaaS / Technology", recommend:["soc2","iso27001"], otDefault:"skip" },
-  { id:"itservices", label:"IT Services / Software Consulting", recommend:["soc2","iso27001"], otDefault:"skip" },
-  { id:"marketing", label:"Digital Marketing / Marketing Agency", recommend:["iso27001"], otDefault:"skip" },
-  { id:"public", label:"Public Sector / Government", recommend:["nis2","iso27001"], otDefault:"ask" },
-  { id:"other", label:"Other / Not listed", recommend:[], otDefault:"ask" },
+  { id:"finance", label:"Financial Services", topPriority:"iso27001", otDefault:"ask" },
+  { id:"health", label:"Healthcare", topPriority:"hipaa", otDefault:"ask" },
+  { id:"energy", label:"Energy / Critical Infrastructure", topPriority:"nis2", otDefault:"ask" },
+  { id:"manufacturing", label:"Manufacturing / Industrial", topPriority:"iso27001", otDefault:"ask" },
+  { id:"retail", label:"Retail / E-commerce", topPriority:"pcidss", otDefault:"ask" },
+  { id:"saas", label:"SaaS / Technology", topPriority:"soc2", otDefault:"skip" },
+  { id:"itservices", label:"IT Services / Software Consulting", topPriority:"soc2", otDefault:"skip" },
+  { id:"marketing", label:"Digital Marketing / Marketing Agency", topPriority:"gdpr", otDefault:"skip" },
+  { id:"public", label:"Public Sector / Government", topPriority:"nis2", otDefault:"ask" },
+  { id:"other", label:"Other / Not listed", topPriority:null, otDefault:"ask" },
 ];
 
 const FRAMEWORKS = [
   { id:"iso27001", name:"ISO 27001", desc:"International standard for an Information Security Management System - common where clients or partners require certification." },
   { id:"nis2", name:"NIS2", desc:"EU directive for essential/important-sector entities - incident notification duties and management accountability." },
   { id:"soc2", name:"SOC 2", desc:"Common for SaaS/vendors selling to enterprise customers who require an independent audit of controls." },
+  { id:"hipaa", name:"HIPAA", desc:"U.S. law governing protection of health information - relevant if you handle patient or health data in the US." },
+  { id:"gdpr", name:"GDPR", desc:"EU regulation governing personal data protection and privacy - relevant if you handle EU residents' data, regardless of where you're based." },
+  { id:"sox", name:"SOX", desc:"U.S. Sarbanes-Oxley Act requiring financial reporting controls - relevant if you're a US public company, or a vendor/auditor to one." },
+  { id:"cyberessentials", name:"Cyber Essentials", desc:"UK government-backed baseline certification - relevant for UK organizations, especially those bidding on UK government contracts." },
+  { id:"pcidss", name:"PCI DSS", desc:"Payment Card Industry Data Security Standard - relevant if you store, process, or transmit credit or debit card data." },
 ];
 
 const PROFILE_STEP = {
@@ -1675,6 +1684,8 @@ const INFRA_STEP = {
   sub:"The specific products and architecture in place - this is what lets recommendations reference your actual stack instead of speaking generically.",
   fields:[
     { id:"edrVendor", type:"text", required:false, label:"What antivirus or EDR product is deployed?", placeholder:"e.g. CrowdStrike Falcon, Microsoft Defender, SentinelOne" },
+    { id:"emailSecurityVendor", type:"text", required:false, label:"What email security / anti-phishing gateway do you use, if any?", placeholder:"e.g. Proofpoint, Mimecast, Microsoft Defender for Office 365" },
+    { id:"awarenessLms", type:"text", required:false, label:"What security awareness / LMS platform do you use for training, if any?", placeholder:"e.g. KnowBe4, Proofpoint Security Awareness" },
     { id:"dlpUsed", type:"select", required:true, label:"Do you use a DLP (data loss prevention) solution?", options:["Yes","No","Not sure"] },
     { id:"dlpVendor", type:"text", required:false, label:"Which DLP product?", placeholder:"e.g. Forcepoint, Microsoft Purview",
       conditional: ()=> answers.dlpUsed === "Yes" },
@@ -1773,10 +1784,14 @@ const VENDOR_NOTES = [
   { keywords:["moveit"], vendor:"MOVEit / Progress", note:"MOVEit Transfer was the subject of a major mass-exploitation event via a since-patched critical vulnerability. Confirm you're on a current, fully-patched release and review file-transfer logs for the historical exposure window." },
   { keywords:["sonicwall"], vendor:"SonicWall", note:"SonicWall firewall/VPN appliances have had repeated critical, actively-exploited vulnerabilities. Confirm firmware is current and management access is restricted." },
   { keywords:["barracuda"], vendor:"Barracuda", note:"Barracuda's Email Security Gateway was subject to a critical zero-day serious enough that Barracuda recommended full hardware replacement for affected units. If you run Barracuda ESG appliances, verify directly with Barracuda whether your hardware was affected." },
+  { keywords:["proofpoint"], vendor:"Proofpoint", note:"Proofpoint's email security and security-awareness products are widely deployed - confirm URL Defense/attachment sandboxing are actually enabled (not just licensed), and that simulated-phishing results are being reviewed and acted on, not just collected." },
+  { keywords:["mimecast"], vendor:"Mimecast", note:"Mimecast email security deployments are commonly found with misconfigured DMARC alignment or impersonation-protection settings left at default - confirm these are actively enforced, not merely available in the license." },
+  { keywords:["knowbe4"], vendor:"KnowBe4", note:"Awareness platforms like KnowBe4 are only as effective as their completion and simulated-phishing-failure rates are actually reviewed by someone - track those metrics on a schedule, don't just deploy the training and move on." },
+  { keywords:["defender for office","office 365 atp","microsoft 365 defender"], vendor:"Microsoft Defender for Office 365", note:"Defender for Office 365 requires Safe Links and Safe Attachments to be explicitly enabled per the licensing tier - confirm these are actually turned on, not just included in the plan you're paying for." },
 ];
 
 function matchedVendorNotes(){
-  const haystack = [answers.edgeDeviceVendor, answers.sdwanVendor, answers.edrVendor, answers.hostingProvider, answers.webServerStack, answers.dlpVendor, answers.cloudProvider]
+  const haystack = [answers.edgeDeviceVendor, answers.sdwanVendor, answers.edrVendor, answers.hostingProvider, answers.webServerStack, answers.dlpVendor, answers.cloudProvider, answers.emailSecurityVendor, answers.awarenessLms]
     .filter(Boolean).join(' ').toLowerCase();
   if(!haystack) return [];
   const seen = new Set();
@@ -1912,11 +1927,11 @@ async function renderScope(){
     historyCount = (lr && lr.keys) ? lr.keys.length : 0;
   } catch(e){ /* storage unavailable - proceed without history */ }
 
-  const rec = scope.industry ? (INDUSTRIES.find(i=>i.id===scope.industry)?.recommend || []) : [];
+  const topPriority = scope.industry ? (INDUSTRIES.find(i=>i.id===scope.industry)?.topPriority || null) : null;
   panel.innerHTML = `
     <div class="step-eyebrow">Scope</div>
     <h2 class="step-title">Before we start</h2>
-    <p class="step-sub">Every assessment includes the NIST CSF 2.0 + CIS Controls baseline. Add any compliance standards relevant to your industry.</p>
+    <p class="step-sub">Every assessment includes the NIST CSF 2.0 + CIS Controls baseline. Add any compliance standards that apply to your organization - none are selected automatically, even if we flag one as a top priority for your industry.</p>
     ${historyCount ? `<p class="history-link" id="historyLink">You have ${historyCount} previous assessment${historyCount===1?'':'s'} saved on this account - <u>view history</u></p>` : ''}
 
     <div class="fw-section-label">Industry</div>
@@ -1937,10 +1952,11 @@ async function renderScope(){
 
     <div class="fw-section-label">Frameworks</div>
     <div class="fw-baseline"><b>Always included:</b> NIST CSF 2.0 + CIS Controls v8 (the baseline this instrument is built on)</div>
+    ${scope.industry ? `<p class="scope-hint" style="margin-top:-8px;">Does your organization carry any compliance obligation tied to your sector - HIPAA, GDPR, PCI DSS, or similar? Select any that genuinely apply below; nothing is assumed for you.</p>` : ''}
     ${FRAMEWORKS.map(f => `
-      <div class="fw-card ${scope[f.id]?'selected':''}" data-fw="${f.id}">
+      <div class="fw-card ${scope[f.id]?'selected':''} ${topPriority===f.id?'fw-top-priority':''}" data-fw="${f.id}">
         <div>
-          <div class="fw-name">${f.name} ${rec.includes(f.id) ? '<span class="recommended-tag">· Recommended for this industry</span>' : ''}</div>
+          <div class="fw-name">${f.name} ${topPriority===f.id ? '<span class="priority-tag">★ Top priority recommendation for this industry</span>' : ''}</div>
           <div class="fw-desc">${f.desc}</div>
         </div>
         <div class="checkbox"></div>
@@ -1957,8 +1973,6 @@ async function renderScope(){
   panel.querySelectorAll('.industry-card').forEach(el=>{
     el.addEventListener('click', ()=>{
       scope.industry = el.dataset.industry;
-      const recNow = INDUSTRIES.find(i=>i.id===scope.industry)?.recommend || [];
-      FRAMEWORKS.forEach(f=>{ if(recNow.includes(f.id)) scope[f.id] = true; });
       renderScope();
     });
   });
@@ -2922,13 +2936,7 @@ function renderAboutTab(container){
       <div class="page-intro">
         <div class="page-eyebrow">About</div>
         <h2 class="page-title">About this project</h2>
-        <p class="page-lede">This project is a cybersecurity assessment and compliance-readiness platform designed for small and medium-sized businesses. It helps organizations understand their current security posture, identify weaknesses, and receive practical recommendations to strengthen their cybersecurity defenses.
-
-The platform is based primarily on the NIST Cybersecurity Framework and CIS Critical Security Controls v8. It guides organizations through structured assessments, highlights security gaps, and provides actionable suggestions to improve their overall resilience.
-
-In addition to security assessments, the platform supports compliance-readiness initiatives for frameworks such as ISO/IEC 27001 and SOC 2. Its long-term goal is to provide businesses with a centralized solution for continuously monitoring, improving, and demonstrating their security and compliance posture.
-
-This is currently a personal project under active development.</p>
+        <p class="page-lede">[Placeholder - add your content here later.]</p>
       </div>
       <div class="section-tile">
         <p class="body-text">This section is intentionally left blank for now.</p>
@@ -3153,6 +3161,9 @@ function computeFlags(){
   if(answers.emailAuth === 0 && answers.training === 0){
     flags.push("No enforced email authentication (SPF/DKIM/DMARC) combined with no security awareness training means phishing and business email compromise attempts are both more likely to arrive successfully and more likely to fool the person who receives them.");
   }
+  if(answers.training !== 0 && answers.phishingSim === 0){
+    flags.push("Training is happening, but without simulated phishing tests there's no actual evidence it's working - the two are meant to reinforce each other, and skipping simulation means the training's real effectiveness is unmeasured.");
+  }
   if(answers.hasOT === "Yes" && answers.otSegregation === "No - flat/shared network"){
     flags.push("An OT/ICS environment sharing a flat network with corporate IT means a routine IT compromise (phishing, ransomware) can pivot directly into industrial control systems - this is one of the most consequential architecture gaps an OT environment can have.");
   }
@@ -3201,6 +3212,8 @@ function snapshotRows(){
   if(answers.mdrMspName) mgmt += ` (${answers.mdrMspName})`;
   rows.push(["Security managed by", mgmt]);
   rows.push(["EDR / antivirus", answers.edrVendor || 'Not specified']);
+  rows.push(["Email security gateway", answers.emailSecurityVendor || 'Not specified']);
+  rows.push(["Awareness / LMS platform", answers.awarenessLms || 'Not specified']);
   let dlp = answers.dlpUsed || '-';
   if(answers.dlpVendor) dlp += ` - ${answers.dlpVendor}`;
   rows.push(["DLP solution", dlp]);
@@ -3347,9 +3360,11 @@ async function renderResults(){
       <b>Prototype note -</b> the flags and priority list above are produced by a rules engine for this demo.
       In the live version, this panel is where the Claude API call plugs in: it receives the full answer set
       plus retrieved remediation content from the knowledge base, and writes the actual narrative report.
-      The vendor/product fields in the snapshot above (EDR, SD-WAN, hosting/web stack) are exactly what a
-      live vulnerability-lookup tool call would key off - checking public advisories/CVE feeds for those
-      specific products - rather than anything fabricated here.
+      The vendor/product fields in the snapshot above (EDR, email security, SD-WAN, hosting/web stack) are
+      exactly what a live lookup would key off - and that lookup is designed to check sources in a specific
+      order: the vendor's own official website or security-advisories page first, then CISA's KEV catalog and
+      NVD, rather than a generic web search. What's shown here is illustrative pattern-matching for named
+      vendors, not a live fetch, but it's built to reflect that same source priority.
       <br><br>
       This run was just saved using Claude's artifact storage (private to your account) - that's what powers
       the history/delta view above. That storage is specific to this Claude environment; the production
