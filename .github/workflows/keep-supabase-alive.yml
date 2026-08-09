@@ -1,0 +1,16 @@
+name: Keep Supabase Project Alive
+
+on:
+  schedule:
+    - cron: '0 8 * * 1,4'  # Runs every Monday and Thursday at 08:00 UTC
+  workflow_dispatch:        # Lets you also trigger it manually from the Actions tab
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase project
+        run: |
+          curl -s -o /dev/null -w "Ping response: %{http_code}\n" \
+            "https://xufqgrcxufptlptpwlfi.supabase.co/rest/v1/" \
+            -H "apikey: sb_publishable_rMgv5Ca-_rmygrgsh9Npeg_4vhl11p_"
