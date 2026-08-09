@@ -1627,6 +1627,11 @@ const LEARNING_RESOURCES = {
   medium: [
     { name:'InfoSec Write-ups', desc:'The largest cybersecurity publication on Medium - bug bounty write-ups, CTF walkthroughs, and real vulnerability research, with its own weekly digest.' },
   ],
+  newssites: [
+    { name:'BleepingComputer', desc:'Fast, detailed coverage of breaking vulnerabilities, ransomware, and malware - often first to publish technical detail on an active incident.' },
+    { name:'Krebs on Security', desc:'Brian Krebs\' investigative reporting - slower, deeper breach investigations rather than daily news volume.' },
+    { name:'SecurityWeek', desc:'Broad daily coverage across vulnerabilities, breaches, and industry news - a solid single feed to check regularly.' },
+  ],
   linkedin: [
     { name:'The Cyber Security Hub™', desc:'One of the largest cybersecurity communities on LinkedIn, with a widely-subscribed newsletter surfacing industry news and leadership commentary.' },
   ],
@@ -1672,9 +1677,16 @@ const PROFILE_STEP = {
     { id:"itSecStaff", type:"select", required:true, label:"How many people are dedicated to IT or cybersecurity in-house?",
       options:["0 - no dedicated staff","1–2","3–10","10+"] },
     { id:"secManagedBy", type:"select", required:true, label:"How is cybersecurity managed day to day?",
-      options:["In-house team only","Managed Service Provider (MSP)","Managed Detection & Response (MDR) service","Hybrid - in-house plus MSP/MDR","No formal management"] },
-    { id:"mdrMspName", type:"text", required:false, label:"If MSP/MDR, which provider?", placeholder:"e.g. Arctic Wolf, a local MSP name…",
-      conditional: ()=> ["Managed Service Provider (MSP)","Managed Detection & Response (MDR) service","Hybrid - in-house plus MSP/MDR"].includes(answers.secManagedBy) },
+      options:["In-house team only","Managed Service Provider (MSP)","Managed Detection & Response (MDR) service","Managed Security Service Provider (MSSP)","Hybrid - in-house plus MSP/MDR/MSSP","No formal management"] },
+    { id:"mdrMspName", type:"text", required:false, label:"If MSP/MDR/MSSP, which provider?",
+      placeholder: ()=>{
+        const m = answers.secManagedBy;
+        if(m === "Managed Detection & Response (MDR) service") return "e.g. CrowdStrike Falcon Complete, Red Canary, Arctic Wolf";
+        if(m === "Managed Security Service Provider (MSSP)") return "e.g. Secureworks, Trustwave, IBM Security Services";
+        if(m === "Managed Service Provider (MSP)") return "e.g. Kyndryl, Rackspace Technology, a local/regional MSP";
+        return "e.g. CrowdStrike Falcon Complete (MDR), Secureworks (MSSP), Kyndryl (MSP)";
+      },
+      conditional: ()=> ["Managed Service Provider (MSP)","Managed Detection & Response (MDR) service","Managed Security Service Provider (MSSP)","Hybrid - in-house plus MSP/MDR/MSSP"].includes(answers.secManagedBy) },
   ]
 };
 
@@ -1857,7 +1869,7 @@ function renderFieldHtml(f){
   return `
     <div class="field">
       <label>${f.label}${f.required?'':' <span class="opt-tag">optional</span>'}</label>
-      <input type="text" data-fid="${f.id}" value="${val}" placeholder="${f.placeholder||''}">
+      <input type="text" data-fid="${f.id}" value="${val}" placeholder="${(typeof f.placeholder === 'function' ? f.placeholder() : f.placeholder) || ''}">
     </div>`;
 }
 
@@ -1953,15 +1965,33 @@ async function renderScope(){
     <div class="fw-section-label">Frameworks</div>
     <div class="fw-baseline"><b>Always included:</b> NIST CSF 2.0 + CIS Controls v8 (the baseline this instrument is built on)</div>
     ${scope.industry ? `<p class="scope-hint" style="margin-top:-8px;">Does your organization carry any compliance obligation tied to your sector - HIPAA, GDPR, PCI DSS, or similar? Select any that genuinely apply below; nothing is assumed for you.</p>` : ''}
-    ${FRAMEWORKS.map(f => `
-      <div class="fw-card ${scope[f.id]?'selected':''} ${topPriority===f.id?'fw-top-priority':''}" data-fw="${f.id}">
-        <div>
-          <div class="fw-name">${f.name} ${topPriority===f.id ? '<span class="priority-tag">★ Top priority recommendation for this industry</span>' : ''}</div>
-          <div class="fw-desc">${f.desc}</div>
+    ${(() => {
+      const topFw = FRAMEWORKS.find(f => f.id === topPriority);
+      const otherFw = FRAMEWORKS.filter(f => f.id !== topPriority);
+      const hasOtherSelected = otherFw.some(f => scope[f.id]);
+      const fwCardHtml = f => `
+        <div class="fw-card ${scope[f.id]?'selected':''} ${topPriority===f.id?'fw-top-priority':''}" data-fw="${f.id}">
+          <div>
+            <div class="fw-name">${f.name} ${topPriority===f.id ? '<span class="priority-tag">★ Top priority recommendation for this industry</span>' : ''}</div>
+            <div class="fw-desc">${f.desc}</div>
+          </div>
+          <div class="checkbox"></div>
         </div>
-        <div class="checkbox"></div>
-      </div>
-    `).join('')}
+      `;
+      return `
+        ${topFw ? fwCardHtml(topFw) : ''}
+        <div class="acc-card ${hasOtherSelected ? 'open' : ''}" style="margin-top:10px;">
+          <div class="acc-head">
+            <div class="icon-badge">${icon('register')}</div>
+            <div><h4>Additional Compliance & Regulatory Frameworks</h4><div class="acc-sub">${otherFw.length} more standards available - ${hasOtherSelected ? 'you have one selected below' : 'optional, select any that apply'}</div></div>
+            <div class="acc-chevron">▸</div>
+          </div>
+          <div class="acc-body" style="padding-left:18px;">
+            ${otherFw.map(fwCardHtml).join('')}
+          </div>
+        </div>
+      `;
+    })()}
     <p class="scope-hint">These are common patterns, not a legal determination - confirm exact obligations (especially NIS2 sector/size thresholds) with your regulatory counsel.</p>
 
     <div class="nav">
@@ -1987,6 +2017,12 @@ async function renderScope(){
   if(historyLinkEl){
     historyLinkEl.addEventListener('click', ()=>{ goToTab('history'); });
   }
+  panel.querySelectorAll('.acc-head').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      if(e.target.closest('.fw-card')) return;
+      el.parentElement.classList.toggle('open');
+    });
+  });
   panel.querySelectorAll('.fw-card').forEach(el=>{
     el.addEventListener('click', ()=>{
       const id = el.dataset.fw;
@@ -2854,6 +2890,10 @@ function renderNewsTab(container){
           <div class="resource-group">
             <h4>Medium</h4>
             ${LEARNING_RESOURCES.medium.map(r=>`<div class="resource-item"><b>${r.name}</b><span>${r.desc}</span></div>`).join('')}
+          </div>
+          <div class="resource-group">
+            <h4>News Sites</h4>
+            ${LEARNING_RESOURCES.newssites.map(r=>`<div class="resource-item"><b>${r.name}</b><span>${r.desc}</span></div>`).join('')}
           </div>
           <div class="resource-group">
             <h4>LinkedIn</h4>
