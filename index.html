@@ -683,7 +683,7 @@
   /* --- roadmap --- */
   .stage-band{ display:flex; align-items:center; gap:12px; margin:0 0 4px; padding:12px 16px; border-left:3px solid var(--stage-color, var(--accent-signal)); background:var(--surface-raised); }
 
-  .stage-band .stage-label{ font-family:var(--mono); font-size:13px; font-weight:600; color:var(--stage-color, var(--accent-signal)); }
+  .stage-band .stage-label{ font-family:var(--mono); font-size:19px; font-weight:700; color:var(--stage-color, var(--accent-signal)); margin:0 0 2px; }
   .stage-band .stage-range{ font-family:var(--mono); font-size:11px; color:var(--text-muted); }
   .stage-band p{ font-size:12.5px; color:var(--text-muted); margin:0; flex:1; }
   @media (max-width:640px){ .stage-band{ flex-direction:column; align-items:flex-start; gap:4px; } }
@@ -712,28 +712,35 @@
   .principle-card p{ font-size:12.5px; color:var(--text-muted); line-height:1.65; margin:0; }
   .logo-assembly-wrap{ display:flex; justify-content:center; padding:32px 0 8px; }
   .logo-assembly-stage{ position:relative; width:260px; height:260px; display:flex; align-items:center; justify-content:center; }
-  .assembly-logo{
-    width:150px; height:150px; position:relative; z-index:2;
-    animation:assemblyLogoIn 1.8s ease-out infinite;
+  .assembly-logo-base{
+    width:150px; height:150px; position:relative; z-index:2; opacity:0.14;
+  }
+  .assembly-logo-reveal{
+    width:150px; height:150px; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2;
+    clip-path:inset(100% 0 0 0);
+    animation:assemblyLogoReveal 4.6s cubic-bezier(0.4,0,0.2,1) infinite;
   }
   .assembly-fragment{
     position:absolute; top:50%; left:50%; z-index:1;
     background:linear-gradient(135deg, #2196f3, #6fd88a);
-    animation:assemblyFragmentIn 1.8s ease-out infinite;
+    animation:assemblyFragmentRise 4.6s cubic-bezier(0.4,0,0.2,1) infinite;
     animation-delay:var(--fdelay);
+    opacity:0;
   }
-  @keyframes assemblyFragmentIn{
-    0%{ transform:translate(calc(-50% + var(--fx)), calc(-50% + var(--fy))) scale(1); opacity:0.9; }
-    55%{ transform:translate(-50%, -50%) scale(0.3); opacity:0.5; }
-    70%, 100%{ transform:translate(-50%, -50%) scale(0.3); opacity:0; }
+  @keyframes assemblyFragmentRise{
+    0%{ transform:translate(calc(-50% + var(--fx)), calc(-50% + var(--fy) + 55px)) scale(1); opacity:0; }
+    8%{ opacity:0.95; }
+    30%{ transform:translate(calc(-50% + var(--fx)), calc(-50% + var(--fy))) scale(1); opacity:0.95; }
+    42%, 100%{ transform:translate(calc(-50% + var(--fx)), calc(-50% + var(--fy))) scale(0.6); opacity:0; }
   }
-  @keyframes assemblyLogoIn{
-    0%, 45%{ opacity:0; transform:scale(0.85); }
-    75%, 100%{ opacity:1; transform:scale(1); }
+  @keyframes assemblyLogoReveal{
+    0%, 15%{ clip-path:inset(100% 0 0 0); }
+    92%, 100%{ clip-path:inset(0% 0 0 0); }
   }
   @media (prefers-reduced-motion: reduce){
-    .assembly-logo, .assembly-fragment{ animation:none; opacity:1; }
+    .assembly-logo-reveal{ animation:none; clip-path:inset(0 0 0 0); }
     .assembly-fragment{ display:none; }
+    .assembly-logo-base{ opacity:0; }
   }
   .fb-error{ color:var(--accent-critical); font-size:12.5px; margin-bottom:14px; }
   .roadmap-loop svg{ flex-shrink:0; animation:spin 6s linear infinite; }
@@ -779,11 +786,11 @@
   html:not([data-theme="light"]) .hero-banner .page-title{ color:#FFFFFF; }
   html:not([data-theme="light"]) .hero-banner .page-lede{ color:rgba(255,255,255,0.82); }
   @media (max-width:760px){ .hero-banner{ flex-direction:column; min-height:auto; } }
-  .hero-infinity{ position:relative; flex-shrink:0; width:330px; max-width:100%; }
+  .hero-infinity{ position:relative; flex-shrink:0; width:390px; max-width:100%; }
   .hero-infinity svg{ width:100%; height:auto; display:block; }
   .infinity-flow{ stroke-dasharray:18 26; animation:infinityFlow 6s linear infinite; }
   @keyframes infinityFlow{ to{ stroke-dashoffset:-445; } }
-  .infinity-caption{ display:flex; justify-content:space-between; gap:14px; margin-top:10px; font-family:var(--mono); font-size:14px; letter-spacing:0.03em; font-weight:600; }
+  .infinity-caption{ display:flex; justify-content:space-between; gap:14px; margin-top:12px; font-family:var(--mono); font-size:16px; letter-spacing:0.03em; font-weight:600; }
   .infinity-caption span{ white-space:nowrap; }
   .site-tile-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:28px 0 8px; }
   @media (max-width:760px){ .site-tile-grid{ grid-template-columns:repeat(2,1fr); } }
@@ -839,7 +846,13 @@
 
   .phase4-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:20px 0 32px; }
   @media (max-width:760px){ .phase4-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:520px){ .phase4-grid{ grid-template-columns:1fr; gap:12px; } .phase4-card{ padding:20px 18px; } }
   .phase4-card{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:28px 26px; }
+  .phase4-icon{
+    width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:var(--tint-signal-soft); color:var(--accent-signal); margin-bottom:14px;
+  }
+  .phase4-icon svg{ width:20px; height:20px; }
   .phase4-card .vnum{ font-family:var(--mono); color:var(--accent-signal); font-size:15px; font-weight:600; margin-bottom:12px; }
   .phase4-card h4{ font-size:19px; margin:0 0 6px; }
   .phase4-tagline{ font-family:var(--mono); font-size:12px; color:var(--accent-secure); letter-spacing:0.02em; margin-bottom:14px; font-weight:600; }
@@ -855,11 +868,15 @@
   }
   .workflow-step:hover{ background:var(--tint-signal-soft); transform:translateY(-2px); }
   .workflow-step.stage-active{ background:var(--tint-signal); border-bottom:2px solid var(--accent-signal); }
-  .stage-detail-panel{ margin-top:14px; padding:20px 22px; background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); }
+  .stage-detail-panel{
+    margin-top:14px; padding:20px 22px; background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line);
+    opacity:0; transform:translateY(-8px); transition:opacity .22s ease, transform .22s ease;
+  }
+  .stage-detail-panel.open{ opacity:1; transform:translateY(0); }
   .stage-detail-panel h4{ font-size:15px; margin:0 0 10px; }
   .risk-slider-wrap{ margin-top:28px; padding-top:20px; border-top:1px solid var(--line); }
   .risk-slider-label{ font-size:12.5px; color:var(--text-muted); margin-bottom:14px; }
-  .risk-slider-track{ display:flex; height:34px; border:1px solid var(--line); position:relative; }
+  .risk-slider-track{ display:flex; height:38px; border:1px solid var(--line); position:relative; }
   .risk-slider-fill{
     position:absolute; inset:0;
     background:linear-gradient(90deg, var(--accent-signal) 0%, #E0A94A 50%, var(--accent-critical) 100%);
@@ -867,11 +884,22 @@
   }
   .risk-slider-tick{
     flex:1; position:relative; display:flex; align-items:center; justify-content:center;
-    font-family:var(--mono); font-size:11px; font-weight:600; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.4);
-    border-right:1px solid rgba(255,255,255,0.25);
+    font-family:var(--mono); font-size:12px; font-weight:600; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.4);
+    border:none; border-right:1px solid rgba(255,255,255,0.25); background:transparent; cursor:pointer; padding:0;
+    transition:transform .15s ease;
   }
   .risk-slider-tick:last-child{ border-right:none; }
+  .risk-slider-tick:hover{ transform:scaleY(1.12); }
+  .risk-slider-tick.active{ outline:2px solid var(--text); outline-offset:-2px; z-index:1; }
   .risk-slider-ends{ display:flex; justify-content:space-between; margin-top:8px; font-family:var(--mono); font-size:11px; color:var(--text-muted); }
+  .risk-slider-desc{
+    margin-top:16px; padding:16px 18px; background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line);
+    font-size:13px; color:var(--text-muted); line-height:1.6; min-height:0;
+    opacity:0; transform:translateY(-6px); transition:opacity .2s ease, transform .2s ease; display:none;
+  }
+  .risk-slider-desc:empty{ display:none; }
+  .risk-slider-desc.open{ opacity:1; transform:translateY(0); display:block; }
+  .risk-slider-desc b{ color:var(--text); }
   .workflow-phase-tag{ font-family:var(--mono); font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
   .workflow-step h4{ font-size:14.5px; margin:0 0 8px; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.03em; }
   .workflow-step p{ font-size:12.5px; color:var(--text-muted); line-height:1.6; margin:0; text-align:left; }
@@ -1263,11 +1291,27 @@ function icon(name){
     moon: `<svg ${common}><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z"/></svg>`,
     external: `<svg ${common}><path d="M9 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/><path d="M14 4h6v6"/><path d="M20 4 11 13"/></svg>`,
     arrowright: `<svg ${common}><path d="M5 12h14M13 6l6 6-6 6"/></svg>`,
+    'hiw-clipboard': `<svg ${common}><rect x="6" y="4" width="12" height="17" rx="1.5"/><rect x="9" y="2.5" width="6" height="3" rx="1"/><path d="M8.5 11l2 2 4-4.5"/><path d="M8.5 16.5h5.5"/></svg>`,
+    'hiw-magnify': `<svg ${common}><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/><path d="M7.5 10.5h6M10.5 7.5v6"/></svg>`,
+    'hiw-lightbulb': `<svg ${common}><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6.5 6.5 0 0 0-3.8 11.8c.5.4.8 1 .8 1.7v.5h6v-.5c0-.7.3-1.3.8-1.7A6.5 6.5 0 0 0 12 3z"/></svg>`,
+    'hiw-transform': `<svg ${common}><path d="M4 14a8 8 0 0 1 14-5.2"/><path d="M17 4v3.2h-3.2"/><path d="M20 10a8 8 0 0 1-14 5.2"/><path d="M7 20v-3.2h3.2"/></svg>`,
   };
   return icons[name] || '';
 }
 
 // --- 10-phase maturity roadmap, organized into 3 clean, non-overlapping stages ---
+const RISK_SCORE_DESCRIPTIONS = {
+  1: 'Minimal risk. Controls are comprehensive, tested, and continuously monitored across every function. This is an aspirational benchmark, not a typical starting point for most organizations.',
+  2: 'Very low risk. A strong baseline across most functions, with only minor, well-understood gaps that are already being tracked.',
+  3: 'Low risk. Core protections are in place and working; a few specific areas need attention, but nothing systemic.',
+  4: 'Low-to-moderate risk. Foundational controls exist, but consistency and testing vary across the organization - some areas are solid, others untested.',
+  5: 'Moderate risk. A genuine mix of solid and weak areas - the kind of profile where a single overlooked gap is enough to be exploited.',
+  6: 'Moderate-to-elevated risk. Multiple functions show real gaps at once; an opportunistic attacker would likely find a way in without much effort.',
+  7: 'Elevated risk. Significant gaps across several NIST functions, especially around detection and response - incidents would likely go unnoticed for a while.',
+  8: 'High risk. Fundamental controls are missing or inconsistently applied. A breach isn\'t really a question of if, but when.',
+  9: 'Very high risk. Minimal effective defenses in place - the organization would likely not detect an active compromise on its own.',
+  10: 'Severe risk. Essentially an unmanaged security posture. Every function needs immediate, foundational work, starting with visibility into what even exists.',
+};
 const STAGE_DETAIL = {
   discovery: {
     summary:'The data-collection phase - your adaptive questionnaire across all six NIST CSF functions (Govern, Identify, Protect, Detect, Respond, Recover), shaped by your industry, region, and infrastructure so you only answer what actually applies.',
@@ -2504,25 +2548,25 @@ const SITE_TILES = [
 ];
 
 const HOW_IT_WORKS = [
-  { n:'01', title:'Data Collection', sub:'Assessment', tagline:'Know exactly where you stand',
+  { n:'01', title:'Data Collection', sub:'Assessment', tagline:'Know exactly where you stand', icon:'hiw-clipboard',
     bullets:[
       'Answer an adaptive questionnaire shaped by your industry and infrastructure',
       'Only relevant questions appear - nothing generic, nothing wasted',
       'All six NIST CSF functions scored individually',
     ]},
-  { n:'02', title:'Analysis', sub:null, tagline:'See risks a checklist would miss',
+  { n:'02', title:'Analysis', sub:null, tagline:'See risks a checklist would miss', icon:'hiw-magnify',
     bullets:[
       'Every answer cross-referenced against every other answer',
       'Compounding risk flagged, not just scored in isolation',
       'Vendor-specific mitigation notes where you\'ve named a product',
     ]},
-  { n:'03', title:'Recommendation', sub:null, tagline:'Know what to fix first',
+  { n:'03', title:'Recommendation', sub:null, tagline:'Know what to fix first', icon:'hiw-lightbulb',
     bullets:[
       'A ranked, prioritized action list - not a wall of findings',
       'Each item tied to why it matters more than the rest',
       'Mapped back to the specific control it strengthens',
     ]},
-  { n:'04', title:'Transformation', sub:null, tagline:'Prove the change actually worked',
+  { n:'04', title:'Transformation', sub:null, tagline:'Prove the change actually worked', icon:'hiw-transform',
     bullets:[
       'Implement fixes using the matching Runbook or Playbook',
       'Re-assess on a cadence to track real progress',
@@ -2561,6 +2605,7 @@ function renderHomeTab(container){
         <div class="phase4-grid">
           ${HOW_IT_WORKS.map(s=>`
             <div class="phase4-card">
+              <div class="phase4-icon">${icon(s.icon)}</div>
               <div class="vnum">${s.n}</div>
               <h4>${s.title}${s.sub ? ` <span style="color:var(--text-muted); font-weight:400;">(${s.sub})</span>` : ''}</h4>
               <div class="phase4-tagline">${s.tagline}</div>
@@ -2573,8 +2618,8 @@ function renderHomeTab(container){
       </div>
 
       <div class="section-tile">
-        <h3 class="section-h">Risk Score Matrix</h3>
-        <p class="body-text">Every assessment runs on a scored matrix (see the <a href="#" id="linkMetricsFromHome" class="inline-link">Metrics</a> page for the full breakdown) and moves through three stages as a continuous workflow. Select a stage for a summary of what it covers and how it's scored:</p>
+        <h3 class="section-h">The three phases of the assessment</h3>
+        <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage for a quick summary - each links through to the full detail on the <a href="#" id="linkMaturityFromPhases" class="inline-link">Maturity Model</a> page.</p>
         <div class="workflow-row">
           ${stageOrder.map((sid,i)=>`
             ${i>0 ? `<div class="workflow-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ''}
@@ -2587,14 +2632,19 @@ function renderHomeTab(container){
           `).join('')}
         </div>
         <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
+      </div>
 
+      <div class="section-tile">
+        <h3 class="section-h">Risk Score Matrix</h3>
+        <p class="body-text">Every assessment runs on a scored matrix (see the <a href="#" id="linkMetricsFromHome" class="inline-link">Metrics</a> page for the full breakdown). Select a number for what that risk level actually means:</p>
         <div class="risk-slider-wrap">
-          <div class="risk-slider-label">Illustrative risk scale - the lower the score, the stronger the security posture</div>
+          <div class="risk-slider-label">Interactive risk scale - the lower the score, the stronger the security posture</div>
           <div class="risk-slider-track">
             <div class="risk-slider-fill"></div>
-            ${Array.from({length:10}, (_,i)=>`<div class="risk-slider-tick">${i+1}</div>`).join('')}
+            ${Array.from({length:10}, (_,i)=>`<button class="risk-slider-tick" data-risk="${i+1}" type="button">${i+1}</button>`).join('')}
           </div>
           <div class="risk-slider-ends"><span>1 - Minimal risk</span><span>10 - Severe risk</span></div>
+          <div class="risk-slider-desc" id="riskSliderDesc"></div>
         </div>
       </div>
 
@@ -2654,18 +2704,24 @@ function renderHomeTab(container){
   document.getElementById('ctaMethod').addEventListener('click', ()=> goToTab('methodology'));
   document.getElementById('heroTakeAssessment').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('assessment'); });
   document.getElementById('linkMetricsFromHome').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('metrics'); });
+  document.getElementById('linkMaturityFromPhases').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('maturity'); });
+
   let openStageDetail = null;
+  function closeStageDetail(){
+    const panel = document.getElementById('stageDetailPanel');
+    if(!panel) return;
+    panel.classList.remove('open');
+    openStageDetail = null;
+    container.querySelectorAll('[data-stage-detail]').forEach(c=>c.classList.remove('stage-active'));
+    setTimeout(()=>{ if(!panel.classList.contains('open')) panel.style.display = 'none'; }, 220);
+  }
   container.querySelectorAll('[data-stage-detail]').forEach(el=>{
-    el.addEventListener('click', ()=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
       const sid = el.dataset.stageDetail;
       const panel = document.getElementById('stageDetailPanel');
       const d = STAGE_DETAIL[sid];
-      if(openStageDetail === sid){
-        panel.style.display = 'none';
-        openStageDetail = null;
-        container.querySelectorAll('[data-stage-detail]').forEach(c=>c.classList.remove('stage-active'));
-        return;
-      }
+      if(openStageDetail === sid){ closeStageDetail(); return; }
       openStageDetail = sid;
       container.querySelectorAll('[data-stage-detail]').forEach(c=>c.classList.remove('stage-active'));
       el.classList.add('stage-active');
@@ -2673,12 +2729,34 @@ function renderHomeTab(container){
         <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
         <p class="body-text">${d.summary}</p>
         <p class="body-text"><b>Scoring metrics used:</b> ${d.metrics}</p>
-        <a href="#" id="stageDetailMetricsLink" class="inline-link">See the full scoring breakdown on the Metrics page →</a>
+        <a href="#" id="stageDetailMaturityLink" class="inline-link">See ${STAGE_META[sid].label} in full on the Maturity Model page →</a>
       `;
       panel.style.display = 'block';
-      document.getElementById('stageDetailMetricsLink').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('metrics'); });
+      requestAnimationFrame(()=> panel.classList.add('open'));
+      document.getElementById('stageDetailMaturityLink').addEventListener('click', (e2)=>{
+        e2.preventDefault();
+        goToTab('maturity', `maturity-${sid}`);
+      });
     });
   });
+  document.addEventListener('click', (e)=>{
+    if(openStageDetail && !e.target.closest('.workflow-row') && !e.target.closest('.stage-detail-panel')){
+      closeStageDetail();
+    }
+  });
+
+  const riskDesc = document.getElementById('riskSliderDesc');
+  container.querySelectorAll('.risk-slider-tick').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const n = btn.dataset.risk;
+      container.querySelectorAll('.risk-slider-tick').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      riskDesc.innerHTML = `<b>Risk score ${n}:</b> ${RISK_SCORE_DESCRIPTIONS[n]}`;
+      riskDesc.classList.remove('open');
+      requestAnimationFrame(()=> riskDesc.classList.add('open'));
+    });
+  });
+
   container.querySelectorAll('.site-tile').forEach(el=>{
     el.addEventListener('click', ()=> goToTab(el.dataset.tab));
   });
@@ -2694,6 +2772,12 @@ function renderMethodologyTab(container){
         <div class="page-eyebrow">How It Works</div>
         <h2 class="page-title">Methodology</h2>
         <p class="page-lede">What you get scored on, why the question set changes per organization, and how the final synthesis is built.</p>
+      </div>
+
+      <div class="section-tile">
+        <h3 class="section-h">Why NIST CSF and CIS Controls</h3>
+        <p class="body-text"><b>NIST CSF 2.0</b> was built by the U.S. National Institute of Standards and Technology as an outcomes-based framework rather than a prescriptive technical checklist - it describes <i>what</i> a mature security program achieves (govern, identify, protect, detect, respond, recover) without dictating exactly how. That makes it vendor-neutral, technology-agnostic, and adopted internationally well beyond the US, which is exactly why it works as a common baseline regardless of your size, sector, or maturity level. Nearly every other major framework - ISO 27001, SOC 2, the others in this assessment - maps cleanly onto its structure, so it functions as a shared language between them rather than one more competing standard.</p>
+        <p class="body-text"><b>CIS Controls v8</b> was chosen to complement it for the opposite reason: where NIST CSF stays abstract, CIS is deliberately prescriptive and prioritized - a maintained, practical answer to "where do I actually start." Pairing the two gives this assessment both the high-level structure and the concrete, specific questions underneath it, rather than picking one at the expense of the other.</p>
       </div>
 
       <div class="section-tile">
@@ -2751,11 +2835,11 @@ function renderMaturityTab(container){
   `;
   stageOrder.forEach(stageId=>{
     const meta = STAGE_META[stageId];
-    html += `<div class="section-tile">`;
+    html += `<div class="section-tile" id="maturity-${stageId}">`;
     html += `
       <div class="stage-band" style="--stage-color:${meta.color}">
         <div class="stage-illustration stage-illustration-sm">${stageIllustration(stageId)}</div>
-        <div><div class="stage-label">${meta.label}</div><div class="stage-range">${meta.range}</div></div>
+        <div><h3 class="stage-label">${meta.label}</h3><div class="stage-range">${meta.range}</div></div>
         <p>${meta.blurb}</p>
       </div>
     `;
@@ -2902,15 +2986,16 @@ function renderMetricsTab(container){
 }
 
 const SITE_LAST_UPDATED = 'August 10, 2026';
+const SITE_STARTED = 'June 2026';
 
 const ROADMAP_SHIPPED = [
-  { module:'Adaptive Assessment Wizard', added:'Aug 2026', desc:'Industry- and region-aware questionnaire across all six NIST CSF functions, with conditional OT/DevSecOps modules.' },
-  { module:'Compounding-Risk Detection', added:'Aug 2026', desc:'Cross-answer flagging for dangerous combinations, not just per-question scoring.' },
-  { module:'Vendor-Aware Mitigation Notes', added:'Aug 2026', desc:'Illustrative guidance for named products across EDR, email security, firewalls, and more.' },
-  { module:'Save Progress / Export / Import', added:'Aug 2026', desc:'Resume an assessment later, or reload a completed one to re-run after fixes.' },
-  { module:'Runbooks & Playbooks', added:'Aug 2026', desc:'8 incident runbooks plus 16 OWASP/AI-mapped attack-type playbooks with MITRE ATT&CK/ATLAS references.' },
-  { module:'Case Studies', added:'Aug 2026', desc:'8 real watershed cybersecurity incidents, each tied back to a specific gap this tool is built to catch.' },
-  { module:'Trends & News', added:'Aug 2026', desc:'Curated threat-landscape snapshot plus a living list of sources to keep following.' },
+  { module:'Adaptive Assessment Wizard', added:'Jun 2026', desc:'Industry- and region-aware questionnaire across all six NIST CSF functions, with conditional OT/DevSecOps modules.' },
+  { module:'Save Progress / Export / Import', added:'Jun 2026', desc:'Resume an assessment later, or reload a completed one to re-run after fixes.' },
+  { module:'Vendor-Aware Mitigation Notes', added:'Jun 2026', desc:'Illustrative guidance for named products across EDR, email security, firewalls, and more.' },
+  { module:'Compounding-Risk Detection', added:'Jul 2026', desc:'Cross-answer flagging for dangerous combinations, not just per-question scoring.' },
+  { module:'Runbooks & Playbooks', added:'Jul 2026', desc:'8 incident runbooks plus 16 OWASP/AI-mapped attack-type playbooks with MITRE ATT&CK/ATLAS references.' },
+  { module:'Case Studies', added:'Jul 2026', desc:'8 real watershed cybersecurity incidents, each tied back to a specific gap this tool is built to catch.' },
+  { module:'Trends & News', added:'Jul 2026', desc:'Curated threat-landscape snapshot plus a living list of sources to keep following.' },
   { module:'Glossary & References', added:'Aug 2026', desc:'A 59-term glossary and a sourced references page.' },
   { module:'History & Score Tracking', added:'Aug 2026', desc:'Every completed run saved, with delta tracking between assessments.' },
   { module:'Hosting & Domain', added:'Aug 2026', desc:'Live at simplifiedcs.net via Netlify, auto-deployed from GitHub on every update.' },
@@ -2935,7 +3020,7 @@ function renderRoadmapTab(container){
       <div class="page-intro">
         <div class="page-eyebrow">Site Status</div>
         <h2 class="page-title">Roadmap</h2>
-        <p class="page-lede">Not the assessment methodology - this page tracks the status of the website itself: what's shipped and working, what's actively being built, and what's planned next. Last updated <b>${SITE_LAST_UPDATED}</b>.</p>
+        <p class="page-lede">Not the assessment methodology - this page tracks the status of the website itself: what's shipped and working, what's actively being built, and what's planned next. Started <b>${SITE_STARTED}</b> · Last updated <b>${SITE_LAST_UPDATED}</b>.</p>
       </div>
 
       <div class="section-tile">
@@ -3401,7 +3486,7 @@ function renderAboutTab(container){
       <div class="page-intro">
         <div class="page-eyebrow">About</div>
         <h2 class="page-title">About this project</h2>
-        <p class="page-lede">Hey there - my name is Sarath, creator of SimplifiedCS. I built this site with one goal: making cybersecurity accessible to everyone, and delivering measurable outcomes - minimal effort, maximum outcome - by cutting down the effort it takes to get started, through easy accessibility and simple steps. The broader goal is a genuinely "cyber safe" world, built by making security accessible to anyone, not just people who already work in the field.</p>
+        <p class="page-lede">Hey there - my name is Sarath, creator of SimplifiedCS. I built this site with one goal: making cybersecurity accessible to everyone.</p>
         <p class="page-lede">With over 9 years of experience in cybersecurity and IT, I've seen the hurdles most companies actually run into firsthand, and wanted to design a simpler workflow for getting past them. This isn't meant to be a last-resort or final solution for every cyber need you have - the goal is to minimize risk as much as realistically possible, using existing tools and minimal cost, not to replace a real security program entirely.</p>
         <p class="page-lede">This is a work in progress, and feedback is genuinely welcome - if you think a feature is missing or something could work better, I'd like to hear about it.</p>
         <p class="page-lede">This project is a cybersecurity assessment and compliance-readiness platform designed for small and medium-sized businesses. It helps organizations understand their current security posture, identify weaknesses, and receive practical recommendations to strengthen their cybersecurity defenses.</p>
@@ -3427,17 +3512,23 @@ function renderLogoAssembly(){
   const wrap = document.getElementById('logoAssemblyWrap');
   if(!wrap) return;
   const logoSrc = document.querySelector('.brand-logo')?.src || '';
-  // Fixed set of fragment offsets/timings for a consistent, repeatable assembly animation
+  // Fragments organized into four horizontal rows, bottom row first - each rises into its
+  // row position just before the logo's bottom-to-top reveal wipe reaches that band.
   const fragments = [
-    {x:-180,y:-90,size:14,delay:0.0},{x:-210,y:-30,size:10,delay:0.15},{x:-170,y:40,size:16,delay:0.3},
-    {x:-140,y:-120,size:8,delay:0.45},{x:-230,y:70,size:12,delay:0.1},{x:-100,y:100,size:9,delay:0.5},
-    {x:-190,y:110,size:11,delay:0.25},{x:-240,y:-60,size:13,delay:0.35},{x:-120,y:-70,size:10,delay:0.55},
-    {x:-160,y:-160,size:9,delay:0.2},{x:-250,y:10,size:15,delay:0.4},{x:-90,y:-140,size:8,delay:0.6},
+    // Row D - bottom, arrives first
+    {x:-58,y:66,size:12,delay:0.35},{x:2,y:70,size:15,delay:0.45},{x:52,y:64,size:10,delay:0.55},
+    // Row C
+    {x:-62,y:22,size:11,delay:1.25},{x:6,y:25,size:14,delay:1.35},{x:56,y:20,size:9,delay:1.45},
+    // Row B
+    {x:-55,y:-24,size:13,delay:2.15},{x:0,y:-20,size:10,delay:2.25},{x:60,y:-26,size:12,delay:2.35},
+    // Row A - top, arrives last
+    {x:-50,y:-68,size:9,delay:3.05},{x:4,y:-70,size:16,delay:3.15},{x:58,y:-66,size:11,delay:3.25},
   ];
   wrap.innerHTML = `
     <div class="logo-assembly-stage">
+      <img src="${logoSrc}" alt="" class="assembly-logo-base" aria-hidden="true">
       ${fragments.map(f=>`<div class="assembly-fragment" style="--fx:${f.x}px; --fy:${f.y}px; --fdelay:${f.delay}s; width:${f.size}px; height:${f.size}px;"></div>`).join('')}
-      <img src="${logoSrc}" alt="SimplifiedCS logo" class="assembly-logo">
+      <img src="${logoSrc}" alt="SimplifiedCS logo" class="assembly-logo-reveal">
     </div>
   `;
 }
