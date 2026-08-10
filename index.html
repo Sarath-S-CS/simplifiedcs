@@ -712,35 +712,28 @@
   .principle-card p{ font-size:12.5px; color:var(--text-muted); line-height:1.65; margin:0; }
   .logo-assembly-wrap{ display:flex; justify-content:center; padding:32px 0 8px; }
   .logo-assembly-stage{ position:relative; width:260px; height:260px; display:flex; align-items:center; justify-content:center; }
-  .assembly-logo-base{
-    width:150px; height:150px; position:relative; z-index:2; opacity:0.14;
-  }
-  .assembly-logo-reveal{
-    width:150px; height:150px; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2;
-    clip-path:inset(100% 0 0 0);
-    animation:assemblyLogoReveal 4.6s cubic-bezier(0.4,0,0.2,1) infinite;
+  .assembly-logo{
+    width:150px; height:150px; position:relative; z-index:2;
+    animation:assemblyLogoIn 4.2s ease-out infinite;
   }
   .assembly-fragment{
     position:absolute; top:50%; left:50%; z-index:1;
     background:linear-gradient(135deg, #2196f3, #6fd88a);
-    animation:assemblyFragmentRise 4.6s cubic-bezier(0.4,0,0.2,1) infinite;
+    animation:assemblyFragmentIn 4.2s ease-out infinite;
     animation-delay:var(--fdelay);
-    opacity:0;
   }
-  @keyframes assemblyFragmentRise{
-    0%{ transform:translate(calc(-50% + var(--fx)), calc(-50% + var(--fy) + 55px)) scale(1); opacity:0; }
-    8%{ opacity:0.95; }
-    30%{ transform:translate(calc(-50% + var(--fx)), calc(-50% + var(--fy))) scale(1); opacity:0.95; }
-    42%, 100%{ transform:translate(calc(-50% + var(--fx)), calc(-50% + var(--fy))) scale(0.6); opacity:0; }
+  @keyframes assemblyFragmentIn{
+    0%{ transform:translate(calc(-50% + var(--fx)), calc(-50% + var(--fy))) scale(1); opacity:0.9; }
+    55%{ transform:translate(-50%, -50%) scale(0.3); opacity:0.5; }
+    70%, 100%{ transform:translate(-50%, -50%) scale(0.3); opacity:0; }
   }
-  @keyframes assemblyLogoReveal{
-    0%, 15%{ clip-path:inset(100% 0 0 0); }
-    92%, 100%{ clip-path:inset(0% 0 0 0); }
+  @keyframes assemblyLogoIn{
+    0%, 45%{ opacity:0; transform:scale(0.85); }
+    75%, 100%{ opacity:1; transform:scale(1); }
   }
   @media (prefers-reduced-motion: reduce){
-    .assembly-logo-reveal{ animation:none; clip-path:inset(0 0 0 0); }
+    .assembly-logo, .assembly-fragment{ animation:none; opacity:1; }
     .assembly-fragment{ display:none; }
-    .assembly-logo-base{ opacity:0; }
   }
   .fb-error{ color:var(--accent-critical); font-size:12.5px; margin-bottom:14px; }
   .roadmap-loop svg{ flex-shrink:0; animation:spin 6s linear infinite; }
@@ -869,6 +862,7 @@
   .workflow-step:hover{ background:var(--tint-signal-soft); transform:translateY(-2px); }
   .workflow-step.stage-active{ background:var(--tint-signal); border-bottom:2px solid var(--accent-signal); }
   .stage-detail-panel{
+    flex-basis:100%; width:100%;
     margin-top:14px; padding:20px 22px; background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line);
     opacity:0; transform:translateY(-8px); transition:opacity .22s ease, transform .22s ease;
   }
@@ -2725,6 +2719,7 @@ function renderHomeTab(container){
       openStageDetail = sid;
       container.querySelectorAll('[data-stage-detail]').forEach(c=>c.classList.remove('stage-active'));
       el.classList.add('stage-active');
+      el.insertAdjacentElement('afterend', panel);
       panel.innerHTML = `
         <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
         <p class="body-text">${d.summary}</p>
@@ -3512,23 +3507,17 @@ function renderLogoAssembly(){
   const wrap = document.getElementById('logoAssemblyWrap');
   if(!wrap) return;
   const logoSrc = document.querySelector('.brand-logo')?.src || '';
-  // Fragments organized into four horizontal rows, bottom row first - each rises into its
-  // row position just before the logo's bottom-to-top reveal wipe reaches that band.
+  // Fixed set of fragment offsets/timings for a consistent, repeatable assembly animation
   const fragments = [
-    // Row D - bottom, arrives first
-    {x:-58,y:66,size:12,delay:0.35},{x:2,y:70,size:15,delay:0.45},{x:52,y:64,size:10,delay:0.55},
-    // Row C
-    {x:-62,y:22,size:11,delay:1.25},{x:6,y:25,size:14,delay:1.35},{x:56,y:20,size:9,delay:1.45},
-    // Row B
-    {x:-55,y:-24,size:13,delay:2.15},{x:0,y:-20,size:10,delay:2.25},{x:60,y:-26,size:12,delay:2.35},
-    // Row A - top, arrives last
-    {x:-50,y:-68,size:9,delay:3.05},{x:4,y:-70,size:16,delay:3.15},{x:58,y:-66,size:11,delay:3.25},
+    {x:-180,y:-90,size:14,delay:0.0},{x:-210,y:-30,size:10,delay:0.35},{x:-170,y:40,size:16,delay:0.7},
+    {x:-140,y:-120,size:8,delay:1.05},{x:-230,y:70,size:12,delay:0.23},{x:-100,y:100,size:9,delay:1.17},
+    {x:-190,y:110,size:11,delay:0.58},{x:-240,y:-60,size:13,delay:0.82},{x:-120,y:-70,size:10,delay:1.28},
+    {x:-160,y:-160,size:9,delay:0.47},{x:-250,y:10,size:15,delay:0.93},{x:-90,y:-140,size:8,delay:1.4},
   ];
   wrap.innerHTML = `
     <div class="logo-assembly-stage">
-      <img src="${logoSrc}" alt="" class="assembly-logo-base" aria-hidden="true">
       ${fragments.map(f=>`<div class="assembly-fragment" style="--fx:${f.x}px; --fy:${f.y}px; --fdelay:${f.delay}s; width:${f.size}px; height:${f.size}px;"></div>`).join('')}
-      <img src="${logoSrc}" alt="SimplifiedCS logo" class="assembly-logo-reveal">
+      <img src="${logoSrc}" alt="SimplifiedCS logo" class="assembly-logo">
     </div>
   `;
 }
