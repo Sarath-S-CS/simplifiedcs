@@ -5,6 +5,12 @@
 // functions) was replaced, by the imports and controller below.
 import { createAssessmentController } from "./ui/assessment.js";
 import { INDUSTRIES } from "./data/industries.js";
+// FUNCTIONS/FUNC_COLORS used to be plain globals at the top of the original
+// script; the Methodology tab's function-legend (an educational reference
+// explaining what NIST CSF's six functions ARE - correctly left showing the
+// real function names, unlike the assessment UI's §5.9 relabeling) still
+// reads them directly, so they need to stay available at this scope too.
+import { FUNCTIONS, FUNC_COLORS } from "./data/categories.js";
 
 const assessmentController = createAssessmentController({
   getPanel: () => document.getElementById("panel"),
