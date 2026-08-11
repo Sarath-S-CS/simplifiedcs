@@ -730,6 +730,7 @@
 
   /* --- animated document lifecycle diagram --- */
   .lifecycle-wrap{ display:flex; justify-content:center; margin:24px 0 32px; }
+  .lifecycle-wrap svg{ width:340px; max-width:100%; height:auto; display:block; }
   .lifecycle-node-label{ font-family:var(--mono); font-size:10px; fill:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
 
   /* --- learning resources (News tab) --- */
