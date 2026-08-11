@@ -12,10 +12,12 @@ import path from "node:path";
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const watch = process.argv.includes("--watch");
 
-const GOOGLE_FONTS_LINK =
-  '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">';
-
 function assembleHtml() {
+  // head.html holds everything real inside <head> (meta tags, title,
+  // favicon, font preconnects) verbatim from source - deliberately NOT
+  // hand-typed here, so a future favicon/meta change on main can't get
+  // silently dropped by this script again the way it was on 2026-08-11.
+  const head = readFileSync(path.join(root, "src/head.html"), "utf8");
   const shellBody = readFileSync(path.join(root, "src/shell-body.html"), "utf8");
   const bundlePath = path.join(root, "assets/app.js");
   const bundle = readFileSync(bundlePath, "utf8");
@@ -23,13 +25,7 @@ function assembleHtml() {
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SimplifiedCS</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-${GOOGLE_FONTS_LINK}
-<link rel="stylesheet" href="./assets/app.css">
+${head}<link rel="stylesheet" href="./assets/app.css">
 </head>
 <body>
 ${shellBody}
