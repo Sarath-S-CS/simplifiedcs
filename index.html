@@ -1087,8 +1087,8 @@
   ];
 
   // src/data/categories.js
-  var FUNCTIONS2 = ["Govern", "Identify", "Protect", "Detect", "Respond", "Recover"];
-  var FUNC_COLORS2 = {
+  var FUNCTIONS = ["Govern", "Identify", "Protect", "Detect", "Respond", "Recover"];
+  var FUNC_COLORS = {
     Govern: "#B48EC7",
     Identify: "#E0A94A",
     Protect: "var(--accent-signal)",
@@ -1419,7 +1419,7 @@
     return Math.round(got / max * 100);
   }
   function computeFuncScores(state) {
-    return FUNCTIONS2.map((fn) => ({ fn, pct: scoreFunction(fn, state) }));
+    return FUNCTIONS.map((fn) => ({ fn, pct: scoreFunction(fn, state) }));
   }
   function computeOverall(funcScores) {
     return Math.round(funcScores.reduce((a2, f) => a2 + f.pct, 0) / funcScores.length);
@@ -1661,7 +1661,7 @@
       const rail = getRail();
       if (!rail) return;
       const visiblePre = visibleProfileScreens();
-      const items = ["Scope", ...visiblePre.map((s) => s.title), ...FUNCTIONS2.map((fn) => FUNC_DISPLAY[fn]), "Reading"];
+      const items = ["Scope", ...visiblePre.map((s) => s.title), ...FUNCTIONS.map((fn) => FUNC_DISPLAY[fn]), "Reading"];
       let activeIdx;
       if (ui.phase === "scope") activeIdx = 0;
       else if (ui.phase === "profile") {
@@ -2028,7 +2028,7 @@
       return categoryQuestions(fn).every((q) => session.answers[q.id] !== void 0);
     }
     function renderAssessmentCategory() {
-      const fn = FUNCTIONS2[ui.categoryIndex];
+      const fn = FUNCTIONS[ui.categoryIndex];
       const p = panel();
       const qs = categoryQuestions(fn);
       p.innerHTML = `
@@ -2054,7 +2054,7 @@
       <div class="nav">
         <button id="backBtn">\u2190 Back</button>
         <button id="saveProgressBtn2">Save progress \u2193</button>
-        <button class="primary" id="nextBtn" ${categoryAnswered(fn) ? "" : "disabled"}>${ui.categoryIndex === FUNCTIONS2.length - 1 ? "Generate reading" : "Continue \u2192"}</button>
+        <button class="primary" id="nextBtn" ${categoryAnswered(fn) ? "" : "disabled"}>${ui.categoryIndex === FUNCTIONS.length - 1 ? "Generate reading" : "Continue \u2192"}</button>
       </div>
     `;
       document.getElementById("saveProgressBtn2").addEventListener("click", () => exportProgressJson2(null));
@@ -2067,7 +2067,7 @@
         });
       });
       document.getElementById("nextBtn").addEventListener("click", () => {
-        if (ui.categoryIndex === FUNCTIONS2.length - 1) {
+        if (ui.categoryIndex === FUNCTIONS.length - 1) {
           ui.phase = "results";
           renderRail();
           renderResults();
@@ -2135,7 +2135,7 @@
         const parts = funcScores.map((f) => {
           const start = acc;
           acc += slice;
-          return `${FUNC_COLORS2[f.fn]} ${start}deg ${acc}deg`;
+          return `${FUNC_COLORS[f.fn]} ${start}deg ${acc}deg`;
         });
         return `conic-gradient(${parts.join(",")})`;
       })();
@@ -2170,7 +2170,7 @@
         (f) => `
             <div class="func-bar-row">
               <div class="fname">${FUNC_DISPLAY[f.fn]}</div>
-              <div class="func-bar-track"><div class="func-bar-fill" style="width:${f.pct}%; background:${FUNC_COLORS2[f.fn]}"></div></div>
+              <div class="func-bar-track"><div class="func-bar-fill" style="width:${f.pct}%; background:${FUNC_COLORS[f.fn]}"></div></div>
               <div class="fpct">${f.pct}%</div>
             </div>
           `
@@ -2240,7 +2240,7 @@
     `;
       document.getElementById("backBtn2").addEventListener("click", () => {
         ui.phase = "wizard";
-        ui.categoryIndex = FUNCTIONS2.length - 1;
+        ui.categoryIndex = FUNCTIONS.length - 1;
         renderRail();
         renderAssessmentCategory();
       });
