@@ -2,15 +2,16 @@ name: Keep Supabase Project Alive
 
 on:
   schedule:
-    - cron: '0 8 * * *'  # Runs daily at 08:00 UTC (was twice-weekly - tighter margin against the 7-day auto-pause window)
+    - cron: '0 8 * * *'  # Runs daily at 08:00 UTC
   workflow_dispatch:      # Lets you also trigger it manually from the Actions tab
 
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase project (fails the run loudly on a bad response, instead of silently "succeeding")
+      - name: Ping Supabase project (sends both required auth headers - apikey alone was being rejected)
         run: |
           curl --fail -s -o /dev/null -w "Ping response: %{http_code}\n" \
             "https://xufqgrcxufptlptpwlfi.supabase.co/rest/v1/" \
-            -H "apikey: sb_publishable_rMgv5Ca-_rmygrgsh9Npeg_4vhl11p_"
+            -H "apikey: sb_publishable_rMgv5Ca-_rmygrgsh9Npeg_4vhl11p_" \
+            -H "Authorization: Bearer sb_publishable_rMgv5Ca-_rmygrgsh9Npeg_4vhl11p_"
