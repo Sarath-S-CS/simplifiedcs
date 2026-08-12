@@ -2313,6 +2313,7 @@
   var HOME_DROPDOWN = [
     { id: "maturitymodel", label: "What is SimplifiedCS?" },
     { id: "coreprinciples", label: "Core Principles" },
+    { id: "roadmap", label: "Roadmap" },
     { id: "runbook", label: "Runbooks" },
     { id: "playbooks", label: "Playbooks" },
     { id: "casestudy", label: "Case Studies" },
@@ -3931,55 +3932,20 @@
   }
   var SITE_LAST_UPDATED = "August 10, 2026";
   var SITE_STARTED = "June 2026";
-  var ROADMAP_SHIPPED = [
-    { module: "Adaptive Assessment Wizard", added: "Jun 2026", desc: "Industry- and region-aware questionnaire across all six NIST CSF functions, with conditional OT/DevSecOps modules." },
-    { module: "Save Progress / Export / Import", added: "Jun 2026", desc: "Resume an assessment later, or reload a completed one to re-run after fixes." },
-    { module: "Vendor-Aware Mitigation Notes", added: "Jun 2026", desc: "Illustrative guidance for named products across EDR, email security, firewalls, and more." },
-    { module: "Compounding-Risk Detection", added: "Jul 2026", desc: "Cross-answer flagging for dangerous combinations, not just per-question scoring." },
-    { module: "Runbooks & Playbooks", added: "Jul 2026", desc: "8 incident runbooks plus 16 OWASP/AI-mapped attack-type playbooks with MITRE ATT&CK/ATLAS references." },
-    { module: "Case Studies", added: "Jul 2026", desc: "8 real watershed cybersecurity incidents, each tied back to a specific gap this tool is built to catch." },
-    { module: "Trends & News", added: "Jul 2026", desc: "Curated threat-landscape snapshot plus a living list of sources to keep following." },
-    { module: "Glossary & References", added: "Aug 2026", desc: "A 59-term glossary and a sourced references page." },
-    { module: "History & Score Tracking", added: "Aug 2026", desc: "Every completed run saved, with delta tracking between assessments." },
-    { module: "Hosting & Domain", added: "Aug 2026", desc: "Live at simplifiedcs.net via Netlify, auto-deployed from GitHub on every update." }
-  ];
-  var ROADMAP_IN_PROGRESS = [
-    { module: "Feedback Form", desc: "A direct feedback channel from the site to its creator, without exposing an email address anywhere in the page source." },
-    { module: "Core Principles Page", desc: "The cybersecurity philosophy this tool is designed around, and why." }
-  ];
-  var ROADMAP_PLANNED = [
-    { module: "Live Backend (Supabase)", desc: "Replacing session-only storage with a real, persistent database for history and resume-progress." },
-    { module: "Real AI-Generated Reports", desc: "A live Claude API call synthesizing the final report, replacing the current rules engine." },
-    { module: "Additional Compliance Frameworks", desc: "More frameworks and region coverage beyond the current eight." },
-    { module: "Vendor Selection Dropdowns", desc: "Structured vendor picklists in place of today's free-text fields." },
-    { module: "Refined Question Bank", desc: "Ongoing revision of the assessment questions themselves as the tool matures." }
-  ];
+  var ROADMAP_IN_PROGRESS = [];
   function renderRoadmapTab(container) {
     container.innerHTML = `
     <div class="page">
       <div class="page-intro">
         <div class="page-eyebrow">Site Status</div>
         <h2 class="page-title">Roadmap</h2>
-        <p class="page-lede">Not the assessment methodology - this page tracks the status of the website itself: what's shipped and working, what's actively being built, and what's planned next. Started <b>${SITE_STARTED}</b> \xB7 Last updated <b>${SITE_LAST_UPDATED}</b>.</p>
-      </div>
-
-      <div class="section-tile">
-        <h3 class="section-h">Shipped &amp; accessible now</h3>
-        <p class="body-text">Fully functional in the live version of this site today.</p>
-        <div class="roadmap-log-grid">
-          ${ROADMAP_SHIPPED.map((m) => `
-            <div class="roadmap-log-card roadmap-log-shipped">
-              <div class="roadmap-log-date">${m.added}</div>
-              <h4>${m.module}</h4>
-              <p>${m.desc}</p>
-            </div>
-          `).join("")}
-        </div>
+        <p class="page-lede">Not the assessment methodology - this page tracks what's actively being built on the website itself right now. Started <b>${SITE_STARTED}</b> \xB7 Last updated <b>${SITE_LAST_UPDATED}</b>.</p>
       </div>
 
       <div class="section-tile">
         <h3 class="section-h">Work in progress</h3>
         <p class="body-text">Being actively built right now.</p>
+        ${ROADMAP_IN_PROGRESS.length ? `
         <div class="roadmap-log-grid">
           ${ROADMAP_IN_PROGRESS.map((m) => `
             <div class="roadmap-log-card roadmap-log-progress">
@@ -3988,21 +3954,8 @@
               <p>${m.desc}</p>
             </div>
           `).join("")}
-        </div>
-      </div>
-
-      <div class="section-tile">
-        <h3 class="section-h">Planned / ideation</h3>
-        <p class="body-text">Not yet started - scoped and intended, not yet onboarded.</p>
-        <div class="roadmap-log-grid">
-          ${ROADMAP_PLANNED.map((m) => `
-            <div class="roadmap-log-card roadmap-log-planned">
-              <div class="roadmap-log-date">Planned</div>
-              <h4>${m.module}</h4>
-              <p>${m.desc}</p>
-            </div>
-          `).join("")}
-        </div>
+        </div>` : `
+        <p class="body-text">Nothing actively in progress right now.</p>`}
       </div>
     </div>
   `;
