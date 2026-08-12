@@ -14,20 +14,4 @@ jobs:
           curl --fail -s -o /dev/null -w "Ping response: %{http_code}\n" \
             "https://xufqgrcxufptlptpwlfi.supabase.co/rest/v1/" \
             -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZnFncmN4dWZwdGxwdHB3bGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDg0MzIsImV4cCI6MjEwMTUyNDQzMn0.owZP8GssYpD1I3-eIgSgS8pk8rDAIrO_pQYEPAyVeZM" \
-            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZnFncmN4dWZwdGxwdHB3bGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDg0MzIsImV4cCI6MjEwMTUyNDQzMn0.owZP8GssYpD1I3-eIgSgS8pk8rDAIrO_pQYEPAyVeZM"name: Keep Supabase Project Alive
-
-on:
-  schedule:
-    - cron: '0 8 * * *'  # Runs daily at 08:00 UTC
-  workflow_dispatch:      # Lets you also trigger it manually from the Actions tab
-
-jobs:
-  ping-supabase:
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Ping Supabase project (uses the legacy anon JWT, required for Authorization Bearer)"
-        run: |
-          curl --fail -s -o /dev/null -w "Ping response: %{http_code}\n" \
-            "https://xufqgrcxufptlptpwlfi.supabase.co/rest/v1/" \
-            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZnFncmN4dWZwdGxwdHB3bGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDg0MzIsImV4cCI6MjEwMTUyNDQzMn0.owZP8GssYpD1I3-eIgSgS8pk8rDAIrO_pQYEPAyVeZM" \
             -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZnFncmN4dWZwdGxwdHB3bGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDg0MzIsImV4cCI6MjEwMTUyNDQzMn0.owZP8GssYpD1I3-eIgSgS8pk8rDAIrO_pQYEPAyVeZM"
