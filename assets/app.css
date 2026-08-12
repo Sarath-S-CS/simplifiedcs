@@ -688,12 +688,8 @@
   .roadmap-log-card h4{ font-size:14px; margin:6px 0 8px; }
   .roadmap-log-card p{ font-size:12.5px; color:var(--text-muted); line-height:1.6; margin:0; }
   .roadmap-log-date{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; }
-  .roadmap-log-shipped{ border-left-color:var(--accent-secure); }
-  .roadmap-log-shipped .roadmap-log-date{ color:var(--accent-secure); }
   .roadmap-log-progress{ border-left-color:var(--accent-amber, #E0A94A); }
   .roadmap-log-progress .roadmap-log-date{ color:var(--accent-amber, #E0A94A); }
-  .roadmap-log-planned{ border-left-color:var(--text-muted); }
-  .roadmap-log-planned .roadmap-log-date{ color:var(--text-muted); }
   .principles-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:8px; }
   .principle-card{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:24px 22px; }
   .principle-num{ font-family:var(--mono); color:var(--accent-signal); font-size:15px; font-weight:600; margin-bottom:10px; }
