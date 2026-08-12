@@ -9,9 +9,9 @@ jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
-      - name: "Ping Supabase project (uses the legacy anon JWT, required for Authorization Bearer)"
+      - name: "Query the keepalive table (anon key, real table - not the restricted schema root)"
         run: |
-          curl --fail -s -o /dev/null -w "Ping response: %{http_code}\n" \
-            "https://xufqgrcxufptlptpwlfi.supabase.co/rest/v1/" \
+          curl --fail -s -w "\nPing response: %{http_code}\n" \
+            "https://xufqgrcxufptlptpwlfi.supabase.co/rest/v1/keepalive?select=id&limit=1" \
             -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZnFncmN4dWZwdGxwdHB3bGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDg0MzIsImV4cCI6MjEwMTUyNDQzMn0.owZP8GssYpD1I3-eIgSgS8pk8rDAIrO_pQYEPAyVeZM" \
             -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZnFncmN4dWZwdGxwdHB3bGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDg0MzIsImV4cCI6MjEwMTUyNDQzMn0.owZP8GssYpD1I3-eIgSgS8pk8rDAIrO_pQYEPAyVeZM"
