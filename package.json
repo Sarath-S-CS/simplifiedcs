@@ -9,6 +9,9 @@
     "watch": "node scripts/build.js --watch",
     "test": "node --test"
   },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
   "devDependencies": {
     "esbuild": "^0.24.0",
     "jsdom": "^25.0.0"
