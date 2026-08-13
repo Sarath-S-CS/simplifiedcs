@@ -50,7 +50,7 @@ test("§5.2 adaptation: 'no team, no formal arrangement' flag fires on the new f
   state.answers.outsourcedStructure = "No formal outsourced arrangement - handled ad hoc";
   const flags = computeFlags(state);
   assert.ok(
-    flags.some((f) => f.includes("No internal IT/security team and no formal outsourced arrangement")),
+    flags.some((f) => f.id === "no-accountability" && f.text.includes("No internal IT/security team and no formal outsourced arrangement")),
     "expected the no-accountability flag to fire"
   );
 });
@@ -59,7 +59,7 @@ test("§5.2 adaptation: the no-accountability flag does NOT fire for a fully sta
   const state = createSessionState();
   state.answers.teamDedicated = "Our IT team takes care of both IT and cybersecurity";
   const flags = computeFlags(state);
-  assert.ok(!flags.some((f) => f.includes("No internal IT/security team")));
+  assert.ok(!flags.some((f) => f.id === "no-accountability"));
 });
 
 test("§5.5 adaptation: unscanned container images flag fires on the renamed fields", () => {
@@ -67,7 +67,7 @@ test("§5.5 adaptation: unscanned container images flag fires on the renamed fie
   state.answers.usesContainers = "Yes, most/all workloads";
   state.answers.containerImageScanning = "No";
   const flags = computeFlags(state);
-  assert.ok(flags.some((f) => f.includes("scanning images for known vulnerabilities")));
+  assert.ok(flags.some((f) => f.id === "unscanned-container-images" && f.text.includes("scanning images for known vulnerabilities")));
 });
 
 test("§5.5 adaptation: the container-scanning flag does not fire when containers aren't used", () => {
@@ -75,7 +75,7 @@ test("§5.5 adaptation: the container-scanning flag does not fire when container
   state.answers.usesContainers = "No";
   state.answers.containerImageScanning = "No";
   const flags = computeFlags(state);
-  assert.ok(!flags.some((f) => f.includes("scanning images for known vulnerabilities")));
+  assert.ok(!flags.some((f) => f.id === "unscanned-container-images"));
 });
 
 test("§5.7: training cadence follow-up only appears once training happens at all", () => {
