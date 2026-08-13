@@ -11,6 +11,7 @@ import { INDUSTRIES } from "./data/industries.js";
 // real function names, unlike the assessment UI's §5.9 relabeling) still
 // reads them directly, so they need to stay available at this scope too.
 import { FUNCTIONS, FUNC_COLORS } from "./data/categories.js";
+import { supabase } from "./data/supabase-client.js";
 
 const assessmentController = createAssessmentController({
   getPanel: () => document.getElementById("panel"),
@@ -99,6 +100,44 @@ const NEWS_ITEMS = [
     source:'IBM Cost of a Data Breach Report' },
 ];
 let newsFilter = 'all';
+let newsCache = null; // { items, live } - loaded once per session, filter clicks just re-render from this
+
+// §1 Phase 2: news_items is fetched by a daily Edge Function (see
+// supabase/functions/fetch-news) from CISA KEV, NVD, and security RSS,
+// ranked by a computed priority score (not just recency). Falls back to the
+// hand-curated NEWS_ITEMS snapshot above if the table is empty (e.g. before
+// the first scheduled run) or the request fails for any reason - the tab
+// should never show a broken/empty page just because the live fetch had a
+// bad day.
+async function loadNewsData(){
+  if(newsCache) return newsCache;
+  try {
+    const { data, error } = await supabase
+      .from('news_items')
+      .select('headline, body, source, source_url, category, published_at')
+      .order('priority_score', { ascending:false })
+      .order('published_at', { ascending:false })
+      .limit(100);
+    if(error) throw error;
+    if(data && data.length){
+      newsCache = {
+        live: true,
+        items: data.map(d => ({
+          headline: d.headline, body: d.body, source: d.source, sourceUrl: d.source_url,
+          cat: d.category, publishedAt: d.published_at,
+        })),
+      };
+      return newsCache;
+    }
+  } catch(e) { /* fall through to static snapshot below */ }
+  newsCache = {
+    live: false,
+    items: [...NEWS_ITEMS]
+      .sort((a,b)=> b.date.localeCompare(a.date))
+      .map(n => ({ headline:n.headline, body:n.body, source:n.source, sourceUrl:null, cat:n.cat, publishedAt:n.date })),
+  };
+  return newsCache;
+}
 
 // --- Original inline icon set (no external images - avoids stock-photo look and any licensing question) ---
 function icon(name){
@@ -1601,15 +1640,40 @@ function renderMaturityModelTab(container){
 }
 
 
-function renderNewsTab(container){
-  const cats = [
-    { id:'all', label:'All' },
-    { id:'ai', label:'AI & Security' },
-    { id:'vuln', label:'Vulnerabilities' },
-    { id:'ot', label:'OT / Industrial' },
-    { id:'landscape', label:'Threat Landscape' },
-  ];
-  const items = NEWS_ITEMS.filter(n => newsFilter==='all' || n.cat===newsFilter).sort((a,b)=> b.date.localeCompare(a.date));
+const NEWS_CATS = [
+  { id:'all', label:'All' },
+  { id:'ai', label:'AI & Security' },
+  { id:'vuln', label:'Vulnerabilities' },
+  { id:'ot', label:'OT / Industrial' },
+  { id:'landscape', label:'Threat Landscape' },
+];
+
+async function renderNewsTab(container){
+  container.innerHTML = `
+    <div class="page">
+      <div class="page-intro">
+        <div class="page-eyebrow">Stay Current</div>
+        <h2 class="page-title">Trends & News</h2>
+        <p class="page-lede">A curated read of what's actually happening in the threat landscape and in AI-for-security - the same context a good consultant would bring into a conversation with you.</p>
+      </div>
+      <div class="section-tile"><p class="body-text">Loading the latest…</p></div>
+    </div>
+  `;
+  const newsData = await loadNewsData();
+  // Bail if the user already navigated away while this was loading.
+  if(!document.getElementById('tabContent')?.contains(container) && activeTab !== 'news') return;
+  renderNewsList(container, newsData);
+  // renderNewsList() just replaced the loading skeleton's .section-tile
+  // with a fresh one - re-observe it so the scroll-reveal fade-in actually
+  // fires (see the identical note on the filter-pill handler below).
+  observeReveals();
+}
+
+function renderNewsList(container, newsData){
+  const items = newsData.items.filter(n => newsFilter==='all' || n.cat===newsFilter);
+  const freshness = newsData.live
+    ? `Refreshed daily from CISA's KEV catalog, NVD, and security RSS feeds, ranked by exploitation status/severity/recency - not just "newest first."`
+    : `Showing a curated snapshot - the live feed didn't return anything this time, so nothing's lost, just not current. Refresh in a bit.`;
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
@@ -1619,17 +1683,17 @@ function renderNewsTab(container){
       </div>
 
       <div class="section-tile">
-        <p class="news-freshness">Curated snapshot as of early August 2026. In production, this section is designed to pull from a live feed (CISA's KEV catalog, NVD, and RSS from outlets like SecurityWeek/BleepingComputer/Krebs) rather than being hand-maintained.</p>
+        <p class="news-freshness">${freshness}</p>
         <div class="news-filters">
-          ${cats.map(c=>`<button class="filter-pill ${newsFilter===c.id?'active':''}" data-cat="${c.id}">${c.label}</button>`).join('')}
+          ${NEWS_CATS.map(c=>`<button class="filter-pill ${newsFilter===c.id?'active':''}" data-cat="${c.id}">${c.label}</button>`).join('')}
         </div>
         <div class="news-grid">
           ${items.map(n=>`
             <div class="news-card">
-              <div class="news-meta"><span>${new Date(n.date+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</span><span class="news-cat">${n.catLabel}</span></div>
+              <div class="news-meta"><span>${new Date(n.publishedAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</span><span class="news-cat">${NEWS_CATS.find(c=>c.id===n.cat)?.label || n.cat}</span></div>
               <h4>${n.headline}</h4>
               <p>${n.body}</p>
-              <div class="news-source">${n.source}</div>
+              <div class="news-source">${n.sourceUrl ? `<a href="${n.sourceUrl}" target="_blank" rel="noopener noreferrer">${n.source}</a>` : n.source}</div>
             </div>
           `).join('')}
         </div>
@@ -1666,7 +1730,13 @@ function renderNewsTab(container){
   container.querySelectorAll('.filter-pill').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       newsFilter = btn.dataset.cat;
-      renderNewsTab(container);
+      renderNewsList(container, newsData);
+      // renderNewsList() replaces container.innerHTML, so the fresh
+      // .section-tile starts at opacity:0 per the scroll-reveal CSS (see
+      // observeReveals()) - without re-observing it here, it never gets the
+      // .revealed class and stays invisible, which is exactly the reported
+      // "filter click does nothing / blank page" bug (§4 Phase 2 brief).
+      observeReveals();
     });
   });
 }

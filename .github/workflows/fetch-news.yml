@@ -1,0 +1,18 @@
+name: Fetch Trends & News
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # Runs daily at 07:00 UTC
+  workflow_dispatch:      # Lets you also trigger it manually from the Actions tab
+
+jobs:
+  fetch-news:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger fetch-news Edge Function
+        run: |
+          curl -s -w "\nHTTP %{http_code}\n" \
+            -X POST "https://xufqgrcxufptlptpwlfi.supabase.co/functions/v1/fetch-news" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZnFncmN4dWZwdGxwdHB3bGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDg0MzIsImV4cCI6MjEwMTUyNDQzMn0.owZP8GssYpD1I3-eIgSgS8pk8rDAIrO_pQYEPAyVeZM" \
+            -H "Content-Type: application/json" \
+            --fail-with-body
