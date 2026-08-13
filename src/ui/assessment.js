@@ -19,6 +19,7 @@ import { matchedVendorNotes } from "../data/vendor-notes.js";
 import { snapshotRows } from "./snapshot.js";
 import { OTHER as OTHER_VALUE } from "../data/vendors.js";
 import { computeFrameworkRecommendations } from "../engine/framework-guidance.js";
+import { guidanceForFlag, guidanceForGapItem } from "../engine/mitre-guidance.js";
 
 export function createAssessmentController({ getPanel, getRail, icon, goToTab, storage, exportProgressJson }) {
   const session = createSessionState();
@@ -532,6 +533,32 @@ export function createAssessmentController({ getPanel, getRail, icon, goToTab, s
     });
   }
 
+  // §2: one collapsed "Why this matters, and what to do now" expander per
+  // compounding-risk flag / notably-low-scoring priority item that has a
+  // confident MITRE ATT&CK mapping (see engine/mitre-guidance.js - items
+  // without a genuine mapping simply don't get a panel, rather than
+  // fabricating one). Reuses the existing acc-card/acc-head/acc-body
+  // accordion pattern verbatim so the interaction matches Runbooks/Playbooks.
+  function mitrePanel(guidance, panelId) {
+    if (!guidance) return "";
+    const techLine = guidance.technique
+      ? `<li><b>Attack pattern:</b> ${guidance.technique.name} (MITRE ATT&CK ${guidance.technique.id}) - ${guidance.explain}</li>`
+      : `<li><b>Why it matters:</b> ${guidance.explain}</li>`;
+    return `
+      <div class="acc-card mitre-panel" data-id="${panelId}">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul>
+            ${techLine}
+            <li><b>Interim step:</b> ${guidance.control}</li>
+          </ul>
+        </div>
+      </div>`;
+  }
+
   // ---------- results ----------
   async function renderResults() {
     const p = panel();
@@ -641,7 +668,14 @@ export function createAssessmentController({ getPanel, getRail, icon, goToTab, s
           ? `
       <div class="flags">
         <h3>Compounding risk - patterns across steps</h3>
-        ${flags.map((f) => `<div class="flag-item"><b>Combined finding -</b> ${f}</div>`).join("")}
+        ${flags
+          .map(
+            (f) => `
+          <div class="flag-item"><b>Combined finding -</b> ${f.text}</div>
+          ${mitrePanel(guidanceForFlag(f, session.answers), `flag-${f.id}`)}
+        `
+          )
+          .join("")}
       </div>`
           : ""
       }
@@ -692,6 +726,7 @@ export function createAssessmentController({ getPanel, getRail, icon, goToTab, s
             <div class="priority-rank">${String(i + 1).padStart(2, "0")}</div>
             <div><b>${FUNC_DISPLAY[p2.fn]}:</b> ${p2.gap}</div>
           </div>
+          ${mitrePanel(guidanceForGapItem(p2, session.answers), `gap-${p2.id}`)}
         `
           )
           .join("")}
@@ -718,6 +753,9 @@ export function createAssessmentController({ getPanel, getRail, icon, goToTab, s
         <button id="viewHistoryBtn">View history (${historyCount + 1}) →</button>
       </div>
     `;
+    p.querySelectorAll(".acc-head").forEach((el) => {
+      el.addEventListener("click", () => el.parentElement.classList.toggle("open"));
+    });
     document.getElementById("backBtn2").addEventListener("click", () => {
       ui.phase = "wizard";
       ui.categoryIndex = FUNCTIONS.length - 1;
