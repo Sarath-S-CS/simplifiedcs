@@ -2437,15 +2437,15 @@
 
   // node_modules/tslib/tslib.es6.mjs
   function __rest(s, e) {
-    var t = {};
+    var t2 = {};
     for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-      t[p] = s[p];
+      t2[p] = s[p];
     if (s != null && typeof Object.getOwnPropertySymbols === "function")
       for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
         if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-          t[p[i]] = s[p[i]];
+          t2[p[i]] = s[p[i]];
       }
-    return t;
+    return t2;
   }
   function __awaiter(thisArg, _arguments, P, generator) {
     function adopt(value) {
@@ -2855,45 +2855,45 @@
       return o$1 && "function" == typeof Symbol && o$1.constructor === Symbol && o$1 !== Symbol.prototype ? "symbol" : typeof o$1;
     }, _typeof(o);
   }
-  function toPrimitive(t, r) {
-    if ("object" != _typeof(t) || !t) return t;
-    var e = t[Symbol.toPrimitive];
+  function toPrimitive(t2, r) {
+    if ("object" != _typeof(t2) || !t2) return t2;
+    var e = t2[Symbol.toPrimitive];
     if (void 0 !== e) {
-      var i = e.call(t, r || "default");
+      var i = e.call(t2, r || "default");
       if ("object" != _typeof(i)) return i;
       throw new TypeError("@@toPrimitive must return a primitive value.");
     }
-    return ("string" === r ? String : Number)(t);
+    return ("string" === r ? String : Number)(t2);
   }
-  function toPropertyKey(t) {
-    var i = toPrimitive(t, "string");
+  function toPropertyKey(t2) {
+    var i = toPrimitive(t2, "string");
     return "symbol" == _typeof(i) ? i : i + "";
   }
-  function _defineProperty(e, r, t) {
+  function _defineProperty(e, r, t2) {
     return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
-      value: t,
+      value: t2,
       enumerable: true,
       configurable: true,
       writable: true
-    }) : e[r] = t, e;
+    }) : e[r] = t2, e;
   }
   function ownKeys(e, r) {
-    var t = Object.keys(e);
+    var t2 = Object.keys(e);
     if (Object.getOwnPropertySymbols) {
       var o = Object.getOwnPropertySymbols(e);
       r && (o = o.filter(function(r$1) {
         return Object.getOwnPropertyDescriptor(e, r$1).enumerable;
-      })), t.push.apply(t, o);
+      })), t2.push.apply(t2, o);
     }
-    return t;
+    return t2;
   }
   function _objectSpread2(e) {
     for (var r = 1; r < arguments.length; r++) {
-      var t = null != arguments[r] ? arguments[r] : {};
-      r % 2 ? ownKeys(Object(t), true).forEach(function(r$1) {
-        _defineProperty(e, r$1, t[r$1]);
-      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function(r$1) {
-        Object.defineProperty(e, r$1, Object.getOwnPropertyDescriptor(t, r$1));
+      var t2 = null != arguments[r] ? arguments[r] : {};
+      r % 2 ? ownKeys(Object(t2), true).forEach(function(r$1) {
+        _defineProperty(e, r$1, t2[r$1]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t2)) : ownKeys(Object(t2)).forEach(function(r$1) {
+        Object.defineProperty(e, r$1, Object.getOwnPropertyDescriptor(t2, r$1));
       });
     }
     return e;
@@ -11246,45 +11246,45 @@ Suggested solution: ${env.workaround}`;
       return o$1 && "function" == typeof Symbol && o$1.constructor === Symbol && o$1 !== Symbol.prototype ? "symbol" : typeof o$1;
     }, _typeof2(o);
   }
-  function toPrimitive2(t, r) {
-    if ("object" != _typeof2(t) || !t) return t;
-    var e = t[Symbol.toPrimitive];
+  function toPrimitive2(t2, r) {
+    if ("object" != _typeof2(t2) || !t2) return t2;
+    var e = t2[Symbol.toPrimitive];
     if (void 0 !== e) {
-      var i = e.call(t, r || "default");
+      var i = e.call(t2, r || "default");
       if ("object" != _typeof2(i)) return i;
       throw new TypeError("@@toPrimitive must return a primitive value.");
     }
-    return ("string" === r ? String : Number)(t);
+    return ("string" === r ? String : Number)(t2);
   }
-  function toPropertyKey2(t) {
-    var i = toPrimitive2(t, "string");
+  function toPropertyKey2(t2) {
+    var i = toPrimitive2(t2, "string");
     return "symbol" == _typeof2(i) ? i : i + "";
   }
-  function _defineProperty2(e, r, t) {
+  function _defineProperty2(e, r, t2) {
     return (r = toPropertyKey2(r)) in e ? Object.defineProperty(e, r, {
-      value: t,
+      value: t2,
       enumerable: true,
       configurable: true,
       writable: true
-    }) : e[r] = t, e;
+    }) : e[r] = t2, e;
   }
   function ownKeys2(e, r) {
-    var t = Object.keys(e);
+    var t2 = Object.keys(e);
     if (Object.getOwnPropertySymbols) {
       var o = Object.getOwnPropertySymbols(e);
       r && (o = o.filter(function(r$1) {
         return Object.getOwnPropertyDescriptor(e, r$1).enumerable;
-      })), t.push.apply(t, o);
+      })), t2.push.apply(t2, o);
     }
-    return t;
+    return t2;
   }
   function _objectSpread22(e) {
     for (var r = 1; r < arguments.length; r++) {
-      var t = null != arguments[r] ? arguments[r] : {};
-      r % 2 ? ownKeys2(Object(t), true).forEach(function(r$1) {
-        _defineProperty2(e, r$1, t[r$1]);
-      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys2(Object(t)).forEach(function(r$1) {
-        Object.defineProperty(e, r$1, Object.getOwnPropertyDescriptor(t, r$1));
+      var t2 = null != arguments[r] ? arguments[r] : {};
+      r % 2 ? ownKeys2(Object(t2), true).forEach(function(r$1) {
+        _defineProperty2(e, r$1, t2[r$1]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t2)) : ownKeys2(Object(t2)).forEach(function(r$1) {
+        Object.defineProperty(e, r$1, Object.getOwnPropertyDescriptor(t2, r$1));
       });
     }
     return e;
@@ -22066,45 +22066,45 @@ ${suffix}`;
       return o$1 && "function" == typeof Symbol && o$1.constructor === Symbol && o$1 !== Symbol.prototype ? "symbol" : typeof o$1;
     }, _typeof3(o);
   }
-  function toPrimitive3(t, r) {
-    if ("object" != _typeof3(t) || !t) return t;
-    var e = t[Symbol.toPrimitive];
+  function toPrimitive3(t2, r) {
+    if ("object" != _typeof3(t2) || !t2) return t2;
+    var e = t2[Symbol.toPrimitive];
     if (void 0 !== e) {
-      var i = e.call(t, r || "default");
+      var i = e.call(t2, r || "default");
       if ("object" != _typeof3(i)) return i;
       throw new TypeError("@@toPrimitive must return a primitive value.");
     }
-    return ("string" === r ? String : Number)(t);
+    return ("string" === r ? String : Number)(t2);
   }
-  function toPropertyKey3(t) {
-    var i = toPrimitive3(t, "string");
+  function toPropertyKey3(t2) {
+    var i = toPrimitive3(t2, "string");
     return "symbol" == _typeof3(i) ? i : i + "";
   }
-  function _defineProperty3(e, r, t) {
+  function _defineProperty3(e, r, t2) {
     return (r = toPropertyKey3(r)) in e ? Object.defineProperty(e, r, {
-      value: t,
+      value: t2,
       enumerable: true,
       configurable: true,
       writable: true
-    }) : e[r] = t, e;
+    }) : e[r] = t2, e;
   }
   function ownKeys3(e, r) {
-    var t = Object.keys(e);
+    var t2 = Object.keys(e);
     if (Object.getOwnPropertySymbols) {
       var o = Object.getOwnPropertySymbols(e);
       r && (o = o.filter(function(r$1) {
         return Object.getOwnPropertyDescriptor(e, r$1).enumerable;
-      })), t.push.apply(t, o);
+      })), t2.push.apply(t2, o);
     }
-    return t;
+    return t2;
   }
   function _objectSpread23(e) {
     for (var r = 1; r < arguments.length; r++) {
-      var t = null != arguments[r] ? arguments[r] : {};
-      r % 2 ? ownKeys3(Object(t), true).forEach(function(r$1) {
-        _defineProperty3(e, r$1, t[r$1]);
-      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys3(Object(t)).forEach(function(r$1) {
-        Object.defineProperty(e, r$1, Object.getOwnPropertyDescriptor(t, r$1));
+      var t2 = null != arguments[r] ? arguments[r] : {};
+      r % 2 ? ownKeys3(Object(t2), true).forEach(function(r$1) {
+        _defineProperty3(e, r$1, t2[r$1]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t2)) : ownKeys3(Object(t2)).forEach(function(r$1) {
+        Object.defineProperty(e, r$1, Object.getOwnPropertyDescriptor(t2, r$1));
       });
     }
     return e;
@@ -23156,11 +23156,15 @@ ${suffix}`;
       title: "Ransomware",
       sub: "Encryption event / extortion attempt",
       steps: [
-        "Isolate affected systems immediately - disconnect from the network rather than powering off, to preserve memory-resident evidence",
-        "Activate the incident response team and determine scope: which systems, which data, and whether backups were touched",
-        "Preserve evidence and logs before any cleanup begins; forensic timeline matters for both recovery and any legal/insurance process",
-        "Notify legal counsel, cyber insurance, and regulators per your legal obligations - timing requirements vary by jurisdiction and sector",
-        "Assess backup viability and restore from clean, verified-isolated backups rather than paying first and asking questions later",
+        `Isolate affected systems immediately: disable the NIC (Disable-NetAdapter in PowerShell, or "Disable" in Network Connections) or pull the network cable rather than powering off, to preserve memory-resident evidence. If EDR is deployed (CrowdStrike, Defender for Endpoint, SentinelOne), use its console isolation action instead of touching the machine directly - it's logged and reversible`,
+        "Take file servers, NAS/SAN volumes, and mapped network drives offline immediately even if not yet visibly affected - ransomware actively hunts for and encrypts every reachable network share, so isolating shared storage buys time before individual endpoints are triaged",
+        "Activate the incident response team and open an incident bridge; determine true scope by querying your EDR console for other endpoints showing the same process tree or mass file-rename/encryption behavior, rather than assuming it's limited to what was visibly reported",
+        "Preserve evidence before any cleanup: capture memory on at least one representative infected host if tooling exists (EDR live-response, or a tool like Magnet RAM Capture), and export EDR/SIEM logs covering the prior 30 days - dwell time before the encryption trigger is commonly days to weeks",
+        "Identify the ransomware family from the ransom note and check it against a known-decryptor list at nomoreransom.org (the Europol-backed No More Ransom project) before assuming payment or full rebuild is the only path - free decryptors exist for dozens of older families",
+        "Notify legal counsel, cyber insurance, and any regulators your jurisdiction/sector requires - breach-notification clocks (e.g. GDPR's 72-hour window) start from discovery, so this runs in parallel with containment, not after it",
+        "Verify backup integrity before relying on it: check backup job logs for gaps around the incident window, and check for shadow-copy deletion (`vssadmin list shadows`) - `vssadmin delete shadows /all` run by the attacker is a documented, common step specifically meant to block easy recovery",
+        "Restore from the most recent clean, verified-isolated backup into a sandboxed/isolated network segment first, scan it, and only then reconnect to production - restoring into a still-compromised network just re-triggers the same event",
+        "Reset credentials for every account with plausible exposure, not just visibly-affected ones - domain admin, service accounts, and local admin passwords (via LAPS if deployed) - before reconnecting restored systems, since credential theft typically precedes the encryption trigger by days",
         "Run a post-incident review and feed findings back into Phase 10 of the Maturity Model - the same gap that let this in will let the next one in too"
       ]
     },
@@ -23170,11 +23174,13 @@ ${suffix}`;
       title: "Phishing / BEC",
       sub: "Credential compromise or business email compromise",
       steps: [
-        "Have a one-click reporting mechanism for users - the first report is often the only warning before it spreads",
-        "Quarantine the message organization-wide and block the sending domain/infrastructure where possible",
-        "For any account that clicked through or entered credentials: force a password reset and revoke all active sessions immediately",
-        "Check for lateral spread - mailbox rules, forwarding rules, or OAuth app grants the attacker may have added to maintain access",
-        "Follow up with the affected user and team without blame - punitive responses reliably reduce future self-reporting"
+        `Have a one-click reporting mechanism for users - the built-in "Report Message" add-in in Outlook/Microsoft 365, or Google Workspace's built-in phishing report action - the first report is often the only warning before it spreads`,
+        'Quarantine the message organization-wide: in Microsoft 365, search by sender/subject in Threat Explorer (Defender portal) and run "Purge" across all mailboxes; in Google Workspace, use the Investigation Tool to search and bulk-delete. Block the sending domain and any malicious URLs/attachment hashes via the Tenant Allow/Block List (Microsoft) or equivalent gateway rule',
+        `For any account that clicked through or entered credentials: force an immediate password reset AND separately revoke active sessions/refresh tokens - a password reset alone does not invalidate an already-issued session. In Entra ID this is "Revoke sessions" on the user's page (or Revoke-MgUserSignInSession via the Microsoft Graph PowerShell SDK); in Google Workspace, "Sign out of all sessions" in the Admin console`,
+        "Check for persistence set up while the attacker had access: review inbox rules for auto-forward or delete-on-arrival rules (Get-InboxRule in Exchange Online PowerShell), check for newly-granted OAuth app consents on the account (Enterprise Applications in Entra ID, or third-party access in Google Workspace), and check tenant-level mail-flow rules for anything unfamiliar",
+        "If this looks like BEC (a request to change payment details, redirect a wire, or an urgent executive ask): before any funds move, verbally confirm the request via a phone number you already had on file - never one supplied in the suspect email - and alert finance/AP immediately so any pending transfer can be held",
+        "Search for other recipients of the same or a similar message using Threat Explorer / Google Vault, rather than relying solely on self-reporting to find everyone who received it",
+        "Follow up with the affected user and team without blame - punitive responses reliably reduce future self-reporting, and the goal is faster reporting next time, not less reporting out of fear"
       ]
     },
     {
@@ -23379,10 +23385,12 @@ ${suffix}`;
       mitre: "Initial Access / Execution - T1190 (Exploit Public-Facing Application)",
       desc: "Untrusted input is interpreted as executable code or commands by an interpreter (SQL, OS shell, LDAP), letting an attacker manipulate queries or execute arbitrary commands.",
       steps: [
-        "Use parameterized queries/prepared statements - never string-concatenated queries.",
-        "Validate and sanitize all input server-side, using allow-lists over deny-lists.",
-        "Apply least-privilege database accounts so a successful injection has limited reach.",
-        "Run static analysis (SAST) against injection patterns in CI/CD."
+        "Use parameterized queries/prepared statements everywhere user input reaches a database call - your framework or ORM's parameter-binding API (?/:param placeholders), never string/template concatenation, including for dynamically-built search or filter queries, which is where developers most often fall back to concatenation.",
+        "Validate and sanitize all input server-side using allow-lists (accept known-good patterns) rather than deny-lists (block known-bad patterns) - deny-lists are reliably bypassed by encoding tricks; an allow-list for a numeric ID parameter that only accepts digits closes the injection path regardless of payload.",
+        "Apply least-privilege database accounts so a successful injection has limited reach: the application's DB account should never be the database's admin/root account, and shouldn't have DROP, ALTER, or cross-schema access it doesn't functionally need.",
+        "Deploy a WAF with injection-pattern rules (the OWASP ModSecurity Core Rule Set, or the managed rule sets built into Cloudflare/AWS WAF/Azure Front Door) as a compensating layer in front of the application - this catches many real-world attempts while underlying code is still being remediated.",
+        "Run static analysis (SAST) for injection patterns in CI/CD - Semgrep's public ruleset, Bandit for Python, or GitHub CodeQL's default query set - configured to flag on pull request, not just generate a report no one reads.",
+        "Enable database query logging or a database activity monitoring tool during and after remediation to catch anomalous query patterns (unexpected UNION clauses, unusually long query strings from application service accounts) against endpoints not yet fully patched."
       ]
     },
     {
@@ -23418,10 +23426,12 @@ ${suffix}`;
       mitre: "Initial Access - T1190 (Exploit Public-Facing Application)",
       desc: "Using libraries, frameworks, or components with known vulnerabilities, often because there's no inventory of what's actually running in production.",
       steps: [
-        "Maintain a software bill of materials (SBOM) for every application.",
-        "Automate dependency scanning (SCA) in the build pipeline.",
-        "Patch or replace end-of-life components on a defined schedule.",
-        "Subscribe to vendor security advisories for every component in use."
+        "Maintain a software bill of materials (SBOM) for every application, and separately inventory infrastructure-level software (OS versions, container base images, network appliance firmware) - application SCA tools won't catch an outdated firewall or unpatched hypervisor.",
+        "Automate dependency scanning (SCA) in the build pipeline - GitHub's built-in Dependabot, Snyk, or OWASP Dependency-Check are all reasonable starting points - configured to fail or flag the build on new critical/high findings, not just generate a report no one reads.",
+        "Cross-reference newly-disclosed vulnerabilities against CISA's Known Exploited Vulnerabilities (KEV) catalog specifically, not CVSS score alone - a medium-severity, actively-exploited CVE warrants faster remediation than a critical-severity one with no known exploitation.",
+        "Patch or replace end-of-life components on a defined schedule, and track time-to-patch once a fix exists as a real metric - the Equifax breach (see Case Studies) is the canonical example of a patch existing for months before exploitation; the gap that mattered was the delay applying it, not the vulnerability itself.",
+        "Subscribe to vendor security advisories and CVE feeds for every component actually in use, rather than relying on periodic manual checks - for anything internet-facing, the gap between disclosure and mass exploitation attempts is often measured in days.",
+        "For container images specifically, scan base images and layers before deployment (Trivy, Grype, or your registry's built-in scanning on ECR/GCR/ACR) and re-scan on a recurring schedule even for unchanged images - new CVEs are disclosed against existing software constantly."
       ]
     },
     {
@@ -23431,10 +23441,12 @@ ${suffix}`;
       mitre: "Credential Access - T1110 (Brute Force)",
       desc: "Weak session management, missing account lockout, or lack of MFA allows attackers to compromise accounts through credential stuffing or brute force.",
       steps: [
-        "Enforce MFA, especially for privileged and remote-access accounts.",
-        "Rate-limit and lock out after repeated failed login attempts.",
-        "Rotate and invalidate session tokens after password changes or logout.",
-        "Eliminate default credentials on any deployed system."
+        "Enforce MFA everywhere feasible, prioritized by risk: start with admin/privileged accounts and anything reachable from the internet (VPN, RDP gateways, cloud consoles) via a Conditional Access policy in Entra ID (or equivalent), then extend to all users. For legacy apps without native MFA support, front them with an MFA-capable reverse proxy or ZTNA product rather than leaving them permanently exempt.",
+        "Set an account lockout policy that balances brute-force protection against denial-of-service risk - a common baseline is 5-10 failed attempts within a 15-minute window with a resetting counter, configured via Default Domain Policy \u2192 Account Lockout Policy in Active Directory, or the equivalent smart-lockout setting in Entra ID/Okta.",
+        "Rate-limit authentication endpoints at the application or WAF layer (a rate-based rule on the login endpoint in Cloudflare/AWS WAF) - account lockout alone doesn't stop distributed credential-stuffing spread thin across many accounts.",
+        'Rotate and invalidate session tokens on password change, not just at explicit logout - a compromised session token otherwise survives a password reset - and set short re-authentication intervals for high-privilege sessions rather than defaulting to long-lived "remember me" everywhere.',
+        "Eliminate default credentials on every deployed system before production, including network gear, IoT/OT devices, and management interfaces, not just applications - track this as a deployment-checklist item, not a one-time audit.",
+        "Check new or changed passwords against a breach-password list (e.g. the Have I Been Pwned Pwned Passwords API, which several IdPs and password managers integrate natively) so a password already circulating in a public breach corpus is rejected even if it meets complexity rules."
       ]
     },
     {
@@ -23457,10 +23469,12 @@ ${suffix}`;
       mitre: "Defense Evasion - T1070 (Indicator Removal)",
       desc: "Insufficient logging, or logs that aren't monitored, means breaches go undetected for long periods and can't be reconstructed after the fact.",
       steps: [
-        "Centralize logs in a SIEM with alerting thresholds, not just local log files.",
-        "Log authentication events, access-control failures, and input-validation failures specifically.",
-        "Protect log integrity so attackers can't delete evidence of their activity.",
-        "Test detection coverage with periodic red-team or purple-team exercises."
+        "Centralize logs in a SIEM or log-aggregation platform (Microsoft Sentinel, Splunk, Elastic, or a lighter option like Datadog) with alerting thresholds defined for specific conditions - not just raw retention with no one watching it.",
+        "Log authentication events, access-control failures, and input-validation failures specifically - at minimum every failed login, every privilege-escalation attempt, every 401/403 response, and every input rejected by validation logic (a burst of rejected input from one source is a stronger injection-attempt signal than any single request).",
+        'Set specific, actionable alert rules rather than "alert on everything": a practical starting set is 5+ failed logins for one account within 10 minutes, a successful login from an impossible-travel location, and a spike in 403/500 responses from one source IP - tune thresholds against your own baseline rather than using defaults blindly.',
+        "Forward logs to the SIEM in near-real-time rather than end-of-day batch collection, and use write-once/immutable log storage where the platform supports it - a local Windows Event Log with no forwarding is trivially cleared by an attacker with local admin (wevtutil cl <log>) before anyone notices.",
+        "Retain logs long enough to cover realistic dwell time, not just a compliance minimum - ransomware and BEC incidents commonly show weeks of attacker presence before the visible trigger event, and 30 days is often not enough to reconstruct the actual entry point.",
+        "Test detection coverage with periodic red-team, purple-team, or even a simple tabletop walkthrough - simulate a failed-login burst and confirm the alert actually fires and reaches a real person. A SIEM with no verified alert path is functionally the same as no SIEM."
       ]
     },
     {
