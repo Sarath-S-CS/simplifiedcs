@@ -23189,11 +23189,14 @@ ${suffix}`;
       title: "DDoS",
       sub: "Availability / denial-of-service attack",
       steps: [
-        "Confirm it's actually an attack and not a legitimate traffic spike or an internal misconfiguration - the response differs completely",
-        "Engage your upstream provider, CDN, or scrubbing service - most effective DDoS mitigation happens outside your own network edge",
-        "Apply traffic filtering and rate-limiting rules for the specific attack pattern observed, not a generic block",
-        "Keep stakeholders informed during the outage with a realistic status cadence - silence during an outage erodes trust faster than the outage itself",
-        "After the fact, review whether current capacity and mitigation contracts are actually sized for the attack you just saw"
+        "Confirm it's actually an attack, not a legitimate spike or misconfiguration: check for genuine traffic-volume anomalies correlated with unusual source-IP diversity/geography or protocol anomalies in your CDN/WAF dashboard (Cloudflare Analytics, AWS Shield/CloudFront metrics) rather than reacting to a single alert threshold breach - a real product launch or press mention can look identical to a volumetric attack at a glance",
+        "Identify the attack layer, since response differs completely: volumetric (L3/4 - UDP/ICMP flood or reflection/amplification) needs upstream scrubbing; application-layer (L7 - an HTTP flood against a specific endpoint) needs WAF/rate-limiting closer to the app. Check your provider's traffic breakdown by protocol, port, and request pattern to tell which you're facing",
+        "Engage your upstream provider, CDN, or dedicated scrubbing service immediately (Cloudflare, AWS Shield Advanced, Akamai, or your ISP's DDoS mitigation service if contracted) - most effective volumetric mitigation happens outside your own network edge, since your own bandwidth is what's being exhausted",
+        `If a CDN/Anycast layer already sits in front of production, verify it's actually switched into an aggressive "under attack" or challenge mode (e.g. Cloudflare's "I'm Under Attack" mode) rather than left on default settings, which are tuned for normal traffic, not an active flood`,
+        "Apply traffic filtering and rate-limiting rules specific to the observed pattern - block by source ASN/geography if the attack is concentrated, rate-limit the specific endpoint under an L7 flood - rather than a broad block that also drops legitimate users",
+        "If the attack is DNS-based or a reflection/amplification attack abusing your own exposed services (open DNS resolvers, NTP, memcached), check for and lock down any misconfigured services of your own that could be contributing to amplification, separate from defending against the inbound flood itself",
+        "Keep stakeholders and customers informed during the outage via a status page (StatusPage, Instatus, or equivalent) with a realistic, regularly-updated cadence - silence during an outage erodes trust faster than the outage itself",
+        "After the fact, review whether current bandwidth capacity, scrubbing contracts, and rate-limit thresholds were actually sized for the attack you just saw, and adjust based on what worked or didn't in the real event"
       ]
     },
     {
@@ -23202,11 +23205,14 @@ ${suffix}`;
       title: "Lateral Movement",
       sub: "Active intrusion spreading internally",
       steps: [
-        "Segment or isolate the affected network segment to contain spread while investigation continues",
-        "Rotate credentials for any accounts observed or suspected to be used by the intruder - assume more were touched than confirmed",
-        "Use EDR to isolate affected endpoints individually rather than shutting down broad segments where avoidable, to preserve business continuity",
-        "Threat-hunt for persistence mechanisms (scheduled tasks, new admin accounts, unfamiliar services) - the initial entry point is rarely the only foothold",
-        "Maintain chain of custody on any forensic evidence gathered, in case of later legal, insurance, or regulatory review"
+        "Use EDR to isolate the specific affected endpoints individually (the network-isolation action in CrowdStrike/Defender for Endpoint/SentinelOne) rather than shutting down broad network segments where avoidable, to contain spread while preserving business continuity elsewhere",
+        "Where individual-endpoint isolation isn't available or the intrusion has already crossed multiple segments, isolate the affected VLAN/subnet at the switch or firewall level as a broader containment step while investigation continues",
+        `Hunt for the specific technique in use before assuming it's stopped: check for anomalous use of legitimate admin tools (PsExec, WMI, PowerShell remoting/WinRM, RDP) between hosts that don't normally talk to each other - this "living off the land" pattern is how most real intrusions actually spread, not custom malware`,
+        "Rotate credentials for every account observed or plausibly used by the intruder - assume more were touched than confirmed, and check EDR telemetry for LSASS memory-access indicators (a Mimikatz-style credential-dumping signature), since an attacker who reached lateral-movement stage has likely harvested credentials beyond the first compromised account",
+        "Threat-hunt for persistence across every host the intruder plausibly touched, not just the originally-identified one: new scheduled tasks (Get-ScheduledTask), new local/domain admin accounts, unfamiliar services (Get-Service), and new or modified Group Policy Objects - the initial entry point is rarely the only foothold left behind",
+        "Check Active Directory specifically for privilege-escalation and persistence indicators: new members added to Domain Admins/Enterprise Admins, Kerberoasting-pattern ticket requests, or Golden/Silver Ticket indicators if you have the logging to detect them - lateral movement frequently aims at AD compromise as the actual objective",
+        "Maintain chain of custody on any forensic evidence gathered (exported logs, memory captures, disk images) with documented collection time, method, and handler, in case of later legal, insurance, or regulatory review",
+        "Once contained, rebuild affected hosts from known-clean images rather than just removing identified malware - a host that hosted an active intruder shouldn't be trusted back into production based on cleanup alone"
       ]
     },
     {
@@ -23215,11 +23221,14 @@ ${suffix}`;
       title: "Cloud Account Compromise",
       sub: "Compromised AWS/Azure/GCP credentials or console access",
       steps: [
-        "Revoke or rotate the compromised credentials/API keys immediately, and invalidate active sessions and tokens",
-        "Check for new IAM users, roles, or access keys the attacker may have created to maintain access after the original credential is fixed",
-        "Review billing and resource-creation logs for unauthorized compute spun up for cryptomining or further attacks - a common monetization move",
-        "Check for modified security groups, storage bucket permissions, or public exposure changes made during the intrusion window",
-        "Preserve cloud provider audit logs (CloudTrail/Azure Activity Log/GCP Audit Logs) before any retention window expires"
+        "Revoke or rotate the compromised credentials/API keys immediately - for AWS, deactivate the IAM access key first (`aws iam update-access-key --status Inactive`) rather than deleting it outright, so it remains available for forensic review; use the equivalent key-disable action in Azure/GCP",
+        "Invalidate active sessions and tokens separately from rotating the credential - a rotated password or disabled key doesn't retroactively kill an already-issued session token or STS credential still within its validity window",
+        `Check for new IAM users, roles, access keys, or federated identity providers the attacker may have created to maintain access after the original credential is fixed - this is the most common way cloud intrusions survive an initial "fix," and it's worth checking even before full scope is confirmed`,
+        "Review CloudTrail (AWS) / Activity Log (Azure) / Audit Logs (GCP) specifically for CreateUser, CreateAccessKey, AttachUserPolicy, and PutRolePolicy events (or provider equivalents) during the suspected compromise window - these are the specific actions an attacker uses to establish persistent access",
+        "Review billing and resource-creation logs for unauthorized compute spun up for cryptomining or further attack infrastructure - a sudden spike in a region you don't normally use, or an unusually large instance type, is the classic signature of this monetization move",
+        "Check for modified security groups, NACLs, storage bucket policies (S3/Blob/GCS), or public-exposure changes made during the intrusion window - an attacker will often open a bucket or security-group rule to exfiltrate data or maintain reach even after the original credential path is closed",
+        "Preserve cloud provider audit logs before any retention window expires - export CloudTrail/Activity Log/Audit Logs to storage outside the affected account if there's any chance the attacker had permissions broad enough to disable or delete logging",
+        "Once contained, review the IAM policy that was actually exploited - was the compromised credential over-privileged relative to its function? - and tighten it; the fix isn't complete if the same identity goes back into production with the same excess permissions it had before"
       ]
     },
     {
@@ -23228,11 +23237,14 @@ ${suffix}`;
       title: "Insider Threat / Data Exfiltration",
       sub: "Suspected internal actor or unusual data movement",
       steps: [
-        "Involve HR and legal before taking action on a person, not just IT - this category carries employment and legal exposure others don't",
-        "Preserve access logs, file activity, and DLP alerts immediately - behavior evidence degrades fast once someone knows they're suspected",
-        "Restrict access proportionate to the evidence rather than immediately alerting the individual, to avoid destruction of evidence",
-        "Review what data specifically was accessed or moved, and to where, to scope actual exposure rather than assuming worst case",
-        "Close the loop afterward - most insider incidents trace back to an offboarding or access-review gap the Risk Register should already have flagged"
+        "Involve HR and legal before taking any action against a specific person, not just IT - this category carries employment-law and privacy exposure others don't, and premature unilateral IT action (disabling an account, searching a device) without sign-off can itself create liability or taint the investigation",
+        "Preserve access logs, file-activity logs, and DLP alerts immediately, before anything ages out of retention - pull authentication logs, file-server/SharePoint access logs, and any DLP alert history covering as far back as is available, not just the triggering event",
+        "Restrict access proportionate to the actual evidence rather than making a visible change to the person's access or alerting them directly - a sudden access change tips off a genuinely malicious insider to destroy evidence or accelerate exfiltration before scope is understood",
+        "Where legally and technically feasible, place a covert monitoring hold on the account (enhanced logging, mail/file-activity alerting) rather than an overt lockout, until HR/legal confirm the investigation approach - coordinate this specifically with legal, since monitoring an employee carries its own compliance requirements depending on jurisdiction",
+        "Review exactly what data was accessed or moved, and to where: unusual volume downloads, access outside the person's normal role/project scope, removable-media activity if endpoint logging captures it, and uploads to personal cloud storage or personal email - to scope actual exposure rather than assuming worst case",
+        "Cross-reference the timeline against known triggers - a resignation, a performance issue, or an upcoming termination are the most common precursors to a real insider incident, and knowing the timeline shapes both urgency and the legal approach",
+        "Once evidence supports action, coordinate access revocation and any device/account preservation with HR and legal as a single planned action, typically timed with any employment action, rather than staggered steps that could tip off the individual",
+        "Close the loop afterward - most insider incidents trace back to an offboarding gap, an access-review gap, or overly broad access the Risk Register should already have flagged; feed the specific gap back into that process, not just this one case"
       ]
     },
     {
@@ -23241,11 +23253,14 @@ ${suffix}`;
       title: "Supply Chain / Third-Party Compromise",
       sub: "A vendor or integration you depend on gets breached",
       steps: [
-        "Identify exactly what that vendor could access - this is only fast if the Vendor Risk Policy's access record is actually kept current",
-        "Revoke or rotate any credentials, API keys, or OAuth tokens shared with the affected vendor immediately, don't wait for their all-clear",
-        "Check your own logs for activity from the vendor's integration during the suspected compromise window, not just take their word for scope",
-        "Notify your own downstream customers if their data could have been exposed through the chain - the obligation doesn't stop at your vendor",
-        "Reassess whether that vendor's access level was appropriate in the first place, and tighten it regardless of fault"
+        "Identify exactly what that vendor/integration could access - this is only fast if a current access record exists (the Vendor Risk Policy's inventory on this site's Runbooks tab is built for exactly this); if it doesn't exist yet, pull every API key, OAuth grant, and account associated with the vendor's name directly from your identity provider and integration settings",
+        "Revoke or rotate any credentials, API keys, or OAuth tokens shared with the affected vendor immediately - don't wait for the vendor's own all-clear or root-cause confirmation, since their compromise-timeline assessment is often incomplete or delayed relative to yours",
+        "For OAuth/SaaS-to-SaaS integrations specifically, revoke the app's consent/grant at the identity-provider level (Enterprise Applications in Entra ID, connected apps in the Google Workspace admin console, or the equivalent app-authorization list) - disabling the vendor's own login doesn't necessarily kill a previously-granted OAuth token",
+        "Check your own logs for activity from the vendor's integration during the suspected compromise window - API access logs, webhook activity, or logins attributable to the integration - rather than relying solely on the vendor's stated scope of impact",
+        "If the vendor had write access to your systems (not just read), specifically review what was created, modified, or deleted during the window - a compromised vendor integration with write access is a path for an attacker to plant persistence directly in your environment, not just read your data",
+        "Notify your own downstream customers if their data could plausibly have been exposed through the chain - the obligation doesn't stop at your vendor, and NotPetya-style incidents (see Case Studies) show how far a single compromised update can propagate",
+        "Coordinate with legal on notification timing and content - a third-party-caused incident can still trigger your own regulatory notification duties depending on what data was involved and your jurisdiction",
+        "Reassess whether that vendor's access level was appropriate in the first place, and tighten it regardless of fault - this is the step most organizations skip once the immediate incident is closed, and it's exactly what lets the same exposure recur with the next vendor"
       ]
     },
     {
@@ -23254,11 +23269,14 @@ ${suffix}`;
       title: "Zero-Day / Actively Exploited Vulnerability",
       sub: "A critical flaw in something you run is being exploited in the wild",
       steps: [
-        "Check CISA's Known Exploited Vulnerabilities (KEV) catalog and vendor advisories immediately to confirm exploitation status and scope",
-        "Apply the vendor patch as the primary fix - but if none exists yet, apply documented interim mitigations (disabling a feature, restricting network access) without waiting",
-        "Inventory every instance of the affected product across the environment - partial patching (as seen in real incidents like the SharePoint RCE chain) leaves real exposure",
-        "Hunt for indicators of prior compromise, not just patch and move on - actively-exploited flaws are often already used before a patch exists",
-        "Track time-to-patch as a metric - this is exactly what Phase 9 (Auditing & Validation) of the Maturity Model should be measuring over time"
+        "Check CISA's Known Exploited Vulnerabilities (KEV) catalog and the vendor's own security advisory immediately to confirm exploitation status, affected versions, and known indicators of compromise - KEV entries specifically flag confirmed real-world exploitation, not just theoretical severity",
+        `Inventory every instance of the affected product across the environment before patching anything - including instances you don't normally think of as "that product" (embedded components, a vendor appliance running the same library, dev/test/staging copies) - partial patching, as seen in real incidents like the SharePoint on-prem RCE chain, leaves real exposure even after the "main" instance is fixed`,
+        "Apply the vendor patch as the primary fix as soon as it's validated in a non-production environment; if no patch exists yet, apply the vendor's documented interim mitigation (disabling a specific feature, restricting network access to the affected service/port) immediately rather than waiting for a patch timeline",
+        "If the vulnerability is remotely exploitable and no patch or mitigation is immediately deployable, apply temporary compensating controls: a WAF virtual-patching rule if a signature exists for the specific CVE, or restricting network reachability to the affected service via firewall rule until a real fix is in place",
+        "Hunt for indicators of prior compromise before assuming patching alone resolves it - actively-exploited flaws are frequently used against a target before a patch exists or before the organization is even aware of the CVE, so check logs covering the period before public disclosure, not just after",
+        "Check the affected systems specifically for webshells, unexpected scheduled tasks, or new admin accounts if the vulnerability class is remote code execution - these are the persistence mechanisms attackers typically plant immediately after successful exploitation, and a clean patch doesn't remove them retroactively",
+        "Validate the patch actually closed the gap - re-scan the specific instance with a vulnerability scanner or the vendor's own detection guidance, since some patches require an additional configuration step beyond just installing the update to be fully effective",
+        "Track time-to-patch as a real metric from disclosure/KEV-listing to remediation - this is exactly what Phase 9 (Auditing & Validation) of the Maturity Model should be measuring over time, and the Equifax case (see Case Studies) is the clearest illustration of why this metric matters more than most"
       ]
     }
   ];
