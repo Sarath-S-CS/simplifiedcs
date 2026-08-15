@@ -24355,6 +24355,8 @@ ${suffix}`;
       panel.classList.remove("open");
       openStageDetail = null;
       container.querySelectorAll("[data-stage-detail]").forEach((c) => c.classList.remove("stage-active"));
+      const tile = panel.closest(".section-tile");
+      if (tile) tile.classList.remove("has-open-overlay");
       setTimeout(() => {
         if (!panel.classList.contains("open")) panel.style.display = "none";
       }, 220);
@@ -24374,6 +24376,8 @@ ${suffix}`;
         container.querySelectorAll("[data-stage-detail]").forEach((c) => c.classList.remove("stage-active"));
         el.classList.add("stage-active");
         el.appendChild(panel);
+        const openTile = el.closest(".section-tile");
+        if (openTile) openTile.classList.add("has-open-overlay");
         panel.innerHTML = `
         <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
         <p class="body-text">${d.summary}</p>
@@ -24389,8 +24393,10 @@ ${suffix}`;
       });
     });
     const riskDesc = document.getElementById("riskSliderDesc");
+    const riskTile = riskDesc.closest(".section-tile");
     function closeRiskDesc() {
       riskDesc.classList.remove("open");
+      if (riskTile) riskTile.classList.remove("has-open-overlay");
     }
     document.addEventListener("click", (e) => {
       if (openStageDetail && !e.target.closest(".workflow-row") && !e.target.closest(".stage-detail-panel")) {
@@ -24412,6 +24418,7 @@ ${suffix}`;
         btn.classList.add("active");
         riskDesc.innerHTML = `<b>Risk score ${n}:</b> ${RISK_SCORE_DESCRIPTIONS[n]}`;
         riskDesc.classList.remove("open");
+        if (riskTile) riskTile.classList.add("has-open-overlay");
         requestAnimationFrame(() => riskDesc.classList.add("open"));
       });
     });
@@ -24884,12 +24891,12 @@ ${suffix}`;
   async function renderNewsTab(container) {
     container.innerHTML = `
     <div class="page">
-      <div class="page-intro">
+      <div class="page-intro revealed">
         <div class="page-eyebrow">Stay Current</div>
         <h2 class="page-title">Trends & News</h2>
         <p class="page-lede">A curated read of what's actually happening in the threat landscape and in AI-for-security - the same context a good consultant would bring into a conversation with you.</p>
       </div>
-      <div class="section-tile"><p class="body-text">Loading the latest\u2026</p></div>
+      <div class="section-tile revealed"><p class="body-text">Loading the latest\u2026</p></div>
     </div>
   `;
     const newsData = await loadNewsData();
