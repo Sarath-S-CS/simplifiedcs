@@ -24199,8 +24199,25 @@ ${suffix}`;
       </div>
 
       <div class="section-tile">
+        <h3 class="section-h">Methodology</h3>
+        <p class="body-text">Every question maps to a real control from a recognized framework - nothing here is invented. <a href="#" id="linkMethodologyFromHome" class="inline-link">Explore the full methodology</a> for exactly how scoring works. These frameworks are the guiding principles behind every score:</p>
+        <div class="framework-badges">
+          <div class="framework-badge">NIST CSF 2.0</div>
+          <div class="framework-badge">CIS Controls v8</div>
+          <div class="framework-badge">ISO 27001</div>
+          <div class="framework-badge">NIS2</div>
+          <div class="framework-badge">GDPR</div>
+          <div class="framework-badge">Cyber Essentials</div>
+          <div class="framework-badge">PCI DSS</div>
+          <div class="framework-badge framework-badge-pipeline">+ more in the pipeline</div>
+        </div>
+        <p class="body-text">The baseline (NIST CSF + CIS) applies to every organization. The rest layer in based on your industry and the regions you operate in - a healthcare provider and a SaaS company are asked different follow-up questions, scored against different compliance overlays, because the risks and obligations genuinely differ. Operational Technology and DevSecOps modules do the same, appearing only where they're actually relevant. This framework set keeps growing as the tool matures.</p>
+        <p class="body-text">Frameworks decide which controls matter; a consistent set of principles decides how the findings get prioritized and explained - proactive over reactive, defense in depth, least privilege, zero trust, and treating improvement as a continuous loop rather than a one-time project, among others. <a href="#" id="linkPrinciplesFromHome" class="inline-link">Explore the core principles</a> for the full reasoning behind every recommendation.</p>
+      </div>
+
+      <div class="section-tile">
         <h3 class="section-h">The three phases of the assessment</h3>
-        <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage for a quick summary - each links through to the full detail on the <a href="#" id="linkMaturityFromPhases" class="inline-link">Maturity Model</a> page.</p>
+        <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage below for a quick summary of what it involves.</p>
         <div class="workflow-row">
           ${stageOrder.map((sid, i) => `
             ${i > 0 ? `<div class="workflow-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ""}
@@ -24213,6 +24230,7 @@ ${suffix}`;
           `).join("")}
         </div>
         <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
+        <p class="body-text"><a href="#" id="linkMaturityExplore" class="inline-link">Explore the full Maturity Model \u2192</a></p>
       </div>
 
       <div class="section-tile">
@@ -24227,22 +24245,6 @@ ${suffix}`;
           <div class="risk-slider-ends"><span>1 - Minimal risk</span><span>10 - Severe risk</span></div>
           <div class="risk-slider-desc" id="riskSliderDesc"></div>
         </div>
-      </div>
-
-      <div class="section-tile">
-        <h3 class="section-h">Methodology</h3>
-        <p class="body-text">Every question maps to a real control from a recognized framework - nothing here is invented. These frameworks are the guiding principles behind every score:</p>
-        <div class="framework-badges">
-          <div class="framework-badge">NIST CSF 2.0</div>
-          <div class="framework-badge">CIS Controls v8</div>
-          <div class="framework-badge">ISO 27001</div>
-          <div class="framework-badge">NIS2</div>
-          <div class="framework-badge">GDPR</div>
-          <div class="framework-badge">Cyber Essentials</div>
-          <div class="framework-badge">PCI DSS</div>
-          <div class="framework-badge framework-badge-pipeline">+ more in the pipeline</div>
-        </div>
-        <p class="body-text">The baseline (NIST CSF + CIS) applies to every organization. The rest layer in based on your industry and the regions you operate in - a healthcare provider and a SaaS company are asked different follow-up questions, scored against different compliance overlays, because the risks and obligations genuinely differ. Operational Technology and DevSecOps modules do the same, appearing only where they're actually relevant. This framework set keeps growing as the tool matures.</p>
       </div>
 
       <div class="section-tile">
@@ -24288,9 +24290,17 @@ ${suffix}`;
       e.preventDefault();
       goToTab("metrics");
     });
-    document.getElementById("linkMaturityFromPhases").addEventListener("click", (e) => {
+    document.getElementById("linkMaturityExplore").addEventListener("click", (e) => {
       e.preventDefault();
       goToTab("maturity");
+    });
+    document.getElementById("linkMethodologyFromHome").addEventListener("click", (e) => {
+      e.preventDefault();
+      goToTab("methodology");
+    });
+    document.getElementById("linkPrinciplesFromHome").addEventListener("click", (e) => {
+      e.preventDefault();
+      goToTab("coreprinciples");
     });
     let openStageDetail = null;
     function closeStageDetail() {
