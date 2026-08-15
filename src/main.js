@@ -40,7 +40,6 @@ const TOP_TABS = [
   { id:'home', label:'Home' },
   { id:'methodology', label:'Methodology' },
   { id:'maturity', label:'Maturity Model' },
-  { id:'metrics', label:'Metrics' },
   { id:'news', label:'Trends & News' },
   { id:'assessment', label:'Assessment' },
 ];
@@ -48,6 +47,7 @@ const HOME_DROPDOWN = [
   { id:'maturitymodel', label:'What is SimplifiedCS?' },
   { id:'coreprinciples', label:'Core Principles' },
   { id:'roadmap', label:'Roadmap' },
+  { id:'metrics', label:'Metrics' },
   { id:'runbook', label:'Runbooks' },
   { id:'playbooks', label:'Playbooks' },
   { id:'casestudy', label:'Case Studies' },
@@ -801,7 +801,13 @@ function observeReveals(){
         io.unobserve(entry.target);
       }
     });
-  }, { threshold:0.06, rootMargin:'0px 0px -40px 0px' });
+  }, { threshold:0, rootMargin:'0px 0px -40px 0px' });
+  // threshold must stay 0 (any visible pixel), not a ratio like 0.06 - a
+  // ratio is measured against the target's OWN height, and a tile that
+  // grows past ~15-16k px (e.g. the live News grid with 75 cards) can
+  // never show 6% of itself in one viewport, so it would silently never
+  // reveal. This bit the News tab directly once the live feed grew past a
+  // handful of items.
   els.forEach(el=> io.observe(el));
 }
 

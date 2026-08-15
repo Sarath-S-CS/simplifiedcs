@@ -22776,7 +22776,6 @@ ${suffix}`;
     { id: "home", label: "Home" },
     { id: "methodology", label: "Methodology" },
     { id: "maturity", label: "Maturity Model" },
-    { id: "metrics", label: "Metrics" },
     { id: "news", label: "Trends & News" },
     { id: "assessment", label: "Assessment" }
   ];
@@ -22784,6 +22783,7 @@ ${suffix}`;
     { id: "maturitymodel", label: "What is SimplifiedCS?" },
     { id: "coreprinciples", label: "Core Principles" },
     { id: "roadmap", label: "Roadmap" },
+    { id: "metrics", label: "Metrics" },
     { id: "runbook", label: "Runbooks" },
     { id: "playbooks", label: "Playbooks" },
     { id: "casestudy", label: "Case Studies" },
@@ -23801,7 +23801,7 @@ ${suffix}`;
           io.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.06, rootMargin: "0px 0px -40px 0px" });
+    }, { threshold: 0, rootMargin: "0px 0px -40px 0px" });
     els.forEach((el) => io.observe(el));
   }
   function renderTabNav() {

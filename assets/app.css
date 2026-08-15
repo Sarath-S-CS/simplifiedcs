@@ -341,6 +341,25 @@
     .masthead h1{ font-size:15px; }
     .masthead-right{ gap:8px; }
   }
+  /* The 480px compaction above still doesn't leave enough room on the
+     smallest real phone widths (iPhone SE 1st-gen at 320px, and similar
+     ~320-340px Android devices) once the icon/toggle sizes were bumped up
+     for visibility - brand + search + theme-toggle + hamburger together
+     need ~299px at that sizing, more than a 320px screen has after
+     padding. Trim just the right-side controls a bit further here rather
+     than shrinking them for the much larger, unaffected 360px+ population. */
+  @media (max-width:340px){
+    .masthead{ padding-left:10px; padding-right:10px; }
+    .masthead h1{ font-size:14px; }
+    .masthead-right{ gap:6px; }
+    .search-toggle-btn, .nav-hamburger{ width:32px; height:32px; }
+    .search-toggle-btn svg{ width:17px; height:17px; }
+    .nav-hamburger svg{ width:18px; height:18px; }
+    .theme-switch-track{ width:44px; height:24px; }
+    .theme-switch-thumb{ width:20px; height:20px; }
+    .theme-toggle[aria-checked="true"] .theme-switch-thumb{ transform:translateX(20px); }
+    .theme-switch-thumb svg{ width:12px; height:12px; }
+  }
 
   /* --- rail / schematic trace --- */
   .rail{
