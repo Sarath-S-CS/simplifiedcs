@@ -92,22 +92,40 @@
     margin-right:auto;
     padding:40px clamp(24px, 4vw, 64px) 80px;
   }
+  /* The masthead used to bleed only to .app's own padding edge via a
+     clamp-based negative margin - which meant its available width was
+     still capped by .app's max-width:1200px reading-width limit, since
+     that padding-cancelling trick can't escape the parent's own box. Past
+     roughly 1330px viewport width, .app stops growing (hits its cap) and
+     so did the header - no matter how much wider the browser got, the nav
+     was stuck fighting for the same ~1080px, which is exactly why a user
+     saw it wrap on a maximized/wide screen but not at a wide-BUT-under-cap
+     width like 1400px. The 50vw-centering breakout below makes .masthead
+     itself genuinely span the full viewport regardless of .app's cap, with
+     .masthead-inner giving its actual content a separate, wider max-width
+     that no longer inherits .app's narrower reading-width limit. */
   .masthead{
+    position:sticky;
+    top:0;
+    z-index:10;
+    width:100vw;
+    margin-left:calc(50% - 50vw);
+    margin-top:-40px;
+    margin-bottom:32px;
+    border-bottom:1px solid var(--line);
+    background:var(--masthead-bg);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+  }
+  .masthead-inner{
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:48px;
-    border-bottom:1px solid var(--line);
-    padding:16px clamp(24px, 4vw, 64px);
-    margin:-40px calc(-1 * clamp(24px, 4vw, 64px)) 32px;
-    width:calc(100% + 2 * clamp(24px, 4vw, 64px));
     flex-wrap:wrap;
-    position:sticky;
-    top:0;
-    z-index:10;
-    background:var(--masthead-bg);
-    backdrop-filter:blur(16px);
-    -webkit-backdrop-filter:blur(16px);
+    max-width:1600px;
+    margin:0 auto;
+    padding:16px clamp(24px, 4vw, 64px);
   }
   .masthead-brand{ flex-shrink:0; text-decoration:none; display:flex; align-items:center; gap:10px; }
   .brand-logo{ width:34px; height:34px; display:block; }
@@ -135,7 +153,7 @@
   }
   .theme-switch-track{
     position:relative; display:block;
-    width:50px; height:27px; border-radius:999px;
+    width:58px; height:31px; border-radius:999px;
     background:var(--surface-raised); border:1px solid var(--line);
     transition:background .2s ease, border-color .2s ease;
   }
@@ -143,14 +161,14 @@
   .theme-toggle[aria-checked="true"] .theme-switch-track{ background:var(--tint-signal); border-color:var(--accent-signal); }
   .theme-switch-thumb{
     position:absolute; top:1px; left:1px;
-    width:23px; height:23px; border-radius:50%;
+    width:27px; height:27px; border-radius:50%;
     background:var(--surface); color:var(--text);
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 1px 3px rgba(0,0,0,0.3);
     transition:transform .2s ease, color .2s ease;
   }
-  .theme-toggle[aria-checked="true"] .theme-switch-thumb{ transform:translateX(25px); color:var(--accent-signal); }
-  .theme-switch-thumb svg{ width:14px; height:14px; }
+  .theme-toggle[aria-checked="true"] .theme-switch-thumb{ transform:translateX(29px); color:var(--accent-signal); }
+  .theme-switch-thumb svg{ width:19px; height:19px; }
   .assessment-serial{
     font-family:var(--mono);
     font-size:11px;
@@ -321,12 +339,16 @@
   .mobile-nav-sublink.active{ color:var(--accent-signal); }
   .mobile-nav-link:hover, .mobile-nav-sublink:hover{ background:var(--tint-signal-soft); color:var(--accent-signal); }
 
-  /* Full nav (6 tabs + search + theme toggle) needs ~1080px alongside the
-     brand lockup at default padding - empirically the full row starts
-     wrapping to a second line below ~1150-1300px, so the hamburger
-     breakpoint needs real margin above that, not just above the nav's own
-     minimum width. */
-  @media (max-width:1300px){
+  /* Full nav (6 tabs + search + theme toggle) needs ~1090px alongside the
+     brand lockup at default padding. This used to need a much larger
+     cutoff here as a band-aid, because .masthead's width was secretly
+     capped by .app's max-width:1200 (see the comment on .masthead above) -
+     past ~1330px viewport the header simply couldn't grow no matter how
+     wide the window got. Now that .masthead genuinely spans the viewport
+     independent of .app, the real fit boundary is much lower and stays
+     proportional to viewport width - this cutoff has real margin below
+     that measured boundary without needing to be defensively huge. */
+  @media (max-width:1200px){
     .tabnav{ display:none; }
     .nav-hamburger{ display:flex; }
     .search-widget.expanded .search-input{ width:150px; }
@@ -336,7 +358,7 @@
      at the desktop gap/padding/logo sizing - compact all of it together
      rather than relying on flex-wrap to paper over the gap. */
   @media (max-width:480px){
-    .masthead{ gap:10px; padding:14px 16px; margin:-40px -16px 32px; width:calc(100% + 32px); }
+    .masthead-inner{ gap:10px; padding:14px 16px; }
     .masthead-brand{ gap:6px; }
     .brand-logo{ width:26px; height:26px; }
     .masthead h1{ font-size:15px; }
@@ -350,16 +372,16 @@
      padding. Trim just the right-side controls a bit further here rather
      than shrinking them for the much larger, unaffected 360px+ population. */
   @media (max-width:340px){
-    .masthead{ padding-left:10px; padding-right:10px; }
+    .masthead-inner{ padding-left:10px; padding-right:10px; }
     .masthead h1{ font-size:14px; }
     .masthead-right{ gap:6px; }
     .search-toggle-btn, .nav-hamburger{ width:32px; height:32px; }
     .search-toggle-btn svg{ width:17px; height:17px; }
     .nav-hamburger svg{ width:18px; height:18px; }
-    .theme-switch-track{ width:44px; height:24px; }
-    .theme-switch-thumb{ width:20px; height:20px; }
-    .theme-toggle[aria-checked="true"] .theme-switch-thumb{ transform:translateX(20px); }
-    .theme-switch-thumb svg{ width:12px; height:12px; }
+    .theme-switch-track{ width:46px; height:25px; }
+    .theme-switch-thumb{ width:21px; height:21px; }
+    .theme-toggle[aria-checked="true"] .theme-switch-thumb{ transform:translateX(21px); }
+    .theme-switch-thumb svg{ width:14px; height:14px; }
   }
 
   /* --- rail / schematic trace --- */
