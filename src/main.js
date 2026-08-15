@@ -963,12 +963,15 @@ function renderSearchWidget(){
       });
     });
   }
+  const mastheadRight = widget.closest('.masthead-right');
   function openSearch(){
     widget.classList.add('expanded');
+    if(mastheadRight) mastheadRight.classList.add('search-active');
     input.focus();
   }
   function closeSearch(){
     widget.classList.remove('expanded');
+    if(mastheadRight) mastheadRight.classList.remove('search-active');
     input.value = '';
     results.innerHTML = '';
     results.classList.remove('open');

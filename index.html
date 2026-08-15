@@ -29,8 +29,8 @@
     <div class="masthead-right">
       <div class="tabnav" id="tabnav"></div>
       <div class="search-widget" id="searchWidget"></div>
-      <button class="nav-hamburger" id="navHamburger" aria-label="Menu" aria-expanded="false" type="button"></button>
       <button class="theme-toggle" id="themeToggle"></button>
+      <button class="nav-hamburger" id="navHamburger" aria-label="Menu" aria-expanded="false" type="button"></button>
     </div>
   </div>
 
@@ -23953,12 +23953,15 @@ ${suffix}`;
         });
       });
     }
+    const mastheadRight = widget.closest(".masthead-right");
     function openSearch() {
       widget.classList.add("expanded");
+      if (mastheadRight) mastheadRight.classList.add("search-active");
       input.focus();
     }
     function closeSearch() {
       widget.classList.remove("expanded");
+      if (mastheadRight) mastheadRight.classList.remove("search-active");
       input.value = "";
       results.innerHTML = "";
       results.classList.remove("open");
