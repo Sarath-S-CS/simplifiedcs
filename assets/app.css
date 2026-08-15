@@ -69,11 +69,12 @@
   .rubric-card, .toc-list, .delta-box, .info-box, .note-box, .upload-result,
   .news-card, .tier-row, .phase-row, .stage-band, .resource-group, .osint-item,
   .link-pill, .footer-social-icon, .region-note, .ot-skip-note, .ot-likely-note,
+  .exploit-card, .exploit-score-box, .exploit-safety,
   select, input[type="text"], input[type="file"], .upload-zone{
     border-radius:12px;
   }
   .q-badge, .priority-tag, .alpha-chip, .news-cat, .checkbox, .tab-btn.active,
-  .footer-social-icon, .icon-badge{
+  .footer-social-icon, .icon-badge, .exploit-ransomware-badge, .exploit-sector-chip{
     border-radius:6px;
   }
   .icon-badge, .footer-social-icon{ border-radius:50%; }
@@ -816,6 +817,29 @@
   .news-card p{ font-size:13.5px; color:var(--text-muted); line-height:1.65; margin:0 0 8px; }
   .news-source{ font-size:11.5px; color:var(--text-muted); font-style:italic; }
   .news-freshness{ font-size:12px; color:var(--text-muted); margin-bottom:20px; padding:10px 14px; border:1px dashed var(--line); }
+
+  /* --- exploits (KEV + EPSS) --- */
+  .exploits-grid{ display:flex; flex-direction:column; gap:16px; }
+  .exploit-card{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:22px 24px; }
+  .exploit-meta{ display:flex; gap:10px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
+  .exploit-cve{ font-family:var(--mono); font-size:11px; letter-spacing:0.04em; color:var(--accent-signal); }
+  .exploit-ransomware-badge{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--accent-critical); border:1px solid var(--accent-critical); padding:2px 8px; }
+  .exploit-card h4{ font-size:15.5px; margin:0 0 6px; }
+  .exploit-vendor{ font-size:12.5px; color:var(--text-muted); margin-bottom:14px; }
+  .exploit-scores{ display:flex; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+  .exploit-score-box{ flex:1; min-width:160px; background:var(--surface-raised); padding:12px 14px; }
+  .exploit-score-value{ display:block; font-family:var(--mono); font-size:22px; font-weight:600; color:var(--accent-signal); }
+  .exploit-score-label{ display:block; font-size:10.5px; color:var(--text-muted); line-height:1.4; margin-top:4px; }
+  .exploit-sectors{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .exploit-sector-chip{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); border:1px solid var(--line); padding:2px 8px; }
+  .exploit-card p{ font-size:13.5px; color:var(--text-muted); line-height:1.65; margin:0 0 10px; }
+  .exploit-safety{ padding:12px 14px; background:var(--surface-raised); border-left:2px solid var(--accent-signal); }
+  .exploit-safety b{ color:var(--text); }
+  .exploit-footer{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+  .exploit-dates{ font-size:11px; color:var(--text-muted); }
+  .exploit-footer a{ font-size:12px; color:var(--accent-signal); text-decoration:none; }
+  .exploit-footer a:hover{ text-decoration:underline; }
+  @media (max-width:600px){ .exploit-scores{ flex-direction:column; } }
 
   /* --- icons --- */
   .icon-badge{
