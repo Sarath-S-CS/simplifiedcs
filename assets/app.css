@@ -91,8 +91,8 @@
     justify-content:space-between;
     gap:24px;
     border-bottom:1px solid var(--line);
-    padding:0 clamp(24px, 4vw, 64px) 16px;
-    margin:0 calc(-1 * clamp(24px, 4vw, 64px)) 32px;
+    padding:16px clamp(24px, 4vw, 64px);
+    margin:-40px calc(-1 * clamp(24px, 4vw, 64px)) 32px;
     width:calc(100% + 2 * clamp(24px, 4vw, 64px));
     flex-wrap:wrap;
     position:sticky;
@@ -874,15 +874,21 @@
     flex:1; min-width:160px; background:var(--surface-raised); padding:18px 20px; text-align:center;
     display:block; text-decoration:none; color:inherit; cursor:pointer;
     transition:background .18s ease, transform .18s ease;
+    position:relative;
   }
   .workflow-step:hover{ background:var(--tint-signal-soft); transform:translateY(-2px); }
-  .workflow-step.stage-active{ background:var(--tint-signal); border-bottom:2px solid var(--accent-signal); }
+  .workflow-step.stage-active{ background:var(--tint-signal); box-shadow:inset 0 -2px 0 var(--accent-signal); }
+  /* Dropdown from the clicked step specifically (same anchor pattern as
+     .tab-dropdown) so opening it never resizes the step or reflows its
+     siblings - it overlays below, it doesn't push. */
   .stage-detail-panel{
-    flex-basis:100%; width:100%;
-    margin-top:14px; padding:20px 22px; background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line);
+    position:absolute; top:100%; left:0; right:0; z-index:5;
+    text-align:left;
+    margin-top:8px; padding:20px 22px; background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line);
     opacity:0; transform:translateY(-8px); transition:opacity .22s ease, transform .22s ease;
+    pointer-events:none;
   }
-  .stage-detail-panel.open{ opacity:1; transform:translateY(0); }
+  .stage-detail-panel.open{ opacity:1; transform:translateY(0); pointer-events:auto; }
   .stage-detail-panel h4{ font-size:15px; margin:0 0 10px; }
   .risk-slider-wrap{ margin-top:28px; padding-top:20px; border-top:1px solid var(--line); }
   .risk-slider-label{ font-size:12.5px; color:var(--text-muted); margin-bottom:14px; }

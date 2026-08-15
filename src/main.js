@@ -1129,10 +1129,7 @@ function renderHomeTab(container){
           <div class="framework-badge">CIS Controls v8</div>
           <div class="framework-badge">ISO 27001</div>
           <div class="framework-badge">NIS2</div>
-          <div class="framework-badge">SOC 2</div>
-          <div class="framework-badge">HIPAA</div>
           <div class="framework-badge">GDPR</div>
-          <div class="framework-badge">SOX</div>
           <div class="framework-badge">Cyber Essentials</div>
           <div class="framework-badge">PCI DSS</div>
           <div class="framework-badge framework-badge-pipeline">+ more in the pipeline</div>
@@ -1190,6 +1187,7 @@ function renderHomeTab(container){
   }
   container.querySelectorAll('[data-stage-detail]').forEach(el=>{
     el.addEventListener('click', (e)=>{
+      if(e.target.closest('.stage-detail-panel')) return; // clicks inside the open panel shouldn't re-toggle it
       e.stopPropagation();
       const sid = el.dataset.stageDetail;
       const panel = document.getElementById('stageDetailPanel');
@@ -1198,7 +1196,7 @@ function renderHomeTab(container){
       openStageDetail = sid;
       container.querySelectorAll('[data-stage-detail]').forEach(c=>c.classList.remove('stage-active'));
       el.classList.add('stage-active');
-      el.insertAdjacentElement('afterend', panel);
+      el.appendChild(panel);
       panel.innerHTML = `
         <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
         <p class="body-text">${d.summary}</p>
