@@ -239,7 +239,7 @@
   .search-widget{ position:relative; display:flex; align-items:center; flex-shrink:0; }
   .search-toggle-btn{
     display:flex; align-items:center; justify-content:center;
-    width:34px; height:34px; flex-shrink:0; border-radius:50%;
+    width:34px; height:34px; min-width:0; padding:0; flex-shrink:0; border-radius:50%;
     background:transparent; border:1px solid var(--line); color:var(--text-muted); cursor:pointer;
     transition:border-color .15s ease, color .15s ease;
   }
@@ -278,7 +278,7 @@
      .tabnav below the masthead breakpoint --- */
   .nav-hamburger{
     display:none; align-items:center; justify-content:center;
-    width:34px; height:34px; flex-shrink:0; border-radius:50%;
+    width:34px; height:34px; min-width:0; padding:0; flex-shrink:0; border-radius:50%;
     background:transparent; border:1px solid var(--line); color:var(--text-muted); cursor:pointer;
   }
   .nav-hamburger svg{ width:17px; height:17px; }
@@ -306,10 +306,26 @@
   .mobile-nav-sublink.active{ color:var(--accent-signal); }
   .mobile-nav-link:hover, .mobile-nav-sublink:hover{ background:var(--tint-signal-soft); color:var(--accent-signal); }
 
-  @media (max-width:900px){
+  /* Full nav (6 tabs + search + theme toggle) needs ~1080px alongside the
+     brand lockup at default padding - empirically the full row starts
+     wrapping to a second line below ~1150-1300px, so the hamburger
+     breakpoint needs real margin above that, not just above the nav's own
+     minimum width. */
+  @media (max-width:1300px){
     .tabnav{ display:none; }
     .nav-hamburger{ display:flex; }
     .search-widget.expanded .search-input{ width:150px; }
+  }
+  /* Even with the nav collapsed to a hamburger, the brand lockup plus
+     search+hamburger+theme-toggle still doesn't fit a phone-width screen
+     at the desktop gap/padding/logo sizing - compact all of it together
+     rather than relying on flex-wrap to paper over the gap. */
+  @media (max-width:480px){
+    .masthead{ gap:10px; padding:14px 16px; margin:-40px -16px 32px; width:calc(100% + 32px); }
+    .masthead-brand{ gap:6px; }
+    .brand-logo{ width:26px; height:26px; }
+    .masthead h1{ font-size:15px; }
+    .masthead-right{ gap:8px; }
   }
 
   /* --- rail / schematic trace --- */
@@ -676,6 +692,13 @@
   .section-tile{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:32px 36px; }
   @media (max-width:720px){ .section-tile{ padding:22px 20px; } }
   .section-tile .section-h:first-child{ margin-top:0; }
+  /* .page is a flex container, and its .section-tile children have
+     z-index:auto - a z-indexed overlay nested inside one can't escape to
+     paint above the NEXT sibling .section-tile (a flex item with
+     z-index:auto still paints in document order relative to its siblings,
+     regardless of a descendant's own z-index). Elevating the container
+     itself, only while it holds an open overlay, fixes that. */
+  .section-tile.has-open-overlay{ position:relative; z-index:6; }
 
   /* --- scroll-reveal + tab transitions --- */
   .section-tile, .page-intro{
