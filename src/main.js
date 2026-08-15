@@ -40,14 +40,15 @@ const TOP_TABS = [
   { id:'home', label:'Home' },
   { id:'methodology', label:'Methodology' },
   { id:'maturity', label:'Maturity Model' },
-  { id:'metrics', label:'Metrics' },
   { id:'news', label:'Trends & News' },
+  { id:'exploits', label:'Exploits' },
   { id:'assessment', label:'Assessment' },
 ];
 const HOME_DROPDOWN = [
   { id:'maturitymodel', label:'What is SimplifiedCS?' },
   { id:'coreprinciples', label:'Core Principles' },
   { id:'roadmap', label:'Roadmap' },
+  { id:'metrics', label:'Metrics' },
   { id:'runbook', label:'Runbooks' },
   { id:'playbooks', label:'Playbooks' },
   { id:'casestudy', label:'Case Studies' },
@@ -801,7 +802,13 @@ function observeReveals(){
         io.unobserve(entry.target);
       }
     });
-  }, { threshold:0.06, rootMargin:'0px 0px -40px 0px' });
+  }, { threshold:0, rootMargin:'0px 0px -40px 0px' });
+  // threshold must stay 0 (any visible pixel), not a ratio like 0.06 - a
+  // ratio is measured against the target's OWN height, and a tile that
+  // grows past ~15-16k px (e.g. the live News grid with 75 cards) can
+  // never show 6% of itself in one viewport, so it would silently never
+  // reveal. This bit the News tab directly once the live feed grew past a
+  // handful of items.
   els.forEach(el=> io.observe(el));
 }
 
@@ -1073,6 +1080,7 @@ function renderActiveTab(){
   else if(activeTab === 'transform') renderTransformTab(container);
   else if(activeTab === 'runbook') renderRunbookTab(container);
   else if(activeTab === 'news') renderNewsTab(container);
+  else if(activeTab === 'exploits') renderExploitsTab(container);
   else if(activeTab === 'casestudy') renderCaseStudyTab(container);
   else if(activeTab === 'playbooks') renderPlaybooksTab(container);
   else if(activeTab === 'glossary') renderGlossaryTab(container);
@@ -1974,6 +1982,135 @@ function renderNewsList(container, newsData){
       // observeReveals()) - without re-observing it here, it never gets the
       // .revealed class and stays invisible, which is exactly the reported
       // "filter click does nothing / blank page" bug (§4 Phase 2 brief).
+      observeReveals();
+    });
+  });
+}
+
+// §2 Exploits: exploit_items is fetched daily by a scheduled Edge Function
+// (see supabase/functions/fetch-exploits) from CISA's Known Exploited
+// Vulnerabilities catalog, enriched with an EPSS score from FIRST.org - the
+// same read-only-Supabase, no-live-refetch-per-visit pattern as News. There
+// is deliberately no static fallback snapshot here (unlike News's
+// NEWS_ITEMS) - fabricating placeholder vulnerability data would be
+// actively misleading, so an empty/failed fetch shows an honest "not
+// available right now" state with a direct link to CISA's own catalog.
+let exploitsCache = null;
+async function loadExploitsData(){
+  if(exploitsCache) return exploitsCache;
+  try {
+    const { data, error } = await supabase
+      .from('exploit_items')
+      .select('cve_id, vendor, product, headline, description, explainer, safe_guidance, sectors_impacted, is_ransomware, epss_score, epss_percentile, source, source_url, date_added, due_date, priority_score')
+      .order('priority_score', { ascending:false });
+    if(error) throw error;
+    exploitsCache = { live:true, items: data || [] };
+  } catch(e) {
+    exploitsCache = { live:false, items: [] };
+  }
+  return exploitsCache;
+}
+
+const EXPLOIT_FILTERS = [
+  { id:'all', label:'All' },
+  { id:'ransomware', label:'Ransomware-Linked' },
+  { id:'ot', label:'Critical Infrastructure / OT', sector:'Critical Infrastructure / OT & ICS' },
+  { id:'healthcare', label:'Healthcare', sector:'Healthcare' },
+  { id:'financial', label:'Financial Services', sector:'Financial Services' },
+  { id:'government', label:'Government & Public Sector', sector:'Government & Public Sector' },
+];
+let exploitsFilter = 'all';
+
+function matchesExploitFilter(item, filterId){
+  if(filterId === 'all') return true;
+  if(filterId === 'ransomware') return item.is_ransomware;
+  const f = EXPLOIT_FILTERS.find(x=>x.id===filterId);
+  return f && item.sectors_impacted?.includes(f.sector);
+}
+
+async function renderExploitsTab(container){
+  container.innerHTML = `
+    <div class="page">
+      <div class="page-intro revealed">
+        <div class="page-eyebrow">Active Threats</div>
+        <h2 class="page-title">Exploits</h2>
+        <p class="page-lede">Vulnerabilities with confirmed active exploitation in the wild - not just a high severity score - sourced from CISA's Known Exploited Vulnerabilities catalog and scored by real-world exploitation likelihood.</p>
+      </div>
+      <div class="section-tile revealed"><p class="body-text">Loading the latest…</p></div>
+    </div>
+  `;
+  const exploitsData = await loadExploitsData();
+  if(!document.getElementById('tabContent')?.contains(container) && activeTab !== 'exploits') return;
+  renderExploitsList(container, exploitsData);
+  observeReveals();
+}
+
+function renderExploitsList(container, exploitsData){
+  const items = exploitsData.items.filter(n => matchesExploitFilter(n, exploitsFilter));
+  container.innerHTML = `
+    <div class="page">
+      <div class="page-intro">
+        <div class="page-eyebrow">Active Threats</div>
+        <h2 class="page-title">Exploits</h2>
+        <p class="page-lede">Vulnerabilities with confirmed active exploitation in the wild - not just a high severity score - sourced from CISA's Known Exploited Vulnerabilities catalog and scored by real-world exploitation likelihood.</p>
+      </div>
+
+      ${!exploitsData.live || !exploitsData.items.length ? `
+        <div class="section-tile">
+          <p class="body-text">Live exploit data isn't available right now. Nothing's lost - this refreshes daily - but in the meantime, see <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener noreferrer" class="inline-link">CISA's KEV catalog</a> directly.</p>
+        </div>
+      ` : `
+        <div class="section-tile">
+          <p class="news-freshness">Refreshed daily from CISA's Known Exploited Vulnerabilities catalog, scored with EPSS (Exploit Prediction Scoring System) from FIRST.org - a model estimating the probability a vulnerability will actually be exploited, not just how severe it could theoretically be.</p>
+          <div class="news-filters">
+            ${EXPLOIT_FILTERS.map(f=>`<button class="filter-pill ${exploitsFilter===f.id?'active':''}" data-filter="${f.id}">${f.label}</button>`).join('')}
+          </div>
+          <div class="exploits-grid">
+            ${items.map(item=>{
+              const epssPct = item.epss_score != null ? (item.epss_score*100).toFixed(1) : null;
+              const percentilePct = item.epss_percentile != null ? (item.epss_percentile*100).toFixed(1) : null;
+              const dateAdded = new Date(item.date_added).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+              const dueDate = item.due_date ? new Date(item.due_date).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : null;
+              return `
+                <div class="exploit-card">
+                  <div class="exploit-meta">
+                    <span class="exploit-cve">${item.cve_id}</span>
+                    ${item.is_ransomware ? '<span class="exploit-ransomware-badge">Ransomware-Linked</span>' : ''}
+                  </div>
+                  <h4>${item.headline}</h4>
+                  <div class="exploit-vendor">${item.vendor} · ${item.product}</div>
+                  ${epssPct != null ? `
+                    <div class="exploit-scores">
+                      <div class="exploit-score-box">
+                        <span class="exploit-score-value">${epssPct}%</span>
+                        <span class="exploit-score-label">EPSS score - probability of exploitation in the next 30 days</span>
+                      </div>
+                      <div class="exploit-score-box">
+                        <span class="exploit-score-value">${percentilePct}%</span>
+                        <span class="exploit-score-label">EPSS percentile - riskier than this share of all scored CVEs</span>
+                      </div>
+                    </div>
+                  ` : ''}
+                  <div class="exploit-sectors">${(item.sectors_impacted||[]).map(s=>`<span class="exploit-sector-chip">${s}</span>`).join('')}</div>
+                  <p>${item.description}</p>
+                  <p>${item.explainer}</p>
+                  <p class="exploit-safety"><b>Staying safe:</b> ${item.safe_guidance}</p>
+                  <div class="exploit-footer">
+                    <span class="exploit-dates">Added to KEV catalog ${dateAdded}${dueDate ? ` · CISA remediation due ${dueDate}` : ''}</span>
+                    <a href="${item.source_url}" target="_blank" rel="noopener noreferrer">View on NVD →</a>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `}
+    </div>
+  `;
+  container.querySelectorAll('.filter-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      exploitsFilter = btn.dataset.filter;
+      renderExploitsList(container, exploitsData);
       observeReveals();
     });
   });
