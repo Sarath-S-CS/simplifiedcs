@@ -12,6 +12,7 @@ import { INDUSTRIES } from "./data/industries.js";
 // reads them directly, so they need to stay available at this scope too.
 import { FUNCTIONS, FUNC_COLORS } from "./data/categories.js";
 import { supabase } from "./data/supabase-client.js";
+import { FRAMEWORKS } from "./data/frameworks.js";
 
 const assessmentController = createAssessmentController({
   getPanel: () => document.getElementById("panel"),
@@ -170,6 +171,9 @@ function icon(name){
     'hiw-magnify': `<svg ${common}><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/><path d="M7.5 10.5h6M10.5 7.5v6"/></svg>`,
     'hiw-lightbulb': `<svg ${common}><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6.5 6.5 0 0 0-3.8 11.8c.5.4.8 1 .8 1.7v.5h6v-.5c0-.7.3-1.3.8-1.7A6.5 6.5 0 0 0 12 3z"/></svg>`,
     'hiw-transform': `<svg ${common}><path d="M4 14a8 8 0 0 1 14-5.2"/><path d="M17 4v3.2h-3.2"/><path d="M20 10a8 8 0 0 1-14 5.2"/><path d="M7 20v-3.2h3.2"/></svg>`,
+    home: `<svg ${common}><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9.5h12V10"/><path d="M10 19.5v-6h4v6"/></svg>`,
+    menu: `<svg ${common}><path d="M4 6h16M4 12h16M4 18h16"/></svg>`,
+    close: `<svg ${common}><path d="M6 6l12 12M18 6 6 18"/></svg>`,
   };
   return icons[name] || '';
 }
@@ -807,18 +811,19 @@ function renderTabNav(){
 
   const navHtml = TOP_TABS.map(t=>{
     const dd = dropdownMap[t.id];
+    const label = t.id==='home' ? `<span class="tab-btn-icon" aria-label="Home">${icon('home')}</span>` : t.label;
     if(dd){
       const parentActive = activeTab===t.id || dd.some(d=>d.id===activeTab);
       return `
         <div class="tab-item has-dropdown">
-          <button class="tab-btn ${parentActive?'active':''}" data-tab="${t.id}">${t.label} <span class="tab-caret" data-toggle="1">▾</span></button>
+          <button class="tab-btn ${parentActive?'active':''}" data-tab="${t.id}">${label} <span class="tab-caret" data-toggle="1">▾</span></button>
           <div class="tab-dropdown">
             ${dd.map(d=>`<button class="dropdown-link ${activeTab===d.id?'active':''}" data-tab="${d.id}">${d.label}</button>`).join('')}
           </div>
         </div>
       `;
     }
-    return `<button class="tab-btn ${activeTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`;
+    return `<button class="tab-btn ${activeTab===t.id?'active':''}" data-tab="${t.id}">${label}</button>`;
   }).join('');
 
   nav.innerHTML = navHtml;
@@ -868,14 +873,169 @@ function renderTabNav(){
 
 function renderThemeToggle(){
   const btn = document.getElementById('themeToggle');
-  const goingTo = theme==='dark' ? 'light' : 'dark';
-  btn.innerHTML = `${icon(goingTo==='light' ? 'sun' : 'moon')} <span>${goingTo==='light' ? 'Light' : 'Dark'} mode</span>`;
+  const isLight = theme === 'light';
+  btn.setAttribute('role', 'switch');
+  btn.setAttribute('aria-checked', String(isLight));
+  btn.setAttribute('aria-label', `Switch to ${isLight ? 'dark' : 'light'} mode`);
+  btn.innerHTML = `
+    <span class="theme-switch-track">
+      <span class="theme-switch-thumb">${icon(isLight ? 'sun' : 'moon')}</span>
+    </span>
+  `;
   btn.onclick = async ()=>{
-    theme = goingTo;
+    theme = isLight ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
     renderThemeToggle();
     try { await window.storage.set('theme', theme, false); } catch(e){ /* ignore */ }
   };
+}
+
+// --- Site search: covers nav destinations plus deeper content (glossary,
+// runbooks, playbooks, frameworks, case studies, maturity phases). Built
+// once, lazily, since every source array is a module-level const that's
+// fully initialized by the time a user could actually trigger a search. ---
+let searchIndexCache = null;
+function getSearchIndex(){
+  if(searchIndexCache) return searchIndexCache;
+  const idx = [];
+  const dropdownMap = { home: HOME_DROPDOWN, assessment: ASSESSMENT_DROPDOWN };
+  TOP_TABS.forEach(t=>{
+    idx.push({ type:'Page', title:t.label, tab:t.id });
+    (dropdownMap[t.id] || []).forEach(d=> idx.push({ type:'Page', title:d.label, tab:d.id }));
+  });
+  GLOSSARY.forEach(g=> idx.push({ type:'Glossary', title:g.term, sub:g.def, tab:'glossary' }));
+  RUNBOOKS.forEach(r=> idx.push({ type:'Runbook', title:r.title, sub:r.sub, tab:'runbook' }));
+  PLAYBOOKS.forEach(p=> idx.push({ type:'Playbook', title:`${p.ref} ${p.title}`, sub:p.desc, tab:'playbooks' }));
+  FRAMEWORKS.forEach(f=> idx.push({ type:'Framework', title:f.name, sub:f.desc, tab:'assessment' }));
+  CASE_STUDIES.forEach(c=> idx.push({ type:'Case Study', title:c.title, sub:c.body, tab:'casestudy' }));
+  PHASES.forEach(p=> idx.push({ type:'Maturity Phase', title:`Phase ${p.num}: ${p.title}`, sub:p.desc, tab:'maturity', anchor:`maturity-${p.stage}` }));
+  searchIndexCache = idx;
+  return idx;
+}
+function searchSite(query){
+  const q = query.trim().toLowerCase();
+  if(!q) return [];
+  const scored = [];
+  getSearchIndex().forEach(item=>{
+    const title = item.title.toLowerCase();
+    let score = 0;
+    if(title === q) score = 100;
+    else if(title.startsWith(q)) score = 80;
+    else if(title.includes(q)) score = 60;
+    else if(item.sub && item.sub.toLowerCase().includes(q)) score = 30;
+    if(score) scored.push({ ...item, score });
+  });
+  scored.sort((a,b)=> b.score - a.score);
+  return scored.slice(0, 8);
+}
+function renderSearchWidget(){
+  const widget = document.getElementById('searchWidget');
+  if(!widget) return;
+  widget.innerHTML = `
+    <button class="search-toggle-btn" id="searchToggleBtn" aria-label="Search" type="button">${icon('hiw-magnify')}</button>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search the site…" autocomplete="off" />
+    <div class="search-results" id="searchResults"></div>
+  `;
+  const toggleBtn = document.getElementById('searchToggleBtn');
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+
+  function renderResults(){
+    const matches = searchSite(input.value);
+    if(!input.value.trim()){
+      results.innerHTML = '';
+      results.classList.remove('open');
+      return;
+    }
+    results.innerHTML = matches.length
+      ? matches.map(m=>`
+          <button class="search-result" data-tab="${m.tab}" ${m.anchor ? `data-anchor="${m.anchor}"` : ''}>
+            <span class="search-result-type">${m.type}</span>
+            <span class="search-result-title">${m.title}</span>
+          </button>
+        `).join('')
+      : `<div class="search-empty">No matches for "${input.value.trim()}"</div>`;
+    results.classList.add('open');
+    results.querySelectorAll('.search-result').forEach(r=>{
+      r.addEventListener('click', ()=>{
+        goToTab(r.dataset.tab, r.dataset.anchor || null);
+        closeSearch();
+      });
+    });
+  }
+  function openSearch(){
+    widget.classList.add('expanded');
+    input.focus();
+  }
+  function closeSearch(){
+    widget.classList.remove('expanded');
+    input.value = '';
+    results.innerHTML = '';
+    results.classList.remove('open');
+  }
+  toggleBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(widget.classList.contains('expanded')) closeSearch();
+    else openSearch();
+  });
+  input.addEventListener('input', renderResults);
+  input.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeSearch(); });
+  document.addEventListener('click', (e)=>{
+    if(widget.classList.contains('expanded') && !e.target.closest('.search-widget')) closeSearch();
+  });
+  window.addEventListener('scroll', ()=>{
+    if(widget.classList.contains('expanded')) closeSearch();
+  }, { passive:true });
+}
+
+// --- Mobile nav: collapses the top nav into a single menu button below a
+// breakpoint, listing every top-level tab plus its dropdown children flat. ---
+function renderHamburgerMenu(){
+  const btn = document.getElementById('navHamburger');
+  if(!btn) return;
+  let panelOpen = false;
+  function render(){
+    btn.innerHTML = icon(panelOpen ? 'close' : 'menu');
+    btn.setAttribute('aria-expanded', String(panelOpen));
+  }
+  function closeMenu(){
+    panelOpen = false;
+    const panel = document.getElementById('mobileNavPanel');
+    if(panel) panel.remove();
+    render();
+  }
+  function openMenu(){
+    panelOpen = true;
+    render();
+    const dropdownMap = { home: HOME_DROPDOWN, assessment: ASSESSMENT_DROPDOWN };
+    const panel = document.createElement('div');
+    panel.className = 'mobile-nav-panel';
+    panel.id = 'mobileNavPanel';
+    panel.innerHTML = TOP_TABS.map(t=>{
+      const dd = dropdownMap[t.id];
+      return `
+        <button class="mobile-nav-link ${activeTab===t.id?'active':''}" data-tab="${t.id}">${t.id==='home' ? 'Home' : t.label}</button>
+        ${(dd||[]).map(d=>`<button class="mobile-nav-sublink ${activeTab===d.id?'active':''}" data-tab="${d.id}">${d.label}</button>`).join('')}
+      `;
+    }).join('');
+    document.querySelector('.masthead').appendChild(panel);
+    panel.querySelectorAll('[data-tab]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        goToTab(el.dataset.tab);
+        closeMenu();
+      });
+    });
+    requestAnimationFrame(()=> panel.classList.add('open'));
+  }
+  render();
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(panelOpen) closeMenu(); else openMenu();
+  });
+  document.addEventListener('click', (e)=>{
+    if(panelOpen && !e.target.closest('#mobileNavPanel') && !e.target.closest('#navHamburger')) closeMenu();
+  });
+  window.addEventListener('scroll', ()=>{ if(panelOpen) closeMenu(); }, { passive:true });
 }
 
 function goToTab(id, anchor){
@@ -1211,15 +1371,29 @@ function renderHomeTab(container){
       });
     });
   });
+  const riskDesc = document.getElementById('riskSliderDesc');
+  function closeRiskDesc(){
+    riskDesc.classList.remove('open');
+  }
   document.addEventListener('click', (e)=>{
     if(openStageDetail && !e.target.closest('.workflow-row') && !e.target.closest('.stage-detail-panel')){
       closeStageDetail();
     }
+    if(riskDesc.classList.contains('open') && !e.target.closest('.risk-slider-wrap')){
+      closeRiskDesc();
+    }
   });
+  // Both panels overlay content rather than pushing it, so scrolling past
+  // them should tuck them away automatically rather than leaving a stale
+  // open panel drifting under the cursor.
+  window.addEventListener('scroll', ()=>{
+    if(openStageDetail) closeStageDetail();
+    closeRiskDesc();
+  }, { passive:true });
 
-  const riskDesc = document.getElementById('riskSliderDesc');
   container.querySelectorAll('.risk-slider-tick').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
       const n = btn.dataset.risk;
       container.querySelectorAll('.risk-slider-tick').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
@@ -2189,5 +2363,7 @@ async function renderHistory(){
     if(r && (r.value === 'light' || r.value === 'dark')) theme = r.value;
   } catch(e){ /* default to dark */ }
   document.documentElement.setAttribute('data-theme', theme);
+  renderSearchWidget();
+  renderHamburgerMenu();
   renderApp();
 })();
