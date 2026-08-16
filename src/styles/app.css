@@ -703,6 +703,13 @@
     width:100%; background:var(--surface-raised); border:1px solid var(--line); color:var(--text);
     font-family:var(--sans); font-size:14px; padding:11px 12px;
   }
+  /* color-scheme (set at :root) tells the browser to use its own dark
+     native chrome for the popup list, but that's a hint, not a guarantee -
+     some browsers/versions still ignore it for the actual <option> rows.
+     Setting an explicit background/color directly on <option> is layered
+     on top for exactly those cases; harmless where color-scheme already
+     has it covered, since the two agree. */
+  .field select option{ background-color:var(--bg); color:var(--text); }
   .field select:focus, .field input[type=text]:focus{ outline:none; border-color:var(--accent-secure); }
   .field input[type=text]::placeholder{ color:var(--text-muted); }
 
