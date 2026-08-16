@@ -1815,7 +1815,7 @@
   }
 
   // src/ui/assessment.js
-  function createAssessmentController({ getPanel, getRail, icon: icon2, goToTab: goToTab2, pathForTab: pathForTab2, wireNavLink: wireNavLink2, storage, exportProgressJson: exportProgressJson2 }) {
+  function createAssessmentController({ getPanel, getRail, icon: icon2, pathForTab: pathForTab2, wireNavLink: wireNavLink2, storage, exportProgressJson: exportProgressJson2 }) {
     const session = createSessionState();
     const ui = { phase: "scope", screenIndex: 0, categoryIndex: 0 };
     function panel() {
@@ -2456,7 +2456,7 @@
         renderRail();
         renderAssessmentCategory();
       });
-      document.getElementById("viewHistoryBtn").addEventListener("click", () => goToTab2("history"));
+      wireNavLink2(document.getElementById("viewHistoryBtn"), "history");
       document.getElementById("exportJsonBtn").addEventListener("click", () => exportProgressJson2(overall));
     }
     function loadExport(data) {
@@ -22757,7 +22757,6 @@ ${suffix}`;
     getPanel: () => document.getElementById("panel"),
     getRail: () => document.getElementById("rail"),
     icon: (name) => icon(name),
-    goToTab: (id, anchor) => goToTab(id, anchor),
     pathForTab: (id, anchor) => pathForTab(id, anchor),
     wireNavLink: (el, id, anchor) => wireNavLink(el, id, anchor),
     // Forward at call time (not a captured reference) - matches the original

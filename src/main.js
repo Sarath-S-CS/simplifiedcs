@@ -18,7 +18,6 @@ const assessmentController = createAssessmentController({
   getPanel: () => document.getElementById("panel"),
   getRail: () => document.getElementById("rail"),
   icon: (name) => icon(name),
-  goToTab: (id, anchor) => goToTab(id, anchor),
   pathForTab: (id, anchor) => pathForTab(id, anchor),
   wireNavLink: (el, id, anchor) => wireNavLink(el, id, anchor),
   // Forward at call time (not a captured reference) - matches the original

@@ -21,7 +21,7 @@ import { OTHER as OTHER_VALUE } from "../data/vendors.js";
 import { computeFrameworkRecommendations } from "../engine/framework-guidance.js";
 import { guidanceForFlag, guidanceForGapItem } from "../engine/mitre-guidance.js";
 
-export function createAssessmentController({ getPanel, getRail, icon, goToTab, pathForTab, wireNavLink, storage, exportProgressJson }) {
+export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink, storage, exportProgressJson }) {
   const session = createSessionState();
   const ui = { phase: "scope", screenIndex: 0, categoryIndex: 0 };
 
@@ -762,7 +762,7 @@ export function createAssessmentController({ getPanel, getRail, icon, goToTab, p
       renderRail();
       renderAssessmentCategory();
     });
-    document.getElementById("viewHistoryBtn").addEventListener("click", () => goToTab("history"));
+    wireNavLink(document.getElementById("viewHistoryBtn"), "history");
     document.getElementById("exportJsonBtn").addEventListener("click", () => exportProgressJson(overall));
   }
 
