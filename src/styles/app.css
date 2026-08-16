@@ -983,10 +983,10 @@
   @keyframes spin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
 
   /* --- animated document lifecycle diagram --- */
-  .lifecycle-row{ display:flex; align-items:center; gap:32px; margin:24px 0 32px; flex-wrap:wrap; }
-  .lifecycle-row .body-text{ flex:1; min-width:240px; margin:0; }
+  .lifecycle-row{ display:flex; align-items:center; gap:24px; margin:24px 0 32px; flex-wrap:wrap; }
+  .lifecycle-row .body-text{ flex:1 1 180px; min-width:180px; max-width:360px; margin:0; }
   .lifecycle-wrap{ display:flex; justify-content:center; flex-shrink:0; }
-  .lifecycle-wrap svg{ width:380px; max-width:100%; height:auto; display:block; }
+  .lifecycle-wrap svg{ width:410px; max-width:100%; height:auto; display:block; }
   .lifecycle-node-label{ font-family:var(--mono); font-size:11px; fill:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
   @media (max-width:760px){ .lifecycle-row{ flex-direction:column; } .lifecycle-wrap{ order:2; } .lifecycle-row .body-text{ order:1; } }
 
@@ -1025,7 +1025,6 @@
     box-shadow: inset 0 70px 50px -40px #000000, inset 0 -70px 50px -40px #000000;
   }
   .hero-banner-inner{ position:relative; z-index:1; flex:1; min-width:260px; }
-  .hero-banner-side{ position:relative; z-index:1; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:18px; width:390px; max-width:100%; }
   .hero-banner .hero-infinity{ position:relative; z-index:1; }
   /* Wallpaper now renders in both themes, so the hero's light text applies unconditionally */
   .hero-banner .page-title{ color:#FFFFFF; }
