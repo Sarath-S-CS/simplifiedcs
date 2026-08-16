@@ -1393,10 +1393,7 @@ function renderHomeTab(container){
             <a href="#how-it-works" class="link-pill secondary"><span class="link-pill-icon">${icon('route')}</span>How it works</a>
           </div>
         </div>
-        <div class="hero-banner-side">
-          ${buildHeroInfinity()}
-          ${buildFrameworkStamps()}
-        </div>
+        ${buildHeroInfinity()}
       </div>
 
       <div class="section-tile">
@@ -1418,8 +1415,13 @@ function renderHomeTab(container){
       </div>
 
       <div class="section-tile">
-        <h3 class="section-h">Methodology</h3>
-        <p class="body-text">Every question maps to a real control from a recognized framework - nothing here is invented. These frameworks are the guiding principles behind every score:</p>
+        <div class="page-intro-row">
+          <div class="page-intro-text">
+            <h3 class="section-h">Methodology</h3>
+            <p class="body-text">Every question maps to a real control from a recognized framework - nothing here is invented. These frameworks are the guiding principles behind every score:</p>
+          </div>
+          ${buildFrameworkStamps()}
+        </div>
         <div class="framework-badges">
           <div class="framework-badge">NIST CSF 2.0</div>
           <div class="framework-badge">CIS Controls v8</div>
@@ -1434,7 +1436,6 @@ function renderHomeTab(container){
         <p class="body-text">Frameworks decide which controls matter; a consistent set of principles decides how the findings get prioritized and explained - proactive over reactive, defense in depth, least privilege, zero trust, and treating improvement as a continuous loop rather than a one-time project, among others.</p>
         <div class="method-link-row">
           <a href="#" id="linkMethodologyFromHome" class="link-pill secondary"><span class="link-pill-icon">${icon('checklist')}</span>Explore the full Methodology</a>
-          <a href="#" id="linkMaturityFromMethodHome" class="link-pill secondary"><span class="link-pill-icon">${icon('cycle')}</span>Explore the full Maturity Model</a>
           <a href="#" id="linkPrinciplesFromHome" class="link-pill secondary"><span class="link-pill-icon">${icon('hiw-lightbulb')}</span>Core Principles</a>
         </div>
       </div>
@@ -1454,7 +1455,9 @@ function renderHomeTab(container){
           `).join('')}
         </div>
         <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
-        <p class="body-text"><a href="#" id="linkMaturityExplore" class="inline-link">Explore the full Maturity Model →</a></p>
+        <div class="method-link-row">
+          <a href="#" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon">${icon('cycle')}</span>Explore the full Maturity Model</a>
+        </div>
       </div>
 
       <div class="section-tile">
@@ -1525,7 +1528,6 @@ function renderHomeTab(container){
   document.getElementById('linkMetricsFromHome').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('metrics'); });
   document.getElementById('linkMaturityExplore').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('maturity'); });
   document.getElementById('linkMethodologyFromHome').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('methodology'); });
-  document.getElementById('linkMaturityFromMethodHome').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('maturity'); });
   document.getElementById('linkPrinciplesFromHome').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('coreprinciples'); });
 
   let openStageDetail = null;
@@ -1805,7 +1807,7 @@ function buildLifecycleSvg(){
   });
   const pathD = `M ${cx+r},${cy} A ${r},${r} 0 1,1 ${cx-r+0.01},${cy} A ${r},${r} 0 1,1 ${cx+r},${cy}`;
   return `
-  <svg viewBox="0 0 400 340" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="-30 0 400 340" xmlns="http://www.w3.org/2000/svg">
     <path id="lifecyclePath" d="${pathD}" fill="none" stroke="var(--line)" stroke-width="1.5"/>
     ${pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="var(--surface)" stroke="var(--accent-secure)" stroke-width="1.6"/>`).join('')}
     ${pts.map(p=>{
