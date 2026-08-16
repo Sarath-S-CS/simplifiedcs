@@ -21,7 +21,7 @@ import { OTHER as OTHER_VALUE } from "../data/vendors.js";
 import { computeFrameworkRecommendations } from "../engine/framework-guidance.js";
 import { guidanceForFlag, guidanceForGapItem } from "../engine/mitre-guidance.js";
 
-export function createAssessmentController({ getPanel, getRail, icon, goToTab, storage, exportProgressJson }) {
+export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink, storage, exportProgressJson }) {
   const session = createSessionState();
   const ui = { phase: "scope", screenIndex: 0, categoryIndex: 0 };
 
@@ -123,7 +123,7 @@ export function createAssessmentController({ getPanel, getRail, icon, goToTab, s
       <div class="step-eyebrow">Scope</div>
       <h2 class="step-title">Before we start</h2>
       <p class="step-sub">Every assessment includes the NIST CSF 2.0 + CIS Controls baseline. Add any compliance standards that apply to your organization - none are selected automatically, even if we flag one as relevant for your industry or region.</p>
-      ${historyCount ? `<p class="history-link" id="historyLink">You have ${historyCount} previous assessment${historyCount === 1 ? "" : "s"} saved on this account - <u>view history</u></p>` : ""}
+      ${historyCount ? `<a class="history-link" id="historyLink" href="${pathForTab("history")}">You have ${historyCount} previous assessment${historyCount === 1 ? "" : "s"} saved on this account - <u>view history</u></a>` : ""}
 
       <div class="fw-section-label">Industry</div>
       <div class="industry-grid">
@@ -257,7 +257,7 @@ export function createAssessmentController({ getPanel, getRail, icon, goToTab, s
       });
     }
     const historyLinkEl = document.getElementById("historyLink");
-    if (historyLinkEl) historyLinkEl.addEventListener("click", () => goToTab("history"));
+    if (historyLinkEl) wireNavLink(historyLinkEl, "history");
     p.querySelectorAll(".acc-head").forEach((el) => {
       el.addEventListener("click", (e) => {
         if (e.target.closest(".fw-card")) return;
@@ -750,7 +750,7 @@ export function createAssessmentController({ getPanel, getRail, icon, goToTab, s
       <div class="nav">
         <button id="backBtn2">← Review answers</button>
         <button id="exportJsonBtn">Export as JSON ↓</button>
-        <button id="viewHistoryBtn">View history (${historyCount + 1}) →</button>
+        <a id="viewHistoryBtn" href="${pathForTab("history")}">View history (${historyCount + 1}) →</a>
       </div>
     `;
     p.querySelectorAll(".acc-head").forEach((el) => {
@@ -762,7 +762,7 @@ export function createAssessmentController({ getPanel, getRail, icon, goToTab, s
       renderRail();
       renderAssessmentCategory();
     });
-    document.getElementById("viewHistoryBtn").addEventListener("click", () => goToTab("history"));
+    wireNavLink(document.getElementById("viewHistoryBtn"), "history");
     document.getElementById("exportJsonBtn").addEventListener("click", () => exportProgressJson(overall));
   }
 
