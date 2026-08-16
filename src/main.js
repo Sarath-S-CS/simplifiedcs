@@ -176,6 +176,7 @@ function icon(name){
     'hiw-magnify': `<svg ${common}><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/><path d="M7.5 10.5h6M10.5 7.5v6"/></svg>`,
     'hiw-lightbulb': `<svg ${common}><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6.5 6.5 0 0 0-3.8 11.8c.5.4.8 1 .8 1.7v.5h6v-.5c0-.7.3-1.3.8-1.7A6.5 6.5 0 0 0 12 3z"/></svg>`,
     'hiw-transform': `<svg ${common}><path d="M4 14a8 8 0 0 1 14-5.2"/><path d="M17 4v3.2h-3.2"/><path d="M20 10a8 8 0 0 1-14 5.2"/><path d="M7 20v-3.2h3.2"/></svg>`,
+    card: `<svg ${common}><rect x="2.5" y="5.5" width="19" height="13" rx="1.6"/><path d="M2.5 9.5h19"/><path d="M6 14.5h4"/></svg>`,
     home: `<svg ${common}><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9.5h12V10"/><path d="M10 19.5v-6h4v6"/></svg>`,
     menu: `<svg ${common}><path d="M4 6h16M4 12h16M4 18h16"/></svg>`,
     close: `<svg ${common}><path d="M6 6l12 12M18 6 6 18"/></svg>`,
@@ -221,34 +222,64 @@ const STAGE_META = {
 const PHASES = [
   { num:1, stage:'discovery', title:'Asset & Data Discovery', desc:'Inventory hardware, software, cloud resources, and data stores - including shadow IT. You can\'t protect what you don\'t know exists, and this is where most real gaps first surface.',
     monitor:'Tracked via a living asset inventory, reviewed whenever new systems, cloud resources, or vendors are added - not just annually.',
-    evolve:'Once assets are known, Phase 2 can map real exposure instead of guessing at it.' },
+    evolve:'Once assets are known, Phase 2 can map real exposure instead of guessing at it.',
+    inputs:'Hardware, software, and cloud resource lists; data stores; shadow IT reports.',
+    output:'A living asset inventory covering every system and data store.',
+    doneWhen:'Every asset can be named to an owner - nothing is on the network by surprise.' },
   { num:2, stage:'discovery', title:'Attack Surface Mapping', desc:'Identify every external-facing entry point - websites, APIs, VPNs, remote access, third-party integrations - and understand how an attacker would actually get in.',
     monitor:'Re-checked whenever external-facing infrastructure changes - new domains, new APIs, new remote-access points.',
-    evolve:'A mapped surface is what makes Phase 4\'s gap analysis meaningful rather than generic.' },
+    evolve:'A mapped surface is what makes Phase 4\'s gap analysis meaningful rather than generic.',
+    inputs:'External-facing infrastructure: websites, APIs, VPNs, remote access, third-party integrations.',
+    output:'A complete external attack-surface map showing every entry point.',
+    doneWhen:'You can name every way in from outside, not just the obvious ones.' },
   { num:3, stage:'discovery', title:'Governance & Ownership Baseline', desc:'Assign real accountability for security decisions before writing a single control. Without an owner, findings from every later phase just accumulate unactioned.',
     monitor:'Verified through named accountability - can you point to the specific person who owns a given control?',
-    evolve:'Without an owner, nothing found in later phases gets actioned - this single phase unlocks every one after it.' },
+    evolve:'Without an owner, nothing found in later phases gets actioned - this single phase unlocks every one after it.',
+    inputs:'Org chart, existing decision-making authority, current (if any) security responsibilities.',
+    output:'Named ownership assigned for every security decision and control.',
+    doneWhen:'You can point to the specific person accountable for any given control.' },
   { num:4, stage:'discovery', title:'Gap Analysis & Prioritization', desc:'Compare current state against a recognized framework (NIST CSF, CIS Controls) and rank gaps by risk - this is the exact function this site\'s Assessment tab performs.',
     monitor:'This is literally what the Assessment tab re-measures every time you run it - your score IS this phase\'s monitoring signal.',
-    evolve:'Turns raw findings into an ordered backlog, which is what Phase 5 actually executes against.' },
+    evolve:'Turns raw findings into an ordered backlog, which is what Phase 5 actually executes against.',
+    inputs:'Current-state controls measured against a recognized framework (NIST CSF, CIS Controls).',
+    output:'A ranked backlog of gaps ordered by risk - this is what the Assessment tab generates.',
+    doneWhen:'Every gap has a severity ranking and a place in the backlog, not just a list of problems.' },
   { num:5, stage:'transformation', title:'Control Implementation', desc:'Roll out the prioritized technical controls - MFA, EDR, network segmentation, email authentication, backup isolation - turning the roadmap into deployed defenses.',
     monitor:'Tracked as percentage of the Phase 4 backlog actually deployed, not just planned or ticketed.',
-    evolve:'Each control closed here is a specific finding that disappears from your next Assessment run.' },
+    evolve:'Each control closed here is a specific finding that disappears from your next Assessment run.',
+    inputs:'The prioritized gap backlog from Phase 4.',
+    output:'Deployed technical controls - MFA, EDR, segmentation, email auth, backup isolation.',
+    doneWhen:'The gap that triggered a control\'s deployment no longer shows up on the next Assessment.' },
   { num:6, stage:'transformation', title:'Policy & Documentation', desc:'Formalize the program in writing: security policy, incident response plan, backup/DR plan, risk register. See the Runbooks tab for what each of these should actually contain.',
     monitor:'Reviewed on the cadence the policy itself states - typically annually, or after any material infrastructure change.',
-    evolve:'Turns implemented controls into an auditable, teachable program instead of tribal knowledge that leaves when one person does.' },
+    evolve:'Turns implemented controls into an auditable, teachable program instead of tribal knowledge that leaves when one person does.',
+    inputs:'Controls implemented in Phase 5, plus any regulatory or compliance obligations.',
+    output:'Written policy, incident response plan, backup/DR plan, and risk register (see Runbooks).',
+    doneWhen:'The program is documented well enough that someone new could follow it without tribal knowledge.' },
   { num:7, stage:'transformation', title:'Response Readiness & Testing', desc:'Rehearse the plans, don\'t just file them - tabletop exercises, restore drills from backup, and walkthroughs of the ransomware/phishing/DDoS runbooks before a real incident forces it.',
     monitor:'Measured by whether tabletop exercises and restore drills actually happened, not whether a plan merely exists on paper.',
-    evolve:'The last step before a program is operational rather than aspirational - directly supported by the Runbooks tab.' },
+    evolve:'The last step before a program is operational rather than aspirational - directly supported by the Runbooks tab.',
+    inputs:'The written plans and runbooks produced in Phase 6.',
+    output:'Completed tabletop exercises, backup-restore drills, and rehearsed runbook walkthroughs.',
+    doneWhen:'Every plan has actually been rehearsed, not just filed.' },
   { num:8, stage:'optimization', title:'Continuous Monitoring & Tuning', desc:'Operationalize logging and detection, and tune it against real telemetry - an alert nobody trusts because of noise is functionally the same as no alert.',
     monitor:'Tracked via alert precision over time - false-positive rate trending down, not just alert volume trending up.',
-    evolve:'Reliable detection is the precondition for Phase 9\'s audits meaning anything at all.' },
+    evolve:'Reliable detection is the precondition for Phase 9\'s audits meaning anything at all.',
+    inputs:'Live telemetry - logs, alerts, and detection signals.',
+    output:'Tuned detection with a signal-to-noise ratio the team actually trusts.',
+    doneWhen:'False-positive rate is trending down, not just alert volume trending up.' },
   { num:9, stage:'optimization', title:'Auditing & Validation', desc:'Vulnerability scans, penetration tests, and control audits confirm defenses work as intended rather than just existing on paper - this is also where compliance audits (ISO 27001, SOC 2) fit in.',
     monitor:'Tracked via time-to-remediate findings from scans, pen tests, and compliance audits - not merely whether audits happened.',
-    evolve:'Confirms which Phase 5 controls are actually working versus just installed and forgotten.' },
+    evolve:'Confirms which Phase 5 controls are actually working versus just installed and forgotten.',
+    inputs:'Deployed controls and monitoring output from Phases 5 and 8.',
+    output:'Vulnerability scan results, penetration test findings, and compliance audits (ISO 27001, SOC 2).',
+    doneWhen:'Findings are tracked to remediation, not just discovered.' },
   { num:10, stage:'optimization', title:'Adaptive Iteration', desc:'Feed lessons from incidents, audits, and a changing threat landscape back into the program - and back into Phase 4\'s gap analysis, since this loop never really ends.',
     monitor:'Tracked by whether lessons from real incidents and audits visibly change next quarter\'s priorities.',
-    evolve:'Feeds directly back into Phase 4 - the phase that makes the other nine a cycle instead of a one-time checklist.' },
+    evolve:'Feeds directly back into Phase 4 - the phase that makes the other nine a cycle instead of a one-time checklist.',
+    inputs:'Lessons from real incidents, audit findings, and a changing threat landscape.',
+    output:'Updated priorities fed back into Phase 4\'s gap analysis.',
+    doneWhen:'Next quarter\'s priorities visibly reflect what was actually learned.' },
 ];
 
 // --- Score rubric: what a given band actually means, on the 0-10 scale (overall % ÷ 10) ---
@@ -1136,15 +1167,27 @@ function stageIllustration(stageId){
       </svg>`,
     transformation: `
       <svg viewBox="0 0 100 100" width="72" height="72">
-        <defs><radialGradient id="gTrans" cx="50%" cy="50%" r="60%">
-          <stop offset="0%" stop-color="var(--accent-secure)" stop-opacity="0.35"/>
-          <stop offset="100%" stop-color="var(--accent-secure)" stop-opacity="0"/>
-        </radialGradient></defs>
+        <defs>
+          <radialGradient id="gTrans" cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stop-color="var(--accent-secure)" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="var(--accent-secure)" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="gTransFlow" x1="30" y1="50" x2="62" y2="50" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="var(--accent-amber)"/>
+            <stop offset="100%" stop-color="var(--accent-secure)"/>
+          </linearGradient>
+        </defs>
         <circle cx="50" cy="50" r="46" fill="url(#gTrans)"/>
-        <path d="M25 42a25 25 0 0 1 42-16" fill="none" stroke="var(--accent-secure)" stroke-width="5" stroke-linecap="round"/>
-        <path d="M17 27l8 0 0 8" fill="none" stroke="var(--accent-secure)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M75 58a25 25 0 0 1-42 16" fill="none" stroke="var(--accent-secure)" stroke-width="5" stroke-linecap="round"/>
-        <path d="M83 73l-8 0 0-8" fill="none" stroke="var(--accent-secure)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- scattered, disconnected findings on the left... -->
+        <circle cx="26" cy="38" r="3.5" fill="var(--accent-amber)" opacity="0.85"/>
+        <circle cx="23" cy="53" r="3" fill="var(--accent-critical)" opacity="0.75"/>
+        <circle cx="29" cy="66" r="3" fill="var(--accent-pop)" opacity="0.8"/>
+        <!-- ...flowing through the transformation... -->
+        <path d="M33 52 Q45 44 58 50" fill="none" stroke="url(#gTransFlow)" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M52 44l8 6-8 6" fill="none" stroke="var(--accent-secure)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- ...into one verified, engineered control on the right -->
+        <path d="M68 37l11 6.5v13l-11 6.5-11-6.5v-13z" fill="var(--accent-secure)"/>
+        <path d="M62 50l4.5 4.5 9-9" fill="none" stroke="var(--text-on-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>`,
     optimization: `
       <svg viewBox="0 0 100 100" width="72" height="72">
@@ -1193,6 +1236,29 @@ function buildHeroInfinity(){
   </div>`;
 }
 
+// Original, text/icon-based "stamps" referencing the frameworks/principles
+// this site draws on - deliberately not a reproduction of any organization's
+// actual logo or mark, per VISUAL-UPDATE-BRIEF.md item 11's trademark note.
+const FRAMEWORK_STAMPS = [
+  { label:'Defense in Depth', icon:'shield', color:'--accent-signal' },
+  { label:'ISO 27001', icon:'register', color:'--accent-secure' },
+  { label:'SOC 2', icon:'checklist', color:'--accent-violet' },
+  { label:'Cyber Essentials', icon:'key', color:'--accent-amber' },
+  { label:'PCI DSS', icon:'card', color:'--accent-critical' },
+];
+function buildFrameworkStamps(){
+  return `
+  <div class="stamp-row">
+    ${FRAMEWORK_STAMPS.map(s=>`
+      <div class="stamp" style="--stamp-color:var(${s.color})" title="${s.label}">
+        <div class="stamp-ring"></div>
+        <span class="stamp-icon">${icon(s.icon)}</span>
+        <span class="stamp-label">${s.label}</span>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
 const SITE_TILES = [
   { tab:'methodology', icon:'register', title:'Methodology', desc:'Exactly how scoring and adaptive questions work.' },
   { tab:'maturity', icon:'cycle', title:'Maturity Model', desc:'The 10-phase journey and NIST\'s own maturity tiers.' },
@@ -1203,6 +1269,72 @@ const SITE_TILES = [
   { tab:'playbooks', icon:'checklist', title:'Playbooks', desc:'OWASP Top 10 and AI-threat playbooks, mapped to MITRE ATT&CK.' },
   { tab:'roadmap', icon:'clock', title:'Roadmap', desc:'What\'s shipped, in progress, and planned for this site itself.' },
 ];
+
+// Wide-format custom SVG banners for the "How it works" cards - same
+// hand-built, theme-adaptive (var(--accent-*)) style as stageIllustration()
+// above, just a banner aspect ratio instead of a circular badge. Each one
+// depicts what that step actually does, not just an abstract icon.
+function howItWorksIllustration(id){
+  const svgs = {
+    'hiw-clipboard': `
+      <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
+        <line x1="50" y1="26" x2="118" y2="58" stroke="var(--accent-signal)" stroke-width="1.5" opacity="0.5"/>
+        <line x1="110" y1="26" x2="124" y2="55" stroke="var(--accent-secure)" stroke-width="1.5" opacity="0.5"/>
+        <line x1="170" y1="26" x2="138" y2="55" stroke="var(--accent-violet)" stroke-width="1.5" opacity="0.5"/>
+        <line x1="212" y1="26" x2="144" y2="58" stroke="var(--accent-amber)" stroke-width="1.5" opacity="0.5"/>
+        <circle cx="50" cy="20" r="9" fill="var(--accent-signal)" opacity="0.85"/>
+        <rect x="100" y="11" width="18" height="18" rx="3" fill="var(--accent-secure)" opacity="0.85"/>
+        <polygon points="170,10 180,28 160,28" fill="var(--accent-violet)" opacity="0.85"/>
+        <circle cx="212" cy="20" r="8" fill="var(--accent-amber)" opacity="0.85"/>
+        <rect x="106" y="52" width="48" height="38" rx="5" fill="var(--surface-raised)" stroke="var(--accent-signal)" stroke-width="2"/>
+        <rect x="120" y="46" width="20" height="10" rx="2" fill="var(--accent-signal)"/>
+        <line x1="114" y1="66" x2="146" y2="66" stroke="var(--accent-signal)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+        <line x1="114" y1="74" x2="146" y2="74" stroke="var(--accent-signal)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+        <line x1="114" y1="82" x2="134" y2="82" stroke="var(--accent-signal)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+      </svg>`,
+    'hiw-magnify': `
+      <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
+        <g opacity="0.35">
+          <circle cx="60" cy="25" r="4" fill="var(--text-muted)"/>
+          <circle cx="90" cy="20" r="4" fill="var(--text-muted)"/>
+          <circle cx="120" cy="30" r="4" fill="var(--text-muted)"/>
+          <circle cx="100" cy="55" r="4" fill="var(--text-muted)"/>
+          <circle cx="135" cy="48" r="4" fill="var(--text-muted)"/>
+          <circle cx="60" cy="75" r="4" fill="var(--text-muted)"/>
+        </g>
+        <line x1="90" y1="20" x2="70" y2="50" stroke="var(--accent-critical)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="70" y1="50" x2="95" y2="80" stroke="var(--accent-critical)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="90" cy="20" r="5" fill="var(--accent-critical)"/>
+        <circle cx="70" cy="50" r="5" fill="var(--accent-critical)"/>
+        <circle cx="95" cy="80" r="5" fill="var(--accent-critical)"/>
+        <circle cx="175" cy="48" r="30" fill="none" stroke="var(--accent-signal)" stroke-width="4"/>
+        <line x1="196" y1="69" x2="215" y2="88" stroke="var(--accent-signal)" stroke-width="6" stroke-linecap="round"/>
+      </svg>`,
+    'hiw-lightbulb': `
+      <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
+        <circle cx="45" cy="45" r="22" fill="none" stroke="var(--accent-amber)" stroke-width="3"/>
+        <path d="M45 23a22 22 0 0 1 15 38" fill="none" stroke="var(--accent-amber)" stroke-width="3" opacity="0.4"/>
+        <line x1="45" y1="67" x2="45" y2="76" stroke="var(--accent-amber)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="38" y1="76" x2="52" y2="76" stroke="var(--accent-amber)" stroke-width="3" stroke-linecap="round"/>
+        <rect x="90" y="24" width="130" height="10" rx="5" fill="var(--accent-critical)"/>
+        <rect x="90" y="42" width="98" height="10" rx="5" fill="var(--accent-amber)"/>
+        <rect x="90" y="60" width="70" height="10" rx="5" fill="var(--accent-signal)"/>
+        <rect x="90" y="78" width="45" height="10" rx="5" fill="var(--line)"/>
+      </svg>`,
+    'hiw-transform': `
+      <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
+        <rect x="30" y="60" width="24" height="24" fill="var(--line)" opacity="0.7"/>
+        <rect x="66" y="46" width="24" height="38" fill="var(--line)" opacity="0.85"/>
+        <line x1="115" y1="60" x2="150" y2="30" stroke="var(--accent-secure)" stroke-width="4" stroke-linecap="round"/>
+        <path d="M140 28l12-3-3 12" fill="none" stroke="var(--accent-secure)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="175" y="40" width="24" height="44" fill="var(--accent-secure)" opacity="0.65"/>
+        <rect x="205" y="20" width="24" height="64" fill="var(--accent-secure)"/>
+        <circle cx="217" cy="20" r="10" fill="var(--accent-signal)"/>
+        <path d="M212 20l3.5 3.5 7-7" fill="none" stroke="var(--text-on-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`,
+  };
+  return svgs[id] || '';
+}
 
 const HOW_IT_WORKS = [
   { n:'01', title:'Data Collection', sub:'Assessment', tagline:'Know exactly where you stand', icon:'hiw-clipboard',
@@ -1261,7 +1393,10 @@ function renderHomeTab(container){
             <a href="#how-it-works" class="link-pill secondary"><span class="link-pill-icon">${icon('route')}</span>How it works</a>
           </div>
         </div>
-        ${buildHeroInfinity()}
+        <div class="hero-banner-side">
+          ${buildHeroInfinity()}
+          ${buildFrameworkStamps()}
+        </div>
       </div>
 
       <div class="section-tile">
@@ -1270,7 +1405,7 @@ function renderHomeTab(container){
         <div class="phase4-grid">
           ${HOW_IT_WORKS.map(s=>`
             <div class="phase4-card">
-              <div class="phase4-icon">${icon(s.icon)}</div>
+              <div class="phase4-banner">${howItWorksIllustration(s.icon)}</div>
               <div class="vnum">${s.n}</div>
               <h4>${s.title}${s.sub ? ` <span style="color:var(--text-muted); font-weight:400;">(${s.sub})</span>` : ''}</h4>
               <div class="phase4-tagline">${s.tagline}</div>
@@ -1499,9 +1634,14 @@ function renderMethodologyTab(container){
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
-        <div class="page-eyebrow">How It Works</div>
-        <h2 class="page-title">Methodology</h2>
-        <p class="page-lede">What you get scored on, why the question set changes per organization, and how the final synthesis is built.</p>
+        <div class="page-intro-row">
+          <div class="page-intro-text">
+            <div class="page-eyebrow">How It Works</div>
+            <h2 class="page-title">Methodology</h2>
+            <p class="page-lede">What you get scored on, why the question set changes per organization, and how the final synthesis is built.</p>
+          </div>
+          ${buildFrameworkStamps()}
+        </div>
       </div>
 
       <div class="section-tile">
@@ -1561,6 +1701,28 @@ function renderMaturityTab(container){
         <div class="page-eyebrow">Maturity Model</div>
         <h2 class="page-title">Maturity Model</h2>
         <p class="page-lede">How a security program actually progresses - ten phases across three stages, four recognized maturity tiers, and what each number on your results page means for where you actually stand.</p>
+      </div>
+
+      <div class="section-tile">
+        <h3 class="section-h">Model at a glance</h3>
+        <p class="body-text">All ten phases side by side: what goes in, what comes out, and what "done" actually looks like before the program moves on. Use this as the quick reference; the sections below go phase by phase in depth.</p>
+        <div class="table-wrap">
+          <table class="data-table glance-table">
+            <thead><tr><th>Level</th><th>Phase</th><th>Stage</th><th>Inputs reviewed</th><th>What it produces</th><th>Definition of done</th></tr></thead>
+            <tbody>
+              ${PHASES.map(p=>`
+                <tr>
+                  <td class="dt-level">${String(p.num).padStart(2,'0')}</td>
+                  <td class="dt-title">${p.title}</td>
+                  <td><span class="stage-chip" style="--stage-color:${STAGE_META[p.stage].color}">${STAGE_META[p.stage].label}</span></td>
+                  <td>${p.inputs}</td>
+                  <td>${p.output}</td>
+                  <td>${p.doneWhen}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
   `;
   stageOrder.forEach(stageId=>{
@@ -1656,7 +1818,41 @@ function buildLifecycleSvg(){
         <mpath href="#lifecyclePath"/>
       </animateMotion>
     </circle>
-    <text x="200" y="175" text-anchor="middle" class="lifecycle-node-label" style="font-size:11px; letter-spacing:0.05em;">continuous, not one-and-done</text>
+    <text x="200" y="175" text-anchor="middle" class="lifecycle-node-label" style="font-size:12px; letter-spacing:0.05em;">continuous, not one-and-done</text>
+  </svg>`;
+}
+
+// Playbooks' own animation (VISUAL-UPDATE-BRIEF.md item 9) - same
+// animated-dot-along-a-path technique and .lifecycle-row/.lifecycle-wrap
+// layout as Runbooks' lifecycle diagram for visual consistency between the
+// two pages, but a distinct linear flow depicting this page's own
+// construction path (attack pattern -> MITRE tactic -> NIST control ->
+// concrete steps), not a re-skin of the same circular diagram.
+function buildPlaybookFlowSvg(){
+  // viewBox height picked so this renders at roughly the same height as
+  // Runbooks' circular lifecycle diagram at the shared .lifecycle-wrap
+  // svg width (380px) - a literal top-to-bottom translation of that
+  // diagram's 4-node spacing would render noticeably taller/lankier here.
+  const nodes = [
+    { label:'Attack Pattern', color:'--accent-critical', y:24 },
+    { label:'MITRE Tactic', color:'--accent-amber', y:84 },
+    { label:'NIST Control', color:'--accent-signal', y:144 },
+    { label:'Response Steps', color:'--accent-secure', y:200 },
+  ];
+  const cx = 40;
+  const pathD = `M ${cx},${nodes[0].y} L ${cx},${nodes[nodes.length-1].y}`;
+  return `
+  <svg viewBox="0 0 260 220" xmlns="http://www.w3.org/2000/svg">
+    <path id="playbookFlowPath" d="${pathD}" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+    ${nodes.map(n=>`
+      <circle cx="${cx}" cy="${n.y}" r="7" fill="var(--surface)" stroke="var(${n.color})" stroke-width="2.2"/>
+      <text x="${cx+20}" y="${n.y+4}" class="lifecycle-node-label">${n.label}</text>
+    `).join('')}
+    <circle r="6" fill="var(--accent-signal)">
+      <animateMotion dur="6s" repeatCount="indefinite">
+        <mpath href="#playbookFlowPath"/>
+      </animateMotion>
+    </circle>
   </svg>`;
 }
 
@@ -1759,6 +1955,22 @@ function wireAccordions(container){
   });
 }
 
+// Scoped to the Runbooks and Playbooks pages specifically (per VISUAL-
+// UPDATE-BRIEF.md items 8-9) via a --icon-accent custom property set
+// inline per item, consumed by a var(--icon-accent, <original-default>)
+// fallback added to the shared .icon-badge rule (see app.css) - .icon-badge
+// itself stays the muted default everywhere else on the site (Home's site
+// tiles, start-links, etc.) since nothing there ever sets the property.
+// Deliberately not a literal inline color/border-color: that would win
+// over the existing :hover rule's color change (inline specificity beats a
+// class selector), which could make an icon the same color as its own
+// hover background and disappear.
+const ICON_ACCENT_CYCLE = ['--accent-signal','--accent-secure','--accent-violet','--accent-amber','--accent-critical','--accent-pop'];
+function accentIconStyle(i){
+  const v = ICON_ACCENT_CYCLE[i % ICON_ACCENT_CYCLE.length];
+  return `style="--icon-accent:var(${v});"`;
+}
+
 function renderRunbookTab(container){
   container.innerHTML = `
     <div class="page">
@@ -1770,8 +1982,10 @@ function renderRunbookTab(container){
 
       <div class="section-tile">
         <h3 class="section-h">Keeping documents alive, not just written</h3>
-        <p class="body-text">A policy that's never reviewed is a policy that's already wrong. Every foundational document below should move through the same cycle continuously:</p>
-        <div class="lifecycle-wrap">${buildLifecycleSvg()}</div>
+        <div class="lifecycle-row">
+          <p class="body-text">A policy that's never reviewed is a policy that's already wrong. Every foundational document below should move through the same cycle continuously:</p>
+          <div class="lifecycle-wrap">${buildLifecycleSvg()}</div>
+        </div>
       </div>
 
       <div class="section-tile">
@@ -1791,10 +2005,10 @@ function renderRunbookTab(container){
   `;
 
   const docContainer = document.getElementById('docAccordions');
-  docContainer.innerHTML = FOUNDATIONAL_DOCS.map(d=>`
+  docContainer.innerHTML = FOUNDATIONAL_DOCS.map((d,i)=>`
     <div class="acc-card" data-id="${d.id}">
       <div class="acc-head">
-        <div class="icon-badge">${icon(d.icon)}</div>
+        <div class="icon-badge" ${accentIconStyle(i)}>${icon(d.icon)}</div>
         <div><h4>${d.title}</h4></div>
         <div class="acc-chevron">▸</div>
       </div>
@@ -1803,10 +2017,10 @@ function renderRunbookTab(container){
   `).join('');
 
   const runbookContainer = document.getElementById('runbookAccordions');
-  runbookContainer.innerHTML = RUNBOOKS.map(r=>`
+  runbookContainer.innerHTML = RUNBOOKS.map((r,i)=>`
     <div class="acc-card" data-id="${r.id}">
       <div class="acc-head">
-        <div class="icon-badge">${icon(r.icon)}</div>
+        <div class="icon-badge" ${accentIconStyle(i)}>${icon(r.icon)}</div>
         <div><h4>${r.title}</h4><div class="acc-sub">${r.sub}</div></div>
         <div class="acc-chevron">▸</div>
       </div>
@@ -2443,7 +2657,10 @@ function renderPlaybooksTab(container){
 
       <div class="section-tile">
         <h3 class="section-h">What a playbook is</h3>
-        <p class="body-text">A playbook is a structured, step-by-step reference that pairs a specific attack pattern with a defined set of detection and mitigation actions, so a team responds consistently rather than improvising mid-incident. Each one below is created by identifying a classified attack type, mapping it to a MITRE ATT&amp;CK or ATLAS tactic, and deriving mitigation steps from the applicable NIST CSF controls. They exist so that response knowledge lives in a document instead of one person's head - repeatable across a team and over time. In practice, a company keeps the relevant playbook accessible to whoever is on call, walks through it during tabletop exercises (see Maturity Model Phase 7 - Response Readiness & Testing), and updates it whenever a real incident exposes a gap.</p>
+        <div class="lifecycle-row">
+          <p class="body-text">A playbook is a structured, step-by-step reference that pairs a specific attack pattern with a defined set of detection and mitigation actions, so a team responds consistently rather than improvising mid-incident. Each one below is created by identifying a classified attack type, mapping it to a MITRE ATT&amp;CK or ATLAS tactic, and deriving mitigation steps from the applicable NIST CSF controls. They exist so that response knowledge lives in a document instead of one person's head - repeatable across a team and over time. In practice, a company keeps the relevant playbook accessible to whoever is on call, walks through it during tabletop exercises (see Maturity Model Phase 7 - Response Readiness & Testing), and updates it whenever a real incident exposes a gap.</p>
+          <div class="lifecycle-wrap">${buildPlaybookFlowSvg()}</div>
+        </div>
       </div>
 
       <div class="section-tile">
@@ -2477,10 +2694,10 @@ function renderPlaybooksTab(container){
   `;
 
   const pbContainer = document.getElementById('playbookAccordions');
-  pbContainer.innerHTML = PLAYBOOKS.map(p=>`
+  pbContainer.innerHTML = PLAYBOOKS.map((p,i)=>`
     <div class="acc-card" data-id="${p.ref}">
       <div class="acc-head">
-        <div class="icon-badge">${icon('urgent')}</div>
+        <div class="icon-badge" ${accentIconStyle(i)}>${icon('urgent')}</div>
         <div>
           <h4>${p.title} <span class="q-badge">${p.cat}</span></h4>
           <div class="acc-sub">${p.ref} · ${p.mitre}</div>

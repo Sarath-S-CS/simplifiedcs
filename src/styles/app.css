@@ -753,6 +753,18 @@
   .page{ display:flex; flex-direction:column; gap:36px; }
   .page-intro{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:32px 36px; }
   @media (max-width:720px){ .page-intro{ padding:22px 20px; } }
+  .page-intro-row{ display:flex; align-items:center; justify-content:space-between; gap:28px; flex-wrap:wrap; }
+  .page-intro-row .page-intro-text{ flex:1; min-width:260px; }
+
+  /* --- "stamp" badges: original text/icon marks referencing frameworks this
+     site draws on, not reproductions of any organization's real logo --- */
+  .stamp-row{ display:flex; flex-wrap:wrap; justify-content:center; gap:12px; flex-shrink:0; max-width:100%; }
+  .stamp{ position:relative; width:74px; height:74px; border-radius:50%; border:1.6px solid var(--stamp-color); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px; box-sizing:border-box; text-align:center; }
+  .stamp-ring{ position:absolute; inset:5px; border:1px dashed var(--stamp-color); border-radius:50%; opacity:0.45; }
+  .stamp-icon{ position:relative; z-index:1; width:16px; height:16px; color:var(--stamp-color); display:flex; }
+  .stamp-icon svg{ width:100%; height:100%; }
+  .stamp-label{ position:relative; z-index:1; font-family:var(--mono); font-size:7.5px; line-height:1.15; letter-spacing:0.01em; text-transform:uppercase; color:var(--stamp-color); }
+  @media (max-width:480px){ .stamp{ width:64px; height:64px; } }
   .section-tile{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:32px 36px; }
   @media (max-width:720px){ .section-tile{ padding:22px 20px; } }
   .section-tile .section-h:first-child{ margin-top:0; }
@@ -880,7 +892,10 @@
   .icon-badge{
     width:40px; height:40px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
     border-radius:50%;
-    border:1px solid var(--line); background:transparent; color:var(--text-muted);
+    /* --icon-accent is unset (and these fall back to the original muted
+       default) everywhere except the Runbooks/Playbooks accordions, which
+       set it inline per item - see accentIconStyle() in main.js. */
+    border:1px solid var(--icon-accent, var(--line)); background:transparent; color:var(--icon-accent, var(--text-muted));
     transition:color .2s ease, border-color .2s ease, background .2s ease;
   }
 
@@ -888,7 +903,7 @@
   .acc-card{ border:1px solid var(--line); background:var(--surface-raised); margin-bottom:10px; }
   .acc-head{ display:flex; align-items:center; gap:14px; padding:16px 18px; cursor:pointer; transition:background .15s ease; }
   .acc-head:hover{ background:var(--surface); }
-  .acc-head:hover .icon-badge{ background:var(--accent-signal); border-color:var(--accent-signal); color:var(--text-on-accent); }
+  .acc-head:hover .icon-badge{ background:var(--icon-accent, var(--accent-signal)); border-color:var(--icon-accent, var(--accent-signal)); color:var(--text-on-accent); }
   .acc-head:hover h4{ color:var(--accent-signal); }
   .acc-head h4{ font-size:14.5px; margin:0; transition:color .15s ease; }
   .acc-head .acc-sub{ font-size:12px; color:var(--text-muted); margin-top:2px; }
@@ -968,9 +983,12 @@
   @keyframes spin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
 
   /* --- animated document lifecycle diagram --- */
-  .lifecycle-wrap{ display:flex; justify-content:center; margin:24px 0 32px; }
-  .lifecycle-wrap svg{ width:340px; max-width:100%; height:auto; display:block; }
-  .lifecycle-node-label{ font-family:var(--mono); font-size:10px; fill:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
+  .lifecycle-row{ display:flex; align-items:center; gap:32px; margin:24px 0 32px; flex-wrap:wrap; }
+  .lifecycle-row .body-text{ flex:1; min-width:240px; margin:0; }
+  .lifecycle-wrap{ display:flex; justify-content:center; flex-shrink:0; }
+  .lifecycle-wrap svg{ width:380px; max-width:100%; height:auto; display:block; }
+  .lifecycle-node-label{ font-family:var(--mono); font-size:11px; fill:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
+  @media (max-width:760px){ .lifecycle-row{ flex-direction:column; } .lifecycle-wrap{ order:2; } .lifecycle-row .body-text{ order:1; } }
 
   /* --- learning resources (News tab) --- */
   .resource-groups{ display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:20px; }
@@ -1007,6 +1025,7 @@
     box-shadow: inset 0 70px 50px -40px #000000, inset 0 -70px 50px -40px #000000;
   }
   .hero-banner-inner{ position:relative; z-index:1; flex:1; min-width:260px; }
+  .hero-banner-side{ position:relative; z-index:1; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:18px; width:390px; max-width:100%; }
   .hero-banner .hero-infinity{ position:relative; z-index:1; }
   /* Wallpaper now renders in both themes, so the hero's light text applies unconditionally */
   .hero-banner .page-title{ color:#FFFFFF; }
@@ -1072,13 +1091,17 @@
 
   .phase4-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:20px 0 32px; }
   @media (max-width:760px){ .phase4-grid{ grid-template-columns:1fr 1fr; } }
-  @media (max-width:520px){ .phase4-grid{ grid-template-columns:1fr; gap:12px; } .phase4-card{ padding:20px 18px; } }
-  .phase4-card{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:28px 26px; }
-  .phase4-icon{
-    width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    background:var(--tint-signal-soft); color:var(--accent-signal); margin-bottom:14px;
+  @media (max-width:520px){
+    .phase4-grid{ grid-template-columns:1fr; gap:12px; }
+    .phase4-card{ padding:20px 18px; }
+    .phase4-banner{ margin:-20px -18px 16px; }
   }
-  .phase4-icon svg{ width:20px; height:20px; }
+  .phase4-card{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:28px 26px; }
+  .phase4-banner{
+    margin:-28px -26px 16px; height:104px; overflow:hidden;
+    border-radius:12px 12px 0 0; background:var(--surface-raised);
+  }
+  .phase4-banner svg{ width:100%; height:100%; display:block; }
   .phase4-card .vnum{ font-family:var(--mono); color:var(--accent-signal); font-size:15px; font-weight:600; margin-bottom:12px; }
   .phase4-card h4{ font-size:20.5px; margin:0 0 6px; }
   .phase4-tagline{ font-family:var(--mono); font-size:12px; color:var(--accent-secure); letter-spacing:0.02em; margin-bottom:14px; font-weight:600; }
@@ -1204,6 +1227,10 @@
   .data-table td.dt-level{ font-family:var(--mono); font-weight:600; color:var(--text); }
   .data-table td.dt-title{ color:var(--text); font-weight:500; }
   .data-table tr:hover td{ background:var(--tint-signal-soft); }
+
+  .glance-table td{ min-width:150px; }
+  .glance-table td:nth-child(4), .glance-table td:nth-child(5), .glance-table td:nth-child(6){ min-width:190px; }
+  .stage-chip{ display:inline-block; font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; padding:3px 8px; border:1px solid var(--stage-color); color:var(--stage-color); white-space:nowrap; }
 
   .rubric-card{ border:1px solid var(--line); background:var(--surface-raised); padding:18px 20px; margin-bottom:12px; }
   .rubric-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:12px; flex-wrap:wrap; }
