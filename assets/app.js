@@ -24629,14 +24629,39 @@ ${suffix}`;
     wireNavLink(document.getElementById("ctaStart2"), "assessment");
     wireNavLink(document.getElementById("linkMetricsFromMethod"), "metrics");
   }
+  function buildMaturityClimbSvg() {
+    const bars = [
+      { h: 30, color: "--accent-signal" },
+      { h: 46, color: "--accent-signal" },
+      { h: 64, color: "--accent-secure" },
+      { h: 82, color: "--accent-secure" },
+      { h: 100, color: "--accent-violet" },
+      { h: 120, color: "--accent-violet" }
+    ];
+    const barW = 24, gap = 12, baseY = 132;
+    return `
+  <svg viewBox="0 0 280 140" xmlns="http://www.w3.org/2000/svg">
+    <line x1="2" y1="${baseY}" x2="278" y2="${baseY}" stroke="var(--line)" stroke-width="1.5"/>
+    ${bars.map((b, i) => {
+      const x = 8 + i * (barW + gap);
+      return `<rect class="climb-bar" x="${x}" y="${baseY - b.h}" width="${barW}" height="${b.h}" rx="3" fill="var(${b.color})" style="animation-delay:${(i * 0.16).toFixed(2)}s"/>`;
+    }).join("")}
+    <circle class="climb-peak-dot" cx="${8 + 5 * (barW + gap) + barW / 2}" cy="${baseY - 120 - 12}" r="4.5" fill="var(--accent-violet)"/>
+  </svg>`;
+  }
   function renderMaturityTab(container) {
     const stageOrder = ["discovery", "transformation", "optimization"];
     let html = `
     <div class="page">
       <div class="page-intro">
-        <div class="page-eyebrow">Maturity Model</div>
-        <h2 class="page-title">Maturity Model</h2>
-        <p class="page-lede">How a security program actually progresses - ten phases across three stages, four recognized maturity tiers, and what each number on your results page means for where you actually stand.</p>
+        <div class="page-intro-row">
+          <div class="page-intro-text">
+            <div class="page-eyebrow">Maturity Model</div>
+            <h2 class="page-title">Maturity Model</h2>
+            <p class="page-lede">How a security program actually progresses - ten phases across three stages, four recognized maturity tiers, and what each number on your results page means for where you actually stand.</p>
+          </div>
+          <div class="maturity-climb-wrap">${buildMaturityClimbSvg()}</div>
+        </div>
       </div>
 
       <div class="section-tile">
@@ -25312,6 +25337,22 @@ ${suffix}`;
     const f = EXPLOIT_FILTERS.find((x) => x.id === filterId);
     return f && item.sectors_impacted?.includes(f.sector);
   }
+  function buildExploitsRadarSvg() {
+    const blips = [
+      { cx: 38, cy: 40, r: 3, delay: 0.4, dur: 2.6 },
+      { cx: 84, cy: 36, r: 2.5, delay: 1.6, dur: 3.2 },
+      { cx: 80, cy: 82, r: 3, delay: 2.4, dur: 2.9 },
+      { cx: 30, cy: 78, r: 2.5, delay: 0.9, dur: 3.4 }
+    ];
+    return `
+  <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <circle class="radar-ring" cx="60" cy="60" r="10" style="animation-delay:0s"/>
+    <circle class="radar-ring" cx="60" cy="60" r="10" style="animation-delay:1s"/>
+    <circle class="radar-ring" cx="60" cy="60" r="10" style="animation-delay:2s"/>
+    ${blips.map((b) => `<circle class="radar-blip" cx="${b.cx}" cy="${b.cy}" r="${b.r}" style="animation-delay:${b.delay}s; animation-duration:${b.dur}s;"/>`).join("")}
+    <circle class="radar-center" cx="60" cy="60" r="5"/>
+  </svg>`;
+  }
   async function renderExploitsTab(container) {
     container.innerHTML = `
     <div class="page">
@@ -25345,7 +25386,10 @@ ${suffix}`;
         </div>
       ` : `
         <div class="section-tile">
-          <p class="news-freshness">Refreshed daily from CISA's Known Exploited Vulnerabilities catalog, VulnCheck's KEV, and ENISA's EU Vulnerability Database, scored with EPSS (Exploit Prediction Scoring System) from FIRST.org - a model estimating the probability a vulnerability will actually be exploited, not just how severe it could theoretically be. Ranked by priority and capped at the ${EXPLOITS_RETENTION_CAP} highest-priority entries, not just newest-first, so the list stays current without growing unbounded.</p>
+          <div class="exploit-live-row">
+            <p class="news-freshness">Refreshed daily from CISA's Known Exploited Vulnerabilities catalog, VulnCheck's KEV, and ENISA's EU Vulnerability Database, scored with EPSS (Exploit Prediction Scoring System) from FIRST.org - a model estimating the probability a vulnerability will actually be exploited, not just how severe it could theoretically be. Ranked by priority and capped at the ${EXPLOITS_RETENTION_CAP} highest-priority entries, not just newest-first, so the list stays current without growing unbounded.</p>
+            <div class="exploit-radar-wrap">${buildExploitsRadarSvg()}</div>
+          </div>
           <div class="news-filters">
             ${EXPLOIT_FILTERS.map((f) => `<button class="filter-pill ${exploitsFilter === f.id ? "active" : ""}" data-filter="${f.id}">${f.label}</button>`).join("")}
           </div>
