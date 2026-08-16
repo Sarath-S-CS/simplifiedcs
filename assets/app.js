@@ -24488,7 +24488,15 @@ ${suffix}`;
         container.querySelectorAll("[data-stage-detail]").forEach((c) => c.classList.remove("stage-active"));
         el.classList.add("stage-active");
         const row = el.closest(".workflow-row") || el.parentElement;
-        row.appendChild(panel);
+        const stacked = window.matchMedia("(max-width:700px)").matches;
+        if (stacked) {
+          panel.classList.add("stage-detail-panel-inline");
+          el.insertAdjacentElement("afterend", panel);
+        } else {
+          panel.classList.remove("stage-detail-panel-inline");
+          row.appendChild(panel);
+          panel.style.top = el.offsetTop + el.offsetHeight + "px";
+        }
         const openTile = el.closest(".section-tile");
         if (openTile) openTile.classList.add("has-open-overlay");
         panel.innerHTML = `
