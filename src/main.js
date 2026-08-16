@@ -1367,6 +1367,7 @@ const HOW_IT_WORKS = [
 ];
 
 const START_LINKS = [
+  { title:'Getting Started With Cybersecurity Controls', desc:'The plain-language on-ramp before you touch the assessment', tab:'starterguide', icon:'route' },
   { title:'Current Trends', desc:'This site\'s own curated threat-landscape roundup', tab:'news', icon:'signal' },
   { title:'Exploits', desc:'Confirmed actively-exploited CVEs, scored by real-world risk', tab:'exploits', icon:'urgent' },
   { title:'Runbooks', desc:'Incident runbooks and foundational documents', tab:'runbook', icon:'document' },
