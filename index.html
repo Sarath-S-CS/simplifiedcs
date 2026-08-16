@@ -24398,7 +24398,8 @@ ${suffix}`;
         openStageDetail = sid;
         container.querySelectorAll("[data-stage-detail]").forEach((c) => c.classList.remove("stage-active"));
         el.classList.add("stage-active");
-        el.appendChild(panel);
+        const row = el.closest(".workflow-row") || el.parentElement;
+        row.appendChild(panel);
         const openTile = el.closest(".section-tile");
         if (openTile) openTile.classList.add("has-open-overlay");
         panel.innerHTML = `

@@ -1,4 +1,11 @@
   :root{
+    /* Tells the browser to render its own native UI chrome (dropdown
+       popups, scrollbars, etc.) using dark-appropriate system colors
+       instead of defaulting to light - without this, a <select>'s open
+       option list ignores custom background-color in most browsers and
+       renders forced-white, which combined with this theme's light text
+       color is illegible. */
+    color-scheme: dark;
     --bg:#000000;
     --surface:#0A0D0B;
     --surface-raised: rgba(255,255,255,0.035);
@@ -30,6 +37,7 @@
     --sans: 'IBM Plex Sans', sans-serif;
   }
   html[data-theme="light"]{
+    color-scheme: light;
     --bg:#FFFFFF;
     --surface:#F5F9F6;
     --surface-raised: rgba(0,0,0,0.035);
@@ -1078,7 +1086,7 @@
   .phase4-bullets li{ font-size:12.5px; color:var(--text-muted); line-height:1.6; margin-bottom:6px; }
   .phase4-bullets li:last-child{ margin-bottom:0; }
 
-  .workflow-row{ display:flex; align-items:stretch; gap:0; margin:20px 0 32px; flex-wrap:wrap; }
+  .workflow-row{ display:flex; align-items:stretch; gap:0; margin:20px 0 32px; flex-wrap:wrap; position:relative; }
   .workflow-step{
     flex:1; min-width:160px; background:var(--surface-raised); padding:18px 20px; text-align:center;
     display:block; text-decoration:none; color:inherit; cursor:pointer;

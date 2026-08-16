@@ -1386,7 +1386,15 @@ function renderHomeTab(container){
       openStageDetail = sid;
       container.querySelectorAll('[data-stage-detail]').forEach(c=>c.classList.remove('stage-active'));
       el.classList.add('stage-active');
-      el.appendChild(panel);
+      // Append to the row, not the clicked step itself - .stage-detail-panel
+      // is position:absolute with left:0;right:0, which resolves against
+      // whichever positioned ancestor it's actually a child of. Appending
+      // into the individual step (a flex:1 item, much narrower than the
+      // full row) made the panel only as wide as that one card instead of
+      // spanning the section - it still opens directly below the row
+      // either way since every step in the row shares the same height.
+      const row = el.closest('.workflow-row') || el.parentElement;
+      row.appendChild(panel);
       const openTile = el.closest('.section-tile');
       if(openTile) openTile.classList.add('has-open-overlay');
       panel.innerHTML = `
