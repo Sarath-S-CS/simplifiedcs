@@ -124,13 +124,22 @@
      width like 1400px. The 50vw-centering breakout below makes .masthead
      itself genuinely span the full viewport regardless of .app's cap, with
      .masthead-inner giving its actual content a separate, wider max-width
-     that no longer inherits .app's narrower reading-width limit. */
+     that no longer inherits .app's narrower reading-width limit.
+
+     --viewport-width (set from document.documentElement.clientWidth by
+     syncViewportWidthVar() in main.js, on every content render and window
+     resize) stands in for 100vw here instead of the raw unit: vw is based
+     on the initial containing block and includes the vertical scrollbar
+     gutter on desktop, while clientWidth - like every other length in this
+     breakout's math - doesn't, so plain 100vw made .masthead a few px wider
+     than the page itself and forced a permanent horizontal scrollbar.
+     Falls back to 100vw before JS runs. */
   .masthead{
     position:sticky;
     top:0;
     z-index:10;
-    width:100vw;
-    margin-left:calc(50% - 50vw);
+    width:var(--viewport-width, 100vw);
+    margin-left:calc(50% - (var(--viewport-width, 100vw) / 2));
     margin-top:-40px;
     margin-bottom:32px;
     border-bottom:1px solid var(--line);

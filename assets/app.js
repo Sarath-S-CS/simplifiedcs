@@ -23820,7 +23820,14 @@ ${suffix}`;
       scrollToPendingAnchor();
     }
   }
+  function syncViewportWidthVar() {
+    document.documentElement.style.setProperty("--viewport-width", document.documentElement.clientWidth + "px");
+    setTimeout(() => {
+      document.documentElement.style.setProperty("--viewport-width", document.documentElement.clientWidth + "px");
+    }, 100);
+  }
   function observeReveals() {
+    syncViewportWidthVar();
     const els = document.querySelectorAll(".section-tile, .page-intro");
     if (!("IntersectionObserver" in window)) {
       els.forEach((el) => el.classList.add("revealed"));
@@ -25825,6 +25832,7 @@ ${suffix}`;
     observeReveals();
   }
   (async function init() {
+    window.addEventListener("resize", syncViewportWidthVar);
     try {
       const r = await window.storage.get("theme", false);
       if (r && (r.value === "light" || r.value === "dark")) theme = r.value;
