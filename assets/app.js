@@ -24163,12 +24163,15 @@ ${suffix}`;
     }
   ];
   var START_LINKS = [
-    { title: "CISA KEV Catalog", desc: "Actively exploited vulnerabilities, updated continuously", href: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog", icon: "urgent", external: true },
-    { title: "NVD - National Vulnerability Database", desc: "The U.S. government's authoritative CVE repository", href: "https://nvd.nist.gov/", icon: "register", external: true },
-    { title: "Recently Flagged Exploits", desc: "CISA's KEV catalog, sorted with newest entries first", href: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog", icon: "clock", external: true },
-    { title: "Ongoing Threat Actor Campaigns", desc: "CISA's cybersecurity advisories on active TTPs", href: "https://www.cisa.gov/news-events/cybersecurity-advisories", icon: "lateral", external: true },
     { title: "Current Trends", desc: "This site's own curated threat-landscape roundup", tab: "news", icon: "signal" },
+    { title: "Exploits", desc: "Confirmed actively-exploited CVEs, scored by real-world risk", tab: "exploits", icon: "urgent" },
     { title: "Runbooks", desc: "Incident runbooks and foundational documents", tab: "runbook", icon: "document" }
+  ];
+  var OFFICIAL_SOURCE_LINKS = [
+    { title: "CISA KEV Catalog", desc: "Actively exploited vulnerabilities, updated continuously", href: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog", domain: "cisa.gov" },
+    { title: "NVD - National Vulnerability Database", desc: "The U.S. government's authoritative CVE repository", href: "https://nvd.nist.gov/", domain: "nvd.nist.gov" },
+    { title: "Recently Flagged Exploits", desc: "CISA's KEV catalog, sorted with newest entries first", href: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog", domain: "cisa.gov" },
+    { title: "Ongoing Threat Actor Campaigns", desc: "CISA's cybersecurity advisories on active TTPs", href: "https://www.cisa.gov/news-events/cybersecurity-advisories", domain: "cisa.gov" }
   ];
   function renderHomeTab(container) {
     const stageOrder = ["discovery", "transformation", "optimization"];
@@ -24206,7 +24209,7 @@ ${suffix}`;
 
       <div class="section-tile">
         <h3 class="section-h">Methodology</h3>
-        <p class="body-text">Every question maps to a real control from a recognized framework - nothing here is invented. <a href="#" id="linkMethodologyFromHome" class="inline-link">Explore the full methodology</a> for exactly how scoring works. These frameworks are the guiding principles behind every score:</p>
+        <p class="body-text">Every question maps to a real control from a recognized framework - nothing here is invented. These frameworks are the guiding principles behind every score:</p>
         <div class="framework-badges">
           <div class="framework-badge">NIST CSF 2.0</div>
           <div class="framework-badge">CIS Controls v8</div>
@@ -24218,7 +24221,12 @@ ${suffix}`;
           <div class="framework-badge framework-badge-pipeline">+ more in the pipeline</div>
         </div>
         <p class="body-text">The baseline (NIST CSF + CIS) applies to every organization. The rest layer in based on your industry and the regions you operate in - a healthcare provider and a SaaS company are asked different follow-up questions, scored against different compliance overlays, because the risks and obligations genuinely differ. Operational Technology and DevSecOps modules do the same, appearing only where they're actually relevant. This framework set keeps growing as the tool matures.</p>
-        <p class="body-text">Frameworks decide which controls matter; a consistent set of principles decides how the findings get prioritized and explained - proactive over reactive, defense in depth, least privilege, zero trust, and treating improvement as a continuous loop rather than a one-time project, among others. <a href="#" id="linkPrinciplesFromHome" class="inline-link">Explore the core principles</a> for the full reasoning behind every recommendation.</p>
+        <p class="body-text">Frameworks decide which controls matter; a consistent set of principles decides how the findings get prioritized and explained - proactive over reactive, defense in depth, least privilege, zero trust, and treating improvement as a continuous loop rather than a one-time project, among others.</p>
+        <div class="method-link-row">
+          <a href="#" id="linkMethodologyFromHome" class="link-pill secondary"><span class="link-pill-icon">${icon("checklist")}</span>Explore the full Methodology</a>
+          <a href="#" id="linkMaturityFromMethodHome" class="link-pill secondary"><span class="link-pill-icon">${icon("cycle")}</span>Explore the full Maturity Model</a>
+          <a href="#" id="linkPrinciplesFromHome" class="link-pill secondary"><span class="link-pill-icon">${icon("hiw-lightbulb")}</span>Core Principles</a>
+        </div>
       </div>
 
       <div class="section-tile">
@@ -24257,6 +24265,21 @@ ${suffix}`;
         <h3 class="section-h">Things to get you started</h3>
         <p class="body-text">Real, current sources - not just this site's own content.</p>
         <div class="start-links">
+          <div class="start-link-dropdown" id="officialSourcesDropdown">
+            <button type="button" class="start-link start-link-dropdown-toggle">
+              <div class="icon-badge">${icon("external")}</div>
+              <div><h4>Official Sources - CISA &amp; NVD</h4><p>Direct links to the two authoritative catalogs themselves, not a summary of them</p></div>
+              <span class="ext-mark start-link-dropdown-caret">\u25BE</span>
+            </button>
+            <div class="start-link-dropdown-panel">
+              ${OFFICIAL_SOURCE_LINKS.map((l) => `
+                <a class="official-source-item" href="${l.href}" target="_blank" rel="noopener noreferrer">
+                  <div><b>${l.title}</b><span>${l.desc}</span></div>
+                  <span class="official-source-domain">${l.domain} \u2197</span>
+                </a>
+              `).join("")}
+            </div>
+          </div>
           ${START_LINKS.map((l) => `
             <a class="start-link" ${l.href ? `href="${l.href}" target="_blank" rel="noopener noreferrer"` : `href="#" data-tab="${l.tab}"`}>
               <div class="icon-badge">${icon(l.icon)}</div>
@@ -24304,6 +24327,10 @@ ${suffix}`;
       e.preventDefault();
       goToTab("methodology");
     });
+    document.getElementById("linkMaturityFromMethodHome").addEventListener("click", (e) => {
+      e.preventDefault();
+      goToTab("maturity");
+    });
     document.getElementById("linkPrinciplesFromHome").addEventListener("click", (e) => {
       e.preventDefault();
       goToTab("coreprinciples");
@@ -24335,7 +24362,8 @@ ${suffix}`;
         openStageDetail = sid;
         container.querySelectorAll("[data-stage-detail]").forEach((c) => c.classList.remove("stage-active"));
         el.classList.add("stage-active");
-        el.appendChild(panel);
+        const row = el.closest(".workflow-row") || el.parentElement;
+        row.appendChild(panel);
         const openTile = el.closest(".section-tile");
         if (openTile) openTile.classList.add("has-open-overlay");
         panel.innerHTML = `
@@ -24390,6 +24418,17 @@ ${suffix}`;
         e.preventDefault();
         goToTab(el.dataset.tab);
       });
+    });
+    const sourcesDropdown = document.getElementById("officialSourcesDropdown");
+    const sourcesToggle = sourcesDropdown.querySelector(".start-link-dropdown-toggle");
+    sourcesToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      sourcesDropdown.classList.toggle("open");
+    });
+    document.addEventListener("click", (e) => {
+      if (sourcesDropdown.classList.contains("open") && !e.target.closest("#officialSourcesDropdown")) {
+        sourcesDropdown.classList.remove("open");
+      }
     });
   }
   function renderMethodologyTab(container) {
