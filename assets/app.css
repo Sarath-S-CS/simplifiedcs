@@ -1020,6 +1020,56 @@
   .lifecycle-node-label{ font-family:var(--mono); font-size:11px; fill:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
   @media (max-width:760px){ .lifecycle-row{ flex-direction:column; } .lifecycle-wrap{ order:2; } .lifecycle-row .body-text{ order:1; } }
 
+  /* --- Maturity Model intro: climbing/progression bars (ANIMATIONS-BRIEF.md)
+     - staggered per-bar CSS animation, not JS-per-frame, scaling each bar
+     up from its own bottom edge (transform-box:fill-box pins the origin to
+     the shape's own box rather than the SVG viewport). --- */
+  .maturity-climb-wrap{ flex-shrink:0; width:280px; max-width:100%; }
+  .maturity-climb-wrap svg{ width:100%; height:auto; display:block; }
+  @keyframes climbGrow{
+    0%, 100%{ transform:scaleY(0.55); }
+    50%{ transform:scaleY(1); }
+  }
+  .climb-bar{ transform-box:fill-box; transform-origin:50% 100%; animation:climbGrow 3s ease-in-out infinite; }
+  @keyframes climbPeakPulse{
+    0%, 100%{ opacity:0.6; transform:scale(1); }
+    50%{ opacity:1; transform:scale(1.3); }
+  }
+  .climb-peak-dot{ transform-box:fill-box; transform-origin:50% 50%; animation:climbPeakPulse 3s ease-in-out infinite; animation-delay:0.8s; }
+  @media (prefers-reduced-motion: reduce){
+    .climb-bar{ animation:none; transform:scaleY(1); }
+    .climb-peak-dot{ animation:none; opacity:1; transform:scale(1); }
+  }
+
+  /* --- Exploits intro: live-threat radar pulse (ANIMATIONS-BRIEF.md) -
+     concentric rings expanding+fading plus a few blips fading in at fixed
+     points, all CSS @keyframes. --- */
+  .exploit-live-row{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin-bottom:20px; }
+  .exploit-live-row .news-freshness{ flex:1 1 240px; margin-bottom:0; }
+  .exploit-radar-wrap{ flex-shrink:0; width:96px; }
+  .exploit-radar-wrap svg{ width:100%; height:auto; display:block; }
+  .radar-ring{ fill:none; stroke:var(--accent-critical); stroke-width:2; transform-box:fill-box; transform-origin:50% 50%; animation:radarPulse 3s ease-out infinite; }
+  @keyframes radarPulse{
+    0%{ transform:scale(0.3); opacity:0.85; }
+    100%{ transform:scale(4.4); opacity:0; }
+  }
+  .radar-center{ fill:var(--accent-critical); transform-box:fill-box; transform-origin:50% 50%; animation:radarHeartbeat 2s ease-in-out infinite; }
+  @keyframes radarHeartbeat{
+    0%, 100%{ transform:scale(1); }
+    50%{ transform:scale(1.18); }
+  }
+  .radar-blip{ fill:var(--accent-amber); animation-name:blipFade; animation-timing-function:ease-in-out; animation-iteration-count:infinite; }
+  @keyframes blipFade{
+    0%, 100%{ opacity:0; }
+    50%{ opacity:1; }
+  }
+  @media (max-width:640px){ .exploit-live-row{ flex-direction:column; align-items:flex-start; } }
+  @media (prefers-reduced-motion: reduce){
+    .radar-ring{ animation:none; opacity:0; }
+    .radar-center{ animation:none; }
+    .radar-blip{ animation:none; opacity:0.7; }
+  }
+
   /* --- learning resources (News tab) --- */
   .resource-groups{ display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:20px; }
   @media (max-width:720px){ .resource-groups{ grid-template-columns:1fr; } }
