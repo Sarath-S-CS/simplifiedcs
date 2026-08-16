@@ -1552,15 +1552,27 @@ function renderHomeTab(container){
       openStageDetail = sid;
       container.querySelectorAll('[data-stage-detail]').forEach(c=>c.classList.remove('stage-active'));
       el.classList.add('stage-active');
-      // Append to the row, not the clicked step itself - .stage-detail-panel
-      // is position:absolute with left:0;right:0, which resolves against
-      // whichever positioned ancestor it's actually a child of. Appending
-      // into the individual step (a flex:1 item, much narrower than the
-      // full row) made the panel only as wide as that one card instead of
-      // spanning the section - it still opens directly below the row
-      // either way since every step in the row shares the same height.
       const row = el.closest('.workflow-row') || el.parentElement;
-      row.appendChild(panel);
+      // Below the 700px breakpoint .workflow-row stacks into a column, and
+      // every step is a separate block rather than three items on one
+      // line. A position:absolute panel doesn't push later siblings down
+      // regardless of where it's pinned, so pointing it at the clicked
+      // step (rather than the row's own bottom) just made it float on top
+      // of whichever step came next instead of the row's bottom. Give it
+      // static, in-flow placement right after the clicked step there
+      // instead, so it genuinely pushes the remaining steps down.
+      // Above 700px all three steps share one line, so appending it to
+      // the row and pinning it to that shared line's bottom edge (with
+      // position:absolute) still spans the full row width correctly.
+      const stacked = window.matchMedia('(max-width:700px)').matches;
+      if(stacked){
+        panel.classList.add('stage-detail-panel-inline');
+        el.insertAdjacentElement('afterend', panel);
+      } else {
+        panel.classList.remove('stage-detail-panel-inline');
+        row.appendChild(panel);
+        panel.style.top = (el.offsetTop + el.offsetHeight) + 'px';
+      }
       const openTile = el.closest('.section-tile');
       if(openTile) openTile.classList.add('has-open-overlay');
       panel.innerHTML = `
