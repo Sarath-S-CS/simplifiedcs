@@ -19,6 +19,8 @@ const assessmentController = createAssessmentController({
   getRail: () => document.getElementById("rail"),
   icon: (name) => icon(name),
   goToTab: (id, anchor) => goToTab(id, anchor),
+  pathForTab: (id, anchor) => pathForTab(id, anchor),
+  wireNavLink: (el, id, anchor) => wireNavLink(el, id, anchor),
   // Forward at call time (not a captured reference) - matches the original
   // code's pattern of always reading window.storage fresh, since it's a
   // host-provided API that may not exist yet at module-init time (see the
@@ -34,7 +36,82 @@ const assessmentController = createAssessmentController({
   exportProgressJson: (overall) => exportProgressJson(overall),
 });
 
-let activeTab = 'home';
+// --- Client-side routing (ROUTING-FIX-BRIEF.md): real URL paths for every
+// top-level tab, layered onto the existing activeTab+renderApp() rendering
+// model via pushState/popstate rather than replacing it. Every tab id below
+// maps 1:1 to a kebab-case path; the assessment wizard itself stays a
+// single /assessment route (deliberately not routed step-by-step per the
+// brief - it's a stateful in-progress form, not a set of bookmarkable pages).
+const ROUTES = {
+  home: '/',
+  methodology: '/methodology',
+  maturity: '/maturity-model',
+  metrics: '/metrics',
+  coreprinciples: '/core-principles',
+  maturitymodel: '/what-is-simplifiedcs',
+  starterguide: '/starter-guide',
+  roadmap: '/roadmap',
+  transform: '/import-report',
+  runbook: '/runbooks',
+  news: '/news',
+  exploits: '/exploits',
+  casestudy: '/case-studies',
+  playbooks: '/playbooks',
+  glossary: '/glossary',
+  references: '/references',
+  about: '/about',
+  feedback: '/feedback',
+  assessment: '/assessment',
+  history: '/history',
+};
+const PATH_TO_TAB = Object.fromEntries(Object.entries(ROUTES).map(([id, path]) => [path, id]));
+
+function pathForTab(id, anchor){
+  const base = ROUTES[id] || '/';
+  return anchor ? `${base}#${anchor}` : base;
+}
+function tabForPath(pathname){
+  const clean = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  return PATH_TO_TAB[clean] || 'home';
+}
+
+// Distinguishes a plain in-app nav click from one that should fall through
+// to the browser's own new-tab/new-window handling. Unconditional
+// preventDefault() - the bug this whole file exists to fix - would swallow
+// Ctrl/Cmd/Shift/middle-click too, not just plain-click's default same-tab
+// navigation, which is exactly what broke "open link in new tab" before.
+function isPlainLeftClick(e){
+  return e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+}
+// Shared click-wiring for internal nav elements now that they carry real
+// hrefs. getTarget(e) returns {tab, anchor}. onNavigate is for the handful
+// of call sites doing something extra beyond navigation (closing a menu,
+// scrolling to top) - gated behind the same plain-click check so it only
+// runs on the intercepted, same-tab path, never when the browser is about
+// to open the href in a new tab/window on its own.
+function wireNavClick(el, getTarget, onNavigate){
+  el.addEventListener('click', (e)=>{
+    if(!isPlainLeftClick(e)) return;
+    const target = getTarget(e);
+    if(!target || !target.tab) return;
+    e.preventDefault();
+    goToTab(target.tab, target.anchor);
+    if(onNavigate) onNavigate();
+  });
+}
+function wireNavLink(el, tab, anchor, onNavigate){
+  wireNavClick(el, ()=> ({ tab, anchor }), onNavigate);
+}
+// Delegated wiring over every element matching selector within container,
+// each carrying its own data-tab (+ optional data-anchor) - the common case
+// across this file for template-string-rendered lists of nav links.
+function wireNavLinksByDataset(container, selector, onNavigate){
+  container.querySelectorAll(selector).forEach(el=>{
+    wireNavClick(el, ()=> ({ tab: el.dataset.tab, anchor: el.dataset.anchor || undefined }), onNavigate);
+  });
+}
+
+let activeTab = tabForPath(location.pathname);
 let theme = 'dark';
 const TOP_TABS = [
   { id:'home', label:'Home' },
@@ -794,7 +871,7 @@ const LEARNING_RESOURCES = {
 };
 
 
-let pendingAnchor = null;
+let pendingAnchor = location.hash ? location.hash.slice(1) : null;
 
 // Only clears pendingAnchor on a successful scroll. renderApp() calls this
 // right after renderActiveTab(), but tabs that load live data (e.g.
@@ -869,24 +946,19 @@ function renderTabNav(){
       const parentActive = activeTab===t.id || dd.some(d=>d.id===activeTab);
       return `
         <div class="tab-item has-dropdown">
-          <button class="tab-btn ${parentActive?'active':''}" data-tab="${t.id}">${label} <span class="tab-caret" data-toggle="1">▾</span></button>
+          <a class="tab-btn ${parentActive?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${label} <span class="tab-caret" data-toggle="1">▾</span></a>
           <div class="tab-dropdown">
-            ${dd.map(d=>`<button class="dropdown-link ${activeTab===d.id?'active':''}" data-tab="${d.id}">${d.label}</button>`).join('')}
+            ${dd.map(d=>`<a class="dropdown-link ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
           </div>
         </div>
       `;
     }
-    return `<button class="tab-btn ${activeTab===t.id?'active':''}" data-tab="${t.id}">${label}</button>`;
+    return `<a class="tab-btn ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${label}</a>`;
   }).join('');
 
   nav.innerHTML = navHtml;
 
-  nav.querySelectorAll('[data-tab]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      activeTab = btn.dataset.tab;
-      renderApp();
-    });
-  });
+  wireNavLinksByDataset(nav, '[data-tab]');
   nav.querySelectorAll('[data-toggle]').forEach(el=>{
     el.addEventListener('click', (e)=>{
       e.stopPropagation();
@@ -906,20 +978,9 @@ function renderTabNav(){
     window._tabnavOutsideClickBound = true;
   }
   if(!window._footerLinksBound){
-    document.querySelectorAll('.footer-links a[data-tab]').forEach(a=>{
-      a.addEventListener('click', (e)=>{
-        e.preventDefault();
-        goToTab(a.dataset.tab);
-        window.scrollTo({ top:0, behavior:'smooth' });
-      });
-    });
+    wireNavLinksByDataset(document, '.footer-links a[data-tab]', ()=> window.scrollTo({ top:0, behavior:'smooth' }));
     const brandLink = document.getElementById('brandHomeLink');
-    if(brandLink){
-      brandLink.addEventListener('click', (e)=>{
-        e.preventDefault();
-        goToTab('home');
-      });
-    }
+    if(brandLink) wireNavLink(brandLink, 'home');
     window._footerLinksBound = true;
   }
 }
@@ -1002,19 +1063,14 @@ function renderSearchWidget(){
     }
     results.innerHTML = matches.length
       ? matches.map(m=>`
-          <button class="search-result" data-tab="${m.tab}" ${m.anchor ? `data-anchor="${m.anchor}"` : ''}>
+          <a class="search-result" href="${pathForTab(m.tab, m.anchor)}" data-tab="${m.tab}" ${m.anchor ? `data-anchor="${m.anchor}"` : ''}>
             <span class="search-result-type">${m.type}</span>
             <span class="search-result-title">${m.title}</span>
-          </button>
+          </a>
         `).join('')
       : `<div class="search-empty">No matches for "${input.value.trim()}"</div>`;
     results.classList.add('open');
-    results.querySelectorAll('.search-result').forEach(r=>{
-      r.addEventListener('click', ()=>{
-        goToTab(r.dataset.tab, r.dataset.anchor || null);
-        closeSearch();
-      });
-    });
+    wireNavLinksByDataset(results, '.search-result', closeSearch);
   }
   const mastheadRight = widget.closest('.masthead-right');
   function openSearch(){
@@ -1070,17 +1126,12 @@ function renderHamburgerMenu(){
     panel.innerHTML = TOP_TABS.map(t=>{
       const dd = dropdownMap[t.id];
       return `
-        <button class="mobile-nav-link ${activeTab===t.id?'active':''}" data-tab="${t.id}">${t.id==='home' ? 'Home' : t.label}</button>
-        ${(dd||[]).map(d=>`<button class="mobile-nav-sublink ${activeTab===d.id?'active':''}" data-tab="${d.id}">${d.label}</button>`).join('')}
+        <a class="mobile-nav-link ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.id==='home' ? 'Home' : t.label}</a>
+        ${(dd||[]).map(d=>`<a class="mobile-nav-sublink ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
       `;
     }).join('');
     document.querySelector('.masthead').appendChild(panel);
-    panel.querySelectorAll('[data-tab]').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        goToTab(el.dataset.tab);
-        closeMenu();
-      });
-    });
+    wireNavLinksByDataset(panel, '[data-tab]', closeMenu);
     requestAnimationFrame(()=> panel.classList.add('open'));
   }
   render();
@@ -1097,6 +1148,10 @@ function renderHamburgerMenu(){
 function goToTab(id, anchor){
   activeTab = id;
   pendingAnchor = anchor || null;
+  const path = pathForTab(id, anchor);
+  if(location.pathname + location.hash !== path){
+    history.pushState({ tab:id, anchor: anchor || null }, '', path);
+  }
   renderApp();
 }
 
@@ -1393,7 +1448,7 @@ function renderHomeTab(container){
           <h2 class="page-title">Cybersecurity posture assessment, made simple.</h2>
           <p class="page-lede">Answer a few adaptive questions. Get a scored, prioritized, evidence-based read on your cybersecurity health - and a clear path to improve it.</p>
           <div class="hero-links">
-            <a href="#" id="heroTakeAssessment" class="link-pill"><span class="link-pill-icon">${icon('checklist')}</span>Take the assessment</a>
+            <a href="${pathForTab('assessment')}" id="heroTakeAssessment" class="link-pill"><span class="link-pill-icon">${icon('checklist')}</span>Take the assessment</a>
             <a href="#how-it-works" class="link-pill secondary"><span class="link-pill-icon">${icon('route')}</span>How it works</a>
           </div>
         </div>
@@ -1439,8 +1494,8 @@ function renderHomeTab(container){
         <p class="body-text">The baseline (NIST CSF + CIS) applies to every organization. The rest layer in based on your industry and the regions you operate in - a healthcare provider and a SaaS company are asked different follow-up questions, scored against different compliance overlays, because the risks and obligations genuinely differ. Operational Technology and DevSecOps modules do the same, appearing only where they're actually relevant. This framework set keeps growing as the tool matures.</p>
         <p class="body-text">Frameworks decide which controls matter; a consistent set of principles decides how the findings get prioritized and explained - proactive over reactive, defense in depth, least privilege, zero trust, and treating improvement as a continuous loop rather than a one-time project, among others.</p>
         <div class="method-link-row">
-          <a href="#" id="linkMethodologyFromHome" class="link-pill secondary"><span class="link-pill-icon">${icon('checklist')}</span>Explore the full Methodology</a>
-          <a href="#" id="linkPrinciplesFromHome" class="link-pill secondary"><span class="link-pill-icon">${icon('hiw-lightbulb')}</span>Core Principles</a>
+          <a href="${pathForTab('methodology')}" id="linkMethodologyFromHome" class="link-pill secondary"><span class="link-pill-icon">${icon('checklist')}</span>Explore the full Methodology</a>
+          <a href="${pathForTab('coreprinciples')}" id="linkPrinciplesFromHome" class="link-pill secondary"><span class="link-pill-icon">${icon('hiw-lightbulb')}</span>Core Principles</a>
         </div>
       </div>
 
@@ -1460,13 +1515,13 @@ function renderHomeTab(container){
         </div>
         <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
         <div class="method-link-row">
-          <a href="#" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon">${icon('cycle')}</span>Explore the full Maturity Model</a>
+          <a href="${pathForTab('maturity')}" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon">${icon('cycle')}</span>Explore the full Maturity Model</a>
         </div>
       </div>
 
       <div class="section-tile">
         <h3 class="section-h">Risk Score Matrix</h3>
-        <p class="body-text">Every assessment runs on a scored matrix (see the <a href="#" id="linkMetricsFromHome" class="inline-link">Metrics</a> page for the full breakdown). Select a number for what that risk level actually means:</p>
+        <p class="body-text">Every assessment runs on a scored matrix (see the <a href="${pathForTab('metrics')}" id="linkMetricsFromHome" class="inline-link">Metrics</a> page for the full breakdown). Select a number for what that risk level actually means:</p>
         <div class="risk-slider-wrap">
           <div class="risk-slider-label">Interactive risk scale - the lower the score, the stronger the security posture</div>
           <div class="risk-slider-track">
@@ -1498,7 +1553,7 @@ function renderHomeTab(container){
             </div>
           </div>
           ${START_LINKS.map(l=>`
-            <a class="start-link" ${l.href ? `href="${l.href}" target="_blank" rel="noopener noreferrer"` : `href="#" data-tab="${l.tab}"`}>
+            <a class="start-link" ${l.href ? `href="${l.href}" target="_blank" rel="noopener noreferrer"` : `href="${pathForTab(l.tab)}" data-tab="${l.tab}"`}>
               <div class="icon-badge">${icon(l.icon)}</div>
               <div><h4>${l.title}</h4><p>${l.desc}</p></div>
               ${l.external ? '<span class="ext-mark">↗</span>' : ''}
@@ -1512,27 +1567,27 @@ function renderHomeTab(container){
         <p class="body-text">Everything this platform offers, in one map.</p>
         <div class="site-tile-grid">
           ${SITE_TILES.map(t=>`
-            <div class="site-tile" data-tab="${t.tab}">
+            <a class="site-tile" href="${pathForTab(t.tab)}" data-tab="${t.tab}">
               <div class="icon-badge">${icon(t.icon)}</div>
               <h4>${t.title}</h4>
               <p>${t.desc}</p>
-            </div>
+            </a>
           `).join('')}
         </div>
         <div class="cta-row">
-          <button class="cta-btn" id="ctaStart">Start an assessment →</button>
-          <button class="cta-btn secondary" id="ctaMethod">See how scoring works</button>
+          <a class="cta-btn" href="${pathForTab('assessment')}" id="ctaStart">Start an assessment →</a>
+          <a class="cta-btn secondary" href="${pathForTab('methodology')}" id="ctaMethod">See how scoring works</a>
         </div>
       </div>
     </div>
   `;
-  document.getElementById('ctaStart').addEventListener('click', ()=> goToTab('assessment'));
-  document.getElementById('ctaMethod').addEventListener('click', ()=> goToTab('methodology'));
-  document.getElementById('heroTakeAssessment').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('assessment'); });
-  document.getElementById('linkMetricsFromHome').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('metrics'); });
-  document.getElementById('linkMaturityExplore').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('maturity'); });
-  document.getElementById('linkMethodologyFromHome').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('methodology'); });
-  document.getElementById('linkPrinciplesFromHome').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('coreprinciples'); });
+  wireNavLink(document.getElementById('ctaStart'), 'assessment');
+  wireNavLink(document.getElementById('ctaMethod'), 'methodology');
+  wireNavLink(document.getElementById('heroTakeAssessment'), 'assessment');
+  wireNavLink(document.getElementById('linkMetricsFromHome'), 'metrics');
+  wireNavLink(document.getElementById('linkMaturityExplore'), 'maturity');
+  wireNavLink(document.getElementById('linkMethodologyFromHome'), 'methodology');
+  wireNavLink(document.getElementById('linkPrinciplesFromHome'), 'coreprinciples');
 
   let openStageDetail = null;
   function closeStageDetail(){
@@ -1583,14 +1638,11 @@ function renderHomeTab(container){
         <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
         <p class="body-text">${d.summary}</p>
         <p class="body-text"><b>Scoring metrics used:</b> ${d.metrics}</p>
-        <a href="#" id="stageDetailMaturityLink" class="inline-link">See ${STAGE_META[sid].label} in full on the Maturity Model page →</a>
+        <a href="${pathForTab('maturity', `maturity-${sid}`)}" id="stageDetailMaturityLink" class="inline-link">See ${STAGE_META[sid].label} in full on the Maturity Model page →</a>
       `;
       panel.style.display = 'block';
       requestAnimationFrame(()=> panel.classList.add('open'));
-      document.getElementById('stageDetailMaturityLink').addEventListener('click', (e2)=>{
-        e2.preventDefault();
-        goToTab('maturity', `maturity-${sid}`);
-      });
+      wireNavLink(document.getElementById('stageDetailMaturityLink'), 'maturity', `maturity-${sid}`);
     });
   });
   const riskDesc = document.getElementById('riskSliderDesc');
@@ -1628,12 +1680,8 @@ function renderHomeTab(container){
     });
   });
 
-  container.querySelectorAll('.site-tile').forEach(el=>{
-    el.addEventListener('click', ()=> goToTab(el.dataset.tab));
-  });
-  container.querySelectorAll('.start-link[data-tab]').forEach(el=>{
-    el.addEventListener('click', (e)=>{ e.preventDefault(); goToTab(el.dataset.tab); });
-  });
+  wireNavLinksByDataset(container, '.site-tile');
+  wireNavLinksByDataset(container, '.start-link[data-tab]');
 
   const sourcesDropdown = document.getElementById('officialSourcesDropdown');
   const sourcesToggle = sourcesDropdown.querySelector('.start-link-dropdown-toggle');
@@ -1685,7 +1733,7 @@ function renderMethodologyTab(container){
 
       <div class="section-tile">
         <h3 class="section-h">Scoring, in brief</h3>
-        <p class="body-text">Each question scores 0, 1, or 2 depending on the answer chosen, rolled up into a function score and an overall percentage. The full breakdown of exactly how that's calculated, what each score band means, and how to read your result lives on the <a href="#" id="linkMetricsFromMethod" class="inline-link">Metrics</a> page.</p>
+        <p class="body-text">Each question scores 0, 1, or 2 depending on the answer chosen, rolled up into a function score and an overall percentage. The full breakdown of exactly how that's calculated, what each score band means, and how to read your result lives on the <a href="${pathForTab('metrics')}" id="linkMetricsFromMethod" class="inline-link">Metrics</a> page.</p>
       </div>
 
       <div class="section-tile">
@@ -1702,13 +1750,13 @@ function renderMethodologyTab(container){
         <h3 class="section-h">Vendor-aware, not a scanner</h3>
         <p class="body-text">If you name specific products (a firewall vendor, hosting provider, etc.), the report can surface mitigation guidance tied to well-documented historical exploitation patterns for that product. This is intentionally illustrative, not a live vulnerability feed - it's a prompt to check current advisories, not a substitute for a real vulnerability management program.</p>
         <div class="cta-row">
-          <button class="cta-btn" id="ctaStart2">Start an assessment →</button>
+          <a class="cta-btn" href="${pathForTab('assessment')}" id="ctaStart2">Start an assessment →</a>
         </div>
       </div>
     </div>
   `;
-  document.getElementById('ctaStart2').addEventListener('click', ()=> goToTab('assessment'));
-  document.getElementById('linkMetricsFromMethod').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('metrics'); });
+  wireNavLink(document.getElementById('ctaStart2'), 'assessment');
+  wireNavLink(document.getElementById('linkMetricsFromMethod'), 'metrics');
 }
 
 function renderMaturityTab(container){
@@ -1784,7 +1832,7 @@ function renderMaturityTab(container){
 
       <div class="section-tile">
         <h3 class="section-h">The full phase table</h3>
-        <p class="body-text">Every phase, with how it's actually monitored and what it unlocks next. For how your score itself is calculated, see the <a href="#" id="linkMetricsFromMaturity" class="inline-link">Metrics</a> page.</p>
+        <p class="body-text">Every phase, with how it's actually monitored and what it unlocks next. For how your score itself is calculated, see the <a href="${pathForTab('metrics')}" id="linkMetricsFromMaturity" class="inline-link">Metrics</a> page.</p>
         <div class="table-wrap">
           <table class="data-table">
             <thead><tr><th>Level</th><th>Stage</th><th>Title</th><th>How it's monitored</th><th>How it advances the program</th></tr></thead>
@@ -1802,16 +1850,16 @@ function renderMaturityTab(container){
           </table>
         </div>
         <div class="cta-row">
-          <button class="cta-btn" id="ctaMaturityAssess">Start an assessment →</button>
-          <button class="cta-btn secondary" id="ctaMaturityDocs">See documentation & runbooks</button>
+          <a class="cta-btn" href="${pathForTab('assessment')}" id="ctaMaturityAssess">Start an assessment →</a>
+          <a class="cta-btn secondary" href="${pathForTab('runbook')}" id="ctaMaturityDocs">See documentation & runbooks</a>
         </div>
       </div>
     </div>
   `;
   container.innerHTML = html;
-  document.getElementById('ctaMaturityAssess').addEventListener('click', ()=> goToTab('assessment'));
-  document.getElementById('ctaMaturityDocs').addEventListener('click', ()=> goToTab('runbook'));
-  document.getElementById('linkMetricsFromMaturity').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('metrics'); });
+  wireNavLink(document.getElementById('ctaMaturityAssess'), 'assessment');
+  wireNavLink(document.getElementById('ctaMaturityDocs'), 'runbook');
+  wireNavLink(document.getElementById('linkMetricsFromMaturity'), 'metrics');
 }
 
 function buildLifecycleSvg(){
@@ -1885,7 +1933,7 @@ function renderMetricsTab(container){
 
       <div class="section-tile">
         <h3 class="section-h">How the score is calculated</h3>
-        <p class="body-text">Each question scores 0, 1, or 2 depending on the answer chosen. A function's score is the sum of its answers divided by the maximum possible, expressed as a percentage. The overall score is the average across all six NIST CSF functions - visible as the radial gauge on your results page. This is a straightforward roll-up, but it isn't the whole picture: see "the part that isn't just averaging" on the <a href="#" id="linkMethodFromMetrics1" class="inline-link">Methodology</a> page for how compounding-risk flags factor in separately.</p>
+        <p class="body-text">Each question scores 0, 1, or 2 depending on the answer chosen. A function's score is the sum of its answers divided by the maximum possible, expressed as a percentage. The overall score is the average across all six NIST CSF functions - visible as the radial gauge on your results page. This is a straightforward roll-up, but it isn't the whole picture: see "the part that isn't just averaging" on the <a href="${pathForTab('methodology')}" id="linkMethodFromMetrics1" class="inline-link">Methodology</a> page for how compounding-risk flags factor in separately.</p>
       </div>
 
       <div class="section-tile">
@@ -1901,7 +1949,7 @@ function renderMetricsTab(container){
 
       <div class="section-tile">
         <h3 class="section-h">Why your score is what it is</h3>
-        <p class="body-text">Bands below are shown on a 0–10 scale (your overall percentage ÷ 10) - a 5–7, for example, means something specific about your organization, not just "middling." For how each phase of the <a href="#" id="linkMaturityFromMetrics" class="inline-link">Maturity Model</a> connects to these bands, see that page directly.</p>
+        <p class="body-text">Bands below are shown on a 0–10 scale (your overall percentage ÷ 10) - a 5–7, for example, means something specific about your organization, not just "middling." For how each phase of the <a href="${pathForTab('maturity')}" id="linkMaturityFromMetrics" class="inline-link">Maturity Model</a> connects to these bands, see that page directly.</p>
         ${SCORE_RUBRIC.map(r=>`
           <div class="rubric-card">
             <div class="rubric-head"><div class="rubric-range">${r.range}</div><div class="rubric-verdict">${r.verdict}</div></div>
@@ -1917,16 +1965,16 @@ function renderMetricsTab(container){
         <h3 class="section-h">How this site tracks it over time</h3>
         <p class="body-text">Every completed assessment is saved. Your next run shows the score delta, which specific findings were resolved, and which are newly flagged - the closest thing this tool has to watching an organization actually improve, run over run, rather than guessing at where it stands.</p>
         <div class="cta-row">
-          <button class="cta-btn" id="ctaMetricsHistory">View assessment history →</button>
-          <button class="cta-btn secondary" id="ctaMetricsAssess">Start an assessment →</button>
+          <a class="cta-btn" href="${pathForTab('history')}" id="ctaMetricsHistory">View assessment history →</a>
+          <a class="cta-btn secondary" href="${pathForTab('assessment')}" id="ctaMetricsAssess">Start an assessment →</a>
         </div>
       </div>
     </div>
   `;
-  document.getElementById('ctaMetricsHistory').addEventListener('click', ()=> goToTab('history'));
-  document.getElementById('ctaMetricsAssess').addEventListener('click', ()=> goToTab('assessment'));
-  document.getElementById('linkMethodFromMetrics1').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('methodology'); });
-  document.getElementById('linkMaturityFromMetrics').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('maturity'); });
+  wireNavLink(document.getElementById('ctaMetricsHistory'), 'history');
+  wireNavLink(document.getElementById('ctaMetricsAssess'), 'assessment');
+  wireNavLink(document.getElementById('linkMethodFromMetrics1'), 'methodology');
+  wireNavLink(document.getElementById('linkMaturityFromMetrics'), 'maturity');
 }
 
 const SITE_LAST_UPDATED = 'August 10, 2026';
@@ -2016,7 +2064,7 @@ function renderRunbookTab(container){
         <p class="body-text">Each of these is meant to be printable and usable mid-incident - short, ordered, and specific enough that whoever's on call at 2am isn't improvising.</p>
         <div id="runbookAccordions"></div>
         <div class="cta-row">
-          <button class="cta-btn" id="ctaDocsAssess">See where you stand first →</button>
+          <a class="cta-btn" href="${pathForTab('assessment')}" id="ctaDocsAssess">See where you stand first →</a>
         </div>
       </div>
     </div>
@@ -2048,7 +2096,7 @@ function renderRunbookTab(container){
 
   wireAccordions(docContainer);
   wireAccordions(runbookContainer);
-  document.getElementById('ctaDocsAssess').addEventListener('click', ()=> goToTab('assessment'));
+  wireNavLink(document.getElementById('ctaDocsAssess'), 'assessment');
 }
 
 
@@ -2088,14 +2136,14 @@ function renderTransformTab(container){
         </div>
 
         <div class="cta-row">
-          <button class="cta-btn" id="ctaTransformAssess">Start a fresh assessment →</button>
-          <button class="cta-btn secondary" id="ctaTransformRoadmap">See the full Maturity Model</button>
+          <a class="cta-btn" href="${pathForTab('assessment')}" id="ctaTransformAssess">Start a fresh assessment →</a>
+          <a class="cta-btn secondary" href="${pathForTab('maturity')}" id="ctaTransformRoadmap">See the full Maturity Model</a>
         </div>
       </div>
     </div>
   `;
-  document.getElementById('ctaTransformAssess').addEventListener('click', ()=> goToTab('assessment'));
-  document.getElementById('ctaTransformRoadmap').addEventListener('click', ()=> goToTab('maturity'));
+  wireNavLink(document.getElementById('ctaTransformAssess'), 'assessment');
+  wireNavLink(document.getElementById('ctaTransformRoadmap'), 'maturity');
 
   document.getElementById('reportUpload').addEventListener('change', (e)=>{
     const file = e.target.files[0];
@@ -2119,11 +2167,12 @@ function renderTransformTab(container){
             Exported: ${data.exportedAt ? new Date(data.exportedAt).toLocaleString() : 'unknown'}<br><br>
             Your prior answers are loaded. Continue to the Assessment tab to review, adjust, and re-run.
           `;
-          const goBtn = document.createElement('button');
+          const goBtn = document.createElement('a');
           goBtn.className = 'cta-btn';
           goBtn.style.marginTop = '14px';
+          goBtn.href = pathForTab('assessment');
           goBtn.textContent = 'Review & re-run assessment →';
-          goBtn.addEventListener('click', ()=>{ goToTab('assessment'); });
+          wireNavLink(goBtn, 'assessment');
           resultEl.appendChild(goBtn);
         } catch(err){
           resultEl.className = 'upload-result error';
@@ -2168,19 +2217,19 @@ function renderMaturityModelTab(container){
         <p class="body-text">Pick an industry and any relevant compliance standards, answer an adaptive questionnaire that only shows what's relevant to your organization, and receive a scored, prioritized report - then re-run it periodically and use Import Report to close what it finds.</p>
 
         <h3 class="section-h" id="mm-capabilities">Capabilities</h3>
-        <p class="body-text">Adaptive question branching by industry and infrastructure · compounding-risk detection across answers rather than per-question scoring alone · vendor-aware mitigation notes for named products · assessment history with score-delta tracking · a documentation and runbook library · report import for re-assessment · a maturity model for context. See the <a href="#" id="linkMaturityFromWhat" class="inline-link">Maturity Model</a> and <a href="#" id="linkMetricsFromWhat" class="inline-link">Metrics</a> pages for the full detail behind each of these.</p>
+        <p class="body-text">Adaptive question branching by industry and infrastructure · compounding-risk detection across answers rather than per-question scoring alone · vendor-aware mitigation notes for named products · assessment history with score-delta tracking · a documentation and runbook library · report import for re-assessment · a maturity model for context. See the <a href="${pathForTab('maturity')}" id="linkMaturityFromWhat" class="inline-link">Maturity Model</a> and <a href="${pathForTab('metrics')}" id="linkMetricsFromWhat" class="inline-link">Metrics</a> pages for the full detail behind each of these.</p>
 
         <h3 class="section-h" id="mm-segments">Segments covered</h3>
         <p class="body-text">NIST CSF 2.0 (all six functions, including Govern) and CIS Controls v8 as the fixed baseline, with optional ISO 27001, NIS2, SOC 2, HIPAA, GDPR, SOX, Cyber Essentials, and PCI DSS modules layered in by industry and region. Dedicated coverage for Operational Technology/ICS and DevSecOps/cloud-native practices, both shown only when relevant to the organization being assessed.</p>
         <div class="cta-row">
-          <button class="cta-btn" id="ctaMMAssess">Start an assessment →</button>
+          <a class="cta-btn" href="${pathForTab('assessment')}" id="ctaMMAssess">Start an assessment →</a>
         </div>
       </div>
     </div>
   `;
-  document.getElementById('ctaMMAssess').addEventListener('click', ()=> goToTab('assessment'));
-  document.getElementById('linkMaturityFromWhat').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('maturity'); });
-  document.getElementById('linkMetricsFromWhat').addEventListener('click', (e)=>{ e.preventDefault(); goToTab('metrics'); });
+  wireNavLink(document.getElementById('ctaMMAssess'), 'assessment');
+  wireNavLink(document.getElementById('linkMaturityFromWhat'), 'maturity');
+  wireNavLink(document.getElementById('linkMetricsFromWhat'), 'metrics');
 }
 
 // STARTER-GUIDE-BRIEF.md: a narrative, in-order on-ramp for someone starting
@@ -2194,12 +2243,12 @@ function renderMaturityModelTab(container){
 // to get you started", per the brief's own "End of page" framing.
 const STARTER_GUIDE_SECTIONS = [
   { id:'sg-audience', icon:'route', title:'Who this page is for', body:`
-    <p class="body-text">New to cybersecurity? Just took on IT for a company that never had a dedicated setup before? This page is the on-ramp - the foundational concepts worth understanding before you touch the actual assessment, written in plain language, in an order that actually makes sense to read top to bottom. If you already know this material, the <a href="#" class="inline-link sg-crosslink" data-tab="assessment">assessment</a> itself and the <a href="#" class="inline-link sg-crosslink" data-tab="glossary">Glossary</a> will serve you better than this page will.</p>
+    <p class="body-text">New to cybersecurity? Just took on IT for a company that never had a dedicated setup before? This page is the on-ramp - the foundational concepts worth understanding before you touch the actual assessment, written in plain language, in an order that actually makes sense to read top to bottom. If you already know this material, the <a href="${pathForTab('assessment')}" class="inline-link sg-crosslink" data-tab="assessment">assessment</a> itself and the <a href="${pathForTab('glossary')}" class="inline-link sg-crosslink" data-tab="glossary">Glossary</a> will serve you better than this page will.</p>
   `},
   { id:'sg-identity', icon:'key', title:'Identity & Access', body:`
     <p class="body-text">Access control decides who can do what - and it's the foundation everything else sits on, because a strong password policy doesn't matter if the wrong person already has admin rights they never needed.</p>
-    <p class="body-text"><b>The principle of least privilege</b> means giving people access to exactly what their role requires, nothing more. An access control list (ACL) is the practical mechanism for this - a defined set of permissions attached to a system, file, or resource, specifying exactly who can read, write, or execute it. See the <a href="#" class="inline-link sg-crosslink" data-tab="glossary" data-anchor="gl-L">Glossary</a> for more on least privilege specifically.</p>
-    <p class="body-text"><b>Password policy</b> is more than "make it long." A genuinely useful policy covers minimum length (current guidance favors length over complex character requirements), discouraging reuse across systems, and - critically - requiring multi-factor authentication (<a href="#" class="inline-link sg-crosslink" data-tab="glossary" data-anchor="gl-M">MFA</a>) wherever it's available, since a strong password alone is no longer considered sufficient on its own.</p>
+    <p class="body-text"><b>The principle of least privilege</b> means giving people access to exactly what their role requires, nothing more. An access control list (ACL) is the practical mechanism for this - a defined set of permissions attached to a system, file, or resource, specifying exactly who can read, write, or execute it. See the <a href="${pathForTab('glossary', 'gl-L')}" class="inline-link sg-crosslink" data-tab="glossary" data-anchor="gl-L">Glossary</a> for more on least privilege specifically.</p>
+    <p class="body-text"><b>Password policy</b> is more than "make it long." A genuinely useful policy covers minimum length (current guidance favors length over complex character requirements), discouraging reuse across systems, and - critically - requiring multi-factor authentication (<a href="${pathForTab('glossary', 'gl-M')}" class="inline-link sg-crosslink" data-tab="glossary" data-anchor="gl-M">MFA</a>) wherever it's available, since a strong password alone is no longer considered sufficient on its own.</p>
     <p class="body-text"><b>Passkeys</b> are a newer, stronger alternative to passwords entirely. Instead of a shared secret you type in (which can be phished, guessed, or leaked in a breach), a passkey uses public-key cryptography tied to your device - you approve a login with your fingerprint, face, or device PIN, and there's no password for an attacker to steal in the first place. They're built on the FIDO Alliance's open standard and are increasingly supported across major platforms (Microsoft, Google, Apple accounts all support them today).</p>
     <p class="body-text"><b>Identity management</b> is how an organization handles all of this at scale - who has an account, what they can access, and how that access changes as people join, move roles, or leave. Larger organizations typically centralize this through an identity provider (IdP) with single sign-on (SSO), so access can be granted or revoked from one place rather than chasing down permissions system by system.</p>
   `},
@@ -2211,17 +2260,17 @@ const STARTER_GUIDE_SECTIONS = [
   { id:'sg-infrastructure', icon:'cloud', title:'Infrastructure & Services', body:`
     <p class="body-text">Where does your organization's technology actually live? <b>Cloud vs. on-premises</b> is the first fork - and most organizations today run a mix of both, not a clean either/or.</p>
     <p class="body-text">Within cloud services, it helps to know the three common models: <b>SaaS</b> (Software as a Service - you use a finished application, like email or CRM, and the provider manages everything underneath it), <b>PaaS</b> (Platform as a Service - you deploy your own code onto infrastructure the provider manages), and <b>IaaS</b> (Infrastructure as a Service - you manage the operating system and everything above it, on infrastructure the provider hosts). Each model shifts a different amount of security responsibility onto you versus the provider - worth knowing which model you're actually using for a given system.</p>
-    <p class="body-text"><b>Basic network concepts</b> worth understanding early: a firewall controls what traffic is allowed in or out of a network based on rules; a VPN (virtual private network) creates an encrypted tunnel for remote access; network <a href="#" class="inline-link sg-crosslink" data-tab="glossary" data-anchor="gl-S">segmentation</a> means dividing a network into smaller, isolated zones so that a compromise in one area doesn't automatically grant access to everything else.</p>
+    <p class="body-text"><b>Basic network concepts</b> worth understanding early: a firewall controls what traffic is allowed in or out of a network based on rules; a VPN (virtual private network) creates an encrypted tunnel for remote access; network <a href="${pathForTab('glossary', 'gl-S')}" class="inline-link sg-crosslink" data-tab="glossary" data-anchor="gl-S">segmentation</a> means dividing a network into smaller, isolated zones so that a compromise in one area doesn't automatically grant access to everything else.</p>
   `},
   { id:'sg-protecting', icon:'backup', title:'Protecting What You Have', body:`
     <p class="body-text"><b>Backups</b> are the single most consistently under-tested control in most organizations. The well-established guideline is the <b>3-2-1 rule</b>: keep at least 3 copies of your data, on 2 different types of storage media, with at least 1 copy stored offsite. Critically - a backup that has never been tested for restoration isn't a real backup, it's an assumption. Ransomware specifically targets backups when it can reach them, which is exactly why the offsite/isolated copy matters most.</p>
-    <p class="body-text"><b>Patching</b> means applying vendor-released updates that fix known vulnerabilities. The gap between a patch being released and it actually being applied is exactly the window attackers look for - this is why frameworks like NIST CSF and tools like CISA's <a href="#" class="inline-link sg-crosslink" data-tab="exploits">Known Exploited Vulnerabilities catalog</a> exist to help prioritize which patches matter most urgently, not just track that patches exist.</p>
-    <p class="body-text"><b>Endpoint protection</b> (antivirus, and its more capable modern successor, <a href="#" class="inline-link sg-crosslink" data-tab="glossary" data-anchor="gl-E">EDR</a> - endpoint detection and response) is the layer watching individual devices for malicious activity, not just blocking known-bad files but detecting suspicious behavior in real time.</p>
+    <p class="body-text"><b>Patching</b> means applying vendor-released updates that fix known vulnerabilities. The gap between a patch being released and it actually being applied is exactly the window attackers look for - this is why frameworks like NIST CSF and tools like CISA's <a href="${pathForTab('exploits')}" class="inline-link sg-crosslink" data-tab="exploits">Known Exploited Vulnerabilities catalog</a> exist to help prioritize which patches matter most urgently, not just track that patches exist.</p>
+    <p class="body-text"><b>Endpoint protection</b> (antivirus, and its more capable modern successor, <a href="${pathForTab('glossary', 'gl-E')}" class="inline-link sg-crosslink" data-tab="glossary" data-anchor="gl-E">EDR</a> - endpoint detection and response) is the layer watching individual devices for malicious activity, not just blocking known-bad files but detecting suspicious behavior in real time.</p>
   `},
   { id:'sg-people', icon:'people', title:'People Matter Too', body:`
     <p class="body-text">Technology alone doesn't secure an organization - the people using it are part of the system, for better or worse.</p>
-    <p class="body-text"><b>Security awareness training</b> teaches staff to recognize real threats (<a href="#" class="inline-link sg-crosslink" data-tab="glossary" data-anchor="gl-P">phishing</a> emails, social engineering attempts, unsafe practices) - but training without reinforcement fades. That's why <b>phishing simulation</b> exists: periodically sending realistic, safe test phishing emails to see who clicks, then using that as a coaching opportunity rather than a punishment.</p>
-    <p class="body-text"><b>Incident response</b>, at a foundational level, just means having a plan <i>before</i> something goes wrong - who gets notified, who has authority to make decisions, and what the first steps are. This page won't go deep here; the site's <a href="#" class="inline-link sg-crosslink" data-tab="runbook">Runbooks</a> are built specifically for that level of detail once you need it.</p>
+    <p class="body-text"><b>Security awareness training</b> teaches staff to recognize real threats (<a href="${pathForTab('glossary', 'gl-P')}" class="inline-link sg-crosslink" data-tab="glossary" data-anchor="gl-P">phishing</a> emails, social engineering attempts, unsafe practices) - but training without reinforcement fades. That's why <b>phishing simulation</b> exists: periodically sending realistic, safe test phishing emails to see who clicks, then using that as a coaching opportunity rather than a punishment.</p>
+    <p class="body-text"><b>Incident response</b>, at a foundational level, just means having a plan <i>before</i> something goes wrong - who gets notified, who has authority to make decisions, and what the first steps are. This page won't go deep here; the site's <a href="${pathForTab('runbook')}" class="inline-link sg-crosslink" data-tab="runbook">Runbooks</a> are built specifically for that level of detail once you need it.</p>
   `},
   { id:'sg-tools', icon:'checklist', title:'Tools That Help', body:`
     <p class="body-text">None of the above requires expensive tooling to start doing well, but the right category of tool makes consistency much easier at any real scale. Presented here at a category level, not as endorsements of specific products:</p>
@@ -2299,7 +2348,7 @@ function renderStarterGuideTab(container){
         ${s.links ? `
           <div class="start-links">
             ${s.links.map(l=>`
-              <a class="start-link" href="#" data-tab="${l.tab}">
+              <a class="start-link" href="${pathForTab(l.tab)}" data-tab="${l.tab}">
                 <div class="icon-badge">${icon(l.icon)}</div>
                 <div><h4>${l.title}</h4><p>${l.desc}</p></div>
               </a>
@@ -2311,12 +2360,8 @@ function renderStarterGuideTab(container){
   `).join('');
   wireAccordions(accContainer);
 
-  accContainer.querySelectorAll('.start-link[data-tab]').forEach(el=>{
-    el.addEventListener('click', (e)=>{ e.preventDefault(); goToTab(el.dataset.tab); });
-  });
-  accContainer.querySelectorAll('.sg-crosslink').forEach(el=>{
-    el.addEventListener('click', (e)=>{ e.preventDefault(); goToTab(el.dataset.tab, el.dataset.anchor || undefined); });
-  });
+  wireNavLinksByDataset(accContainer, '.start-link[data-tab]');
+  wireNavLinksByDataset(accContainer, '.sg-crosslink');
 
   // Jumping to a specific section from the TOC while every accordion
   // starts collapsed would land on an empty header - open the target
@@ -2396,7 +2441,7 @@ function renderNewsList(container, newsData){
                 // through to an Exploits card that may not exist. See §1
                 // of EXPLOITS-FIX-BRIEF.md.
                 (n.cveId && n.source === 'CISA KEV Catalog')
-                  ? `<button type="button" class="news-source-exploit-link" data-goto-exploit="${n.cveId}">${n.source} - full detail on Exploits →</button>`
+                  ? `<a class="news-source-exploit-link" href="${pathForTab('exploits', `exploit-${n.cveId}`)}" data-goto-exploit="${n.cveId}">${n.source} - full detail on Exploits →</a>`
                   : (n.sourceUrl ? `<a href="${n.sourceUrl}" target="_blank" rel="noopener noreferrer">${n.source}</a>` : n.source)
               }</div>
             </div>
@@ -2433,7 +2478,7 @@ function renderNewsList(container, newsData){
     </div>
   `;
   container.querySelectorAll('[data-goto-exploit]').forEach(btn=>{
-    btn.addEventListener('click', ()=> goToTab('exploits', `exploit-${btn.dataset.gotoExploit}`));
+    wireNavClick(btn, ()=> ({ tab:'exploits', anchor:`exploit-${btn.dataset.gotoExploit}` }));
   });
   container.querySelectorAll('.filter-pill').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -2682,13 +2727,14 @@ function renderFeedbackTab(container){
         <div id="feedbackSuccess" style="display:none;">
           <p class="body-text">Thank you - your feedback has been sent. It's genuinely read and taken into account for what gets worked on next.</p>
           <div class="cta-row">
-            <button class="cta-btn secondary" id="fbBackHome">Back to Home</button>
+            <a class="cta-btn secondary" href="${pathForTab('home')}" id="fbBackHome">Back to Home</a>
           </div>
         </div>
       </div>
     </div>
   `;
-  document.getElementById('fbBackHome')?.addEventListener('click', ()=> goToTab('home'));
+  const fbBackHome = document.getElementById('fbBackHome');
+  if(fbBackHome) wireNavLink(fbBackHome, 'home');
   document.getElementById('feedbackForm').addEventListener('submit', async (e)=>{
     e.preventDefault();
     const errEl = document.getElementById('fbError');
@@ -2806,12 +2852,12 @@ function renderCorePrinciplesTab(container){
           `).join('')}
         </div>
         <div class="cta-row">
-          <button class="cta-btn" id="ctaPrinciplesAssess">See these principles in practice →</button>
+          <a class="cta-btn" href="${pathForTab('assessment')}" id="ctaPrinciplesAssess">See these principles in practice →</a>
         </div>
       </div>
     </div>
   `;
-  document.getElementById('ctaPrinciplesAssess').addEventListener('click', ()=> goToTab('assessment'));
+  wireNavLink(document.getElementById('ctaPrinciplesAssess'), 'assessment');
 }
 
 function renderPlaybooksTab(container){
@@ -2904,14 +2950,14 @@ function renderCaseStudyTab(container){
           `).join('')}
         </div>
         <div class="cta-row">
-          <button class="cta-btn" id="ctaCaseAssess">See where you stand →</button>
-          <button class="cta-btn secondary" id="ctaCaseRunbook">See the matching runbooks</button>
+          <a class="cta-btn" href="${pathForTab('assessment')}" id="ctaCaseAssess">See where you stand →</a>
+          <a class="cta-btn secondary" href="${pathForTab('runbook')}" id="ctaCaseRunbook">See the matching runbooks</a>
         </div>
       </div>
     </div>
   `;
-  document.getElementById('ctaCaseAssess').addEventListener('click', ()=> goToTab('assessment'));
-  document.getElementById('ctaCaseRunbook').addEventListener('click', ()=> goToTab('runbook'));
+  wireNavLink(document.getElementById('ctaCaseAssess'), 'assessment');
+  wireNavLink(document.getElementById('ctaCaseRunbook'), 'runbook');
 }
 
 
@@ -2960,14 +3006,12 @@ async function renderHistory(){
         `).join('') : '<p class="body-text">No assessments saved yet - complete one to start tracking.</p>'}
       </div>
       <div class="cta-row">
-        <button class="cta-btn" id="backToScope">← Back to Assessment</button>
+        <a class="cta-btn" href="${pathForTab('assessment')}" id="backToScope">← Back to Assessment</a>
         ${runs.length ? `<button class="cta-btn secondary" id="clearHistory">Clear history</button>` : ''}
       </div>
     </div>
   `;
-  document.getElementById('backToScope').addEventListener('click', ()=>{
-    goToTab('assessment');
-  });
+  wireNavLink(document.getElementById('backToScope'), 'assessment');
   const clearBtn = document.getElementById('clearHistory');
   if(clearBtn){
     clearBtn.addEventListener('click', async ()=>{
@@ -2990,4 +3034,12 @@ async function renderHistory(){
   renderSearchWidget();
   renderHamburgerMenu();
   renderApp();
+  // Back/forward: the URL has already changed by the time this fires, so
+  // just read it and re-render - no pushState here, goToTab() already
+  // handles the forward-navigation case.
+  window.addEventListener('popstate', ()=>{
+    activeTab = tabForPath(location.pathname);
+    pendingAnchor = location.hash ? location.hash.slice(1) : null;
+    renderApp();
+  });
 })();

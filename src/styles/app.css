@@ -86,6 +86,19 @@
     border-radius:6px;
   }
   .icon-badge, .footer-social-icon{ border-radius:50%; }
+
+  /* --- anchor reset for nav elements retagged from button/div to <a> per
+     ROUTING-FIX-BRIEF.md, so real hrefs support right-click/middle-click
+     open-in-new-tab. None of these were ever meant to look like a link -
+     each already defines its own complete visual treatment, so the
+     browser's default underline/blue/inline just needs suppressing.
+     Placed before each class's own rule so a class that already sets its
+     own display (e.g. .tab-btn's display:flex) still wins for that
+     property specifically. --- */
+  .tab-btn, .dropdown-link, .mobile-nav-link, .mobile-nav-sublink,
+  .search-result, .site-tile, .cta-btn, .history-link{
+    display:block; text-decoration:none; color:inherit;
+  }
   /* --- genuine glass (not flat color) for the larger --surface-raised
      containers; small decorative elements and form/table chrome are
      deliberately excluded --- */
@@ -528,6 +541,16 @@
   button.primary:hover{ filter:brightness(1.08); }
   button:not(.primary):hover{ border-color:var(--accent-signal); }
   button:disabled{ opacity:0.35; cursor:not-allowed; }
+  /* #viewHistoryBtn sits next to two real <button> siblings that get their
+     entire look from the bare button{} rule above - it was retagged to <a>
+     per ROUTING-FIX-BRIEF.md so it carries a real href, so it needs the
+     same declarations explicitly since button{} can't match it anymore. */
+  a#viewHistoryBtn{
+    font-family:var(--sans); font-size:14px; font-weight:600; padding:11px 22px;
+    border:1px solid var(--line); background:transparent; color:var(--text);
+    cursor:pointer; transition:all .15s ease; text-decoration:none; display:inline-block;
+  }
+  a#viewHistoryBtn:hover{ border-color:var(--accent-signal); }
 
   /* --- results --- */
   .results{ display:none; }
