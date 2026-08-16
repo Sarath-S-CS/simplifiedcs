@@ -22877,12 +22877,16 @@ ${suffix}`;
   async function loadNewsData() {
     if (newsCache) return newsCache;
     try {
-      const { data, error } = await supabase.from("news_items").select("headline, body, source, source_url, category, published_at").order("priority_score", { ascending: false }).order("published_at", { ascending: false }).limit(100);
+      const { data, error } = await supabase.from("news_items").select("external_id, headline, body, source, source_url, category, published_at").order("priority_score", { ascending: false }).order("published_at", { ascending: false }).limit(100);
       if (error) throw error;
       if (data && data.length) {
         newsCache = {
           live: true,
           items: data.map((d) => ({
+            // external_id is 'cve:CVE-xxxx-xxxxx' for KEV-sourced items, used
+            // below to link through to the matching Exploits entry instead of
+            // duplicating its mitigation detail inline here.
+            cveId: d.external_id?.startsWith("cve:") ? d.external_id.slice(4) : null,
             headline: d.headline,
             body: d.body,
             source: d.source,
@@ -22897,7 +22901,7 @@ ${suffix}`;
     }
     newsCache = {
       live: false,
-      items: [...NEWS_ITEMS].sort((a2, b) => b.date.localeCompare(a2.date)).map((n) => ({ headline: n.headline, body: n.body, source: n.source, sourceUrl: null, cat: n.cat, publishedAt: n.date }))
+      items: [...NEWS_ITEMS].sort((a2, b) => b.date.localeCompare(a2.date)).map((n) => ({ headline: n.headline, body: n.body, source: n.source, sourceUrl: null, cveId: null, cat: n.cat, publishedAt: n.date }))
     };
     return newsCache;
   }
@@ -23766,8 +23770,10 @@ ${suffix}`;
   function scrollToPendingAnchor() {
     if (!pendingAnchor) return;
     const el = document.getElementById(pendingAnchor);
-    pendingAnchor = null;
-    if (el && typeof el.scrollIntoView === "function") el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      pendingAnchor = null;
+    }
   }
   function renderApp() {
     const tc = document.getElementById("tabContent");
@@ -24943,7 +24949,14 @@ ${suffix}`;
               <div class="news-meta"><span>${new Date(n.publishedAt).toLocaleDateString(void 0, { month: "short", day: "numeric", year: "numeric" })}</span><span class="news-cat">${NEWS_CATS.find((c) => c.id === n.cat)?.label || n.cat}</span></div>
               <h4>${n.headline}</h4>
               <p>${n.body}</p>
-              <div class="news-source">${n.sourceUrl ? `<a href="${n.sourceUrl}" target="_blank" rel="noopener noreferrer">${n.source}</a>` : n.source}</div>
+              <div class="news-source">${// Only KEV-sourced items are guaranteed to actually have a
+    // matching entry on Exploits (which tracks confirmed
+    // actively-exploited CVEs specifically, not every
+    // high-CVSS NVD disclosure) - checking source here, not
+    // just presence of a CVE id, avoids linking NVD items
+    // through to an Exploits card that may not exist. See §1
+    // of EXPLOITS-FIX-BRIEF.md.
+    n.cveId && n.source === "CISA KEV Catalog" ? `<button type="button" class="news-source-exploit-link" data-goto-exploit="${n.cveId}">${n.source} - full detail on Exploits \u2192</button>` : n.sourceUrl ? `<a href="${n.sourceUrl}" target="_blank" rel="noopener noreferrer">${n.source}</a>` : n.source}</div>
             </div>
           `).join("")}
         </div>
@@ -24977,6 +24990,9 @@ ${suffix}`;
       </div>
     </div>
   `;
+    container.querySelectorAll("[data-goto-exploit]").forEach((btn) => {
+      btn.addEventListener("click", () => goToTab("exploits", `exploit-${btn.dataset.gotoExploit}`));
+    });
     container.querySelectorAll(".filter-pill").forEach((btn) => {
       btn.addEventListener("click", () => {
         newsFilter = btn.dataset.cat;
@@ -24997,6 +25013,7 @@ ${suffix}`;
     }
     return exploitsCache;
   }
+  var EXPLOITS_RETENTION_CAP = 60;
   var EXPLOIT_FILTERS = [
     { id: "all", label: "All" },
     { id: "ransomware", label: "Ransomware-Linked" },
@@ -25027,6 +25044,7 @@ ${suffix}`;
     if (!document.getElementById("tabContent")?.contains(container) && activeTab !== "exploits") return;
     renderExploitsList(container, exploitsData);
     observeReveals();
+    scrollToPendingAnchor();
   }
   function renderExploitsList(container, exploitsData) {
     const items = exploitsData.items.filter((n) => matchesExploitFilter(n, exploitsFilter));
@@ -25044,7 +25062,7 @@ ${suffix}`;
         </div>
       ` : `
         <div class="section-tile">
-          <p class="news-freshness">Refreshed daily from CISA's Known Exploited Vulnerabilities catalog, scored with EPSS (Exploit Prediction Scoring System) from FIRST.org - a model estimating the probability a vulnerability will actually be exploited, not just how severe it could theoretically be.</p>
+          <p class="news-freshness">Refreshed daily from CISA's Known Exploited Vulnerabilities catalog, VulnCheck's KEV, and ENISA's EU Vulnerability Database, scored with EPSS (Exploit Prediction Scoring System) from FIRST.org - a model estimating the probability a vulnerability will actually be exploited, not just how severe it could theoretically be. Ranked by priority and capped at the ${EXPLOITS_RETENTION_CAP} highest-priority entries, not just newest-first, so the list stays current without growing unbounded.</p>
           <div class="news-filters">
             ${EXPLOIT_FILTERS.map((f) => `<button class="filter-pill ${exploitsFilter === f.id ? "active" : ""}" data-filter="${f.id}">${f.label}</button>`).join("")}
           </div>
@@ -25055,7 +25073,7 @@ ${suffix}`;
       const dateAdded = new Date(item.date_added).toLocaleDateString(void 0, { month: "short", day: "numeric", year: "numeric" });
       const dueDate = item.due_date ? new Date(item.due_date).toLocaleDateString(void 0, { month: "short", day: "numeric", year: "numeric" }) : null;
       return `
-                <div class="exploit-card">
+                <div class="exploit-card" id="exploit-${item.cve_id}">
                   <div class="exploit-meta">
                     <span class="exploit-cve">${item.cve_id}</span>
                     ${item.is_ransomware ? '<span class="exploit-ransomware-badge">Ransomware-Linked</span>' : ""}

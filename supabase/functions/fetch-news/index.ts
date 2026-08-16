@@ -48,18 +48,40 @@ function truncate(s: string, n: number): string {
   return s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s;
 }
 
+// KEV_NEWS_LIMIT is deliberately small: this feed is meant to surface a
+// curated handful of genuinely notable exploited-vulnerability items as
+// news-style context, not the full KEV catalog - that's what the dedicated
+// Exploits tab is for (see supabase/functions/fetch-exploits). Before this
+// was capped, both tabs independently pulled the same ~40 raw KEV entries
+// with the same embedded mitigation text, which read as duplicated content
+// once Exploits existed. Selecting the top N *by this feed's own priority
+// score* (not just most-recent) means what actually surfaces here is
+// ransomware-linked or freshly-added, the same signal already used to rank
+// the rest of the News feed.
+const KEV_NEWS_LIMIT = 8;
+const KEV_POOL_SIZE = 60; // broader pool to rank within before taking the curated top N
+
 async function fetchKev() {
   const res = await fetch("https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json");
   if (!res.ok) throw new Error(`CISA KEV fetch failed: ${res.status}`);
   const data = await res.json();
-  const items = (data.vulnerabilities ?? [])
+  const pool = (data.vulnerabilities ?? [])
     .sort((a: any, b: any) => b.dateAdded.localeCompare(a.dateAdded))
-    .slice(0, 40);
-  return items.map((v: any) => {
+    .slice(0, KEV_POOL_SIZE);
+  const scored = pool.map((v: any) => {
     const isRansomware = v.knownRansomwareCampaignUse === "Known";
     const priority = 75 + (isRansomware ? 15 : 0) + recencyBonus(v.dateAdded, 10, 30);
+    return { v, isRansomware, priority };
+  });
+  scored.sort((a, b) => b.priority - a.priority);
+  return scored.slice(0, KEV_NEWS_LIMIT).map(({ v, isRansomware, priority }) => {
+    // No mitigation/technical detail here by design - that's the Exploits
+    // tab's job (see the "See full detail on Exploits" link the client adds
+    // for KEV-sourced items). Embedding CISA's full requiredAction text
+    // here is exactly what caused this feed and Exploits to show near-
+    // identical content for the same CVE.
     const body = truncate(
-      `${v.shortDescription} Required action: ${v.requiredAction}${isRansomware ? " Known to be used in ransomware campaigns." : ""}`,
+      `${v.shortDescription}${isRansomware ? " Known to be used in ransomware campaigns." : ""}`,
       500
     );
     return {
