@@ -1792,12 +1792,12 @@
         activeIdx = 1 + (posInVisible >= 0 ? posInVisible : 0);
       } else if (ui.phase === "wizard") activeIdx = 1 + visiblePre.length + ui.categoryIndex;
       else activeIdx = items.length - 1;
-      rail.innerHTML = '<div class="rail-line"></div>' + items.map((label, i) => {
+      rail.innerHTML = '<div class="rail-line"></div><div class="rail-dots">' + items.map((label, i) => {
         let cls = "node";
         if (i < activeIdx) cls += " done";
         if (i === activeIdx) cls += " active";
         return `<div class="${cls}"><div class="dot"></div><div class="label">${label}</div></div>`;
-      }).join("");
+      }).join("") + `</div><div class="rail-active-label">${items[activeIdx]}</div>`;
     }
     function updateSerial() {
       const el = document.getElementById("serial");

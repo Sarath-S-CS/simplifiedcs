@@ -68,6 +68,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     else activeIdx = items.length - 1;
     rail.innerHTML =
       '<div class="rail-line"></div>' +
+      '<div class="rail-dots">' +
       items
         .map((label, i) => {
           let cls = "node";
@@ -75,7 +76,12 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           if (i === activeIdx) cls += " active";
           return `<div class="${cls}"><div class="dot"></div><div class="label">${label}</div></div>`;
         })
-        .join("");
+        .join("") +
+      "</div>" +
+      // Only rendered below 720px (see .rail-active-label in app.css) - the
+      // horizontal mobile rail hides each node's own label and shows this
+      // one instead, since there's no room for 8-15+ of them at once.
+      `<div class="rail-active-label">${items[activeIdx]}</div>`;
   }
 
   // ---------- scope screen (§5.1) ----------
