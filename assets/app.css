@@ -937,7 +937,7 @@
   .exploit-score-label{ display:block; font-size:10.5px; color:var(--text-muted); line-height:1.4; margin-top:4px; }
   .exploit-sectors{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
   .exploit-sector-chip{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); border:1px solid var(--line); padding:2px 8px; }
-  .exploit-card p{ font-size:13.5px; color:var(--text-muted); line-height:1.65; margin:0 0 10px; }
+  .exploit-card p{ font-size:13.5px; color:var(--text-muted); line-height:1.65; margin:0 0 10px; overflow-wrap:break-word; }
   .exploit-safety{ padding:12px 14px; background:var(--surface-raised); border-left:2px solid var(--accent-signal); }
   .exploit-safety b{ color:var(--text); }
   .exploit-footer{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
