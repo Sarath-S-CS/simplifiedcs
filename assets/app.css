@@ -203,7 +203,7 @@
   }
   @media (max-width:720px){
     .layout{grid-template-columns:1fr;}
-    .rail{display:flex; flex-direction:row; gap:0; margin-bottom:24px;}
+    .rail{margin-bottom:24px;}
   }
 
   /* --- tab navigation --- */
@@ -447,6 +447,34 @@
   }
   .node.active .label{ color:var(--text); }
   .node.done .label{ color:var(--text-muted); }
+  /* Current-step readout for the horizontal mobile rail below - hidden here
+     since the desktop vertical rail already shows every label in place. */
+  .rail-active-label{ display:none; }
+  /* Below 720px .rail turns into a horizontal dot trail (see .layout's own
+     media query above) - with 8-15+ steps depending on which profile
+     screens are visible (§5.2 branching), a per-dot text label has nowhere
+     near enough room and was previously forcing the whole rail (and page)
+     wider than the viewport. Dots alone, evenly spaced by flex:1, always
+     fit; .rail-active-label carries the one label that actually matters at
+     a glance - the current step - as its own centered line below the
+     trail, so nothing is lost, it just isn't all shown at once anymore.
+     .rail-active-label is a plain block sibling AFTER .rail-dots rather
+     than a flex:1 0 100% item inside the same flex row - with flex-basis:0
+     on every .node, their combined hypothetical size is ~0, so the wrap
+     algorithm judged the row (nodes + a 100%-basis label) as never
+     exceeding the container and never actually wrapped, rendering the
+     label on top of the dots instead of below them. Normal block flow
+     doesn't have that edge case. */
+  @media (max-width:720px){
+    .rail-line{ left:0; right:0; top:14px; bottom:auto; width:auto; height:1px; }
+    .rail-dots{ display:flex; flex-direction:row; }
+    .node{ flex:1 1 0; min-width:0; gap:0; padding:8px 0; justify-content:center; }
+    .node .label{ display:none; }
+    .rail-active-label{
+      display:block; width:100%;
+      margin-top:8px; text-align:center; overflow-wrap:break-word;
+    }
+  }
 
   /* --- main panel --- */
   .panel{
