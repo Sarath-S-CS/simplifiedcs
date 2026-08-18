@@ -23852,6 +23852,7 @@ ${suffix}`;
     }
   }
   function renderApp() {
+    if (!pendingAnchor) window.scrollTo(0, 0);
     const tc = document.getElementById("tabContent");
     if (tc && tc.childNodes.length) {
       tc.classList.add("tab-fade");
@@ -23936,7 +23937,7 @@ ${suffix}`;
       window._tabnavOutsideClickBound = true;
     }
     if (!window._footerLinksBound) {
-      wireNavLinksByDataset(document, ".footer-links a[data-tab]", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+      wireNavLinksByDataset(document, ".footer-links a[data-tab]");
       const brandLink = document.getElementById("brandHomeLink");
       if (brandLink) wireNavLink(brandLink, "home");
       window._footerLinksBound = true;
@@ -24591,10 +24592,8 @@ ${suffix}`;
       });
     });
     const riskDesc = document.getElementById("riskSliderDesc");
-    const riskTile = riskDesc.closest(".section-tile");
     function closeRiskDesc() {
       riskDesc.classList.remove("open");
-      if (riskTile) riskTile.classList.remove("has-open-overlay");
     }
     document.addEventListener("click", (e) => {
       if (openStageDetail && !e.target.closest(".workflow-row") && !e.target.closest(".stage-detail-panel")) {
@@ -24606,7 +24605,6 @@ ${suffix}`;
     });
     window.addEventListener("scroll", () => {
       if (openStageDetail) closeStageDetail();
-      closeRiskDesc();
     }, { passive: true });
     container.querySelectorAll(".risk-slider-tick").forEach((btn) => {
       btn.addEventListener("click", (e) => {
@@ -24616,7 +24614,6 @@ ${suffix}`;
         btn.classList.add("active");
         riskDesc.innerHTML = `<b>Risk score ${n}:</b> ${RISK_SCORE_DESCRIPTIONS[n]}`;
         riskDesc.classList.remove("open");
-        if (riskTile) riskTile.classList.add("has-open-overlay");
         requestAnimationFrame(() => riskDesc.classList.add("open"));
       });
     });
@@ -25885,6 +25882,7 @@ ${suffix}`;
     observeReveals();
   }
   (async function init() {
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
     window.addEventListener("resize", syncViewportWidthVar);
     try {
       const r = await window.storage.get("theme", false);
