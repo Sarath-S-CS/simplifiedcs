@@ -2613,11 +2613,12 @@ function matchesExploitFilter(item, filterId){
 }
 
 // ANIMATIONS-BRIEF.md: a "live threat detection" visual for the Exploits
-// methodology note - pulsing radar rings plus a few small blips fading in
-// at fixed points, in the same accent-critical/accent-amber threat colors
-// already used for the ransomware-linked badge on this page, reinforcing
-// the "refreshed daily... capped" text next to it rather than introducing
-// a new palette. CSS-driven (@keyframes, see app.css), respects
+// page's main intro, alongside the title (same page-intro-row slot
+// buildMaturityClimbSvg uses on the Maturity page) - pulsing radar rings
+// plus a few small blips fading in at fixed points, in the same
+// accent-critical/accent-amber threat colors already used for the
+// ransomware-linked badge on this page rather than introducing a new
+// palette. CSS-driven (@keyframes, see app.css), respects
 // prefers-reduced-motion there too.
 function buildExploitsRadarSvg(){
   const blips = [
@@ -2640,9 +2641,14 @@ async function renderExploitsTab(container){
   container.innerHTML = `
     <div class="page">
       <div class="page-intro revealed">
-        <div class="page-eyebrow">Active Threats</div>
-        <h2 class="page-title">Exploits</h2>
-        <p class="page-lede">Vulnerabilities with confirmed active exploitation in the wild - not just a high severity score - sourced from CISA's Known Exploited Vulnerabilities catalog and scored by real-world exploitation likelihood.</p>
+        <div class="page-intro-row">
+          <div class="page-intro-text">
+            <div class="page-eyebrow">Active Threats</div>
+            <h2 class="page-title">Exploits</h2>
+            <p class="page-lede">Vulnerabilities with confirmed active exploitation in the wild - not just a high severity score - sourced from CISA's Known Exploited Vulnerabilities catalog and scored by real-world exploitation likelihood.</p>
+          </div>
+          <div class="exploit-radar-wrap">${buildExploitsRadarSvg()}</div>
+        </div>
       </div>
       <div class="section-tile revealed"><p class="body-text">Loading the latest…</p></div>
     </div>
@@ -2664,9 +2670,14 @@ function renderExploitsList(container, exploitsData){
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
-        <div class="page-eyebrow">Active Threats</div>
-        <h2 class="page-title">Exploits</h2>
-        <p class="page-lede">Vulnerabilities with confirmed active exploitation in the wild - not just a high severity score - sourced from CISA's Known Exploited Vulnerabilities catalog and scored by real-world exploitation likelihood.</p>
+        <div class="page-intro-row">
+          <div class="page-intro-text">
+            <div class="page-eyebrow">Active Threats</div>
+            <h2 class="page-title">Exploits</h2>
+            <p class="page-lede">Vulnerabilities with confirmed active exploitation in the wild - not just a high severity score - sourced from CISA's Known Exploited Vulnerabilities catalog and scored by real-world exploitation likelihood.</p>
+          </div>
+          <div class="exploit-radar-wrap">${buildExploitsRadarSvg()}</div>
+        </div>
       </div>
 
       ${!exploitsData.live || !exploitsData.items.length ? `
@@ -2675,10 +2686,7 @@ function renderExploitsList(container, exploitsData){
         </div>
       ` : `
         <div class="section-tile">
-          <div class="exploit-live-row">
-            <p class="news-freshness">Refreshed daily from CISA's Known Exploited Vulnerabilities catalog, VulnCheck's KEV, and ENISA's EU Vulnerability Database, scored with EPSS (Exploit Prediction Scoring System) from FIRST.org - a model estimating the probability a vulnerability will actually be exploited, not just how severe it could theoretically be. Ranked by priority and capped at the ${EXPLOITS_RETENTION_CAP} highest-priority entries, not just newest-first, so the list stays current without growing unbounded.</p>
-            <div class="exploit-radar-wrap">${buildExploitsRadarSvg()}</div>
-          </div>
+          <p class="news-freshness">Refreshed daily from CISA's Known Exploited Vulnerabilities catalog, VulnCheck's KEV, and ENISA's EU Vulnerability Database, scored with EPSS (Exploit Prediction Scoring System) from FIRST.org - a model estimating the probability a vulnerability will actually be exploited, not just how severe it could theoretically be. Ranked by priority and capped at the ${EXPLOITS_RETENTION_CAP} highest-priority entries, not just newest-first, so the list stays current without growing unbounded.</p>
           <div class="news-filters">
             ${EXPLOIT_FILTERS.map(f=>`<button class="filter-pill ${exploitsFilter===f.id?'active':''}" data-filter="${f.id}">${f.label}</button>`).join('')}
           </div>
