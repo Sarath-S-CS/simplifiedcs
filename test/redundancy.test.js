@@ -80,6 +80,24 @@ const KNOWN_OVERLAPS = [
   { a: "mdrProviderName", b: "webDb", reason: "coincidental 'service' word overlap - MDR security service vs. webDb's own parent (externalWebsite), unrelated to MDR" },
   { a: "outsourcedFunctionBreakdown", b: "cloudProvider", reason: "coincidental 'provider(s)' word overlap - outsourced IT/cybersecurity functions vs. cloud infrastructure provider" },
   { a: "outsourcedStructure", b: "outsourcedFunctionBreakdown", reason: "parent branch question + the next question in its own chain (fires when structure is 'different providers per service type')" },
+  // --- Cross-flow (profile question vs. NIST assessment question): the
+  // profile side asks WHAT tool/capability exists (unscored context), the
+  // NIST side scores HOW WELL or how formally it's actually used - a team
+  // can own a tool and still score low on using it well, or vice versa,
+  // so these are genuinely different facts despite sharing vocabulary.
+  { a: "awarenessLms", b: "training", reason: "cross-flow: which LMS platform (profile, unscored) vs. whether training actually happens (NIST, scored) - owning a tool isn't the same as using it" },
+  { a: "awarenessLms", b: "trainingCadence", reason: "cross-flow: which LMS platform (profile, unscored) vs. how often training actually runs (NIST, scored)" },
+  { a: "edrVendor", b: "endpoint", reason: "cross-flow: which EDR product (profile, unscored) vs. whether it's deployed on all devices (NIST, scored) - product choice isn't the same as coverage completeness" },
+  { a: "inhouseSocCapability", b: "irPlan", reason: "cross-flow: in-house SOC/IR/forensics staffing breadth (profile, unscored) vs. whether a documented IR plan exists (NIST, scored) - having the people isn't the same as having a written plan" },
+  { a: "inhouseSocCapability", b: "irTeam", reason: "cross-flow: in-house SOC/IR/forensics staffing breadth (profile, unscored, only asked on the fully-in-house branch) vs. whether any designated IR contact exists at all, in-house or not (NIST, scored, universal)" },
+  // --- Cross-flow coincidental short-phrase overlap - unrelated questions
+  // sharing a generic word ("access", "managed", "provider(s)") rather
+  // than asking about the same real-world fact.
+  { a: "otRemoteAccess", b: "vendorCount", reason: "cross-flow coincidental overlap - OT remote-access controls vs. third-party vendor count, unrelated" },
+  { a: "otRemoteAccess", b: "mfa", reason: "cross-flow coincidental 'remote access' overlap - OT-specific remote access controls vs. general MFA enforcement, different systems" },
+  { a: "otRemoteAccess", b: "soxAccessReview", reason: "cross-flow coincidental 'access' overlap - OT remote access vs. financial-system access reviews, unrelated domains" },
+  { a: "dayToDay", b: "patching", reason: "cross-flow coincidental 'managed' overlap - how cybersecurity is staffed/outsourced vs. how patches are managed, unrelated" },
+  { a: "socOwnership", b: "vendorCount", reason: "cross-flow coincidental overlap - who owns SOC/monitoring vs. third-party vendor count, unrelated" },
   // --- §5.7: documented in nist-questions.js itself as an intentional
   // cadence follow-up on top of the training question, specifically NOT a
   // duplicate - this pair is expected to score high.
@@ -297,6 +315,50 @@ test("content redundancy: every framework's injected questions, individually and
     failures,
     [],
     `new, unreviewed content overlap found:\n${JSON.stringify(failures, null, 2)}`
+  );
+});
+
+// The two tests above check redundancy *within* the profile flow and
+// *within* the NIST assessment flow separately, but never combined - so a
+// profile question duplicating a NIST question (or vice versa) would slip
+// past both. Which profile questions are visible depends only on the
+// team-structure branch; which NIST questions are visible depends only on
+// framework selection; neither affects the other, so any branch + any
+// framework combination is a valid real scenario. Checking the UNION of
+// every profile question ever visible across all TEAM_SCENARIOS against
+// the UNION of every NIST question (all frameworks at once, the maximal
+// set) therefore covers every pair that could ever actually co-occur for
+// a real user, without needing the full branch x framework cross-product.
+test("content redundancy: profile-flow questions against NIST assessment questions (cross-flow)", () => {
+  const allProfileVisible = new Map();
+  for (const scenario of TEAM_SCENARIOS) {
+    const flows = profileFlows();
+    const state = createSessionState();
+    answerSharedProfileBaseline(state, flows);
+    scenario.apply(state, flows.team);
+    collectVisible(state, [flows.org, flows.team, flows.infra, flows.container, flows.devsec, flows.ot]).forEach((n) =>
+      allProfileVisible.set(n.id, n.text)
+    );
+  }
+
+  const nistState = createSessionState();
+  for (const fw of FRAMEWORKS) nistState.answers[fw.id] = true;
+  const allNistVisible = visibleNodes(assessmentFlow(), nistState);
+
+  const combined = [
+    ...Array.from(allProfileVisible, ([id, text]) => ({ id, text })),
+    ...allNistVisible.map((n) => ({ id: n.id, text: n.text })),
+  ];
+  const profileIds = new Set(allProfileVisible.keys());
+  const nistIds = new Set(allNistVisible.map((n) => n.id));
+
+  const pairs = findSimilarPairs(combined, SIMILARITY_THRESHOLD);
+  const crossFlowOnly = pairs.filter((p) => (profileIds.has(p.a) && nistIds.has(p.b)) || (profileIds.has(p.b) && nistIds.has(p.a)));
+  const unexpected = crossFlowOnly.filter((p) => !isKnownOverlap(p.a, p.b));
+  assert.deepEqual(
+    unexpected,
+    [],
+    `new, unreviewed cross-flow overlap between a profile question and a NIST question found:\n${JSON.stringify(unexpected, null, 2)}`
   );
 });
 
