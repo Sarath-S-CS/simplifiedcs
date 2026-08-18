@@ -198,8 +198,12 @@ export const NIST_QUESTIONS = [
   scored("Detect", "soxAuditTrail", "Are audit trails for financial systems retained and protected from tampering, per your audit requirements?", [
     { v: 0, t: "No" }, { v: 1, t: "Retained, but not protected from tampering" }, { v: 2, t: "Yes, retained and protected" },
   ], { framework: "sox" }),
-  // §5.6 — PCI DSS
-  scored("Detect", "pcidssASVScanning", "Do you undergo quarterly external vulnerability scans by an Approved Scanning Vendor (ASV), as PCI DSS requires?", [
+  // §5.6 — PCI DSS. REDUNDANCY-AUDIT-BRIEF.md §2: worded as an explicit
+  // refinement of vulnScanning above (same underlying activity - external
+  // vulnerability scanning) rather than a cold re-ask, since PCI DSS's
+  // actual requirement is more specific (quarterly cadence, ASV-certified)
+  // than that general question captures.
+  scored("Detect", "pcidssASVScanning", "You mentioned your vulnerability scanning cadence above - for PCI DSS specifically, are external scans done quarterly by an Approved Scanning Vendor (ASV), as the standard requires?", [
     { v: 0, t: "No" }, { v: 1, t: "Irregularly" }, { v: 2, t: "Yes, quarterly" },
   ], { framework: "pcidss" }),
 

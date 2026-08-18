@@ -12,7 +12,19 @@ export function createSessionState() {
 export function recordAnswer(state, node, value) {
   state.answers[node.id] = value;
   if (!state.asked.includes(node.id)) state.asked.push(node.id);
-  if (node.dedupeKey) state.dedupe[node.dedupeKey] = value;
+  if (node.dedupeKey) {
+    // Most nodes sharing a dedupeKey are literally the same question asked
+    // under a different id, so the raw value carries forward unchanged.
+    // A node can instead supply dedupeValue(value) when that's not true -
+    // e.g. a multi-select where only *some* selections actually answer the
+    // deduped question (REDUNDANCY-AUDIT-BRIEF.md: partialOutsourceFunctions
+    // only implies socOwnership when "SOC/monitoring" is among the selected
+    // functions). Returning undefined means "this answer doesn't resolve
+    // the deduped question" - the dedupe key is left unset rather than
+    // populated with something misleading.
+    const dedupeValue = typeof node.dedupeValue === "function" ? node.dedupeValue(value) : value;
+    if (dedupeValue !== undefined) state.dedupe[node.dedupeKey] = dedupeValue;
+  }
 }
 
 export function hasDedupeValue(state, dedupeKey) {
