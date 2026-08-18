@@ -889,6 +889,16 @@ function scrollToPendingAnchor(){
 }
 
 function renderApp(){
+  // Every navigation funnels through here (goToTab's forward-nav and the
+  // popstate back/forward handler both call this), so it's the one place
+  // that can reliably reset scroll position - without it, a page you
+  // navigate to keeps whatever scrollY the previous page was at, which
+  // reads as landing mid-page instead of at the top. Instant, not smooth -
+  // arriving at a new page should snap the way a real navigation does;
+  // smooth is reserved for scrollToPendingAnchor() below, which animates
+  // to a specific element *within* the page that just loaded. Anchor-
+  // targeted nav (pendingAnchor set) skips this reset entirely.
+  if(!pendingAnchor) window.scrollTo(0, 0);
   const tc = document.getElementById('tabContent');
   if(tc && tc.childNodes.length){
     tc.classList.add('tab-fade');
@@ -1006,7 +1016,9 @@ function renderTabNav(){
     window._tabnavOutsideClickBound = true;
   }
   if(!window._footerLinksBound){
-    wireNavLinksByDataset(document, '.footer-links a[data-tab]', ()=> window.scrollTo({ top:0, behavior:'smooth' }));
+    // renderApp() itself now resets scroll on every navigation without a
+    // pending anchor, so this no longer needs its own scroll-to-top callback.
+    wireNavLinksByDataset(document, '.footer-links a[data-tab]');
     const brandLink = document.getElementById('brandHomeLink');
     if(brandLink) wireNavLink(brandLink, 'home');
     window._footerLinksBound = true;
@@ -1674,10 +1686,8 @@ function renderHomeTab(container){
     });
   });
   const riskDesc = document.getElementById('riskSliderDesc');
-  const riskTile = riskDesc.closest('.section-tile');
   function closeRiskDesc(){
     riskDesc.classList.remove('open');
-    if(riskTile) riskTile.classList.remove('has-open-overlay');
   }
   document.addEventListener('click', (e)=>{
     if(openStageDetail && !e.target.closest('.workflow-row') && !e.target.closest('.stage-detail-panel')){
@@ -1687,12 +1697,14 @@ function renderHomeTab(container){
       closeRiskDesc();
     }
   });
-  // Both panels overlay content rather than pushing it, so scrolling past
-  // them should tuck them away automatically rather than leaving a stale
-  // open panel drifting under the cursor.
+  // stage-detail-panel still overlays content instead of pushing it, so
+  // scrolling past it should tuck it away automatically rather than
+  // leaving it drifting under the cursor. riskDesc is in-flow (it pushes
+  // "Things to get you started" down instead of floating over it), so it
+  // has no such drift to guard against and can just stay open on scroll
+  // like any other content.
   window.addEventListener('scroll', ()=>{
     if(openStageDetail) closeStageDetail();
-    closeRiskDesc();
   }, { passive:true });
 
   container.querySelectorAll('.risk-slider-tick').forEach(btn=>{
@@ -1703,7 +1715,6 @@ function renderHomeTab(container){
       btn.classList.add('active');
       riskDesc.innerHTML = `<b>Risk score ${n}:</b> ${RISK_SCORE_DESCRIPTIONS[n]}`;
       riskDesc.classList.remove('open');
-      if(riskTile) riskTile.classList.add('has-open-overlay');
       requestAnimationFrame(()=> riskDesc.classList.add('open'));
     });
   });
@@ -3113,6 +3124,14 @@ async function renderHistory(){
 }
 
 (async function init(){
+  // The browser's own automatic scroll restoration on back/forward fights
+  // with renderApp()'s own scroll-to-top-or-anchor handling below - without
+  // this, popstate ends up with whatever scrollY the browser decided to
+  // restore for that history entry instead of what the app just set,
+  // since both run on the same navigation. 'manual' hands scroll
+  // ownership entirely to the app, which is what a pushState-routed SPA
+  // is expected to do.
+  if('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.addEventListener('resize', syncViewportWidthVar);
   try {
     const r = await window.storage.get('theme', false);

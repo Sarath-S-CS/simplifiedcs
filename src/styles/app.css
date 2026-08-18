@@ -1278,8 +1278,13 @@
   .risk-slider-tick:hover{ transform:scaleY(1.12); }
   .risk-slider-tick.active{ outline:2px solid var(--text); outline-offset:-2px; z-index:1; }
   .risk-slider-ends{ display:flex; justify-content:space-between; margin-top:8px; font-family:var(--mono); font-size:11px; color:var(--text-muted); }
+  /* In-flow, not position:absolute - unlike stage-detail-panel/
+     start-link-dropdown-panel, this is the last thing in its section-tile
+     with another section-tile always immediately after it at every
+     viewport width, so a floating overlay here has nowhere to expand
+     into except the next tile. Letting it push that tile down instead
+     keeps it from visually overlapping "Things to get you started". */
   .risk-slider-desc{
-    position:absolute; top:100%; left:0; right:0; z-index:5;
     margin-top:16px; padding:16px 18px; background:var(--overlay-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line);
     font-size:13px; color:var(--text-muted); line-height:1.6; min-height:0;
     opacity:0; transform:translateY(-6px); transition:opacity .2s ease, transform .2s ease; display:none;
