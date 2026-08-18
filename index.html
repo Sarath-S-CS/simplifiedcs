@@ -1595,7 +1595,14 @@
       if (answers.cybersecHeadcount) team += ` (+${answers.cybersecHeadcount} cybersecurity)`;
     }
     rows.push(["Dedicated IT/security team", team]);
-    const providerNames = [answers.mspProviderName, answers.mdrProviderName, answers.msspProviderName].filter(Boolean);
+    const providerNames = [
+      answers.outsourcedMspName,
+      answers.fullMspProviderName,
+      answers.mixedMspProviderName,
+      answers.mdrMspProviderName,
+      answers.mdrProviderName,
+      answers.msspProviderName
+    ].filter(Boolean);
     if (Array.isArray(answers.dayToDay) && answers.dayToDay.length) {
       const labels = answers.dayToDay.map((id) => DAY_TO_DAY_OPTIONS.find((o) => o.id === id)?.label || id);
       rows.push(["Security managed by", labels.join("; ") + (providerNames.length ? ` (${providerNames.join(", ")})` : "")]);

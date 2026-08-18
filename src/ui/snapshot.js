@@ -18,7 +18,21 @@ export function snapshotRows(answers) {
   }
   rows.push(["Dedicated IT/security team", team]);
 
-  const providerNames = [answers.mspProviderName, answers.mdrProviderName, answers.msspProviderName].filter(Boolean);
+  // mspProviderName itself is never a real answers key - it's the shared
+  // dedupeKey across these four branch-specific fields (team-structure.js),
+  // used only to stop a second MSP-name question from being asked when a
+  // multi-select dayToDay combo would otherwise trigger more than one. The
+  // dedupe-adoption mechanism that would populate answers.mspProviderName
+  // needs an actual node with that id to adopt into, and none exists, so
+  // reading it directly here was always undefined - read the real fields.
+  const providerNames = [
+    answers.outsourcedMspName,
+    answers.fullMspProviderName,
+    answers.mixedMspProviderName,
+    answers.mdrMspProviderName,
+    answers.mdrProviderName,
+    answers.msspProviderName,
+  ].filter(Boolean);
   if (Array.isArray(answers.dayToDay) && answers.dayToDay.length) {
     const labels = answers.dayToDay.map((id) => DAY_TO_DAY_OPTIONS.find((o) => o.id === id)?.label || id);
     rows.push(["Security managed by", labels.join("; ") + (providerNames.length ? ` (${providerNames.join(", ")})` : "")]);
