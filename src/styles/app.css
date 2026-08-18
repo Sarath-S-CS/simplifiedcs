@@ -1080,10 +1080,9 @@
 
   /* --- Exploits intro: live-threat radar pulse (ANIMATIONS-BRIEF.md) -
      concentric rings expanding+fading plus a few blips fading in at fixed
-     points, all CSS @keyframes. --- */
-  .exploit-live-row{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin-bottom:20px; }
-  .exploit-live-row .news-freshness{ flex:1 1 240px; margin-bottom:0; }
-  .exploit-radar-wrap{ flex-shrink:0; width:96px; }
+     points, all CSS @keyframes. Sits in .page-intro-row next to the page
+     title, same slot .maturity-climb-wrap uses on the Maturity page. --- */
+  .exploit-radar-wrap{ flex-shrink:0; width:170px; max-width:100%; }
   .exploit-radar-wrap svg{ width:100%; height:auto; display:block; }
   .radar-ring{ fill:none; stroke:var(--accent-critical); stroke-width:2; transform-box:fill-box; transform-origin:50% 50%; animation:radarPulse 3s ease-out infinite; }
   @keyframes radarPulse{
@@ -1100,7 +1099,6 @@
     0%, 100%{ opacity:0; }
     50%{ opacity:1; }
   }
-  @media (max-width:640px){ .exploit-live-row{ flex-direction:column; align-items:flex-start; } }
   @media (prefers-reduced-motion: reduce){
     .radar-ring{ animation:none; opacity:0; }
     .radar-center{ animation:none; }
