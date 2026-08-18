@@ -20,6 +20,7 @@ import { snapshotRows } from "./snapshot.js";
 import { OTHER as OTHER_VALUE } from "../data/vendors.js";
 import { computeFrameworkRecommendations } from "../engine/framework-guidance.js";
 import { guidanceForFlag, guidanceForGapItem } from "../engine/mitre-guidance.js";
+import { buildAssessmentPdf } from "../engine/pdf-report.js";
 
 export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink, storage, exportProgressJson }) {
   const session = createSessionState();
@@ -645,6 +646,17 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       <h2 class="step-title">Health Reading</h2>
       <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f) => session.answers[f.id]).map((f) => " + " + f.name).join("")}${session.answers.industry ? " · " + INDUSTRIES.find((i) => i.id === session.answers.industry).label : ""}</p>
 
+      <div class="report-meta-fields">
+        <div class="field">
+          <label>Company / firm name <span class="opt-tag">optional</span></label>
+          <input type="text" id="reportCompanyName" placeholder="e.g. Acme Corp" value="${session.answers.companyName || ""}">
+        </div>
+        <div class="field">
+          <label>Report requested by <span class="opt-tag">optional</span></label>
+          <input type="text" id="reportRequestedBy" placeholder="e.g. Jane Smith, CISO" value="${session.answers.reportRequestedBy || ""}">
+        </div>
+      </div>
+
       ${
         prevRun
           ? `
@@ -773,11 +785,18 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       <div class="nav">
         <button id="backBtn2">← Review answers</button>
         <button id="exportJsonBtn">Export as JSON ↓</button>
+        <button id="exportPdfBtn">Download as PDF ↓</button>
         <a id="viewHistoryBtn" href="${pathForTab("history")}">View history (${historyCount + 1}) →</a>
       </div>
     `;
     p.querySelectorAll(".acc-head").forEach((el) => {
       el.addEventListener("click", () => el.parentElement.classList.toggle("open"));
+    });
+    document.getElementById("reportCompanyName").addEventListener("input", (e) => {
+      session.answers.companyName = e.target.value;
+    });
+    document.getElementById("reportRequestedBy").addEventListener("input", (e) => {
+      session.answers.reportRequestedBy = e.target.value;
     });
     document.getElementById("backBtn2").addEventListener("click", () => {
       ui.phase = "wizard";
@@ -787,6 +806,9 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     });
     wireNavLink(document.getElementById("viewHistoryBtn"), "history");
     document.getElementById("exportJsonBtn").addEventListener("click", () => exportProgressJson(overall));
+    document.getElementById("exportPdfBtn").addEventListener("click", () => {
+      buildAssessmentPdf({ session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs });
+    });
   }
 
   // Used by the Transform tab's "upload a previous export" feature - restores

@@ -773,6 +773,10 @@
   .field select:focus, .field input[type=text]:focus{ outline:none; border-color:var(--accent-secure); }
   .field input[type=text]::placeholder{ color:var(--text-muted); }
 
+  /* --- results page: optional report-header metadata (company/requester) --- */
+  .report-meta-fields{ display:flex; gap:16px; flex-wrap:wrap; margin:20px 0 28px; }
+  .report-meta-fields .field{ flex:1 1 220px; margin-bottom:0; }
+
   /* --- infrastructure snapshot --- */
   .snapshot{ margin-bottom:28px; }
   .snapshot-row{ display:grid; grid-template-columns:180px 1fr; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px; }
