@@ -311,6 +311,8 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     }
     if (node.type === "multiselect") {
       const selected = Array.isArray(val) ? val : [];
+      const otherChecked = selected.includes(OTHER_VALUE);
+      const otherText = session.answers[node.id + "__otherText"] || "";
       return `
         <div class="field">
           <label>${node.text}${node.required ? "" : ' <span class="opt-tag">optional</span>'}</label>
@@ -324,7 +326,16 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
             `
               )
               .join("")}
+            ${
+              node.allowOther
+                ? `
+              <label class="checkbox-option ${otherChecked ? "selected" : ""}">
+                <input type="checkbox" data-optid="${OTHER_VALUE}" ${otherChecked ? "checked" : ""}> Other
+              </label>`
+                : ""
+            }
           </div>
+          ${otherChecked ? `<input type="text" data-fid-other="${node.id}" value="${otherText}" placeholder="${node.otherPlaceholder || "Please specify"}">` : ""}
         </div>`;
     }
     if (node.type === "vendor") {
@@ -421,6 +432,12 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           recordAnswer(session, node, current);
           renderProfileScreen();
         });
+      });
+    });
+    p.querySelectorAll("input[data-fid-other]").forEach((el) => {
+      el.addEventListener("input", () => {
+        session.answers[el.dataset.fidOther + "__otherText"] = el.value;
+        refreshNext();
       });
     });
 

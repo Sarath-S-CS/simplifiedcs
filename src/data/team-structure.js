@@ -10,7 +10,7 @@
 //
 // Provider-name fields use the §5.3 dropdown+"Other" pattern, same as the
 // infra vendor fields.
-import { MSP_VENDORS, MDR_VENDORS, MSSP_VENDORS } from "./vendors.js";
+import { MSP_VENDORS, MDR_VENDORS, MSSP_VENDORS, OTHER } from "./vendors.js";
 
 const HEADCOUNT_OPTIONS = ["1–2", "3–10", "10+"];
 
@@ -58,6 +58,36 @@ export const DAY_TO_DAY_OPTIONS = [
   { id: "mdr-msp", label: "MDR service and dedicated MSP" },
   { id: "mssp", label: "MSSP" },
 ];
+
+// REDUNDANCY-AUDIT-BRIEF.md §1: shared across every "which functions are
+// outsourced" question below (previously three separate free-text fields -
+// partialOutsourceFunctions, outsourcedFunctionBreakdown,
+// mixedOtherProviderDetail - each a case where a later question, socOwnership,
+// needed to reliably know whether SOC/monitoring specifically was already
+// covered. Free text can't be cross-referenced; a shared checkbox list can.
+export const OUTSOURCED_FUNCTION_OPTIONS = [
+  { id: "soc-monitoring", label: "SOC / monitoring" },
+  { id: "incident-response", label: "Incident response" },
+  { id: "patch-management", label: "Patch management" },
+  { id: "backup-dr", label: "Backup / DR" },
+  { id: "firewall-management", label: "Firewall management" },
+  { id: "email-security", label: "Email security" },
+];
+
+// Maps a selected-functions answer to socOwnership's own vocabulary, only
+// when SOC/monitoring specifically was selected - returning undefined for
+// every other case leaves socOwnership's dedupeKey unset, so it's still
+// asked normally when this answer doesn't actually resolve it. "Hybrid" is
+// the correct mapping regardless of which node this fires from: all three
+// reuse this same helper, and in every one of their branches the user has
+// already told us *some* functions are in-house and others are outsourced
+// (that's what put them on this branch in the first place) - so SOC being
+// among the outsourced ones is a hybrid arrangement by definition, not a
+// guess at what "Same MSP"-style wording would map to.
+function outsourcedFunctionsDedupeValue(selected) {
+  const ids = Array.isArray(selected) ? selected : [];
+  return ids.includes("soc-monitoring") ? "Hybrid - some in-house, some third-party" : undefined;
+}
 
 export const TEAM_STRUCTURE_NODES = [
   // ---- Step 1 ----
@@ -147,10 +177,14 @@ export const TEAM_STRUCTURE_NODES = [
     id: "outsourcedFunctionBreakdown",
     kind: "profile",
     category: "team",
-    type: "text",
-    text: "Briefly, which provider handles which function (e.g. \"MSP handles helpdesk/patching, separate MDR vendor handles detection\")?",
-    placeholder: "e.g. MSP: Kyndryl (infrastructure); MDR: Arctic Wolf (monitoring)",
+    type: "multiselect",
+    text: "Which specific functions are handled by your outsourced provider(s)? (select all that apply)",
+    options: OUTSOURCED_FUNCTION_OPTIONS,
+    allowOther: true,
+    otherPlaceholder: "e.g. MSP: Kyndryl (infrastructure); MDR: Arctic Wolf (monitoring)",
     required: false,
+    dedupeKey: "socOwnership",
+    dedupeValue: outsourcedFunctionsDedupeValue,
     next: () => "socOwnership",
   },
 
@@ -181,11 +215,19 @@ export const TEAM_STRUCTURE_NODES = [
     id: "partialOutsourceFunctions",
     kind: "profile",
     category: "team",
-    type: "text",
-    text: "Which specific functions are outsourced (e.g. SOC/monitoring, incident response, patch management, backup/DR, firewall management, email security)?",
-    placeholder: "e.g. SOC/monitoring and patch management are outsourced; everything else is in-house",
+    type: "multiselect",
+    text: "Which specific functions are outsourced? (select all that apply)",
+    options: OUTSOURCED_FUNCTION_OPTIONS,
+    allowOther: true,
     required: false,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("partial-outsource"),
+    // REDUNDANCY-AUDIT-BRIEF.md §1 - the confirmed bug: this used to be
+    // free text, so there was no reliable way to know whether "SOC/
+    // monitoring" was already covered here before socOwnership asked again
+    // below. Now that it's structured, array-membership answers that
+    // reliably.
+    dedupeKey: "socOwnership",
+    dedupeValue: outsourcedFunctionsDedupeValue,
     next: () => "fullMspProviderName",
   },
   {
@@ -202,6 +244,11 @@ export const TEAM_STRUCTURE_NODES = [
     text: "Is SOC/security monitoring handled by that same MSP, or a separate third party?",
     options: ["Same MSP", "Separate third party", "No SOC/monitoring in place"],
     required: true,
+    // REDUNDANCY-AUDIT-BRIEF.md §1: this is the same underlying fact as
+    // socOwnership below (who handles SOC/monitoring) asked with
+    // full-msp-specific framing - dedupeKey means whichever fires first
+    // silently carries its answer forward instead of asking again.
+    dedupeKey: "socOwnership",
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("full-msp"),
     next: () => "mixedMspProviderName",
   },
@@ -215,11 +262,15 @@ export const TEAM_STRUCTURE_NODES = [
     id: "mixedOtherProviderDetail",
     kind: "profile",
     category: "team",
-    type: "text",
-    text: "What do the other outsourced providers handle, and which vendors are they?",
-    placeholder: "e.g. Backup/DR outsourced to a separate managed backup vendor",
+    type: "multiselect",
+    text: "Which specific functions do those other outsourced providers handle? (select all that apply)",
+    options: OUTSOURCED_FUNCTION_OPTIONS,
+    allowOther: true,
+    otherPlaceholder: "e.g. Backup/DR outsourced to a separate managed backup vendor",
     required: false,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("mixed-msp-other"),
+    dedupeKey: "socOwnership",
+    dedupeValue: outsourcedFunctionsDedupeValue,
     next: () => "mdrProviderName",
   },
   {

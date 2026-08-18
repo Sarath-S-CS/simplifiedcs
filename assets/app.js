@@ -13,7 +13,10 @@
   function recordAnswer(state, node, value) {
     state.answers[node.id] = value;
     if (!state.asked.includes(node.id)) state.asked.push(node.id);
-    if (node.dedupeKey) state.dedupe[node.dedupeKey] = value;
+    if (node.dedupeKey) {
+      const dedupeValue = typeof node.dedupeValue === "function" ? node.dedupeValue(value) : value;
+      if (dedupeValue !== void 0) state.dedupe[node.dedupeKey] = dedupeValue;
+    }
   }
   function hasDedupeValue(state, dedupeKey) {
     return Boolean(dedupeKey) && Object.prototype.hasOwnProperty.call(state.dedupe, dedupeKey);
@@ -669,6 +672,18 @@
     { id: "mdr-msp", label: "MDR service and dedicated MSP" },
     { id: "mssp", label: "MSSP" }
   ];
+  var OUTSOURCED_FUNCTION_OPTIONS = [
+    { id: "soc-monitoring", label: "SOC / monitoring" },
+    { id: "incident-response", label: "Incident response" },
+    { id: "patch-management", label: "Patch management" },
+    { id: "backup-dr", label: "Backup / DR" },
+    { id: "firewall-management", label: "Firewall management" },
+    { id: "email-security", label: "Email security" }
+  ];
+  function outsourcedFunctionsDedupeValue(selected) {
+    const ids = Array.isArray(selected) ? selected : [];
+    return ids.includes("soc-monitoring") ? "Hybrid - some in-house, some third-party" : void 0;
+  }
   var TEAM_STRUCTURE_NODES = [
     // ---- Step 1 ----
     {
@@ -755,10 +770,14 @@
       id: "outsourcedFunctionBreakdown",
       kind: "profile",
       category: "team",
-      type: "text",
-      text: 'Briefly, which provider handles which function (e.g. "MSP handles helpdesk/patching, separate MDR vendor handles detection")?',
-      placeholder: "e.g. MSP: Kyndryl (infrastructure); MDR: Arctic Wolf (monitoring)",
+      type: "multiselect",
+      text: "Which specific functions are handled by your outsourced provider(s)? (select all that apply)",
+      options: OUTSOURCED_FUNCTION_OPTIONS,
+      allowOther: true,
+      otherPlaceholder: "e.g. MSP: Kyndryl (infrastructure); MDR: Arctic Wolf (monitoring)",
       required: false,
+      dedupeKey: "socOwnership",
+      dedupeValue: outsourcedFunctionsDedupeValue,
       next: () => "socOwnership"
     },
     // ---- Step 3: day-to-day management (multi-select) ----
@@ -788,11 +807,19 @@
       id: "partialOutsourceFunctions",
       kind: "profile",
       category: "team",
-      type: "text",
-      text: "Which specific functions are outsourced (e.g. SOC/monitoring, incident response, patch management, backup/DR, firewall management, email security)?",
-      placeholder: "e.g. SOC/monitoring and patch management are outsourced; everything else is in-house",
+      type: "multiselect",
+      text: "Which specific functions are outsourced? (select all that apply)",
+      options: OUTSOURCED_FUNCTION_OPTIONS,
+      allowOther: true,
       required: false,
       visibleIf: (answers) => (a(answers).dayToDay || []).includes("partial-outsource"),
+      // REDUNDANCY-AUDIT-BRIEF.md §1 - the confirmed bug: this used to be
+      // free text, so there was no reliable way to know whether "SOC/
+      // monitoring" was already covered here before socOwnership asked again
+      // below. Now that it's structured, array-membership answers that
+      // reliably.
+      dedupeKey: "socOwnership",
+      dedupeValue: outsourcedFunctionsDedupeValue,
       next: () => "fullMspProviderName"
     },
     {
@@ -809,6 +836,11 @@
       text: "Is SOC/security monitoring handled by that same MSP, or a separate third party?",
       options: ["Same MSP", "Separate third party", "No SOC/monitoring in place"],
       required: true,
+      // REDUNDANCY-AUDIT-BRIEF.md §1: this is the same underlying fact as
+      // socOwnership below (who handles SOC/monitoring) asked with
+      // full-msp-specific framing - dedupeKey means whichever fires first
+      // silently carries its answer forward instead of asking again.
+      dedupeKey: "socOwnership",
       visibleIf: (answers) => (a(answers).dayToDay || []).includes("full-msp"),
       next: () => "mixedMspProviderName"
     },
@@ -822,11 +854,15 @@
       id: "mixedOtherProviderDetail",
       kind: "profile",
       category: "team",
-      type: "text",
-      text: "What do the other outsourced providers handle, and which vendors are they?",
-      placeholder: "e.g. Backup/DR outsourced to a separate managed backup vendor",
+      type: "multiselect",
+      text: "Which specific functions do those other outsourced providers handle? (select all that apply)",
+      options: OUTSOURCED_FUNCTION_OPTIONS,
+      allowOther: true,
+      otherPlaceholder: "e.g. Backup/DR outsourced to a separate managed backup vendor",
       required: false,
       visibleIf: (answers) => (a(answers).dayToDay || []).includes("mixed-msp-other"),
+      dedupeKey: "socOwnership",
+      dedupeValue: outsourcedFunctionsDedupeValue,
       next: () => "mdrProviderName"
     },
     {
@@ -1297,8 +1333,12 @@
       { v: 1, t: "Retained, but not protected from tampering" },
       { v: 2, t: "Yes, retained and protected" }
     ], { framework: "sox" }),
-    // §5.6 — PCI DSS
-    scored("Detect", "pcidssASVScanning", "Do you undergo quarterly external vulnerability scans by an Approved Scanning Vendor (ASV), as PCI DSS requires?", [
+    // §5.6 — PCI DSS. REDUNDANCY-AUDIT-BRIEF.md §2: worded as an explicit
+    // refinement of vulnScanning above (same underlying activity - external
+    // vulnerability scanning) rather than a cold re-ask, since PCI DSS's
+    // actual requirement is more specific (quarterly cadence, ASV-certified)
+    // than that general question captures.
+    scored("Detect", "pcidssASVScanning", "You mentioned your vulnerability scanning cadence above - for PCI DSS specifically, are external scans done quarterly by an Approved Scanning Vendor (ASV), as the standard requires?", [
       { v: 0, t: "No" },
       { v: 1, t: "Irregularly" },
       { v: 2, t: "Yes, quarterly" }
@@ -2013,6 +2053,8 @@
       }
       if (node.type === "multiselect") {
         const selected = Array.isArray(val) ? val : [];
+        const otherChecked = selected.includes(OTHER);
+        const otherText = session.answers[node.id + "__otherText"] || "";
         return `
         <div class="field">
           <label>${node.text}${node.required ? "" : ' <span class="opt-tag">optional</span>'}</label>
@@ -2024,7 +2066,12 @@
               </label>
             `
         ).join("")}
+            ${node.allowOther ? `
+              <label class="checkbox-option ${otherChecked ? "selected" : ""}">
+                <input type="checkbox" data-optid="${OTHER}" ${otherChecked ? "checked" : ""}> Other
+              </label>` : ""}
           </div>
+          ${otherChecked ? `<input type="text" data-fid-other="${node.id}" value="${otherText}" placeholder="${node.otherPlaceholder || "Please specify"}">` : ""}
         </div>`;
       }
       if (node.type === "vendor") {
@@ -2115,6 +2162,12 @@
             recordAnswer(session, node, current);
             renderProfileScreen();
           });
+        });
+      });
+      p.querySelectorAll("input[data-fid-other]").forEach((el) => {
+        el.addEventListener("input", () => {
+          session.answers[el.dataset.fidOther + "__otherText"] = el.value;
+          refreshNext();
         });
       });
       refreshNext();
