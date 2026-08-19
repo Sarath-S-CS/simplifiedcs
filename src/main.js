@@ -130,7 +130,7 @@ const HOME_DROPDOWN = [
   { id:'playbooks', label:'Playbooks' },
   { id:'casestudy', label:'Case Studies' },
   { id:'glossary', label:'Glossary' },
-  { id:'history', label:'History' },
+  { id:'about', label:'About' },
 ];
 const ASSESSMENT_DROPDOWN = [
   { id:'assessment', label:'Take Assessment' },
@@ -2083,6 +2083,7 @@ const ROADMAP_SHIPPED = [
 const ROADMAP_IN_PROGRESS = [
   { module:'History & Score Tracking', desc:'Every completed run compared against your last, with resolved/new-finding tracking between assessments - currently backed by session-local storage rather than a real database, so it doesn\'t yet persist reliably for every visitor. See "Supabase-Backed History" below.' },
   { module:'Save Progress / Export / Import', desc:'Download a completed or in-progress assessment as JSON, and re-upload it later to resume or re-run. The core round-trip works today; still being hardened and tested before calling it fully reliable.' },
+  { module:'Feedback Form', desc:'The submission mechanism is built and wired to Netlify Forms, but Netlify Forms is not currently enabled for this site at the account level - confirmed directly, not assumed - so a real submission likely isn\'t being captured yet. Worth enabling and testing with a real submission before calling this shipped.' },
 ];
 
 const ROADMAP_PLANNED = [
@@ -2974,6 +2975,7 @@ function renderAboutTab(container){
         <p class="page-lede">This project is a cybersecurity assessment and compliance-readiness platform designed for small and medium-sized businesses. It helps organizations understand their current security posture, identify weaknesses, and receive practical recommendations to strengthen their cybersecurity defenses.</p>
         <p class="page-lede">The platform is based primarily on the NIST Cybersecurity Framework and CIS Critical Security Controls v8. It guides organizations through structured assessments, highlights security gaps, and provides actionable suggestions to improve their overall resilience.</p>
         <p class="page-lede">In addition to security assessments, the platform supports compliance-readiness initiatives for frameworks such as ISO/IEC 27001 and SOC 2. Its long-term goal is to provide businesses with a centralized solution for continuously monitoring, improving, and demonstrating their security and compliance posture.</p>
+        <p class="page-lede">Most recently, the platform added a hybrid AI layer to the results. Every report is still built first by the same tested, deterministic scoring engine the assessment has run on from the start - that part doesn't change, and it's already complete and accurate on its own. On top of it, an optional live pass checks your named vendors and products against current CISA and NVD vulnerability data, and looks for patterns in your specific answers the fixed rule set wasn't built to anticipate. It's clearly labeled wherever it appears, and it's additive, not a replacement.</p>
       </div>
 
       <div class="section-tile">
