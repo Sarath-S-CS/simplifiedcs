@@ -768,18 +768,31 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       </div>
 
       <div class="note-box">
-        <b>Prototype note -</b> the flags and priority list above are produced by a rules engine for this demo.
-        In the live version, this panel is where the Claude API call plugs in: it receives the full answer set
-        plus retrieved remediation content from the knowledge base, and writes the actual narrative report.
-        The vendor/product fields in the snapshot above (EDR, email security, SD-WAN, hosting/web stack) are
-        exactly what a live lookup would key off - and that lookup is designed to check sources in a specific
-        order: the vendor's own official website or security-advisories page first, then CISA's KEV catalog and
-        NVD, rather than a generic web search. What's shown here is illustrative pattern-matching for named
-        vendors, not a live fetch, but it's built to reflect that same source priority.
+        <b>About this report -</b> the flags and priority list above are produced by a deterministic rules
+        engine, tested and running the same way for every assessment - nothing above this line depends on a
+        live API call, and it renders instantly and for free, same as always.
+        <br><br>
+        The "Get AI-Enhanced Insights" button below is a separate, opt-in second pass: a live check of your
+        named vendors/products (EDR, email security, hosting, cloud, and the rest of the snapshot above)
+        against CISA's Known Exploited Vulnerabilities catalog and NVD's own CVE database for anything current
+        the rules engine can't know by nature, plus a look at this specific combination of answers for anything
+        genuinely outside a fixed rule set. It calls the Claude API, so it's triggered explicitly rather than
+        automatically - the report above is already complete without it.
         <br><br>
         This run was just saved using Claude's artifact storage (private to your account) - that's what powers
         the history/delta view above. That storage is specific to this Claude environment; the production
         deployment needs a real database (e.g., Supabase) doing the same job.
+      </div>
+
+      <div class="ai-insights-section">
+        <div class="ai-insights-intro">
+          <div>
+            <h3>AI-Enhanced Insights <span class="ai-badge">AI-generated</span></h3>
+            <p class="body-text">A live check of your named vendors against current CVE data, plus a second pass for anything this specific answer combination raises that the rules engine above didn't anticipate.</p>
+          </div>
+          <button id="aiInsightsBtn">Get AI-Enhanced Insights ✨</button>
+        </div>
+        <div id="aiInsightsBody"></div>
       </div>
 
       <div class="nav">
@@ -809,6 +822,120 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     document.getElementById("exportPdfBtn").addEventListener("click", () => {
       buildAssessmentPdf({ session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs });
     });
+    document.getElementById("aiInsightsBtn").addEventListener("click", () =>
+      requestAiInsights({ session, overall, verdict: verdictLabel(overall), flags, priorities, vendorNotes, frameworkRecs })
+    );
+  }
+
+  // ---------- AI-Enhanced Insights (AI-RAG-HYBRID-BRIEF.md) ----------
+  // Opt-in only - never called automatically on assessment completion. The
+  // deterministic report above has already fully rendered before this can
+  // even be triggered, so any failure here (network error, function
+  // timeout, non-200 response, malformed JSON) is caught and scoped to
+  // just #aiInsightsBody - it must never affect the rest of the page.
+  function namedVendorsFor(answers) {
+    const mspProvider =
+      answers.outsourcedMspName || answers.fullMspProviderName || answers.mixedMspProviderName || answers.mdrMspProviderName || answers.mdrProviderName || answers.msspProviderName || "";
+    return {
+      "antivirus": answers.antivirusVendor || "",
+      "EDR": answers.edrVendor || "",
+      "email security": answers.emailSecurityVendor || "",
+      "DLP": answers.dlpVendor || "",
+      "SD-WAN": answers.sdwanVendor || "",
+      "edge device / firewall": answers.edgeDeviceVendor || "",
+      "hosting provider": answers.hostingProvider || "",
+      "cloud provider": answers.cloudProvider || "",
+      "security awareness / LMS": answers.awarenessLms || "",
+      "OT/ICS platform": answers.otVendor || "",
+      "MSP/MDR/MSSP provider": mspProvider,
+    };
+  }
+
+  // Everything rendered here originated as a Claude API response, but that
+  // response is built from a prompt containing this person's own free-text
+  // answers (vendor "Other" fields, company name) - and an assessment can
+  // be exported and re-imported by someone else entirely (see loadExport()
+  // above), so this isn't purely a self-XSS case. Escape every dynamic
+  // string field before it goes into innerHTML, same as any other
+  // server-sourced content would need.
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+  function safeHttpUrl(url) {
+    try {
+      const u = new URL(url, location.href);
+      return u.protocol === "http:" || u.protocol === "https:" ? u.href : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function aiInsightCardsHtml(result) {
+    const hasAnything = (result.recency && result.recency.length) || (result.longTail && result.longTail.length) || (result.narrative && result.narrative.trim());
+    if (!hasAnything) {
+      return `<p class="body-text">No additional live findings beyond what's already in the report above - your named vendors/products didn't turn up anything current, and this specific answer combination didn't surface a pattern outside the rules engine's coverage.</p>`;
+    }
+    const recencyHtml = (result.recency || [])
+      .map((r) => {
+        const safeUrl = r.url ? safeHttpUrl(r.url) : null;
+        return `
+        <div class="vendor-note-item"><b>${escapeHtml(r.vendorOrProduct)} -</b> ${escapeHtml(r.finding)} <span class="ai-source">(${escapeHtml(r.source)}${safeUrl ? ` - <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">source</a>` : ""})</span></div>`;
+      })
+      .join("");
+    const longTailHtml = (result.longTail || [])
+      .map((l) => `<div class="vendor-note-item"><b>${escapeHtml(l.finding)}</b><br>${escapeHtml(l.why)}</div>`)
+      .join("");
+    return `
+      ${recencyHtml ? `<h4>Live vendor/product check</h4>${recencyHtml}` : ""}
+      ${longTailHtml ? `<h4>Beyond the rules engine</h4>${longTailHtml}` : ""}
+      ${result.narrative && result.narrative.trim() ? `<h4>Synthesis</h4><p class="body-text">${escapeHtml(result.narrative)}</p>` : ""}
+    `;
+  }
+
+  async function requestAiInsights({ session: s, overall, verdict, flags, priorities, vendorNotes, frameworkRecs }) {
+    const btn = document.getElementById("aiInsightsBtn");
+    const body = document.getElementById("aiInsightsBody");
+    if (!btn || !body) return;
+    btn.disabled = true;
+    btn.textContent = "Getting insights…";
+    body.innerHTML = `<p class="body-text">Checking your named vendors against current CVE data and looking for anything the rules engine above didn't anticipate…</p>`;
+
+    const payload = {
+      profile: {
+        industry: s.answers.industry ? INDUSTRIES.find((i) => i.id === s.answers.industry)?.label || s.answers.industry : "",
+        regions: (s.answers.regions || []).map((id) => REGIONS.find((r) => r.id === id)?.label || id),
+        frameworks: FRAMEWORKS.filter((f) => s.answers[f.id]).map((f) => f.name),
+        overall,
+        verdict,
+      },
+      namedVendors: namedVendorsFor(s.answers),
+      findings: {
+        flags: flags.map((f) => ({ text: f.text })),
+        priorities: priorities.map((p2) => ({ fn: FUNC_DISPLAY[p2.fn], gap: p2.gap })),
+        vendorNotes: vendorNotes.map((v) => ({ vendor: v.vendor, note: v.note })),
+        frameworkRecs: frameworkRecs.map((r) => ({ name: r.name, summary: r.summary, gaps: r.gaps })),
+      },
+    };
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30_000);
+      const res = await fetch("/.netlify/functions/ai-insights", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`ai-insights returned ${res.status}`);
+      const result = await res.json();
+      body.innerHTML = aiInsightCardsHtml(result);
+      btn.remove();
+    } catch (e) {
+      body.innerHTML = `<p class="body-text">AI insights unavailable right now - the rest of this report is unaffected. You can try again below.</p>`;
+      btn.disabled = false;
+      btn.textContent = "Get AI-Enhanced Insights ✨";
+    }
   }
 
   // Used by the Transform tab's "upload a previous export" feature - restores

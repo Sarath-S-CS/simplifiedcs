@@ -36073,18 +36073,31 @@
       </div>
 
       <div class="note-box">
-        <b>Prototype note -</b> the flags and priority list above are produced by a rules engine for this demo.
-        In the live version, this panel is where the Claude API call plugs in: it receives the full answer set
-        plus retrieved remediation content from the knowledge base, and writes the actual narrative report.
-        The vendor/product fields in the snapshot above (EDR, email security, SD-WAN, hosting/web stack) are
-        exactly what a live lookup would key off - and that lookup is designed to check sources in a specific
-        order: the vendor's own official website or security-advisories page first, then CISA's KEV catalog and
-        NVD, rather than a generic web search. What's shown here is illustrative pattern-matching for named
-        vendors, not a live fetch, but it's built to reflect that same source priority.
+        <b>About this report -</b> the flags and priority list above are produced by a deterministic rules
+        engine, tested and running the same way for every assessment - nothing above this line depends on a
+        live API call, and it renders instantly and for free, same as always.
+        <br><br>
+        The "Get AI-Enhanced Insights" button below is a separate, opt-in second pass: a live check of your
+        named vendors/products (EDR, email security, hosting, cloud, and the rest of the snapshot above)
+        against CISA's Known Exploited Vulnerabilities catalog and NVD's own CVE database for anything current
+        the rules engine can't know by nature, plus a look at this specific combination of answers for anything
+        genuinely outside a fixed rule set. It calls the Claude API, so it's triggered explicitly rather than
+        automatically - the report above is already complete without it.
         <br><br>
         This run was just saved using Claude's artifact storage (private to your account) - that's what powers
         the history/delta view above. That storage is specific to this Claude environment; the production
         deployment needs a real database (e.g., Supabase) doing the same job.
+      </div>
+
+      <div class="ai-insights-section">
+        <div class="ai-insights-intro">
+          <div>
+            <h3>AI-Enhanced Insights <span class="ai-badge">AI-generated</span></h3>
+            <p class="body-text">A live check of your named vendors against current CVE data, plus a second pass for anything this specific answer combination raises that the rules engine above didn't anticipate.</p>
+          </div>
+          <button id="aiInsightsBtn">Get AI-Enhanced Insights \u2728</button>
+        </div>
+        <div id="aiInsightsBody"></div>
       </div>
 
       <div class="nav">
@@ -36114,6 +36127,97 @@
       document.getElementById("exportPdfBtn").addEventListener("click", () => {
         buildAssessmentPdf({ session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs });
       });
+      document.getElementById("aiInsightsBtn").addEventListener(
+        "click",
+        () => requestAiInsights({ session, overall, verdict: verdictLabel(overall), flags, priorities, vendorNotes, frameworkRecs })
+      );
+    }
+    function namedVendorsFor(answers) {
+      const mspProvider = answers.outsourcedMspName || answers.fullMspProviderName || answers.mixedMspProviderName || answers.mdrMspProviderName || answers.mdrProviderName || answers.msspProviderName || "";
+      return {
+        "antivirus": answers.antivirusVendor || "",
+        "EDR": answers.edrVendor || "",
+        "email security": answers.emailSecurityVendor || "",
+        "DLP": answers.dlpVendor || "",
+        "SD-WAN": answers.sdwanVendor || "",
+        "edge device / firewall": answers.edgeDeviceVendor || "",
+        "hosting provider": answers.hostingProvider || "",
+        "cloud provider": answers.cloudProvider || "",
+        "security awareness / LMS": answers.awarenessLms || "",
+        "OT/ICS platform": answers.otVendor || "",
+        "MSP/MDR/MSSP provider": mspProvider
+      };
+    }
+    function escapeHtml(s3) {
+      return String(s3 ?? "").replace(/[&<>"']/g, (c4) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c4]);
+    }
+    function safeHttpUrl(url) {
+      try {
+        const u3 = new URL(url, location.href);
+        return u3.protocol === "http:" || u3.protocol === "https:" ? u3.href : null;
+      } catch {
+        return null;
+      }
+    }
+    function aiInsightCardsHtml(result) {
+      const hasAnything = result.recency && result.recency.length || result.longTail && result.longTail.length || result.narrative && result.narrative.trim();
+      if (!hasAnything) {
+        return `<p class="body-text">No additional live findings beyond what's already in the report above - your named vendors/products didn't turn up anything current, and this specific answer combination didn't surface a pattern outside the rules engine's coverage.</p>`;
+      }
+      const recencyHtml = (result.recency || []).map((r2) => {
+        const safeUrl = r2.url ? safeHttpUrl(r2.url) : null;
+        return `
+        <div class="vendor-note-item"><b>${escapeHtml(r2.vendorOrProduct)} -</b> ${escapeHtml(r2.finding)} <span class="ai-source">(${escapeHtml(r2.source)}${safeUrl ? ` - <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">source</a>` : ""})</span></div>`;
+      }).join("");
+      const longTailHtml = (result.longTail || []).map((l3) => `<div class="vendor-note-item"><b>${escapeHtml(l3.finding)}</b><br>${escapeHtml(l3.why)}</div>`).join("");
+      return `
+      ${recencyHtml ? `<h4>Live vendor/product check</h4>${recencyHtml}` : ""}
+      ${longTailHtml ? `<h4>Beyond the rules engine</h4>${longTailHtml}` : ""}
+      ${result.narrative && result.narrative.trim() ? `<h4>Synthesis</h4><p class="body-text">${escapeHtml(result.narrative)}</p>` : ""}
+    `;
+    }
+    async function requestAiInsights({ session: s3, overall, verdict, flags, priorities, vendorNotes, frameworkRecs }) {
+      const btn = document.getElementById("aiInsightsBtn");
+      const body = document.getElementById("aiInsightsBody");
+      if (!btn || !body) return;
+      btn.disabled = true;
+      btn.textContent = "Getting insights\u2026";
+      body.innerHTML = `<p class="body-text">Checking your named vendors against current CVE data and looking for anything the rules engine above didn't anticipate\u2026</p>`;
+      const payload = {
+        profile: {
+          industry: s3.answers.industry ? INDUSTRIES.find((i3) => i3.id === s3.answers.industry)?.label || s3.answers.industry : "",
+          regions: (s3.answers.regions || []).map((id) => REGIONS.find((r2) => r2.id === id)?.label || id),
+          frameworks: FRAMEWORKS.filter((f3) => s3.answers[f3.id]).map((f3) => f3.name),
+          overall,
+          verdict
+        },
+        namedVendors: namedVendorsFor(s3.answers),
+        findings: {
+          flags: flags.map((f3) => ({ text: f3.text })),
+          priorities: priorities.map((p22) => ({ fn: FUNC_DISPLAY[p22.fn], gap: p22.gap })),
+          vendorNotes: vendorNotes.map((v3) => ({ vendor: v3.vendor, note: v3.note })),
+          frameworkRecs: frameworkRecs.map((r2) => ({ name: r2.name, summary: r2.summary, gaps: r2.gaps }))
+        }
+      };
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3e4);
+        const res = await fetch("/.netlify/functions/ai-insights", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+        if (!res.ok) throw new Error(`ai-insights returned ${res.status}`);
+        const result = await res.json();
+        body.innerHTML = aiInsightCardsHtml(result);
+        btn.remove();
+      } catch (e2) {
+        body.innerHTML = `<p class="body-text">AI insights unavailable right now - the rest of this report is unaffected. You can try again below.</p>`;
+        btn.disabled = false;
+        btn.textContent = "Get AI-Enhanced Insights \u2728";
+      }
     }
     function loadExport(data) {
       Object.keys(session.answers).forEach((k2) => delete session.answers[k2]);
