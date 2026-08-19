@@ -296,6 +296,18 @@
   .dropdown-link:hover{ color:var(--accent-signal); background:var(--tint-signal-soft); }
   .dropdown-link.active{ color:var(--accent-signal); }
 
+  /* Home's dropdown specifically (not Assessment's, which shares this same
+     .dropdown-link class with no other distinguishing container) reads its
+     items in the mono/13.5px treatment meant for nav chrome, not body
+     copy - inconsistent with the actual body font used everywhere else on
+     the site. Scoped via :has() to the Home tab-item rather than
+     enumerating individual dropdown items, so it stays correct as items
+     are added/removed from HOME_DROPDOWN. */
+  .tab-item:has(> .tab-btn[data-tab="home"]) .tab-dropdown .dropdown-link{
+    font-family:var(--sans);
+    font-size:14px;
+  }
+
   /* --- search widget: icon that expands into a floating overlay input
      (absolutely positioned so it never adds flex-row width - expanding it
      must not push the masthead into wrapping), with a floating results
