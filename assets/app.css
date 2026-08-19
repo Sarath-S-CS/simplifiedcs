@@ -211,7 +211,19 @@
     gap:40px;
   }
   @media (max-width:720px){
-    .layout{grid-template-columns:1fr;}
+    /* minmax(0,1fr), not bare 1fr - same gotcha already fixed for
+       .phase4-grid (PR #34): a bare 1fr track's minimum is auto (its
+       content's own max-content size), not 0. .report-meta-fields (the
+       "Company / firm name" / "Report requested by" fields on the results
+       screen) is a flex row with flex-wrap:wrap that DOES correctly wrap
+       its two ~220px fields onto separate lines - but that wrapping
+       happens after this track is already sized, using the max-content
+       (un-wrapped, ~456px) contribution as if nothing could wrap. The
+       track - and .rail, which shares this same single column - was
+       rendering wider than the viewport as a result. minmax(0,_) makes the
+       track actually respect the available width first, letting flex-wrap
+       do its job as intended. */
+    .layout{grid-template-columns:minmax(0,1fr);}
     .rail{margin-bottom:24px;}
   }
 
@@ -626,6 +638,17 @@
   .func-bar-track{ height:6px; background:var(--surface-raised); position:relative; }
   .func-bar-fill{ height:100%; transition:width .6s ease; }
   .func-bar-row .fpct{ font-family:var(--mono); text-align:right; color:var(--text-muted); }
+
+  /* .gauge-row's fixed 200px gauge column + func-bars' own min-content
+     (func-bar-row's fixed 90px/40px columns put a ~154px floor under the
+     1fr column) don't fit together once the available width drops below
+     ~200+36+154=390px plus card padding - confirmed via live testing to
+     overflow starting around 420px wide. Stack to one column below 480px
+     (an existing breakpoint used elsewhere in this file) so the gauge and
+     func-bars each get the full row width instead of splitting it. */
+  @media (max-width:480px){
+    .gauge-row{ grid-template-columns:minmax(0,1fr); }
+  }
 
   .flags{ margin-bottom:28px; }
   .flags h3, .priorities h3, .snapshot h3{
