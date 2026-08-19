@@ -58697,7 +58697,7 @@ ${suffix}`;
     { module: "Case Studies", desc: "8 real watershed cybersecurity incidents, each tied back to a specific gap this tool is built to catch." },
     { module: "Glossary & References", desc: "A 59-term glossary and a sourced references page." },
     { module: "Starter Guide", desc: "A narrative, in-order on-ramp for starting cybersecurity from zero - distinct from the Glossary's alphabetical lookup." },
-    { module: "Live Trends & News", desc: "Daily-refreshed threat-landscape feed pulled from CISA's KEV catalog, NVD, and security RSS feeds via a scheduled Supabase job - not a static snapshot." },
+    { module: "Live Trends & News", desc: "Daily-refreshed threat-landscape feed pulled from CISA's KEV catalog, NVD, and security RSS feeds, updated automatically - not a static snapshot." },
     { module: "Exploits Page", desc: "Confirmed actively-exploited CVEs from CISA KEV, VulnCheck KEV, and ENISA's EU Vulnerability Database, scored by real-world exploitation likelihood via FIRST.org's EPSS, refreshed daily." },
     { module: "Header, Navigation & Site Search", desc: "Live site search across every page, a mobile hamburger menu, and a real toggle-style theme switch." },
     { module: "Real Client-Side Routing", desc: "Every page has a real, shareable URL - back/forward, bookmarking, and opening links in a new tab all work as expected." },
@@ -58705,12 +58705,12 @@ ${suffix}`;
     { module: "Hosting & Domain", desc: "Live at simplifiedcs.net via Netlify, auto-deployed from GitHub on every update." }
   ];
   var ROADMAP_IN_PROGRESS = [
-    { module: "History & Score Tracking", desc: `Every completed run compared against your last, with resolved/new-finding tracking between assessments - currently backed by session-local storage rather than a real database, so it doesn't yet persist reliably for every visitor. See "Supabase-Backed History" below.` },
+    { module: "History & Score Tracking", desc: `Every completed run compared against your last, with resolved/new-finding tracking between assessments - currently backed by session-local storage rather than a real database, so it doesn't yet persist reliably for every visitor. See "Persistent History & Score Tracking" below.` },
     { module: "Save Progress / Export / Import", desc: "Download a completed or in-progress assessment as JSON, and re-upload it later to resume or re-run. The core round-trip works today; still being hardened and tested before calling it fully reliable." },
     { module: "Feedback Form", desc: "The submission mechanism is built and wired to Netlify Forms, but Netlify Forms is not currently enabled for this site at the account level - confirmed directly, not assumed - so a real submission likely isn't being captured yet. Worth enabling and testing with a real submission before calling this shipped." }
   ];
   var ROADMAP_PLANNED = [
-    { module: "Supabase-Backed History", desc: "Replacing today's session-only History and resume-progress with real, persistent storage in the Supabase backend already provisioned for this project." },
+    { module: "Persistent History & Score Tracking", desc: "Replacing today's session-only History and resume-progress with real, persistent storage, so your results are still there the next time you visit." },
     { module: "Chatbot Assistant", desc: "A conversational assistant to help visitors navigate the site, answer cybersecurity basics questions, and potentially help fill out the assessment conversationally." }
   ];
   function buildRoadmapPipelineSvg() {
