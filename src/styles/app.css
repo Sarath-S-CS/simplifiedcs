@@ -658,6 +658,26 @@
   }
   .note-box b{ color:var(--text); }
 
+  /* --- results panel: AI-Enhanced Insights (AI-RAG-HYBRID-BRIEF.md) - opt-in
+     second pass alongside the deterministic report above. .ai-badge follows
+     the same bordered-pill pattern as .exploit-ransomware-badge, in
+     --accent-violet specifically so it reads as distinct from every other
+     semantic color already in use (green/amber/red/signal are all spoken
+     for elsewhere on the results page) - the whole point is that a reader
+     can tell at a glance which content came from the tested rules engine
+     versus the live-generated layer. --- */
+  .ai-insights-section{ margin-top:28px; padding-top:24px; border-top:1px solid var(--line); }
+  .ai-insights-intro{ display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; margin-bottom:16px; }
+  .ai-insights-intro h3{ font-size:15px; margin:0 0 6px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .ai-insights-intro .body-text{ margin:0; }
+  .ai-badge{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--accent-violet); border:1px solid var(--accent-violet); padding:2px 8px; }
+  .ai-insights-section h4{
+    font-family:var(--mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--text-muted); margin:18px 0 10px; font-weight:500;
+  }
+  .ai-insights-section h4:first-child{ margin-top:0; }
+  .ai-source{ font-size:12px; color:var(--text-muted); }
+
   /* --- scope screen --- */
   .industry-grid{
     display:grid;

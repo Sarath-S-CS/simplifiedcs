@@ -10,11 +10,15 @@
     "test": "node --test"
   },
   "dependencies": {
+    "@netlify/blobs": "^11.0.1",
     "@supabase/supabase-js": "^2.45.0",
     "jspdf": "^4.2.1"
   },
   "devDependencies": {
+    "@netlify/functions": "^6.0.0",
+    "@types/node": "^26.2.0",
     "esbuild": "^0.24.0",
-    "jsdom": "^25.0.0"
+    "jsdom": "^25.0.0",
+    "typescript": "^7.0.2"
   }
 }
