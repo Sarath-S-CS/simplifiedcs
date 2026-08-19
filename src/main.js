@@ -2048,21 +2048,91 @@ function renderMetricsTab(container){
   wireNavLink(document.getElementById('linkMaturityFromMetrics'), 'maturity');
 }
 
-const SITE_LAST_UPDATED = 'August 10, 2026';
-const SITE_STARTED = 'June 2026';
+// SITE_LAST_UPDATED comes from esbuild's define (see scripts/build.js) -
+// a real build timestamp instead of a hand-typed date someone has to
+// remember to update. Don't reintroduce a literal date string here; that's
+// exactly the failure mode ROADMAP-FIX-BRIEF.md flagged.
+const SITE_LAST_UPDATED = __BUILD_TIME__;
 
-// Both prior entries here (Feedback Form, Core Principles Page) have since
-// shipped and moved off this list - nothing is currently queued. Add real
-// in-progress items here as they start.
+// This page has three required sections - Shipped, In Progress, Planned -
+// each with its own array below and its own render block in
+// renderRoadmapTab(). A prior edit (b217a47) removed two of the three
+// sections while only meaning to clear a stale In Progress entry, and the
+// page silently ran with one section for days before anyone caught it (see
+// ROADMAP-FIX-BRIEF.md). Before committing any change to ONE of these
+// arrays, confirm the other two still exist and still render.
+const ROADMAP_SHIPPED = [
+  { module:'Adaptive Assessment Engine', added:'Aug 2026', desc:'Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice.' },
+  { module:'MITRE ATT&CK Guidance Panel', added:'Aug 2026', desc:'A "why this matters, and what to do now" expander under each compounding-risk flag and low-scoring priority item, mapping to a real MITRE ATT&CK technique plus a compensating control computed from your own answers.' },
+  { module:'Compounding-Risk Detection', added:'Jul 2026', desc:'Cross-answer flagging for dangerous combinations, not just per-question scoring.' },
+  { module:'Vendor-Aware Mitigation Notes', added:'Jun 2026', desc:'Illustrative guidance for named products, entered via dropdown + "Other" across every vendor field in the questionnaire.' },
+  { module:'Save Progress / Export / Import', added:'Jun 2026', desc:'Resume an assessment later, or reload a completed one to re-run after fixes.' },
+  { module:'PDF Report Export', added:'Aug 2026', desc:'A real, programmatically-built PDF of your results - selectable/searchable text, not a screenshot - alongside the existing JSON export.' },
+  { module:'Runbooks & Playbooks', added:'Jul 2026', desc:'8 incident runbooks plus 16 OWASP/AI-mapped attack-type playbooks, each with MITRE ATT&CK/ATLAS references and equal-depth, actionable steps.' },
+  { module:'Case Studies', added:'Jul 2026', desc:'8 real watershed cybersecurity incidents, each tied back to a specific gap this tool is built to catch.' },
+  { module:'Glossary & References', added:'Aug 2026', desc:'A 59-term glossary and a sourced references page.' },
+  { module:'Starter Guide', added:'Aug 2026', desc:'A narrative, in-order on-ramp for starting cybersecurity from zero - distinct from the Glossary\'s alphabetical lookup.' },
+  { module:'Live Trends & News', added:'Aug 2026', desc:'Daily-refreshed threat-landscape feed pulled from CISA\'s KEV catalog, NVD, and security RSS feeds via a scheduled Supabase job - not a static snapshot.' },
+  { module:'Exploits Page', added:'Aug 2026', desc:'Confirmed actively-exploited CVEs from CISA KEV, VulnCheck KEV, and ENISA\'s EU Vulnerability Database, scored by real-world exploitation likelihood via FIRST.org\'s EPSS, refreshed daily.' },
+  { module:'History & Score Tracking', added:'Aug 2026', desc:'Every completed run saved this session, with delta tracking between assessments.' },
+  { module:'Header, Navigation & Site Search', added:'Aug 2026', desc:'Live site search across every page, a mobile hamburger menu, and a real toggle-style theme switch.' },
+  { module:'Real Client-Side Routing', added:'Aug 2026', desc:'Every page has a real, shareable URL - back/forward, bookmarking, and opening links in a new tab all work as expected.' },
+  { module:'Custom Visual System & Animations', added:'Aug 2026', desc:'Original SVG illustrations across the site, a Maturity Model comparison table, framework stamps, and custom CSS animations on the Maturity Model and Exploits pages.' },
+  { module:'Hosting & Domain', added:'Jun 2026', desc:'Live at simplifiedcs.net via Netlify, auto-deployed from GitHub on every update.' },
+];
+
+// Nothing currently queued - add real in-progress items here as they start.
 const ROADMAP_IN_PROGRESS = [];
+
+const ROADMAP_PLANNED = [
+  { module:'Hybrid AI/RAG Report Enrichment', desc:'A real Claude API call generating the final report, grounded by a retrieval-augmented layer pulling current vendor advisories and CVE data - already underway.' },
+  { module:'Supabase-Backed History', desc:'Replacing today\'s session-only History and resume-progress with real, persistent storage in the Supabase backend already provisioned for this project.' },
+  { module:'Chatbot Assistant', desc:'A conversational assistant to help visitors navigate the site, answer cybersecurity basics questions, and potentially help fill out the assessment conversationally.' },
+];
+
+// --- Roadmap intro: three-stage pipeline flow (ROADMAP-FIX-BRIEF.md) - a
+// small indicator traveling shipped -> in progress -> planned, colored
+// through the exact same green/amber/gray already used for this page's own
+// roadmap-log-shipped/progress/planned card accents. Sits in .page-intro-row
+// next to the page title, same slot buildMaturityClimbSvg/
+// buildExploitsRadarSvg use on their own pages.
+function buildRoadmapPipelineSvg(){
+  return `
+  <svg viewBox="0 0 260 90" xmlns="http://www.w3.org/2000/svg">
+    <line x1="30" y1="45" x2="230" y2="45" stroke="var(--line)" stroke-width="1.5"/>
+    <circle cx="30" cy="45" r="9" fill="var(--accent-secure)"/>
+    <circle cx="130" cy="45" r="9" fill="var(--accent-amber)"/>
+    <circle cx="230" cy="45" r="9" fill="var(--text-muted)"/>
+    <circle class="pipeline-flow-dot" cx="30" cy="45" r="4.5" fill="var(--accent-signal)"/>
+  </svg>`;
+}
 
 function renderRoadmapTab(container){
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
-        <div class="page-eyebrow">Site Status</div>
-        <h2 class="page-title">Roadmap</h2>
-        <p class="page-lede">Not the assessment methodology - this page tracks what's actively being built on the website itself right now. Started <b>${SITE_STARTED}</b> · Last updated <b>${SITE_LAST_UPDATED}</b>.</p>
+        <div class="page-intro-row">
+          <div class="page-intro-text">
+            <div class="page-eyebrow">Site Status</div>
+            <h2 class="page-title">Roadmap</h2>
+            <p class="page-lede">Not the assessment methodology - this page tracks the status of the website itself: what's shipped and working, what's actively being built, and what's planned next. Last updated <b>${SITE_LAST_UPDATED}</b>.</p>
+          </div>
+          <div class="roadmap-pipeline-wrap">${buildRoadmapPipelineSvg()}</div>
+        </div>
+      </div>
+
+      <div class="section-tile">
+        <h3 class="section-h">Shipped &amp; accessible now</h3>
+        <p class="body-text">Fully functional in the live version of this site today.</p>
+        <div class="roadmap-log-grid">
+          ${ROADMAP_SHIPPED.map(m=>`
+            <div class="roadmap-log-card roadmap-log-shipped">
+              <div class="roadmap-log-date">${m.added}</div>
+              <h4>${m.module}</h4>
+              <p>${m.desc}</p>
+            </div>
+          `).join('')}
+        </div>
       </div>
 
       <div class="section-tile">
@@ -2079,6 +2149,20 @@ function renderRoadmapTab(container){
           `).join('')}
         </div>` : `
         <p class="body-text">Nothing actively in progress right now.</p>`}
+      </div>
+
+      <div class="section-tile">
+        <h3 class="section-h">Planned / ideation</h3>
+        <p class="body-text">Not yet started - scoped and intended, not yet onboarded.</p>
+        <div class="roadmap-log-grid">
+          ${ROADMAP_PLANNED.map(m=>`
+            <div class="roadmap-log-card roadmap-log-planned">
+              <div class="roadmap-log-date">Planned</div>
+              <h4>${m.module}</h4>
+              <p>${m.desc}</p>
+            </div>
+          `).join('')}
+        </div>
       </div>
     </div>
   `;

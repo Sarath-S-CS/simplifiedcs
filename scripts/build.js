@@ -12,6 +12,14 @@ import path from "node:path";
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const watch = process.argv.includes("--watch");
 
+// Stamped into src/main.js's SITE_LAST_UPDATED via esbuild's define below -
+// a real build-time value instead of a hand-typed date someone has to
+// remember to update (see ROADMAP-FIX-BRIEF.md - a hand-typed
+// SITE_LAST_UPDATED/SITE_STARTED was exactly the failure mode that let the
+// Roadmap page drift). Explicit en-US locale so this doesn't vary with
+// whatever locale the build machine happens to default to.
+const buildDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
 function assembleHtml() {
   // head.html holds everything real inside <head> (meta tags, title,
   // favicon, font preconnects) verbatim from source - deliberately NOT
@@ -48,6 +56,7 @@ const buildOptions = {
   target: "es2020",
   outfile: path.join(root, "assets/app.js"),
   logLevel: "info",
+  define: { __BUILD_TIME__: JSON.stringify(buildDate) },
 };
 
 if (watch) {
