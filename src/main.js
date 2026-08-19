@@ -2062,30 +2062,30 @@ const SITE_LAST_UPDATED = __BUILD_TIME__;
 // ROADMAP-FIX-BRIEF.md). Before committing any change to ONE of these
 // arrays, confirm the other two still exist and still render.
 const ROADMAP_SHIPPED = [
-  { module:'Adaptive Assessment Engine', added:'Aug 2026', desc:'Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice.' },
-  { module:'MITRE ATT&CK Guidance Panel', added:'Aug 2026', desc:'A "why this matters, and what to do now" expander under each compounding-risk flag and low-scoring priority item, mapping to a real MITRE ATT&CK technique plus a compensating control computed from your own answers.' },
-  { module:'Compounding-Risk Detection', added:'Jul 2026', desc:'Cross-answer flagging for dangerous combinations, not just per-question scoring.' },
-  { module:'Vendor-Aware Mitigation Notes', added:'Jun 2026', desc:'Illustrative guidance for named products, entered via dropdown + "Other" across every vendor field in the questionnaire.' },
-  { module:'Save Progress / Export / Import', added:'Jun 2026', desc:'Resume an assessment later, or reload a completed one to re-run after fixes.' },
-  { module:'PDF Report Export', added:'Aug 2026', desc:'A real, programmatically-built PDF of your results - selectable/searchable text, not a screenshot - alongside the existing JSON export.' },
-  { module:'Runbooks & Playbooks', added:'Jul 2026', desc:'8 incident runbooks plus 16 OWASP/AI-mapped attack-type playbooks, each with MITRE ATT&CK/ATLAS references and equal-depth, actionable steps.' },
-  { module:'Case Studies', added:'Jul 2026', desc:'8 real watershed cybersecurity incidents, each tied back to a specific gap this tool is built to catch.' },
-  { module:'Glossary & References', added:'Aug 2026', desc:'A 59-term glossary and a sourced references page.' },
-  { module:'Starter Guide', added:'Aug 2026', desc:'A narrative, in-order on-ramp for starting cybersecurity from zero - distinct from the Glossary\'s alphabetical lookup.' },
-  { module:'Live Trends & News', added:'Aug 2026', desc:'Daily-refreshed threat-landscape feed pulled from CISA\'s KEV catalog, NVD, and security RSS feeds via a scheduled Supabase job - not a static snapshot.' },
-  { module:'Exploits Page', added:'Aug 2026', desc:'Confirmed actively-exploited CVEs from CISA KEV, VulnCheck KEV, and ENISA\'s EU Vulnerability Database, scored by real-world exploitation likelihood via FIRST.org\'s EPSS, refreshed daily.' },
-  { module:'History & Score Tracking', added:'Aug 2026', desc:'Every completed run saved this session, with delta tracking between assessments.' },
-  { module:'Header, Navigation & Site Search', added:'Aug 2026', desc:'Live site search across every page, a mobile hamburger menu, and a real toggle-style theme switch.' },
-  { module:'Real Client-Side Routing', added:'Aug 2026', desc:'Every page has a real, shareable URL - back/forward, bookmarking, and opening links in a new tab all work as expected.' },
-  { module:'Custom Visual System & Animations', added:'Aug 2026', desc:'Original SVG illustrations across the site, a Maturity Model comparison table, framework stamps, and custom CSS animations on the Maturity Model and Exploits pages.' },
-  { module:'Hosting & Domain', added:'Jun 2026', desc:'Live at simplifiedcs.net via Netlify, auto-deployed from GitHub on every update.' },
+  { module:'Adaptive Assessment Engine', desc:'Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice.' },
+  { module:'AI-Enhanced Insights', desc:'A live, opt-in second pass on your completed results: checks your named vendors/products against CISA\'s KEV catalog and NVD\'s CVE database for anything current a fixed rule set can\'t know by nature, plus a look for patterns this specific answer combination raises beyond it. Clearly labeled as AI-generated - the deterministic report above it is already complete either way.' },
+  { module:'MITRE ATT&CK Guidance Panel', desc:'A "why this matters, and what to do now" expander under each compounding-risk flag and low-scoring priority item, mapping to a real MITRE ATT&CK technique plus a compensating control computed from your own answers.' },
+  { module:'Compounding-Risk Detection', desc:'Cross-answer flagging for dangerous combinations, not just per-question scoring.' },
+  { module:'Vendor-Aware Mitigation Notes', desc:'Illustrative guidance for named products, entered via dropdown + "Other" across every vendor field in the questionnaire.' },
+  { module:'PDF Report Export', desc:'A real, programmatically-built PDF of your results - selectable/searchable text, not a screenshot - alongside the existing JSON export.' },
+  { module:'Runbooks & Playbooks', desc:'8 incident runbooks plus 16 OWASP/AI-mapped attack-type playbooks, each with MITRE ATT&CK/ATLAS references and equal-depth, actionable steps.' },
+  { module:'Case Studies', desc:'8 real watershed cybersecurity incidents, each tied back to a specific gap this tool is built to catch.' },
+  { module:'Glossary & References', desc:'A 59-term glossary and a sourced references page.' },
+  { module:'Starter Guide', desc:'A narrative, in-order on-ramp for starting cybersecurity from zero - distinct from the Glossary\'s alphabetical lookup.' },
+  { module:'Live Trends & News', desc:'Daily-refreshed threat-landscape feed pulled from CISA\'s KEV catalog, NVD, and security RSS feeds via a scheduled Supabase job - not a static snapshot.' },
+  { module:'Exploits Page', desc:'Confirmed actively-exploited CVEs from CISA KEV, VulnCheck KEV, and ENISA\'s EU Vulnerability Database, scored by real-world exploitation likelihood via FIRST.org\'s EPSS, refreshed daily.' },
+  { module:'Header, Navigation & Site Search', desc:'Live site search across every page, a mobile hamburger menu, and a real toggle-style theme switch.' },
+  { module:'Real Client-Side Routing', desc:'Every page has a real, shareable URL - back/forward, bookmarking, and opening links in a new tab all work as expected.' },
+  { module:'Custom Visual System & Animations', desc:'Original SVG illustrations across the site, a Maturity Model comparison table, framework stamps, and custom CSS animations on the Maturity Model and Exploits pages.' },
+  { module:'Hosting & Domain', desc:'Live at simplifiedcs.net via Netlify, auto-deployed from GitHub on every update.' },
 ];
 
-// Nothing currently queued - add real in-progress items here as they start.
-const ROADMAP_IN_PROGRESS = [];
+const ROADMAP_IN_PROGRESS = [
+  { module:'History & Score Tracking', desc:'Every completed run compared against your last, with resolved/new-finding tracking between assessments - currently backed by session-local storage rather than a real database, so it doesn\'t yet persist reliably for every visitor. See "Supabase-Backed History" below.' },
+  { module:'Save Progress / Export / Import', desc:'Download a completed or in-progress assessment as JSON, and re-upload it later to resume or re-run. The core round-trip works today; still being hardened and tested before calling it fully reliable.' },
+];
 
 const ROADMAP_PLANNED = [
-  { module:'Hybrid AI/RAG Report Enrichment', desc:'A real Claude API call generating the final report, grounded by a retrieval-augmented layer pulling current vendor advisories and CVE data - already underway.' },
   { module:'Supabase-Backed History', desc:'Replacing today\'s session-only History and resume-progress with real, persistent storage in the Supabase backend already provisioned for this project.' },
   { module:'Chatbot Assistant', desc:'A conversational assistant to help visitors navigate the site, answer cybersecurity basics questions, and potentially help fill out the assessment conversationally.' },
 ];
@@ -2127,7 +2127,6 @@ function renderRoadmapTab(container){
         <div class="roadmap-log-grid">
           ${ROADMAP_SHIPPED.map(m=>`
             <div class="roadmap-log-card roadmap-log-shipped">
-              <div class="roadmap-log-date">${m.added}</div>
               <h4>${m.module}</h4>
               <p>${m.desc}</p>
             </div>
