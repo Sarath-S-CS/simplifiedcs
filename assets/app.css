@@ -1083,6 +1083,10 @@
   .principle-num{ font-family:var(--mono); color:var(--accent-signal); font-size:15px; font-weight:600; margin-bottom:10px; }
   .principle-card h4{ font-size:15.5px; margin:0 0 10px; }
   .principle-card p{ font-size:12.5px; color:var(--text-muted); line-height:1.65; margin:0; }
+  .tech-highlights-list{ margin:0; padding-left:20px; }
+  .tech-highlights-list li{ font-size:13.5px; color:var(--text-muted); line-height:1.7; margin-bottom:12px; }
+  .tech-highlights-list li:last-child{ margin-bottom:0; }
+  .tech-highlights-list b{ color:var(--text); font-weight:600; }
   .logo-assembly-wrap{ display:flex; justify-content:center; padding:32px 0 8px; }
   .logo-assembly-stage{ position:relative; width:260px; height:260px; display:flex; align-items:center; justify-content:center; }
   .assembly-logo{
