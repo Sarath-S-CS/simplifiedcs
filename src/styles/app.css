@@ -1017,8 +1017,12 @@
   .roadmap-log-card h4{ font-size:15px; margin:6px 0 8px; }
   .roadmap-log-card p{ font-size:12.5px; color:var(--text-muted); line-height:1.6; margin:0; }
   .roadmap-log-date{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; }
+  .roadmap-log-shipped{ border-left-color:var(--accent-secure); }
+  .roadmap-log-shipped .roadmap-log-date{ color:var(--accent-secure); }
   .roadmap-log-progress{ border-left-color:var(--accent-amber, #E0A94A); }
   .roadmap-log-progress .roadmap-log-date{ color:var(--accent-amber, #E0A94A); }
+  .roadmap-log-planned{ border-left-color:var(--text-muted); }
+  .roadmap-log-planned .roadmap-log-date{ color:var(--text-muted); }
   .principles-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:8px; }
   .principle-card{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:24px 22px; }
   .principle-num{ font-family:var(--mono); color:var(--accent-signal); font-size:15px; font-weight:600; margin-bottom:10px; }
@@ -1107,6 +1111,25 @@
     .radar-ring{ animation:none; opacity:0; }
     .radar-center{ animation:none; }
     .radar-blip{ animation:none; opacity:0.7; }
+  }
+
+  /* --- Roadmap intro: three-stage pipeline flow (ROADMAP-FIX-BRIEF.md) -
+     three static nodes colored to match this page's own roadmap-log-
+     shipped/progress/planned card accents, connected by a static line, with
+     one small dot animating along it left to right on a loop. Sits in
+     .page-intro-row next to the page title, same slot .maturity-climb-wrap
+     and .exploit-radar-wrap use on their own pages. --- */
+  .roadmap-pipeline-wrap{ flex-shrink:0; width:220px; max-width:100%; }
+  .roadmap-pipeline-wrap svg{ width:100%; height:auto; display:block; }
+  .pipeline-flow-dot{ animation:pipelineFlow 3s ease-in-out infinite; }
+  @keyframes pipelineFlow{
+    0%{ transform:translateX(0); opacity:0; }
+    10%{ opacity:1; }
+    90%{ opacity:1; }
+    100%{ transform:translateX(200px); opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .pipeline-flow-dot{ animation:none; opacity:0; }
   }
 
   /* --- learning resources (News tab) --- */
