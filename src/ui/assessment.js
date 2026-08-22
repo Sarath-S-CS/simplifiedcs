@@ -216,13 +216,13 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       }
       <div class="mode-grid">
         <div class="mode-card" id="modeQuick">
-          <div class="mode-card-time">~2 min</div>
+          <div class="mode-card-time">${icon("clock")} ~2 minutes</div>
           <h4>Quick Assessment</h4>
           <p>Core NIST function scoring across all six functions - skips vendor-specific detail like which product or provider you use.</p>
           <div class="mode-card-cta">Start Quick →</div>
         </div>
         <div class="mode-card" id="modeFull">
-          <div class="mode-card-time">~5 min</div>
+          <div class="mode-card-time">${icon("clock")} ~5 minutes</div>
           <h4>Full Assessment</h4>
           <p>Everything, including vendor-specific mitigation guidance for the exact products and providers in your environment.</p>
           <div class="mode-card-cta">Start Full →</div>

@@ -1276,7 +1276,12 @@
     width:26px; height:26px; flex-shrink:0;
     border-radius:50%;
     background:var(--surface-raised);
-    color:var(--text-muted);
+    /* --icon-accent is unset (falls back to the original muted default)
+       everywhere except the footer's five link-pills, which set it inline
+       per item - see the footer markup in shell-body.html and
+       ICON_ACCENT_CYCLE/accentIconStyle() in main.js for the same pattern
+       used on Runbooks/Playbooks' icon-badges. */
+    color:var(--icon-accent, var(--text-muted));
     transition:background .2s ease, color .2s ease;
   }
   .link-pill-icon svg{ width:14px; height:14px; }
@@ -1486,7 +1491,12 @@
   .mode-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin:22px 0; }
   .mode-card{ display:flex; flex-direction:column; gap:10px; padding:22px 20px; border:1px solid var(--line); border-radius:12px; background:var(--tile-bg); cursor:pointer; text-align:left; }
   .mode-card:hover{ border-color:var(--accent-signal); }
-  .mode-card-time{ font-family:var(--mono); font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--accent-signal); }
+  /* UX-VISUAL-CREDIBILITY-BRIEF.md §5: icon + naturally-worded text ("~5
+     minutes") instead of an all-caps abbreviated badge ("~5 MIN") - the
+     de-abbreviated wording is the point, so this deliberately drops the
+     uppercase transform the original badge style had. */
+  .mode-card-time{ display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:12px; letter-spacing:0.02em; color:var(--accent-signal); }
+  .mode-card-time svg{ width:14px; height:14px; flex-shrink:0; }
   .mode-card h4{ font-size:16px; margin:0; }
   .mode-card p{ font-size:13px; color:var(--text-muted); line-height:1.55; margin:0; }
   .mode-card-cta{ margin-top:auto; padding-top:6px; font-size:13px; font-weight:600; color:var(--accent-signal); }
@@ -1503,7 +1513,12 @@
   .sample-banner b{ text-transform:uppercase; letter-spacing:0.04em; font-size:11px; font-family:var(--mono); color:var(--accent-amber); }
 
   /* --- footer --- */
-  .site-footer{ margin-top:40px; padding-top:24px; border-top:1px solid var(--line); }
+  /* UX-VISUAL-CREDIBILITY-BRIEF.md §6: same glass/blur tile treatment
+     every other content section on the site uses (CLAUDE.md: "the
+     glass/blur tile treatment... should be reused, not reinvented"),
+     rather than floating on the plain page background. */
+  .site-footer{ margin-top:40px; padding:28px clamp(20px, 4vw, 36px) 20px; background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); }
+  @media (max-width:720px){ .site-footer{ padding:20px; } }
   .footer-bar{ display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:18px; }
   .footer-links{ display:flex; gap:10px; flex-wrap:wrap; }
   .footer-social{ display:flex; gap:10px; }
@@ -1518,7 +1533,14 @@
     transition:background .2s ease, border-color .2s ease, color .2s ease, transform .15s ease;
   }
   .footer-social-icon:hover{ background:var(--accent-signal); border-color:var(--accent-signal); color:var(--text-on-accent); transform:translateY(-1px); }
-  .footer-bottom{ text-align:center; font-size:11px; color:var(--text-muted); padding-top:16px; border-top:1px solid var(--line); font-family:var(--mono); }
+  /* Small repeated wordmark + optional tagline (§6) - a text-only echo of
+     the masthead's brand.brand-s/brand-mid/brand-cs treatment, not the
+     full logo image again (avoids a second ~36KB inline base64 payload
+     for a purely decorative footer repeat). */
+  .footer-brand-row{ display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; padding-top:16px; border-top:1px solid var(--line); }
+  .footer-brand{ font-family:var(--mono); font-size:14px; font-weight:600; letter-spacing:0.04em; }
+  .footer-tagline{ font-size:12px; color:var(--text-muted); }
+  .footer-bottom{ text-align:center; font-size:11px; color:var(--text-muted); padding-top:10px; font-family:var(--mono); }
 
   /* --- glossary page --- */
   .alpha-index{ display:flex; flex-wrap:wrap; gap:6px; margin:16px 0 28px; }
