@@ -74,26 +74,35 @@ export const INFRA_NODES = [
   select("hasAntivirus", "infra", "Do you have an antivirus solution?", ["Yes", "No", "Not sure"], { required: true }),
   vendor("antivirusVendor", "infra", "Which antivirus product?", ANTIVIRUS_VENDORS, {
     visibleIf: (answers) => answers.hasAntivirus === "Yes",
+    quickSkip: true,
   }),
-  vendor("edrVendor", "infra", "What EDR (Endpoint Detection & Response) product is deployed, if any?", EDR_VENDORS),
-  vendor("emailSecurityVendor", "infra", "What email security / anti-phishing gateway do you use, if any?", EMAIL_SECURITY_VENDORS),
-  vendor("awarenessLms", "infra", "What security awareness / LMS platform do you use for training, if any?", AWARENESS_LMS_VENDORS),
+  vendor("edrVendor", "infra", "What EDR (Endpoint Detection & Response) product is deployed, if any?", EDR_VENDORS, { quickSkip: true }),
+  vendor("emailSecurityVendor", "infra", "What email security / anti-phishing gateway do you use, if any?", EMAIL_SECURITY_VENDORS, { quickSkip: true }),
+  vendor("awarenessLms", "infra", "What security awareness / LMS platform do you use for training, if any?", AWARENESS_LMS_VENDORS, { quickSkip: true }),
   select("dlpUsed", "infra", "Do you use a DLP (data loss prevention) solution?", ["Yes", "No", "Not sure"], { required: true }),
   vendor("dlpVendor", "infra", "Which DLP product?", DLP_VENDORS, {
     visibleIf: (answers) => answers.dlpUsed === "Yes",
+    quickSkip: true,
   }),
   select("deployModel", "infra", "Is your infrastructure on-premises, cloud-only, or hybrid?", ["On-premises only", "Cloud-only", "Hybrid (on-prem + cloud)"], { required: true }),
   vendor("cloudProvider", "infra", "Which cloud provider(s)?", CLOUD_PROVIDERS, {
     visibleIf: (answers) => answers.deployModel && answers.deployModel !== "On-premises only",
+    quickSkip: true,
   }),
-  select("sdwanUsed", "infra", "Do you use SD-WAN?", ["Yes", "No", "Not sure"], { required: true }),
+  // sdwanUsed/sdwanVendor: SD-WAN presence isn't itself a scored gap the way
+  // missing antivirus/DLP is (no computeFlags rule references it either) -
+  // its only downstream purpose is gating a pure vendor-name follow-up, so
+  // the whole pair is Quick-mode detail rather than a mixed sequence.
+  select("sdwanUsed", "infra", "Do you use SD-WAN?", ["Yes", "No", "Not sure"], { required: true, quickSkip: true }),
   vendor("sdwanVendor", "infra", "Which SD-WAN vendor?", SDWAN_VENDORS, {
     visibleIf: (answers) => answers.sdwanUsed === "Yes",
+    quickSkip: true,
   }),
   select("networkArch", "infra", "How would you describe your network architecture?", ["Flat / mostly unsegmented", "Segmented (VLANs / zones)", "Zero-trust / microsegmented"], { required: true }),
   select("externalDevices", "infra", "Do you have external-facing devices (VPN gateways, remote-access appliances, firewalls with public IPs)?", ["Yes", "No"], { required: true }),
   vendor("edgeDeviceVendor", "infra", "What firewall / VPN gateway appliance handles that external access?", EDGE_DEVICE_VENDORS, {
     visibleIf: (answers) => answers.externalDevices === "Yes",
+    quickSkip: true,
   }),
   select(
     "externalWebsite",
@@ -106,8 +115,10 @@ export const INFRA_NODES = [
     required: false,
     visibleIf: (answers) => answers.externalWebsite === "Yes",
   }),
-  vendor("hostingProvider", "infra", "Who hosts your web server(s)?", HOSTING_PROVIDERS),
-  text("webServerStack", "infra", "What web server software / OS runs it, if known?", "e.g. Nginx on Ubuntu 22.04, IIS on Windows Server"),
+  vendor("hostingProvider", "infra", "Who hosts your web server(s)?", HOSTING_PROVIDERS, { quickSkip: true }),
+  // webServerStack: free-text specificity that only ever feeds vendor-note
+  // matching (see vendors.js/VENDOR_NOTES), not scoring - Quick-mode skip.
+  text("webServerStack", "infra", "What web server software / OS runs it, if known?", "e.g. Nginx on Ubuntu 22.04, IIS on Windows Server", { quickSkip: true }),
 ];
 
 export const DEVSEC_ORDER = ["developsSoftware", "devsecopsMaturity", "secretsManagement"];
@@ -159,6 +170,7 @@ export const OT_NODES = [
   }),
   vendor("otVendor", "infra", "What ICS/SCADA platform or vendor is primarily in use, if known?", OT_ICS_VENDORS, {
     visibleIf: (answers) => answers.hasOT === "Yes",
+    quickSkip: true,
   }),
 ];
 

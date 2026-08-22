@@ -120,3 +120,82 @@ test("no duplicate node ids exist in the team-structure graph", () => {
   assert.equal(new Set(ids).size, ids.length, "every node id must be unique");
   assert.deepEqual([...TEAM_STRUCTURE_ORDER].sort(), [...ids].sort(), "TEAM_STRUCTURE_ORDER must match the node set exactly");
 });
+
+// Bug found while verifying ASSESSMENT-EXPERIENCE-BRIEF.md §2: selecting
+// "Other" on a provider-name vendor field records an empty-string answer,
+// which (before the vendorNameDedupeValue fix) immediately satisfied its
+// own dedupeKey and self-adopted, making the field - and its "Other" text
+// input - vanish before the user could type anything into it. Each of
+// these six fields shares a dedupeKey specifically so a later field in the
+// same family doesn't re-ask once one has a real answer; selecting "Other"
+// must not count as a real answer for that purpose.
+const PROVIDER_NAME_OTHER_SCENARIOS = [
+  {
+    nodeId: "outsourcedMspName",
+    setup: (state, f) => {
+      answer(state, f, "teamDedicated", "IT services outsourced with no internal IT team");
+      answer(state, f, "outsourcedStructure", "One dedicated MSP handles everything");
+    },
+  },
+  {
+    nodeId: "fullMspProviderName",
+    setup: (state, f) => {
+      answer(state, f, "teamDedicated", "Our IT team takes care of both IT and cybersecurity");
+      answer(state, f, "combinedHeadcount", "3–10");
+      answer(state, f, "dayToDay", ["full-msp"]);
+    },
+  },
+  {
+    nodeId: "mixedMspProviderName",
+    setup: (state, f) => {
+      answer(state, f, "teamDedicated", "Our IT team takes care of both IT and cybersecurity");
+      answer(state, f, "combinedHeadcount", "10+");
+      answer(state, f, "dayToDay", ["mixed-msp-other"]);
+    },
+  },
+  {
+    nodeId: "mdrProviderName",
+    setup: (state, f) => {
+      answer(state, f, "teamDedicated", "Our IT team takes care of both IT and cybersecurity");
+      answer(state, f, "combinedHeadcount", "1–2");
+      answer(state, f, "dayToDay", ["mdr-msp"]);
+    },
+  },
+  {
+    nodeId: "msspProviderName",
+    setup: (state, f) => {
+      answer(state, f, "teamDedicated", "Our IT team takes care of both IT and cybersecurity");
+      answer(state, f, "combinedHeadcount", "1–2");
+      answer(state, f, "dayToDay", ["mssp"]);
+    },
+  },
+];
+
+test("selecting 'Other' on a provider-name field keeps it visible until real text is typed", () => {
+  for (const { nodeId, setup } of PROVIDER_NAME_OTHER_SCENARIOS) {
+    const f = flow();
+    const state = createSessionState();
+    setup(state, f);
+    // Mirrors fieldHtml's vendor-select handler: choosing "Other" records "".
+    answer(state, f, nodeId, "");
+    const ids = visibleIds(f, state);
+    assert.ok(ids.includes(nodeId), `${nodeId}: selecting "Other" (empty string) must not make the field disappear`);
+    // Now typing a real name resolves the shared dedupeKey as expected.
+    answer(state, f, nodeId, "A local/regional MSP");
+    const idsAfter = visibleIds(f, state);
+    assert.equal(state.answers[nodeId], "A local/regional MSP");
+    assert.ok(!idsAfter.includes(nodeId) || idsAfter.filter((id) => id === nodeId).length === 1, `${nodeId}: should not be duplicated once answered`);
+  }
+});
+
+test("mdrMspProviderName ('Other') doesn't self-adopt and blocks its own MDR-branch chain", () => {
+  const f = flow();
+  const state = createSessionState();
+  answer(state, f, "teamDedicated", "Our IT team takes care of both IT and cybersecurity");
+  answer(state, f, "combinedHeadcount", "1–2");
+  answer(state, f, "dayToDay", ["mdr-msp"]);
+  answer(state, f, "mdrProviderName", "Arctic Wolf");
+  answer(state, f, "mdrMspProviderName", "");
+  const ids = visibleIds(f, state);
+  assert.ok(ids.includes("mdrMspProviderName"), "selecting 'Other' here must not make the field disappear before a name is typed");
+});

@@ -232,9 +232,9 @@ async function fetchNvdMatches(vendorTerms: string[]): Promise<string[]> {
 
 // The request body reaches this function as untrusted input regardless of
 // what the site's own UI happens to send - a raw POST to this public
-// endpoint can put anything in these fields, including someone else's
-// re-imported/re-shared assessment export (loadExport() in
-// src/ui/assessment.js) carrying a crafted vendor "Other" value. Two
+// endpoint can put anything in these fields, crafted or not, since nothing
+// here can verify the request actually originated from the site's own
+// assessment flow rather than a direct call. Two
 // distinct defenses, both needed: neutralize literal `<`/`>` so a value
 // can't structurally close/open one of this prompt's own tags early, and
 // cap length/count so a deliberately huge payload can't blow up token cost

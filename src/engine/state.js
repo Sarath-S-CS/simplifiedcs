@@ -1,11 +1,12 @@
 // Session-scoped state for the adaptive assessment (§5.10 de-duplication memory).
-// A plain, serializable object so it can round-trip through the existing
-// window.storage save/export mechanism unchanged.
+// A plain, serializable object so it can round-trip through localStorage
+// save/resume (ASSESSMENT-EXPERIENCE-BRIEF.md §2) unchanged.
 export function createSessionState() {
   return {
     answers: {},   // nodeId -> answer value (number for scored questions, string/array otherwise)
     asked: [],     // ordered list of node ids actually shown to the user, for progress/back-nav
     dedupe: {},    // dedupeKey -> value already collected under a different node id
+    quickMode: false, // §1: when true, graph.js's resolveNext() also skips any node.quickSkip
   };
 }
 

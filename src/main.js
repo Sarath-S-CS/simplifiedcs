@@ -32,7 +32,6 @@ const assessmentController = createAssessmentController({
     list: (...args) => window.storage.list(...args),
     delete: (...args) => window.storage.delete(...args),
   },
-  exportProgressJson: (overall) => exportProgressJson(overall),
 });
 
 // --- Client-side routing (ROUTING-FIX-BRIEF.md): real URL paths for every
@@ -50,7 +49,6 @@ const ROUTES = {
   maturitymodel: '/what-is-simplifiedcs',
   starterguide: '/starter-guide',
   roadmap: '/roadmap',
-  transform: '/import-report',
   runbook: '/runbooks',
   news: '/news',
   exploits: '/exploits',
@@ -134,7 +132,6 @@ const HOME_DROPDOWN = [
 ];
 const ASSESSMENT_DROPDOWN = [
   { id:'assessment', label:'Take Assessment' },
-  { id:'transform', label:'Import Report' },
   { id:'history', label:'History' },
 ];
 
@@ -386,16 +383,6 @@ const SCORE_RUBRIC = [
     bad:'Even here, the compounding-risk flags still matter - a single overlooked combination (like a new vendor integration nobody reviewed) can create real exposure that a per-function score alone wouldn\'t catch.',
     why:'Consistently top-tier answers across every function - this band is earned, not assumed, and should be re-verified every assessment cycle rather than taken for granted.',
     priority:'Maturity Model Phase 10 - Adaptive Iteration. The job here is sustaining the loop, not finding new gaps.' },
-];
-
-// --- Transform tab: practical implementation steps, mapped to Maturity Model phases 4-10 ---
-const TRANSFORM_STEPS = [
-  { n:1, title:'Prioritize from your assessment', desc:'Start from the ranked Priority list on your latest results - highest severity first, not whatever\'s easiest.', phaseRef:'Maturity Model Phase 4' },
-  { n:2, title:'Assign ownership', desc:'Every item on that list needs a named person, not a team - an unowned finding is a finding nobody fixes.', phaseRef:'Maturity Model Phase 3' },
-  { n:3, title:'Implement the technical controls', desc:'MFA, EDR, network segmentation, email authentication - the specific gaps your assessment flagged, in order.', phaseRef:'Maturity Model Phase 5' },
-  { n:4, title:'Document it', desc:'Every control needs a policy behind it. See the Runbooks tab for exactly what each foundational document should contain.', phaseRef:'Maturity Model Phase 6' },
-  { n:5, title:'Rehearse, don\'t just file it', desc:'Tabletop exercises and backup-restore drills - a plan that\'s never been tested is a hypothesis, not a plan.', phaseRef:'Maturity Model Phase 7' },
-  { n:6, title:'Re-assess to confirm it worked', desc:'Run the Assessment again. This is how you prove the transformation happened instead of assuming it did.', phaseRef:'Maturity Model Phase 4, next cycle' },
 ];
 
 // --- Foundational documents (referenced from the Runbooks tab) ---
@@ -1195,20 +1182,6 @@ function goToTab(id, anchor){
   renderApp();
 }
 
-function exportProgressJson(overallValue){
-  const exportData = { scsExport:true, exportedAt: Date.now(), overall: overallValue ?? null, answers: assessmentController.session.answers };
-  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type:'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const suffix = overallValue === undefined || overallValue === null ? 'in-progress' : 'complete';
-  a.download = `simplifiedcs-assessment-${suffix}-${new Date().toISOString().slice(0,10)}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
 function renderActiveTab(){
   const container = document.getElementById('tabContent');
   if(activeTab === 'home') renderHomeTab(container);
@@ -1219,7 +1192,6 @@ function renderActiveTab(){
   else if(activeTab === 'maturitymodel') renderMaturityModelTab(container);
   else if(activeTab === 'starterguide') renderStarterGuideTab(container);
   else if(activeTab === 'roadmap') renderRoadmapTab(container);
-  else if(activeTab === 'transform') renderTransformTab(container);
   else if(activeTab === 'runbook') renderRunbookTab(container);
   else if(activeTab === 'news') renderNewsTab(container);
   else if(activeTab === 'exploits') renderExploitsTab(container);
@@ -2067,7 +2039,7 @@ const ROADMAP_SHIPPED = [
   { module:'MITRE ATT&CK Guidance Panel', desc:'A "why this matters, and what to do now" expander under each compounding-risk flag and low-scoring priority item, mapping to a real MITRE ATT&CK technique plus a compensating control computed from your own answers.' },
   { module:'Compounding-Risk Detection', desc:'Cross-answer flagging for dangerous combinations, not just per-question scoring.' },
   { module:'Vendor-Aware Mitigation Notes', desc:'Illustrative guidance for named products, entered via dropdown + "Other" across every vendor field in the questionnaire.' },
-  { module:'PDF Report Export', desc:'A real, programmatically-built PDF of your results - selectable/searchable text, not a screenshot - alongside the existing JSON export.' },
+  { module:'PDF Report Export', desc:'A real, programmatically-built PDF of your results - selectable/searchable text, not a screenshot.' },
   { module:'Runbooks & Playbooks', desc:'8 incident runbooks plus 16 OWASP/AI-mapped attack-type playbooks, each with MITRE ATT&CK/ATLAS references and equal-depth, actionable steps.' },
   { module:'Case Studies', desc:'8 real watershed cybersecurity incidents, each tied back to a specific gap this tool is built to catch.' },
   { module:'Glossary & References', desc:'A 59-term glossary and a sourced references page.' },
@@ -2082,12 +2054,13 @@ const ROADMAP_SHIPPED = [
 
 const ROADMAP_IN_PROGRESS = [
   { module:'History & Score Tracking', desc:'Every completed run compared against your last, with resolved/new-finding tracking between assessments - currently backed by session-local storage rather than a real database, so it doesn\'t yet persist reliably for every visitor. See "Persistent History & Score Tracking" below.' },
-  { module:'Save Progress / Export / Import', desc:'Download a completed or in-progress assessment as JSON, and re-upload it later to resume or re-run. The core round-trip works today; still being hardened and tested before calling it fully reliable.' },
+  { module:'Save & Resume (same browser)', desc:'In-progress answers are saved to your browser\'s own local storage as you go - close the tab, close the browser, even restart the device, and resuming picks up where you left off, as long as it\'s the same browser on the same device. This is what\'s actively being built and hardened right now.' },
   { module:'Feedback Form', desc:'The submission mechanism is built and wired to Netlify Forms, but Netlify Forms is not currently enabled for this site at the account level - confirmed directly, not assumed - so a real submission likely isn\'t being captured yet. Worth enabling and testing with a real submission before calling this shipped.' },
 ];
 
 const ROADMAP_PLANNED = [
-  { module:'Persistent History & Score Tracking', desc:'Replacing today\'s session-only History and resume-progress with real, persistent storage, so your results are still there the next time you visit.' },
+  { module:'Persistent History & Score Tracking', desc:'Replacing today\'s session-only History with real, persistent storage, so completed assessment results are still there - and comparable over time - the next time you visit.' },
+  { module:'Cross-Device Resume', desc:'A securely-generated link to pick up an in-progress assessment from any device, complementing the current same-device browser save above - a future, more advanced capability layered on top of it, not a replacement for it.' },
   { module:'Chatbot Assistant', desc:'A conversational assistant to help visitors navigate the site, answer cybersecurity basics questions, and potentially help fill out the assessment conversationally.' },
 ];
 
@@ -2255,96 +2228,6 @@ function renderRunbookTab(container){
 }
 
 
-function renderTransformTab(container){
-  container.innerHTML = `
-    <div class="page">
-      <div class="page-intro">
-        <div class="page-eyebrow">Assessment</div>
-        <h2 class="page-title">Import Report</h2>
-        <p class="page-lede">Import a previous assessment to review and re-run it, and follow the practical steps for actually closing what it found.</p>
-      </div>
-
-      <div class="section-tile">
-        <h3 class="section-h">Import a previous report</h3>
-        <div class="upload-zone">
-          <label class="upload-label" for="reportUpload">Choose a file →</label>
-          <input type="file" id="reportUpload" accept=".json">
-          <div class="upload-hint">Choose your exported SimplifiedCS JSON file to resume the assessment.</div>
-          <div id="uploadResult"></div>
-        </div>
-      </div>
-
-      <div class="section-tile">
-        <h3 class="section-h">Steps to strengthen your cyber health</h3>
-        <p class="body-text">Once you know what's wrong, this is the practical sequence for actually fixing it - each step ties back to a specific phase on the Maturity Model.</p>
-        <div class="transform-steps">
-          ${TRANSFORM_STEPS.map(s=>`
-            <div class="transform-step">
-              <div class="transform-step-num">${String(s.n).padStart(2,'0')}</div>
-              <div>
-                <h4>${s.title}</h4>
-                <p>${s.desc}</p>
-                <div class="phase-ref">${s.phaseRef}</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-
-        <div class="cta-row">
-          <a class="cta-btn" href="${pathForTab('assessment')}" id="ctaTransformAssess">Start a fresh assessment →</a>
-          <a class="cta-btn secondary" href="${pathForTab('maturity')}" id="ctaTransformRoadmap">See the full Maturity Model</a>
-        </div>
-      </div>
-    </div>
-  `;
-  wireNavLink(document.getElementById('ctaTransformAssess'), 'assessment');
-  wireNavLink(document.getElementById('ctaTransformRoadmap'), 'maturity');
-
-  document.getElementById('reportUpload').addEventListener('change', (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const resultEl = document.getElementById('uploadResult');
-    const ext = file.name.split('.').pop().toLowerCase();
-
-    if(ext === 'json'){
-      const reader = new FileReader();
-      reader.onload = (ev)=>{
-        try {
-          const data = JSON.parse(ev.target.result);
-          if(!data.scsExport) throw new Error('not-recognized');
-          assessmentController.loadExport(data);
-          const industryLabel = (INDUSTRIES.find(i=>i.id===(data.scope?.industry || data.answers?.industry))||{}).label || 'Not set';
-          const scoreLine = (data.overall === null || data.overall === undefined) ? 'In progress - not yet completed' : `${data.overall}% overall`;
-          resultEl.className = 'upload-result';
-          resultEl.innerHTML = `
-            <b>Report loaded</b> - ${file.name}<br>
-            Previous status: <b>${scoreLine}</b> · Industry: <b>${industryLabel}</b><br>
-            Exported: ${data.exportedAt ? new Date(data.exportedAt).toLocaleString() : 'unknown'}<br><br>
-            Your prior answers are loaded. Continue to the Assessment tab to review, adjust, and re-run.
-          `;
-          const goBtn = document.createElement('a');
-          goBtn.className = 'cta-btn';
-          goBtn.style.marginTop = '14px';
-          goBtn.href = pathForTab('assessment');
-          goBtn.textContent = 'Review & re-run assessment →';
-          wireNavLink(goBtn, 'assessment');
-          resultEl.appendChild(goBtn);
-        } catch(err){
-          resultEl.className = 'upload-result error';
-          resultEl.innerHTML = `<b>Couldn't read this file</b> - it doesn't look like a SimplifiedCS export. Try exporting one from a completed assessment's results screen first (look for "Export as JSON").`;
-        }
-      };
-      reader.readAsText(file);
-    } else {
-      resultEl.className = 'upload-result';
-      resultEl.innerHTML = `
-        <b>File received</b> - ${file.name}<br>
-        This prototype only fully parses its own JSON export format. In the live version, this is exactly where Claude's document understanding would extract structured findings from any report format (PDF, Word, whatever your last audit came in) and pre-populate the assessment automatically - that integration isn't built here yet.
-      `;
-    }
-  });
-}
-
 function renderMaturityModelTab(container){
   container.innerHTML = `
     <div class="page">
@@ -2369,10 +2252,10 @@ function renderMaturityModelTab(container){
         <p class="body-text">A self-assessment and advisory instrument that scores an organization's cybersecurity health against NIST CSF 2.0 and CIS Controls v8, cross-references answers for compounding risk instead of scoring each in isolation, and tracks maturity across repeated runs over time.</p>
 
         <h3 class="section-h" id="mm-how">How it's used</h3>
-        <p class="body-text">Pick an industry and any relevant compliance standards, answer an adaptive questionnaire that only shows what's relevant to your organization, and receive a scored, prioritized report - then re-run it periodically and use Import Report to close what it finds.</p>
+        <p class="body-text">Pick an industry and any relevant compliance standards, answer an adaptive questionnaire that only shows what's relevant to your organization, and receive a scored, prioritized report - then re-run it periodically to track whether what it found actually got fixed.</p>
 
         <h3 class="section-h" id="mm-capabilities">Capabilities</h3>
-        <p class="body-text">Adaptive question branching by industry and infrastructure · compounding-risk detection across answers rather than per-question scoring alone · vendor-aware mitigation notes for named products · assessment history with score-delta tracking · a documentation and runbook library · report import for re-assessment · a maturity model for context. See the <a href="${pathForTab('maturity')}" id="linkMaturityFromWhat" class="inline-link">Maturity Model</a> and <a href="${pathForTab('metrics')}" id="linkMetricsFromWhat" class="inline-link">Metrics</a> pages for the full detail behind each of these.</p>
+        <p class="body-text">Adaptive question branching by industry and infrastructure · compounding-risk detection across answers rather than per-question scoring alone · vendor-aware mitigation notes for named products · assessment history with score-delta tracking · a documentation and runbook library · a maturity model for context. See the <a href="${pathForTab('maturity')}" id="linkMaturityFromWhat" class="inline-link">Maturity Model</a> and <a href="${pathForTab('metrics')}" id="linkMetricsFromWhat" class="inline-link">Metrics</a> pages for the full detail behind each of these.</p>
 
         <h3 class="section-h" id="mm-segments">Segments covered</h3>
         <p class="body-text">NIST CSF 2.0 (all six functions, including Govern) and CIS Controls v8 as the fixed baseline, with optional ISO 27001, NIS2, SOC 2, HIPAA, GDPR, SOX, Cyber Essentials, and PCI DSS modules layered in by industry and region. Dedicated coverage for Operational Technology/ICS and DevSecOps/cloud-native practices, both shown only when relevant to the organization being assessed.</p>
