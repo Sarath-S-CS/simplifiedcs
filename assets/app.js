@@ -19892,8 +19892,10 @@
       // nodeId -> answer value (number for scored questions, string/array otherwise)
       asked: [],
       // ordered list of node ids actually shown to the user, for progress/back-nav
-      dedupe: {}
+      dedupe: {},
       // dedupeKey -> value already collected under a different node id
+      quickMode: false
+      // §1: when true, graph.js's resolveNext() also skips any node.quickSkip
     };
   }
   function recordAnswer(state, node2, value) {
@@ -19934,12 +19936,17 @@
     const v3 = state.answers[nodeId];
     return v3 !== void 0 && v3 !== "" && !(Array.isArray(v3) && v3.length === 0);
   }
+  function isNodeHidden(node2, state) {
+    const hiddenByVisibleIf = node2.visibleIf && !node2.visibleIf(state.answers);
+    const hiddenByQuickMode = state.quickMode && node2.quickSkip;
+    return Boolean(hiddenByVisibleIf || hiddenByQuickMode);
+  }
   function resolveNext(flow, currentId, state) {
     let id = currentId === null ? flow.order[0] : nextIdFrom(flow, currentId, state);
     while (id !== null) {
       const node2 = getNode(flow, id);
       if (!node2) return null;
-      if (node2.visibleIf && !node2.visibleIf(state.answers)) {
+      if (isNodeHidden(node2, state)) {
         id = nextIdFrom(flow, id, state);
         continue;
       }
@@ -20429,27 +20436,36 @@
     // §5.3: antivirus asked as its own step, before EDR.
     select("hasAntivirus", "infra", "Do you have an antivirus solution?", ["Yes", "No", "Not sure"], { required: true }),
     vendor("antivirusVendor", "infra", "Which antivirus product?", ANTIVIRUS_VENDORS, {
-      visibleIf: (answers) => answers.hasAntivirus === "Yes"
+      visibleIf: (answers) => answers.hasAntivirus === "Yes",
+      quickSkip: true
     }),
-    vendor("edrVendor", "infra", "What EDR (Endpoint Detection & Response) product is deployed, if any?", EDR_VENDORS),
-    vendor("emailSecurityVendor", "infra", "What email security / anti-phishing gateway do you use, if any?", EMAIL_SECURITY_VENDORS),
-    vendor("awarenessLms", "infra", "What security awareness / LMS platform do you use for training, if any?", AWARENESS_LMS_VENDORS),
+    vendor("edrVendor", "infra", "What EDR (Endpoint Detection & Response) product is deployed, if any?", EDR_VENDORS, { quickSkip: true }),
+    vendor("emailSecurityVendor", "infra", "What email security / anti-phishing gateway do you use, if any?", EMAIL_SECURITY_VENDORS, { quickSkip: true }),
+    vendor("awarenessLms", "infra", "What security awareness / LMS platform do you use for training, if any?", AWARENESS_LMS_VENDORS, { quickSkip: true }),
     select("dlpUsed", "infra", "Do you use a DLP (data loss prevention) solution?", ["Yes", "No", "Not sure"], { required: true }),
     vendor("dlpVendor", "infra", "Which DLP product?", DLP_VENDORS, {
-      visibleIf: (answers) => answers.dlpUsed === "Yes"
+      visibleIf: (answers) => answers.dlpUsed === "Yes",
+      quickSkip: true
     }),
     select("deployModel", "infra", "Is your infrastructure on-premises, cloud-only, or hybrid?", ["On-premises only", "Cloud-only", "Hybrid (on-prem + cloud)"], { required: true }),
     vendor("cloudProvider", "infra", "Which cloud provider(s)?", CLOUD_PROVIDERS, {
-      visibleIf: (answers) => answers.deployModel && answers.deployModel !== "On-premises only"
+      visibleIf: (answers) => answers.deployModel && answers.deployModel !== "On-premises only",
+      quickSkip: true
     }),
-    select("sdwanUsed", "infra", "Do you use SD-WAN?", ["Yes", "No", "Not sure"], { required: true }),
+    // sdwanUsed/sdwanVendor: SD-WAN presence isn't itself a scored gap the way
+    // missing antivirus/DLP is (no computeFlags rule references it either) -
+    // its only downstream purpose is gating a pure vendor-name follow-up, so
+    // the whole pair is Quick-mode detail rather than a mixed sequence.
+    select("sdwanUsed", "infra", "Do you use SD-WAN?", ["Yes", "No", "Not sure"], { required: true, quickSkip: true }),
     vendor("sdwanVendor", "infra", "Which SD-WAN vendor?", SDWAN_VENDORS, {
-      visibleIf: (answers) => answers.sdwanUsed === "Yes"
+      visibleIf: (answers) => answers.sdwanUsed === "Yes",
+      quickSkip: true
     }),
     select("networkArch", "infra", "How would you describe your network architecture?", ["Flat / mostly unsegmented", "Segmented (VLANs / zones)", "Zero-trust / microsegmented"], { required: true }),
     select("externalDevices", "infra", "Do you have external-facing devices (VPN gateways, remote-access appliances, firewalls with public IPs)?", ["Yes", "No"], { required: true }),
     vendor("edgeDeviceVendor", "infra", "What firewall / VPN gateway appliance handles that external access?", EDGE_DEVICE_VENDORS, {
-      visibleIf: (answers) => answers.externalDevices === "Yes"
+      visibleIf: (answers) => answers.externalDevices === "Yes",
+      quickSkip: true
     }),
     select(
       "externalWebsite",
@@ -20462,8 +20478,10 @@
       required: false,
       visibleIf: (answers) => answers.externalWebsite === "Yes"
     }),
-    vendor("hostingProvider", "infra", "Who hosts your web server(s)?", HOSTING_PROVIDERS),
-    text("webServerStack", "infra", "What web server software / OS runs it, if known?", "e.g. Nginx on Ubuntu 22.04, IIS on Windows Server")
+    vendor("hostingProvider", "infra", "Who hosts your web server(s)?", HOSTING_PROVIDERS, { quickSkip: true }),
+    // webServerStack: free-text specificity that only ever feeds vendor-note
+    // matching (see vendors.js/VENDOR_NOTES), not scoring - Quick-mode skip.
+    text("webServerStack", "infra", "What web server software / OS runs it, if known?", "e.g. Nginx on Ubuntu 22.04, IIS on Windows Server", { quickSkip: true })
   ];
   var DEVSEC_ORDER = ["developsSoftware", "devsecopsMaturity", "secretsManagement"];
   var DEVSEC_NODES = [
@@ -20510,7 +20528,8 @@
       visibleIf: (answers) => answers.hasOT === "Yes"
     }),
     vendor("otVendor", "infra", "What ICS/SCADA platform or vendor is primarily in use, if known?", OT_ICS_VENDORS, {
-      visibleIf: (answers) => answers.hasOT === "Yes"
+      visibleIf: (answers) => answers.hasOT === "Yes",
+      quickSkip: true
     })
   ];
   function otSectionSkipped(answers) {
@@ -20569,6 +20588,9 @@
   function outsourcedFunctionsDedupeValue(selected) {
     const ids = Array.isArray(selected) ? selected : [];
     return ids.includes("soc-monitoring") ? "Hybrid - some in-house, some third-party" : void 0;
+  }
+  function vendorNameDedupeValue(value) {
+    return value === "" ? void 0 : value;
   }
   var TEAM_STRUCTURE_NODES = [
     // ---- Step 1 ----
@@ -20650,6 +20672,8 @@
     {
       ...vendorField("outsourcedMspName", "Which MSP provides this coverage?", MSP_VENDORS),
       dedupeKey: "mspProviderName",
+      dedupeValue: vendorNameDedupeValue,
+      quickSkip: true,
       next: () => "socOwnership"
     },
     {
@@ -20711,6 +20735,8 @@
     {
       ...vendorField("fullMspProviderName", "Which MSP is it completely outsourced to?", MSP_VENDORS),
       dedupeKey: "mspProviderName",
+      dedupeValue: vendorNameDedupeValue,
+      quickSkip: true,
       visibleIf: (answers) => (a(answers).dayToDay || []).includes("full-msp"),
       next: () => "mspSocOwner"
     },
@@ -20733,6 +20759,8 @@
     {
       ...vendorField("mixedMspProviderName", "In the mixed arrangement, which MSP is involved?", MSP_VENDORS),
       dedupeKey: "mspProviderName",
+      dedupeValue: vendorNameDedupeValue,
+      quickSkip: true,
       visibleIf: (answers) => (a(answers).dayToDay || []).includes("mixed-msp-other"),
       next: () => "mixedOtherProviderDetail"
     },
@@ -20754,18 +20782,24 @@
     {
       ...vendorField("mdrProviderName", "Which MDR service do you use?", MDR_VENDORS),
       dedupeKey: "mdrProviderName",
+      dedupeValue: vendorNameDedupeValue,
+      quickSkip: true,
       visibleIf: (answers) => (a(answers).dayToDay || []).includes("mdr-msp"),
       next: () => "mdrMspProviderName"
     },
     {
       ...vendorField("mdrMspProviderName", "And which MSP handles the rest of IT alongside that MDR service?", MSP_VENDORS),
       dedupeKey: "mspProviderName",
+      dedupeValue: vendorNameDedupeValue,
+      quickSkip: true,
       visibleIf: (answers) => (a(answers).dayToDay || []).includes("mdr-msp"),
       next: () => "msspProviderName"
     },
     {
       ...vendorField("msspProviderName", "Which MSSP do you use?", MSSP_VENDORS),
       dedupeKey: "msspProviderName",
+      dedupeValue: vendorNameDedupeValue,
+      quickSkip: true,
       visibleIf: (answers) => (a(answers).dayToDay || []).includes("mssp"),
       next: () => "socOwnership"
     },
@@ -35436,12 +35470,245 @@
     doc.save(filename);
   }
 
+  // src/engine/local-save.js
+  var SAVE_KEY = "simplifiedcs:assessment:v1";
+  var NOTICE_KEY = "simplifiedcs:hasSeenSaveNotice";
+  function storageAvailable() {
+    try {
+      return typeof localStorage !== "undefined" && localStorage !== null;
+    } catch {
+      return false;
+    }
+  }
+  function saveProgress(session, ui) {
+    if (!storageAvailable()) return;
+    try {
+      localStorage.setItem(
+        SAVE_KEY,
+        JSON.stringify({
+          answers: session.answers,
+          asked: session.asked,
+          dedupe: session.dedupe,
+          quickMode: session.quickMode,
+          ui,
+          savedAt: Date.now()
+        })
+      );
+    } catch {
+    }
+  }
+  function loadProgress() {
+    if (!storageAvailable()) return null;
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== "object" || !data.answers || !data.ui) return null;
+      return data;
+    } catch {
+      return null;
+    }
+  }
+  function clearProgress() {
+    if (!storageAvailable()) return;
+    try {
+      localStorage.removeItem(SAVE_KEY);
+    } catch {
+    }
+  }
+  function hasSeenSaveNotice() {
+    if (!storageAvailable()) return true;
+    try {
+      return localStorage.getItem(NOTICE_KEY) === "true";
+    } catch {
+      return true;
+    }
+  }
+  function markSaveNoticeSeen() {
+    if (!storageAvailable()) return;
+    try {
+      localStorage.setItem(NOTICE_KEY, "true");
+    } catch {
+    }
+  }
+
+  // src/ui/toast.js
+  function showToast(message) {
+    if (typeof document === "undefined") return;
+    const el = document.createElement("div");
+    el.className = "save-toast";
+    el.setAttribute("role", "status");
+    el.innerHTML = `<span>${message}</span><button type="button" class="save-toast-close" aria-label="Dismiss">\xD7</button>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("visible"));
+    let dismissed = false;
+    const dismiss = () => {
+      if (dismissed) return;
+      dismissed = true;
+      el.classList.remove("visible");
+      setTimeout(() => el.remove(), 300);
+    };
+    el.querySelector(".save-toast-close").addEventListener("click", dismiss);
+    setTimeout(dismiss, 7e3);
+  }
+
+  // src/data/sample-scenario.js
+  var SAMPLE_ANSWERS = {
+    industry: "health",
+    hipaa: true,
+    employeeCount: "201\u20131,000",
+    teamDedicated: "Yes, dedicated IT and cybersecurity team",
+    itHeadcountSeparate: "3\u201310",
+    cybersecHeadcount: "1\u20132",
+    dayToDay: ["inhouse-all"],
+    inhouseSocCapability: "Some in-house, some gaps",
+    hasAntivirus: "Yes",
+    antivirusVendor: "Bitdefender",
+    edrVendor: "CrowdStrike Falcon",
+    emailSecurityVendor: "Mimecast",
+    awarenessLms: "KnowBe4",
+    dlpUsed: "Yes",
+    dlpVendor: "Microsoft Purview",
+    deployModel: "Hybrid (on-prem + cloud)",
+    cloudProvider: "Microsoft Azure",
+    sdwanUsed: "No",
+    networkArch: "Segmented (VLANs / zones)",
+    externalDevices: "Yes",
+    edgeDeviceVendor: "Fortinet FortiGate",
+    externalWebsite: "Yes",
+    webDb: "Yes",
+    hostingProvider: "Amazon Web Services (AWS)",
+    webServerStack: "Nginx on Ubuntu 22.04",
+    usesContainers: "Yes, some workloads",
+    containerOrchestration: "Yes",
+    containerImageScanning: "Occasionally",
+    containerHostSecurity: "Some hardening (e.g. minimal base images)",
+    usesVirtualization: "Yes, on-prem hypervisor (e.g. VMware, Hyper-V)",
+    hypervisorPatching: "Scheduled maintenance windows",
+    vmSegmentation: "Partially segmented",
+    developsSoftware: "Yes",
+    devsecopsMaturity: "Security scanning exists but isn't enforced in the pipeline",
+    secretsManagement: "Environment variables, informally managed",
+    hasOT: "No",
+    govPolicy: 1,
+    govRoles: 2,
+    govReporting: 1,
+    govRiskDecisions: 1,
+    hipaaBAA: 1,
+    aiToolGovernance: 1,
+    assetInv: 1,
+    dataClass: 2,
+    vendorCount: 1,
+    hipaaRiskAnalysis: 1,
+    mfa: 0,
+    patching: 1,
+    training: 2,
+    phishingSim: 1,
+    trainingCadence: 2,
+    endpoint: 2,
+    rdpExposed: 2,
+    emailAuth: 1,
+    privSeparation: 2,
+    privilegedAccessModel: 1,
+    privAccountMgmt: 1,
+    passwordPolicy: 2,
+    passwordManager: 1,
+    offboarding: 1,
+    hipaaEncryption: 2,
+    siem: 2,
+    anomalyTime: 1,
+    exfil: 0,
+    vulnScanning: 1,
+    pentest: 1,
+    irPlan: 1,
+    irTeam: 2,
+    commsPlan: 2,
+    backupTest: 1,
+    bcdr: 2,
+    backupIsolation: 0
+  };
+  var SAMPLE_AI_INSIGHTS = {
+    recency: [
+      {
+        vendorOrProduct: "Fortinet FortiGate",
+        finding: "FortiGate/FortiOS has a recent history of critical, actively-exploited authentication-bypass CVEs. No CVE specific to this exact configuration was found, but firmware currency is worth confirming directly given that track record.",
+        source: "CISA KEV catalog (pattern match, illustrative)"
+      },
+      {
+        vendorOrProduct: "Mimecast",
+        finding: "No current actively-exploited CVEs found against Mimecast's email security platform.",
+        source: "NVD CVE database (illustrative)"
+      }
+    ],
+    longTail: [
+      {
+        finding: "Segmented network architecture, but MFA not enforced at all",
+        why: "A segmented network limits lateral movement after a breach, but doesn't stop the initial compromise - and with MFA off entirely, a single leaked password is enough to get in. These two answers don't individually look alarming, but MFA is usually the higher-leverage fix precisely because it blocks the step that happens before segmentation would even matter."
+      }
+    ],
+    narrative: "This is a reasonably well-run environment for its size - recurring security training, enforced logging, and a segmented network are all real, working fundamentals. The two flagged gaps (no MFA enforcement, and no outbound-traffic monitoring on a database-connected public app) are specific and fixable rather than symptomatic of a broader absence of controls, which is a meaningfully different starting point than an org with no program at all."
+  };
+
   // src/ui/assessment.js
-  function createAssessmentController({ getPanel, getRail, icon: icon2, pathForTab: pathForTab2, wireNavLink: wireNavLink2, storage, exportProgressJson: exportProgressJson2 }) {
+  var SECTION_TRANSITIONS = {
+    profile: "Org profile done - let's talk about your team.",
+    team: "Team structure done - now the technology itself.",
+    infra: "Infrastructure covered - a couple of adjacent areas next.",
+    containerization: "Containers and virtualization done - almost through setup.",
+    devsecops: "Nearly there - just Operational Technology left, if it applies to you.",
+    ot: "Setup's done. Now the actual six-function assessment.",
+    Govern: "Governance done - next, what you actually have to protect.",
+    Identify: "Identify done - now the safeguards standing in an attacker's way.",
+    Protect: "Protect done - how would you even know if something went wrong?",
+    Detect: "Detect done - the first hour of a real incident, next.",
+    Respond: "Respond done - last section: getting back to normal."
+  };
+  function createAssessmentController({ getPanel, getRail, icon: icon2, pathForTab: pathForTab2, wireNavLink: wireNavLink2, storage }) {
     const session = createSessionState();
-    const ui = { phase: "scope", screenIndex: 0, categoryIndex: 0 };
+    const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null };
     function panel() {
       return getPanel();
+    }
+    function escapeHtml(s3) {
+      return String(s3 ?? "").replace(/[&<>"']/g, (c4) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c4]);
+    }
+    function persistProgress() {
+      if (ui.phase !== "scope" && ui.phase !== "profile" && ui.phase !== "wizard") return;
+      saveProgress(session, ui);
+      if (Object.keys(session.answers).length > 0 && !hasSeenSaveNotice()) {
+        showToast("Saved to this browser \u2014 close the tab anytime, but this only resumes from the same browser and device.");
+        markSaveNoticeSeen();
+      }
+    }
+    function allKnownNodes() {
+      return [...PROFILE_SCREENS.flatMap((s3) => Array.from(s3.flow.index.values())), ...Array.from(ASSESSMENT_FLOW.index.values())];
+    }
+    function skippedCount() {
+      return allKnownNodes().filter((n2) => isNodeHidden(n2, session)).length;
+    }
+    function progressInfo() {
+      const totalSections = visibleProfileScreens().length + FUNCTIONS.length;
+      let sectionIndex = 0;
+      if (ui.phase === "profile") sectionIndex = visibleProfileScreens().indexOf(PROFILE_SCREENS[ui.screenIndex]);
+      else if (ui.phase === "wizard") sectionIndex = visibleProfileScreens().length + ui.categoryIndex;
+      const remaining = Math.max(0, totalSections - sectionIndex);
+      const baseMinutes = session.quickMode ? 2 : 5;
+      const estimateMinutes = Math.max(1, Math.round(baseMinutes * remaining / totalSections));
+      return { position: sectionIndex + 1, totalSections, estimateMinutes };
+    }
+    function progressMetaHtml() {
+      const { position, totalSections, estimateMinutes } = progressInfo();
+      const skipped = skippedCount();
+      return `
+      <div class="progress-meta"><b>${position} of ${totalSections}</b> sections \xB7 ~${estimateMinutes} minute${estimateMinutes === 1 ? "" : "s"} left</div>
+      ${skipped > 0 ? `<p class="skip-note">Based on your answers, we've skipped ${skipped} question${skipped === 1 ? "" : "s"} that don't apply to your setup.</p>` : ""}
+    `;
+    }
+    function transitionNoteHtml() {
+      if (!ui.transitionNote) return "";
+      const text3 = ui.transitionNote;
+      ui.transitionNote = null;
+      return `<p class="section-transition">${text3}</p>`;
     }
     function visibleProfileScreens() {
       return PROFILE_SCREENS.filter((s3) => !s3.skipIf || !s3.skipIf(session.answers));
@@ -35468,6 +35735,10 @@
     function renderRail() {
       const rail = getRail();
       if (!rail) return;
+      if (ui.phase === "landing" || ui.phase === "sample") {
+        rail.innerHTML = "";
+        return;
+      }
       const visiblePre = visibleProfileScreens();
       const items = ["Scope", ...visiblePre.map((s3) => s3.title), ...FUNCTIONS.map((fn) => FUNC_DISPLAY[fn]), "Reading"];
       let activeIdx;
@@ -35484,6 +35755,72 @@
         return `<div class="${cls}"><div class="dot"></div><div class="label">${label}</div></div>`;
       }).join("") + `</div><div class="rail-active-label">${items[activeIdx]}</div>`;
     }
+    function startFresh(quickMode) {
+      session.quickMode = quickMode;
+      ui.phase = "scope";
+      renderRail();
+      renderScope();
+    }
+    function resumeFromSave(saved) {
+      Object.assign(session.answers, saved.answers || {});
+      session.asked = Array.isArray(saved.asked) ? saved.asked : [];
+      session.dedupe = saved.dedupe && typeof saved.dedupe === "object" ? saved.dedupe : {};
+      session.quickMode = Boolean(saved.quickMode);
+      Object.assign(ui, saved.ui || {});
+      renderRail();
+      dispatchPhase();
+    }
+    function renderLanding() {
+      const p3 = panel();
+      const saved = loadProgress();
+      p3.innerHTML = `
+      <div class="step-eyebrow">Assessment</div>
+      <h2 class="step-title">Choose how to start</h2>
+      <p class="step-sub">Every mode runs the same six-function NIST CSF scoring, compounding-risk detection, and MITRE ATT&CK mapping at full strength - Quick just collects less vendor-specific detail along the way.</p>
+      ${saved ? `<div class="resume-banner">
+               <div class="resume-banner-text">You have an <b>in-progress assessment</b> saved on this browser.</div>
+               <div class="resume-banner-actions">
+                 <button id="discardResumeBtn">Start fresh</button>
+                 <button class="primary" id="resumeBtn">Resume \u2192</button>
+               </div>
+             </div>` : ""}
+      <div class="mode-grid">
+        <div class="mode-card" id="modeQuick">
+          <div class="mode-card-time">~2 min</div>
+          <h4>Quick Assessment</h4>
+          <p>Core NIST function scoring across all six functions - skips vendor-specific detail like which product or provider you use.</p>
+          <div class="mode-card-cta">Start Quick \u2192</div>
+        </div>
+        <div class="mode-card" id="modeFull">
+          <div class="mode-card-time">~5 min</div>
+          <h4>Full Assessment</h4>
+          <p>Everything, including vendor-specific mitigation guidance for the exact products and providers in your environment.</p>
+          <div class="mode-card-cta">Start Full \u2192</div>
+        </div>
+        <div class="mode-card" id="modeSample">
+          <div class="mode-card-time">Instant</div>
+          <h4>See a Sample Report</h4>
+          <p>View a complete example report with no questions to answer - full depth, real scoring, nothing to fill in.</p>
+          <div class="mode-card-cta">View sample \u2192</div>
+        </div>
+      </div>
+    `;
+      document.getElementById("modeQuick").addEventListener("click", () => startFresh(true));
+      document.getElementById("modeFull").addEventListener("click", () => startFresh(false));
+      document.getElementById("modeSample").addEventListener("click", () => {
+        ui.phase = "sample";
+        renderRail();
+        renderSampleReport();
+      });
+      const resumeBtn = document.getElementById("resumeBtn");
+      if (resumeBtn) resumeBtn.addEventListener("click", () => resumeFromSave(saved));
+      const discardBtn = document.getElementById("discardResumeBtn");
+      if (discardBtn)
+        discardBtn.addEventListener("click", () => {
+          clearProgress();
+          renderLanding();
+        });
+    }
     function updateSerial() {
       const el = document.getElementById("serial");
       if (!el) return;
@@ -35492,6 +35829,7 @@
       el.innerHTML = `SIMPLIFIEDCS / PROTOTYPE&nbsp;v0.1 \xB7 ${label}`;
     }
     async function renderScope() {
+      persistProgress();
       const p3 = panel();
       p3.innerHTML = `<div class="step-eyebrow">Scope</div><h2 class="step-title">Before we start</h2>`;
       let historyCount = 0;
@@ -35520,7 +35858,7 @@
       const regularRegions = REGIONS.filter((r2) => !r2.standalone);
       const globalRegion = REGIONS.find((r2) => r2.standalone);
       p3.innerHTML = `
-      <div class="step-eyebrow">Scope</div>
+      <div class="step-eyebrow">Scope \xB7 ${session.quickMode ? "Quick Assessment" : "Full Assessment"}</div>
       <h2 class="step-title">Before we start</h2>
       <p class="step-sub">Every assessment includes the NIST CSF 2.0 + CIS Controls baseline. Add any compliance standards that apply to your organization - none are selected automatically, even if we flag one as relevant for your industry or region.</p>
       ${historyCount ? `<a class="history-link" id="historyLink" href="${pathForTab2("history")}">You have ${historyCount} previous assessment${historyCount === 1 ? "" : "s"} saved on this account - <u>view history</u></a>` : ""}
@@ -35615,7 +35953,7 @@
       <p class="scope-hint">These are common patterns, not a legal determination - confirm exact obligations (especially NIS2 sector/size thresholds) with your regulatory counsel.</p>
 
       <div class="nav">
-        <div></div>
+        <button id="backToLandingBtn">\u2190 Change assessment type</button>
         <button class="primary" id="scopeNext">Start assessment \u2192</button>
       </div>
     `;
@@ -35653,6 +35991,11 @@
       }
       const historyLinkEl = document.getElementById("historyLink");
       if (historyLinkEl) wireNavLink2(historyLinkEl, "history");
+      document.getElementById("backToLandingBtn").addEventListener("click", () => {
+        ui.phase = "landing";
+        renderRail();
+        renderLanding();
+      });
       p3.querySelectorAll(".acc-head").forEach((el) => {
         el.addEventListener("click", (e2) => {
           if (e2.target.closest(".fw-card")) return;
@@ -35716,7 +36059,7 @@
                 <input type="checkbox" data-optid="${OTHER}" ${otherChecked ? "checked" : ""}> Other
               </label>` : ""}
           </div>
-          ${otherChecked ? `<input type="text" data-fid-other="${node2.id}" value="${otherText}" placeholder="${node2.otherPlaceholder || "Please specify"}">` : ""}
+          ${otherChecked ? `<input type="text" data-fid-other="${node2.id}" value="${escapeHtml(otherText)}" placeholder="${escapeHtml(node2.otherPlaceholder || "Please specify")}">` : ""}
         </div>`;
       }
       if (node2.type === "vendor") {
@@ -35729,19 +36072,20 @@
             ${node2.vendorOptions.map((v3) => `<option value="${v3}" ${!isOther && val === v3 ? "selected" : ""}>${v3}</option>`).join("")}
             <option value="${OTHER}" ${isOther ? "selected" : ""}>Other</option>
           </select>
-          ${isOther ? `<input type="text" data-vendor-other-fid="${node2.id}" value="${!node2.vendorOptions.includes(val) ? val : ""}" placeholder="Please specify">` : ""}
+          ${isOther ? `<input type="text" data-vendor-other-fid="${node2.id}" value="${escapeHtml(!node2.vendorOptions.includes(val) ? val : "")}" placeholder="Please specify">` : ""}
         </div>`;
       }
       return `
       <div class="field">
         <label>${node2.text}${node2.required ? "" : ' <span class="opt-tag">optional</span>'}</label>
-        <input type="text" data-fid="${node2.id}" value="${val}" placeholder="${node2.placeholder || ""}">
+        <input type="text" data-fid="${node2.id}" value="${escapeHtml(val)}" placeholder="${escapeHtml(node2.placeholder || "")}">
       </div>`;
     }
     function screenComplete(screen) {
       return visibleNodes(screen.flow, session).every((n2) => !n2.required || session.answers[n2.id] !== void 0 && session.answers[n2.id] !== "" && !(Array.isArray(session.answers[n2.id]) && session.answers[n2.id].length === 0));
     }
     function renderProfileScreen() {
+      persistProgress();
       const screen = PROFILE_SCREENS[ui.screenIndex];
       const p3 = panel();
       const nodes = visibleNodes(screen.flow, session);
@@ -35749,15 +36093,15 @@
       p3.innerHTML = `
       <div class="step-eyebrow">Pre-Assessment</div>
       <h2 class="step-title">${screen.title}</h2>
+      ${transitionNoteHtml()}
+      ${progressMetaHtml()}
       <p class="step-sub">${screen.sub}</p>
       ${nodes.map(fieldHtml).join("")}
       <div class="nav">
         <button id="backBtn">\u2190 Back</button>
-        <button id="saveProgressBtn">Save progress \u2193</button>
         <button class="primary" id="nextBtn" ${screenComplete(screen) ? "" : "disabled"}>${isLastVisible ? "Continue to assessment \u2192" : "Continue \u2192"}</button>
       </div>
     `;
-      document.getElementById("saveProgressBtn").addEventListener("click", () => exportProgressJson2(null));
       function refreshNext() {
         document.getElementById("nextBtn").disabled = !screenComplete(screen);
       }
@@ -35818,6 +36162,7 @@
       refreshNext();
       document.getElementById("nextBtn").addEventListener("click", () => {
         const nxt = nextVisibleScreenIndex(ui.screenIndex);
+        ui.transitionNote = SECTION_TRANSITIONS[screen.id] || null;
         if (nxt >= PROFILE_SCREENS.length) {
           ui.phase = "wizard";
           ui.categoryIndex = 0;
@@ -35849,12 +36194,15 @@
       return categoryQuestions(fn).every((q2) => session.answers[q2.id] !== void 0);
     }
     function renderAssessmentCategory() {
+      persistProgress();
       const fn = FUNCTIONS[ui.categoryIndex];
       const p3 = panel();
       const qs = categoryQuestions(fn);
       p3.innerHTML = `
       <div class="step-eyebrow">${FUNC_REF[fn]}</div>
       <h2 class="step-title">${FUNC_DISPLAY[fn]}</h2>
+      ${transitionNoteHtml()}
+      ${progressMetaHtml()}
       <p class="step-sub"></p>
       ${qs.map(
         (q2) => `
@@ -35874,11 +36222,9 @@
       ).join("")}
       <div class="nav">
         <button id="backBtn">\u2190 Back</button>
-        <button id="saveProgressBtn2">Save progress \u2193</button>
         <button class="primary" id="nextBtn" ${categoryAnswered(fn) ? "" : "disabled"}>${ui.categoryIndex === FUNCTIONS.length - 1 ? "Generate reading" : "Continue \u2192"}</button>
       </div>
     `;
-      document.getElementById("saveProgressBtn2").addEventListener("click", () => exportProgressJson2(null));
       p3.querySelectorAll(".option").forEach((el) => {
         el.addEventListener("click", () => {
           const qid = el.dataset.qid;
@@ -35888,6 +36234,7 @@
         });
       });
       document.getElementById("nextBtn").addEventListener("click", () => {
+        ui.transitionNote = SECTION_TRANSITIONS[fn] || null;
         if (ui.categoryIndex === FUNCTIONS.length - 1) {
           ui.phase = "results";
           renderRail();
@@ -35935,80 +36282,25 @@
         </div>
       </div>`;
     }
-    async function renderResults() {
-      const p3 = panel();
-      p3.innerHTML = `<div class="step-eyebrow">Synthesis - all functions considered jointly</div><h2 class="step-title">Calculating your reading\u2026</h2>`;
-      const funcScores = computeFuncScores(session);
-      const overall = computeOverall(funcScores);
-      const flags = computeFlags(session);
-      const gapItems = computeGapItems(session);
-      const priorities = computePriorities(session);
-      const vendorNotes = matchedVendorNotes(session.answers);
-      const frameworkRecs = computeFrameworkRecommendations(session);
-      const currentGapTexts = gapItems.map((i3) => i3.gap);
-      let prevRun = null, historyCount = 0;
-      try {
-        const lr = await storage.list("runs:", false);
-        if (lr && lr.keys && lr.keys.length) {
-          historyCount = lr.keys.length;
-          const gets = await Promise.all(lr.keys.map((k2) => storage.get(k2, false).catch(() => null)));
-          const runs = gets.filter(Boolean).map((g2) => JSON.parse(g2.value)).sort((a4, b2) => a4.ts - b2.ts);
-          if (runs.length) prevRun = runs[runs.length - 1];
-        }
-      } catch (e2) {
-      }
-      let resolvedSincePrev = [], newSincePrev = [];
-      if (prevRun && prevRun.gapTexts) {
-        resolvedSincePrev = prevRun.gapTexts.filter((g2) => !currentGapTexts.includes(g2));
-        newSincePrev = currentGapTexts.filter((g2) => !prevRun.gapTexts.includes(g2));
-      }
-      const runRecord = { ts: Date.now(), overall, gapTexts: currentGapTexts, industry: session.answers.industry };
-      try {
-        await storage.set(`runs:${runRecord.ts}`, JSON.stringify(runRecord), false);
-      } catch (e2) {
-      }
-      const conic = (() => {
-        const slice = 360 / funcScores.length;
-        let acc = 0;
-        const parts = funcScores.map((f3) => {
-          const start = acc;
-          acc += slice;
-          return `${FUNC_COLORS[f3.fn]} ${start}deg ${acc}deg`;
-        });
-        return `conic-gradient(${parts.join(",")})`;
-      })();
-      const delta = prevRun ? overall - prevRun.overall : null;
-      p3.innerHTML = `
-      <div class="step-eyebrow">Synthesis - all functions considered jointly</div>
-      <h2 class="step-title">Health Reading</h2>
-      <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f3) => session.answers[f3.id]).map((f3) => " + " + f3.name).join("")}${session.answers.industry ? " \xB7 " + INDUSTRIES.find((i3) => i3.id === session.answers.industry).label : ""}</p>
-
-      <div class="report-meta-fields">
-        <div class="field">
-          <label>Company / firm name <span class="opt-tag">optional</span></label>
-          <input type="text" id="reportCompanyName" placeholder="e.g. Acme Corp" value="${session.answers.companyName || ""}">
-        </div>
-        <div class="field">
-          <label>Report requested by <span class="opt-tag">optional</span></label>
-          <input type="text" id="reportRequestedBy" placeholder="e.g. Jane Smith, CISO" value="${session.answers.reportRequestedBy || ""}">
-        </div>
-      </div>
-
-      ${prevRun ? `
-      <div class="delta-box">
-        <h3>Change since your last assessment (${new Date(prevRun.ts).toLocaleDateString()})</h3>
-        <div class="delta-score ${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "+" : ""}${delta}% overall</div>
-        ${resolvedSincePrev.length ? `<div class="delta-resolved"><b>Resolved:</b> ${resolvedSincePrev.length} item(s) closed since last time</div>` : ""}
-        ${newSincePrev.length ? `<div class="delta-new"><b>New:</b> ${newSincePrev.length} item(s) newly flagged</div>` : ""}
-      </div>` : ""}
-
+    function conicFor(funcScores) {
+      const slice = 360 / funcScores.length;
+      let acc = 0;
+      const parts = funcScores.map((f3) => {
+        const start = acc;
+        acc += slice;
+        return `${FUNC_COLORS[f3.fn]} ${start}deg ${acc}deg`;
+      });
+      return `conic-gradient(${parts.join(",")})`;
+    }
+    function reportBodyHtml({ session: s3, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities }) {
+      return `
       <div class="snapshot">
         <h3>Infrastructure snapshot (self-reported)</h3>
-        ${snapshotRows(session.answers).map(([k2, v3]) => `<div class="snapshot-row"><div class="skey">${k2}</div><div>${v3}</div></div>`).join("")}
+        ${snapshotRows(s3.answers).map(([k2, v3]) => `<div class="snapshot-row"><div class="skey">${k2}</div><div>${escapeHtml(v3)}</div></div>`).join("")}
       </div>
 
       <div class="gauge-row">
-        <div class="gauge" style="background:${conic}">
+        <div class="gauge" style="background:${conicFor(funcScores)}">
           <div class="gauge-inner">
             <div class="pct">${overall}%</div>
             <div class="verdict">${verdictLabel(overall)}</div>
@@ -36033,7 +36325,7 @@
         ${flags.map(
         (f3) => `
           <div class="flag-item"><b>Combined finding -</b> ${f3.text}</div>
-          ${mitrePanel(guidanceForFlag(f3, session.answers), `flag-${f3.id}`)}
+          ${mitrePanel(guidanceForFlag(f3, s3.answers), `flag-${f3.id}`)}
         `
       ).join("")}
       </div>` : ""}
@@ -36067,10 +36359,71 @@
             <div class="priority-rank">${String(i3 + 1).padStart(2, "0")}</div>
             <div><b>${FUNC_DISPLAY[p22.fn]}:</b> ${p22.gap}</div>
           </div>
-          ${mitrePanel(guidanceForGapItem(p22, session.answers), `gap-${p22.id}`)}
+          ${mitrePanel(guidanceForGapItem(p22, s3.answers), `gap-${p22.id}`)}
         `
       ).join("")}
       </div>
+    `;
+    }
+    async function renderResults() {
+      const p3 = panel();
+      p3.innerHTML = `<div class="step-eyebrow">Synthesis - all functions considered jointly</div><h2 class="step-title">Calculating your reading\u2026</h2>`;
+      const funcScores = computeFuncScores(session);
+      const overall = computeOverall(funcScores);
+      const flags = computeFlags(session);
+      const gapItems = computeGapItems(session);
+      const priorities = computePriorities(session);
+      const vendorNotes = matchedVendorNotes(session.answers);
+      const frameworkRecs = computeFrameworkRecommendations(session);
+      const currentGapTexts = gapItems.map((i3) => i3.gap);
+      clearProgress();
+      let prevRun = null, historyCount = 0;
+      try {
+        const lr = await storage.list("runs:", false);
+        if (lr && lr.keys && lr.keys.length) {
+          historyCount = lr.keys.length;
+          const gets = await Promise.all(lr.keys.map((k2) => storage.get(k2, false).catch(() => null)));
+          const runs = gets.filter(Boolean).map((g2) => JSON.parse(g2.value)).sort((a4, b2) => a4.ts - b2.ts);
+          if (runs.length) prevRun = runs[runs.length - 1];
+        }
+      } catch (e2) {
+      }
+      let resolvedSincePrev = [], newSincePrev = [];
+      if (prevRun && prevRun.gapTexts) {
+        resolvedSincePrev = prevRun.gapTexts.filter((g2) => !currentGapTexts.includes(g2));
+        newSincePrev = currentGapTexts.filter((g2) => !prevRun.gapTexts.includes(g2));
+      }
+      const runRecord = { ts: Date.now(), overall, gapTexts: currentGapTexts, industry: session.answers.industry };
+      try {
+        await storage.set(`runs:${runRecord.ts}`, JSON.stringify(runRecord), false);
+      } catch (e2) {
+      }
+      const delta = prevRun ? overall - prevRun.overall : null;
+      p3.innerHTML = `
+      <div class="step-eyebrow">Synthesis - all functions considered jointly</div>
+      <h2 class="step-title">Health Reading</h2>
+      <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f3) => session.answers[f3.id]).map((f3) => " + " + f3.name).join("")}${session.answers.industry ? " \xB7 " + INDUSTRIES.find((i3) => i3.id === session.answers.industry).label : ""}</p>
+
+      <div class="report-meta-fields">
+        <div class="field">
+          <label>Company / firm name <span class="opt-tag">optional</span></label>
+          <input type="text" id="reportCompanyName" placeholder="e.g. Acme Corp" value="${escapeHtml(session.answers.companyName || "")}">
+        </div>
+        <div class="field">
+          <label>Report requested by <span class="opt-tag">optional</span></label>
+          <input type="text" id="reportRequestedBy" placeholder="e.g. Jane Smith, CISO" value="${escapeHtml(session.answers.reportRequestedBy || "")}">
+        </div>
+      </div>
+
+      ${prevRun ? `
+      <div class="delta-box">
+        <h3>Change since your last assessment (${new Date(prevRun.ts).toLocaleDateString()})</h3>
+        <div class="delta-score ${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "+" : ""}${delta}% overall</div>
+        ${resolvedSincePrev.length ? `<div class="delta-resolved"><b>Resolved:</b> ${resolvedSincePrev.length} item(s) closed since last time</div>` : ""}
+        ${newSincePrev.length ? `<div class="delta-new"><b>New:</b> ${newSincePrev.length} item(s) newly flagged</div>` : ""}
+      </div>` : ""}
+
+      ${reportBodyHtml({ session, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities })}
 
       <div class="note-box">
         <b>About this report -</b> the flags and priority list above are produced by a deterministic rules
@@ -36102,7 +36455,6 @@
 
       <div class="nav">
         <button id="backBtn2">\u2190 Review answers</button>
-        <button id="exportJsonBtn">Export as JSON \u2193</button>
         <button id="exportPdfBtn">Download as PDF \u2193</button>
         <a id="viewHistoryBtn" href="${pathForTab2("history")}">View history (${historyCount + 1}) \u2192</a>
       </div>
@@ -36123,7 +36475,6 @@
         renderAssessmentCategory();
       });
       wireNavLink2(document.getElementById("viewHistoryBtn"), "history");
-      document.getElementById("exportJsonBtn").addEventListener("click", () => exportProgressJson2(overall));
       document.getElementById("exportPdfBtn").addEventListener("click", () => {
         buildAssessmentPdf({ session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs });
       });
@@ -36131,6 +36482,57 @@
         "click",
         () => requestAiInsights({ session, overall, verdict: verdictLabel(overall), flags, priorities, vendorNotes, frameworkRecs })
       );
+    }
+    function renderSampleReport() {
+      const p3 = panel();
+      const sampleSession = createSessionState();
+      Object.assign(sampleSession.answers, SAMPLE_ANSWERS);
+      const funcScores = computeFuncScores(sampleSession);
+      const overall = computeOverall(funcScores);
+      const flags = computeFlags(sampleSession);
+      const priorities = computePriorities(sampleSession);
+      const vendorNotes = matchedVendorNotes(sampleSession.answers);
+      const frameworkRecs = computeFrameworkRecommendations(sampleSession);
+      p3.innerHTML = `
+      <div class="sample-banner"><b>Sample</b>&nbsp;This is example data from a fixed, realistic answer set - not a real assessment result.</div>
+      <div class="step-eyebrow">Synthesis - all functions considered jointly</div>
+      <h2 class="step-title">Health Reading</h2>
+      <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f3) => sampleSession.answers[f3.id]).map((f3) => " + " + f3.name).join("")}${sampleSession.answers.industry ? " \xB7 " + INDUSTRIES.find((i3) => i3.id === sampleSession.answers.industry).label : ""}</p>
+
+      ${reportBodyHtml({ session: sampleSession, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities })}
+
+      <div class="note-box">
+        <b>About this report -</b> everything above is produced by running a fixed sample answer set through
+        this site's real, deterministic scoring engine - the same one every actual assessment uses - so this
+        sample stays accurate as that engine evolves, rather than being a separately-maintained mockup.
+      </div>
+
+      <div class="ai-insights-section">
+        <div class="ai-insights-intro">
+          <div>
+            <h3>AI-Enhanced Insights <span class="ai-badge">AI-generated</span></h3>
+            <p class="body-text">A static example of what the live, opt-in "Get AI-Enhanced Insights" pass on a real report looks like, shown here without an actual API call so the sample stays instant and free to view.</p>
+          </div>
+        </div>
+        <div>${aiInsightCardsHtml(SAMPLE_AI_INSIGHTS)}</div>
+      </div>
+
+      <div class="nav">
+        <button id="sampleBackBtn">\u2190 Back to assessment options</button>
+        <button id="samplePdfBtn">Download as PDF \u2193</button>
+      </div>
+    `;
+      p3.querySelectorAll(".acc-head").forEach((el) => {
+        el.addEventListener("click", () => el.parentElement.classList.toggle("open"));
+      });
+      document.getElementById("sampleBackBtn").addEventListener("click", () => {
+        ui.phase = "landing";
+        renderRail();
+        renderLanding();
+      });
+      document.getElementById("samplePdfBtn").addEventListener("click", () => {
+        buildAssessmentPdf({ session: sampleSession, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs });
+      });
     }
     function namedVendorsFor(answers) {
       const mspProvider = answers.outsourcedMspName || answers.fullMspProviderName || answers.mixedMspProviderName || answers.mdrMspProviderName || answers.mdrProviderName || answers.msspProviderName || "";
@@ -36147,9 +36549,6 @@
         "OT/ICS platform": answers.otVendor || "",
         "MSP/MDR/MSSP provider": mspProvider
       };
-    }
-    function escapeHtml(s3) {
-      return String(s3 ?? "").replace(/[&<>"']/g, (c4) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c4]);
     }
     function safeHttpUrl(url) {
       try {
@@ -36219,22 +36618,19 @@
         btn.textContent = "Get AI-Enhanced Insights \u2728";
       }
     }
-    function loadExport(data) {
-      Object.keys(session.answers).forEach((k2) => delete session.answers[k2]);
-      Object.assign(session.answers, data.scope || {}, data.answers || {});
-      if (!Array.isArray(session.answers.regions)) session.answers.regions = [];
-      session.asked = [];
-      session.dedupe = {};
-      ui.phase = "scope";
-      ui.screenIndex = 0;
-      ui.categoryIndex = 0;
+    function dispatchPhase() {
+      if (ui.phase === "landing") renderLanding();
+      else if (ui.phase === "scope") renderScope();
+      else if (ui.phase === "profile") renderProfileScreen();
+      else if (ui.phase === "wizard") renderAssessmentCategory();
+      else if (ui.phase === "sample") renderSampleReport();
+      else renderResults();
     }
     return {
       get phase() {
         return ui.phase;
       },
       session,
-      loadExport,
       renderRail,
       renderScope,
       renderProfileScreen,
@@ -36244,10 +36640,7 @@
       renderCurrentPhase() {
         updateSerial();
         renderRail();
-        if (ui.phase === "scope") renderScope();
-        else if (ui.phase === "profile") renderProfileScreen();
-        else if (ui.phase === "wizard") renderAssessmentCategory();
-        else renderResults();
+        dispatchPhase();
       }
     };
   }
@@ -56530,8 +56923,7 @@ ${suffix}`;
       set: (...args) => window.storage.set(...args),
       list: (...args) => window.storage.list(...args),
       delete: (...args) => window.storage.delete(...args)
-    },
-    exportProgressJson: (overall) => exportProgressJson(overall)
+    }
   });
   var ROUTES = {
     home: "/",
@@ -56542,7 +56934,6 @@ ${suffix}`;
     maturitymodel: "/what-is-simplifiedcs",
     starterguide: "/starter-guide",
     roadmap: "/roadmap",
-    transform: "/import-report",
     runbook: "/runbooks",
     news: "/news",
     exploits: "/exploits",
@@ -56609,7 +57000,6 @@ ${suffix}`;
   ];
   var ASSESSMENT_DROPDOWN = [
     { id: "assessment", label: "Take Assessment" },
-    { id: "transform", label: "Import Report" },
     { id: "history", label: "History" }
   ];
   var NEWS_ITEMS = [
@@ -56964,14 +57354,6 @@ ${suffix}`;
       why: "Consistently top-tier answers across every function - this band is earned, not assumed, and should be re-verified every assessment cycle rather than taken for granted.",
       priority: "Maturity Model Phase 10 - Adaptive Iteration. The job here is sustaining the loop, not finding new gaps."
     }
-  ];
-  var TRANSFORM_STEPS = [
-    { n: 1, title: "Prioritize from your assessment", desc: "Start from the ranked Priority list on your latest results - highest severity first, not whatever's easiest.", phaseRef: "Maturity Model Phase 4" },
-    { n: 2, title: "Assign ownership", desc: "Every item on that list needs a named person, not a team - an unowned finding is a finding nobody fixes.", phaseRef: "Maturity Model Phase 3" },
-    { n: 3, title: "Implement the technical controls", desc: "MFA, EDR, network segmentation, email authentication - the specific gaps your assessment flagged, in order.", phaseRef: "Maturity Model Phase 5" },
-    { n: 4, title: "Document it", desc: "Every control needs a policy behind it. See the Runbooks tab for exactly what each foundational document should contain.", phaseRef: "Maturity Model Phase 6" },
-    { n: 5, title: "Rehearse, don't just file it", desc: "Tabletop exercises and backup-restore drills - a plan that's never been tested is a hypothesis, not a plan.", phaseRef: "Maturity Model Phase 7" },
-    { n: 6, title: "Re-assess to confirm it worked", desc: "Run the Assessment again. This is how you prove the transformation happened instead of assuming it did.", phaseRef: "Maturity Model Phase 4, next cycle" }
   ];
   var FOUNDATIONAL_DOCS = [
     {
@@ -57878,19 +58260,6 @@ ${suffix}`;
     }
     renderApp();
   }
-  function exportProgressJson(overallValue) {
-    const exportData = { scsExport: true, exportedAt: Date.now(), overall: overallValue ?? null, answers: assessmentController.session.answers };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a4 = document.createElement("a");
-    a4.href = url;
-    const suffix = overallValue === void 0 || overallValue === null ? "in-progress" : "complete";
-    a4.download = `simplifiedcs-assessment-${suffix}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a4);
-    a4.click();
-    a4.remove();
-    URL.revokeObjectURL(url);
-  }
   function renderActiveTab() {
     const container = document.getElementById("tabContent");
     if (activeTab === "home") renderHomeTab(container);
@@ -57901,7 +58270,6 @@ ${suffix}`;
     else if (activeTab === "maturitymodel") renderMaturityModelTab(container);
     else if (activeTab === "starterguide") renderStarterGuideTab(container);
     else if (activeTab === "roadmap") renderRoadmapTab(container);
-    else if (activeTab === "transform") renderTransformTab(container);
     else if (activeTab === "runbook") renderRunbookTab(container);
     else if (activeTab === "news") renderNewsTab(container);
     else if (activeTab === "exploits") renderExploitsTab(container);
@@ -58685,14 +59053,14 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMethodFromMetrics1"), "methodology");
     wireNavLink(document.getElementById("linkMaturityFromMetrics"), "maturity");
   }
-  var SITE_LAST_UPDATED = "August 19, 2026";
+  var SITE_LAST_UPDATED = "August 22, 2026";
   var ROADMAP_SHIPPED = [
     { module: "Adaptive Assessment Engine", desc: "Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice." },
     { module: "AI-Enhanced Insights", desc: "A live, opt-in second pass on your completed results: checks your named vendors/products against CISA's KEV catalog and NVD's CVE database for anything current a fixed rule set can't know by nature, plus a look for patterns this specific answer combination raises beyond it. Clearly labeled as AI-generated - the deterministic report above it is already complete either way." },
     { module: "MITRE ATT&CK Guidance Panel", desc: 'A "why this matters, and what to do now" expander under each compounding-risk flag and low-scoring priority item, mapping to a real MITRE ATT&CK technique plus a compensating control computed from your own answers.' },
     { module: "Compounding-Risk Detection", desc: "Cross-answer flagging for dangerous combinations, not just per-question scoring." },
     { module: "Vendor-Aware Mitigation Notes", desc: 'Illustrative guidance for named products, entered via dropdown + "Other" across every vendor field in the questionnaire.' },
-    { module: "PDF Report Export", desc: "A real, programmatically-built PDF of your results - selectable/searchable text, not a screenshot - alongside the existing JSON export." },
+    { module: "PDF Report Export", desc: "A real, programmatically-built PDF of your results - selectable/searchable text, not a screenshot." },
     { module: "Runbooks & Playbooks", desc: "8 incident runbooks plus 16 OWASP/AI-mapped attack-type playbooks, each with MITRE ATT&CK/ATLAS references and equal-depth, actionable steps." },
     { module: "Case Studies", desc: "8 real watershed cybersecurity incidents, each tied back to a specific gap this tool is built to catch." },
     { module: "Glossary & References", desc: "A 59-term glossary and a sourced references page." },
@@ -58706,11 +59074,12 @@ ${suffix}`;
   ];
   var ROADMAP_IN_PROGRESS = [
     { module: "History & Score Tracking", desc: `Every completed run compared against your last, with resolved/new-finding tracking between assessments - currently backed by session-local storage rather than a real database, so it doesn't yet persist reliably for every visitor. See "Persistent History & Score Tracking" below.` },
-    { module: "Save Progress / Export / Import", desc: "Download a completed or in-progress assessment as JSON, and re-upload it later to resume or re-run. The core round-trip works today; still being hardened and tested before calling it fully reliable." },
+    { module: "Save & Resume (same browser)", desc: "In-progress answers are saved to your browser's own local storage as you go - close the tab, close the browser, even restart the device, and resuming picks up where you left off, as long as it's the same browser on the same device. This is what's actively being built and hardened right now." },
     { module: "Feedback Form", desc: "The submission mechanism is built and wired to Netlify Forms, but Netlify Forms is not currently enabled for this site at the account level - confirmed directly, not assumed - so a real submission likely isn't being captured yet. Worth enabling and testing with a real submission before calling this shipped." }
   ];
   var ROADMAP_PLANNED = [
-    { module: "Persistent History & Score Tracking", desc: "Replacing today's session-only History and resume-progress with real, persistent storage, so your results are still there the next time you visit." },
+    { module: "Persistent History & Score Tracking", desc: "Replacing today's session-only History with real, persistent storage, so completed assessment results are still there - and comparable over time - the next time you visit." },
+    { module: "Cross-Device Resume", desc: "A securely-generated link to pick up an in-progress assessment from any device, complementing the current same-device browser save above - a future, more advanced capability layered on top of it, not a replacement for it." },
     { module: "Chatbot Assistant", desc: "A conversational assistant to help visitors navigate the site, answer cybersecurity basics questions, and potentially help fill out the assessment conversationally." }
   ];
   function buildRoadmapPipelineSvg() {
@@ -58852,93 +59221,6 @@ ${suffix}`;
     wireAccordions(runbookContainer);
     wireNavLink(document.getElementById("ctaDocsAssess"), "assessment");
   }
-  function renderTransformTab(container) {
-    container.innerHTML = `
-    <div class="page">
-      <div class="page-intro">
-        <div class="page-eyebrow">Assessment</div>
-        <h2 class="page-title">Import Report</h2>
-        <p class="page-lede">Import a previous assessment to review and re-run it, and follow the practical steps for actually closing what it found.</p>
-      </div>
-
-      <div class="section-tile">
-        <h3 class="section-h">Import a previous report</h3>
-        <div class="upload-zone">
-          <label class="upload-label" for="reportUpload">Choose a file \u2192</label>
-          <input type="file" id="reportUpload" accept=".json">
-          <div class="upload-hint">Choose your exported SimplifiedCS JSON file to resume the assessment.</div>
-          <div id="uploadResult"></div>
-        </div>
-      </div>
-
-      <div class="section-tile">
-        <h3 class="section-h">Steps to strengthen your cyber health</h3>
-        <p class="body-text">Once you know what's wrong, this is the practical sequence for actually fixing it - each step ties back to a specific phase on the Maturity Model.</p>
-        <div class="transform-steps">
-          ${TRANSFORM_STEPS.map((s3) => `
-            <div class="transform-step">
-              <div class="transform-step-num">${String(s3.n).padStart(2, "0")}</div>
-              <div>
-                <h4>${s3.title}</h4>
-                <p>${s3.desc}</p>
-                <div class="phase-ref">${s3.phaseRef}</div>
-              </div>
-            </div>
-          `).join("")}
-        </div>
-
-        <div class="cta-row">
-          <a class="cta-btn" href="${pathForTab("assessment")}" id="ctaTransformAssess">Start a fresh assessment \u2192</a>
-          <a class="cta-btn secondary" href="${pathForTab("maturity")}" id="ctaTransformRoadmap">See the full Maturity Model</a>
-        </div>
-      </div>
-    </div>
-  `;
-    wireNavLink(document.getElementById("ctaTransformAssess"), "assessment");
-    wireNavLink(document.getElementById("ctaTransformRoadmap"), "maturity");
-    document.getElementById("reportUpload").addEventListener("change", (e2) => {
-      const file = e2.target.files[0];
-      if (!file) return;
-      const resultEl = document.getElementById("uploadResult");
-      const ext = file.name.split(".").pop().toLowerCase();
-      if (ext === "json") {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          try {
-            const data = JSON.parse(ev.target.result);
-            if (!data.scsExport) throw new Error("not-recognized");
-            assessmentController.loadExport(data);
-            const industryLabel = (INDUSTRIES.find((i3) => i3.id === (data.scope?.industry || data.answers?.industry)) || {}).label || "Not set";
-            const scoreLine = data.overall === null || data.overall === void 0 ? "In progress - not yet completed" : `${data.overall}% overall`;
-            resultEl.className = "upload-result";
-            resultEl.innerHTML = `
-            <b>Report loaded</b> - ${file.name}<br>
-            Previous status: <b>${scoreLine}</b> \xB7 Industry: <b>${industryLabel}</b><br>
-            Exported: ${data.exportedAt ? new Date(data.exportedAt).toLocaleString() : "unknown"}<br><br>
-            Your prior answers are loaded. Continue to the Assessment tab to review, adjust, and re-run.
-          `;
-            const goBtn = document.createElement("a");
-            goBtn.className = "cta-btn";
-            goBtn.style.marginTop = "14px";
-            goBtn.href = pathForTab("assessment");
-            goBtn.textContent = "Review & re-run assessment \u2192";
-            wireNavLink(goBtn, "assessment");
-            resultEl.appendChild(goBtn);
-          } catch (err2) {
-            resultEl.className = "upload-result error";
-            resultEl.innerHTML = `<b>Couldn't read this file</b> - it doesn't look like a SimplifiedCS export. Try exporting one from a completed assessment's results screen first (look for "Export as JSON").`;
-          }
-        };
-        reader.readAsText(file);
-      } else {
-        resultEl.className = "upload-result";
-        resultEl.innerHTML = `
-        <b>File received</b> - ${file.name}<br>
-        This prototype only fully parses its own JSON export format. In the live version, this is exactly where Claude's document understanding would extract structured findings from any report format (PDF, Word, whatever your last audit came in) and pre-populate the assessment automatically - that integration isn't built here yet.
-      `;
-      }
-    });
-  }
   function renderMaturityModelTab(container) {
     container.innerHTML = `
     <div class="page">
@@ -58963,10 +59245,10 @@ ${suffix}`;
         <p class="body-text">A self-assessment and advisory instrument that scores an organization's cybersecurity health against NIST CSF 2.0 and CIS Controls v8, cross-references answers for compounding risk instead of scoring each in isolation, and tracks maturity across repeated runs over time.</p>
 
         <h3 class="section-h" id="mm-how">How it's used</h3>
-        <p class="body-text">Pick an industry and any relevant compliance standards, answer an adaptive questionnaire that only shows what's relevant to your organization, and receive a scored, prioritized report - then re-run it periodically and use Import Report to close what it finds.</p>
+        <p class="body-text">Pick an industry and any relevant compliance standards, answer an adaptive questionnaire that only shows what's relevant to your organization, and receive a scored, prioritized report - then re-run it periodically to track whether what it found actually got fixed.</p>
 
         <h3 class="section-h" id="mm-capabilities">Capabilities</h3>
-        <p class="body-text">Adaptive question branching by industry and infrastructure \xB7 compounding-risk detection across answers rather than per-question scoring alone \xB7 vendor-aware mitigation notes for named products \xB7 assessment history with score-delta tracking \xB7 a documentation and runbook library \xB7 report import for re-assessment \xB7 a maturity model for context. See the <a href="${pathForTab("maturity")}" id="linkMaturityFromWhat" class="inline-link">Maturity Model</a> and <a href="${pathForTab("metrics")}" id="linkMetricsFromWhat" class="inline-link">Metrics</a> pages for the full detail behind each of these.</p>
+        <p class="body-text">Adaptive question branching by industry and infrastructure \xB7 compounding-risk detection across answers rather than per-question scoring alone \xB7 vendor-aware mitigation notes for named products \xB7 assessment history with score-delta tracking \xB7 a documentation and runbook library \xB7 a maturity model for context. See the <a href="${pathForTab("maturity")}" id="linkMaturityFromWhat" class="inline-link">Maturity Model</a> and <a href="${pathForTab("metrics")}" id="linkMetricsFromWhat" class="inline-link">Metrics</a> pages for the full detail behind each of these.</p>
 
         <h3 class="section-h" id="mm-segments">Segments covered</h3>
         <p class="body-text">NIST CSF 2.0 (all six functions, including Govern) and CIS Controls v8 as the fixed baseline, with optional ISO 27001, NIS2, SOC 2, HIPAA, GDPR, SOX, Cyber Essentials, and PCI DSS modules layered in by industry and region. Dedicated coverage for Operational Technology/ICS and DevSecOps/cloud-native practices, both shown only when relevant to the organization being assessed.</p>

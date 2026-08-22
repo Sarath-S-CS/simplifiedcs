@@ -5,7 +5,7 @@
 // instead of walking a fixed PRE_STEPS array. Markup/class names are kept
 // identical to the original wherever the behavior didn't need to change,
 // per CLAUDE.md's "preserve the design system" rule.
-import { visibleNodes, resolveNext } from "../engine/graph.js";
+import { visibleNodes, resolveNext, isNodeHidden } from "../engine/graph.js";
 import { recordAnswer, createSessionState } from "../engine/state.js";
 import { INDUSTRIES } from "../data/industries.js";
 import { REGIONS } from "../data/regions.js";
@@ -21,13 +21,95 @@ import { OTHER as OTHER_VALUE } from "../data/vendors.js";
 import { computeFrameworkRecommendations } from "../engine/framework-guidance.js";
 import { guidanceForFlag, guidanceForGapItem } from "../engine/mitre-guidance.js";
 import { buildAssessmentPdf } from "../engine/pdf-report.js";
+import { saveProgress, loadProgress, clearProgress, hasSeenSaveNotice, markSaveNoticeSeen } from "../engine/local-save.js";
+import { showToast } from "./toast.js";
+import { SAMPLE_ANSWERS, SAMPLE_AI_INSIGHTS } from "../data/sample-scenario.js";
 
-export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink, storage, exportProgressJson }) {
+// ASSESSMENT-EXPERIENCE-BRIEF.md §4: brief, warm section-transition lines -
+// no points/badges/streaks, just tone consistent with About/Core Principles.
+// Keyed by the screen/category id just completed, shown once at the top of
+// the next screen's render then cleared (see ui.transitionNote below).
+const SECTION_TRANSITIONS = {
+  profile: "Org profile done - let's talk about your team.",
+  team: "Team structure done - now the technology itself.",
+  infra: "Infrastructure covered - a couple of adjacent areas next.",
+  containerization: "Containers and virtualization done - almost through setup.",
+  devsecops: "Nearly there - just Operational Technology left, if it applies to you.",
+  ot: "Setup's done. Now the actual six-function assessment.",
+  Govern: "Governance done - next, what you actually have to protect.",
+  Identify: "Identify done - now the safeguards standing in an attacker's way.",
+  Protect: "Protect done - how would you even know if something went wrong?",
+  Detect: "Detect done - the first hour of a real incident, next.",
+  Respond: "Respond done - last section: getting back to normal.",
+};
+
+export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink, storage }) {
   const session = createSessionState();
-  const ui = { phase: "scope", screenIndex: 0, categoryIndex: 0 };
+  const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null };
 
   function panel() {
     return getPanel();
+  }
+
+  // Every dynamic string interpolated into innerHTML below - free-text
+  // answers (vendor "Other" fields, company name, webServerStack) and
+  // AI-Insights response fields - needs this. localStorage save/resume
+  // (§2) doesn't change what needs escaping (that's an XSS-safety property
+  // of rendering, not of persistence), but it's the reason this got a fresh
+  // audit: a saved answer set now round-trips through this renderer many
+  // more times per session (loaded fresh on every "Resume") than an
+  // answer typed once and rendered once, so a missed spot fails more often.
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+
+  // ---------- ASSESSMENT-EXPERIENCE-BRIEF.md §2: localStorage save/resume ----------
+  // Fires after every answer - this IS the save mechanism (see the brief:
+  // "no separate 'Save' vs 'Save & Next' button... one save mechanism, one
+  // toast, shown once"). Only persists during the actual data-collection
+  // phases; landing/results have nothing in-progress worth resuming into.
+  function persistProgress() {
+    if (ui.phase !== "scope" && ui.phase !== "profile" && ui.phase !== "wizard") return;
+    saveProgress(session, ui);
+    if (Object.keys(session.answers).length > 0 && !hasSeenSaveNotice()) {
+      showToast("Saved to this browser — close the tab anytime, but this only resumes from the same browser and device.");
+      markSaveNoticeSeen();
+    }
+  }
+
+  // ---------- ASSESSMENT-EXPERIENCE-BRIEF.md §4: progress/skip UX ----------
+  function allKnownNodes() {
+    return [...PROFILE_SCREENS.flatMap((s) => Array.from(s.flow.index.values())), ...Array.from(ASSESSMENT_FLOW.index.values())];
+  }
+  function skippedCount() {
+    return allKnownNodes().filter((n) => isNodeHidden(n, session)).length;
+  }
+  function progressInfo() {
+    const totalSections = visibleProfileScreens().length + FUNCTIONS.length;
+    let sectionIndex = 0;
+    if (ui.phase === "profile") sectionIndex = visibleProfileScreens().indexOf(PROFILE_SCREENS[ui.screenIndex]);
+    else if (ui.phase === "wizard") sectionIndex = visibleProfileScreens().length + ui.categoryIndex;
+    const remaining = Math.max(0, totalSections - sectionIndex);
+    const baseMinutes = session.quickMode ? 2 : 5;
+    const estimateMinutes = Math.max(1, Math.round((baseMinutes * remaining) / totalSections));
+    return { position: sectionIndex + 1, totalSections, estimateMinutes };
+  }
+  function progressMetaHtml() {
+    const { position, totalSections, estimateMinutes } = progressInfo();
+    const skipped = skippedCount();
+    return `
+      <div class="progress-meta"><b>${position} of ${totalSections}</b> sections · ~${estimateMinutes} minute${estimateMinutes === 1 ? "" : "s"} left</div>
+      ${skipped > 0 ? `<p class="skip-note">Based on your answers, we've skipped ${skipped} question${skipped === 1 ? "" : "s"} that don't apply to your setup.</p>` : ""}
+    `;
+  }
+  // Rendered once at the top of the next screen, then cleared so re-renders
+  // of that same screen (e.g. after answering another question on it) don't
+  // keep repeating it.
+  function transitionNoteHtml() {
+    if (!ui.transitionNote) return "";
+    const text = ui.transitionNote;
+    ui.transitionNote = null;
+    return `<p class="section-transition">${text}</p>`;
   }
 
   // ---------- visibility helpers ----------
@@ -58,6 +140,10 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   function renderRail() {
     const rail = getRail();
     if (!rail) return;
+    if (ui.phase === "landing" || ui.phase === "sample") {
+      rail.innerHTML = "";
+      return;
+    }
     const visiblePre = visibleProfileScreens();
     const items = ["Scope", ...visiblePre.map((s) => s.title), ...FUNCTIONS.map((fn) => FUNC_DISPLAY[fn]), "Reading"];
     let activeIdx;
@@ -85,6 +171,80 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       `<div class="rail-active-label">${items[activeIdx]}</div>`;
   }
 
+  // ---------- ASSESSMENT-EXPERIENCE-BRIEF.md §5: mode-selection landing screen ----------
+  function startFresh(quickMode) {
+    session.quickMode = quickMode;
+    ui.phase = "scope";
+    renderRail();
+    renderScope();
+  }
+
+  function resumeFromSave(saved) {
+    Object.assign(session.answers, saved.answers || {});
+    session.asked = Array.isArray(saved.asked) ? saved.asked : [];
+    session.dedupe = saved.dedupe && typeof saved.dedupe === "object" ? saved.dedupe : {};
+    session.quickMode = Boolean(saved.quickMode);
+    Object.assign(ui, saved.ui || {});
+    renderRail();
+    dispatchPhase();
+  }
+
+  function renderLanding() {
+    const p = panel();
+    const saved = loadProgress();
+    p.innerHTML = `
+      <div class="step-eyebrow">Assessment</div>
+      <h2 class="step-title">Choose how to start</h2>
+      <p class="step-sub">Every mode runs the same six-function NIST CSF scoring, compounding-risk detection, and MITRE ATT&CK mapping at full strength - Quick just collects less vendor-specific detail along the way.</p>
+      ${
+        saved
+          ? `<div class="resume-banner">
+               <div class="resume-banner-text">You have an <b>in-progress assessment</b> saved on this browser.</div>
+               <div class="resume-banner-actions">
+                 <button id="discardResumeBtn">Start fresh</button>
+                 <button class="primary" id="resumeBtn">Resume →</button>
+               </div>
+             </div>`
+          : ""
+      }
+      <div class="mode-grid">
+        <div class="mode-card" id="modeQuick">
+          <div class="mode-card-time">~2 min</div>
+          <h4>Quick Assessment</h4>
+          <p>Core NIST function scoring across all six functions - skips vendor-specific detail like which product or provider you use.</p>
+          <div class="mode-card-cta">Start Quick →</div>
+        </div>
+        <div class="mode-card" id="modeFull">
+          <div class="mode-card-time">~5 min</div>
+          <h4>Full Assessment</h4>
+          <p>Everything, including vendor-specific mitigation guidance for the exact products and providers in your environment.</p>
+          <div class="mode-card-cta">Start Full →</div>
+        </div>
+        <div class="mode-card" id="modeSample">
+          <div class="mode-card-time">Instant</div>
+          <h4>See a Sample Report</h4>
+          <p>View a complete example report with no questions to answer - full depth, real scoring, nothing to fill in.</p>
+          <div class="mode-card-cta">View sample →</div>
+        </div>
+      </div>
+    `;
+    document.getElementById("modeQuick").addEventListener("click", () => startFresh(true));
+    document.getElementById("modeFull").addEventListener("click", () => startFresh(false));
+    document.getElementById("modeSample").addEventListener("click", () => {
+      ui.phase = "sample";
+      renderRail();
+      renderSampleReport();
+    });
+    const resumeBtn = document.getElementById("resumeBtn");
+    if (resumeBtn) resumeBtn.addEventListener("click", () => resumeFromSave(saved));
+    const discardBtn = document.getElementById("discardResumeBtn");
+    if (discardBtn)
+      discardBtn.addEventListener("click", () => {
+        clearProgress();
+        renderLanding();
+      });
+  }
+
   // ---------- scope screen (§5.1) ----------
   function updateSerial() {
     const el = document.getElementById("serial");
@@ -95,6 +255,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   }
 
   async function renderScope() {
+    persistProgress();
     const p = panel();
     p.innerHTML = `<div class="step-eyebrow">Scope</div><h2 class="step-title">Before we start</h2>`;
     let historyCount = 0;
@@ -127,7 +288,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     const globalRegion = REGIONS.find((r) => r.standalone);
 
     p.innerHTML = `
-      <div class="step-eyebrow">Scope</div>
+      <div class="step-eyebrow">Scope · ${session.quickMode ? "Quick Assessment" : "Full Assessment"}</div>
       <h2 class="step-title">Before we start</h2>
       <p class="step-sub">Every assessment includes the NIST CSF 2.0 + CIS Controls baseline. Add any compliance standards that apply to your organization - none are selected automatically, even if we flag one as relevant for your industry or region.</p>
       ${historyCount ? `<a class="history-link" id="historyLink" href="${pathForTab("history")}">You have ${historyCount} previous assessment${historyCount === 1 ? "" : "s"} saved on this account - <u>view history</u></a>` : ""}
@@ -226,7 +387,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       <p class="scope-hint">These are common patterns, not a legal determination - confirm exact obligations (especially NIS2 sector/size thresholds) with your regulatory counsel.</p>
 
       <div class="nav">
-        <div></div>
+        <button id="backToLandingBtn">← Change assessment type</button>
         <button class="primary" id="scopeNext">Start assessment →</button>
       </div>
     `;
@@ -265,6 +426,11 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     }
     const historyLinkEl = document.getElementById("historyLink");
     if (historyLinkEl) wireNavLink(historyLinkEl, "history");
+    document.getElementById("backToLandingBtn").addEventListener("click", () => {
+      ui.phase = "landing";
+      renderRail();
+      renderLanding();
+    });
     p.querySelectorAll(".acc-head").forEach((el) => {
       el.addEventListener("click", (e) => {
         if (e.target.closest(".fw-card")) return;
@@ -336,7 +502,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
                 : ""
             }
           </div>
-          ${otherChecked ? `<input type="text" data-fid-other="${node.id}" value="${otherText}" placeholder="${node.otherPlaceholder || "Please specify"}">` : ""}
+          ${otherChecked ? `<input type="text" data-fid-other="${node.id}" value="${escapeHtml(otherText)}" placeholder="${escapeHtml(node.otherPlaceholder || "Please specify")}">` : ""}
         </div>`;
     }
     if (node.type === "vendor") {
@@ -349,14 +515,14 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
             ${node.vendorOptions.map((v) => `<option value="${v}" ${!isOther && val === v ? "selected" : ""}>${v}</option>`).join("")}
             <option value="${OTHER_VALUE}" ${isOther ? "selected" : ""}>Other</option>
           </select>
-          ${isOther ? `<input type="text" data-vendor-other-fid="${node.id}" value="${!node.vendorOptions.includes(val) ? val : ""}" placeholder="Please specify">` : ""}
+          ${isOther ? `<input type="text" data-vendor-other-fid="${node.id}" value="${escapeHtml(!node.vendorOptions.includes(val) ? val : "")}" placeholder="Please specify">` : ""}
         </div>`;
     }
     // text
     return `
       <div class="field">
         <label>${node.text}${node.required ? "" : ' <span class="opt-tag">optional</span>'}</label>
-        <input type="text" data-fid="${node.id}" value="${val}" placeholder="${node.placeholder || ""}">
+        <input type="text" data-fid="${node.id}" value="${escapeHtml(val)}" placeholder="${escapeHtml(node.placeholder || "")}">
       </div>`;
   }
 
@@ -365,6 +531,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   }
 
   function renderProfileScreen() {
+    persistProgress();
     const screen = PROFILE_SCREENS[ui.screenIndex];
     const p = panel();
     const nodes = visibleNodes(screen.flow, session);
@@ -372,16 +539,15 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     p.innerHTML = `
       <div class="step-eyebrow">Pre-Assessment</div>
       <h2 class="step-title">${screen.title}</h2>
+      ${transitionNoteHtml()}
+      ${progressMetaHtml()}
       <p class="step-sub">${screen.sub}</p>
       ${nodes.map(fieldHtml).join("")}
       <div class="nav">
         <button id="backBtn">← Back</button>
-        <button id="saveProgressBtn">Save progress ↓</button>
         <button class="primary" id="nextBtn" ${screenComplete(screen) ? "" : "disabled"}>${isLastVisible ? "Continue to assessment →" : "Continue →"}</button>
       </div>
     `;
-
-    document.getElementById("saveProgressBtn").addEventListener("click", () => exportProgressJson(null));
 
     function refreshNext() {
       document.getElementById("nextBtn").disabled = !screenComplete(screen);
@@ -446,6 +612,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
 
     document.getElementById("nextBtn").addEventListener("click", () => {
       const nxt = nextVisibleScreenIndex(ui.screenIndex);
+      ui.transitionNote = SECTION_TRANSITIONS[screen.id] || null;
       if (nxt >= PROFILE_SCREENS.length) {
         ui.phase = "wizard";
         ui.categoryIndex = 0;
@@ -480,12 +647,15 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   }
 
   function renderAssessmentCategory() {
+    persistProgress();
     const fn = FUNCTIONS[ui.categoryIndex];
     const p = panel();
     const qs = categoryQuestions(fn);
     p.innerHTML = `
       <div class="step-eyebrow">${FUNC_REF[fn]}</div>
       <h2 class="step-title">${FUNC_DISPLAY[fn]}</h2>
+      ${transitionNoteHtml()}
+      ${progressMetaHtml()}
       <p class="step-sub"></p>
       ${qs
         .map(
@@ -509,12 +679,9 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
         .join("")}
       <div class="nav">
         <button id="backBtn">← Back</button>
-        <button id="saveProgressBtn2">Save progress ↓</button>
         <button class="primary" id="nextBtn" ${categoryAnswered(fn) ? "" : "disabled"}>${ui.categoryIndex === FUNCTIONS.length - 1 ? "Generate reading" : "Continue →"}</button>
       </div>
     `;
-
-    document.getElementById("saveProgressBtn2").addEventListener("click", () => exportProgressJson(null));
 
     p.querySelectorAll(".option").forEach((el) => {
       el.addEventListener("click", () => {
@@ -526,6 +693,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     });
 
     document.getElementById("nextBtn").addEventListener("click", () => {
+      ui.transitionNote = SECTION_TRANSITIONS[fn] || null;
       if (ui.categoryIndex === FUNCTIONS.length - 1) {
         ui.phase = "results";
         renderRail();
@@ -583,101 +751,38 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       </div>`;
   }
 
-  // ---------- results ----------
-  async function renderResults() {
-    const p = panel();
-    p.innerHTML = `<div class="step-eyebrow">Synthesis - all functions considered jointly</div><h2 class="step-title">Calculating your reading…</h2>`;
+  // Conic-gradient string for the overall-score gauge - shared by the real
+  // results screen and §6's Sample Report, since both render the same gauge.
+  function conicFor(funcScores) {
+    const slice = 360 / funcScores.length;
+    let acc = 0;
+    const parts = funcScores.map((f) => {
+      const start = acc;
+      acc += slice;
+      return `${FUNC_COLORS[f.fn]} ${start}deg ${acc}deg`;
+    });
+    return `conic-gradient(${parts.join(",")})`;
+  }
 
-    const funcScores = computeFuncScores(session);
-    const overall = computeOverall(funcScores);
-    const flags = computeFlags(session);
-    const gapItems = computeGapItems(session);
-    const priorities = computePriorities(session);
-    const vendorNotes = matchedVendorNotes(session.answers);
-    const frameworkRecs = computeFrameworkRecommendations(session);
-    const currentGapTexts = gapItems.map((i) => i.gap);
-
-    let prevRun = null,
-      historyCount = 0;
-    try {
-      const lr = await storage.list("runs:", false);
-      if (lr && lr.keys && lr.keys.length) {
-        historyCount = lr.keys.length;
-        const gets = await Promise.all(lr.keys.map((k) => storage.get(k, false).catch(() => null)));
-        const runs = gets
-          .filter(Boolean)
-          .map((g) => JSON.parse(g.value))
-          .sort((a, b) => a.ts - b.ts);
-        if (runs.length) prevRun = runs[runs.length - 1];
-      }
-    } catch (e) {
-      /* storage unavailable - proceed without history */
-    }
-
-    let resolvedSincePrev = [],
-      newSincePrev = [];
-    if (prevRun && prevRun.gapTexts) {
-      resolvedSincePrev = prevRun.gapTexts.filter((g) => !currentGapTexts.includes(g));
-      newSincePrev = currentGapTexts.filter((g) => !prevRun.gapTexts.includes(g));
-    }
-
-    const runRecord = { ts: Date.now(), overall, gapTexts: currentGapTexts, industry: session.answers.industry };
-    try {
-      await storage.set(`runs:${runRecord.ts}`, JSON.stringify(runRecord), false);
-    } catch (e) {
-      /* ignore save failure */
-    }
-
-    const conic = (() => {
-      const slice = 360 / funcScores.length;
-      let acc = 0;
-      const parts = funcScores.map((f) => {
-        const start = acc;
-        acc += slice;
-        return `${FUNC_COLORS[f.fn]} ${start}deg ${acc}deg`;
-      });
-      return `conic-gradient(${parts.join(",")})`;
-    })();
-
-    const delta = prevRun ? overall - prevRun.overall : null;
-
-    p.innerHTML = `
-      <div class="step-eyebrow">Synthesis - all functions considered jointly</div>
-      <h2 class="step-title">Health Reading</h2>
-      <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f) => session.answers[f.id]).map((f) => " + " + f.name).join("")}${session.answers.industry ? " · " + INDUSTRIES.find((i) => i.id === session.answers.industry).label : ""}</p>
-
-      <div class="report-meta-fields">
-        <div class="field">
-          <label>Company / firm name <span class="opt-tag">optional</span></label>
-          <input type="text" id="reportCompanyName" placeholder="e.g. Acme Corp" value="${session.answers.companyName || ""}">
-        </div>
-        <div class="field">
-          <label>Report requested by <span class="opt-tag">optional</span></label>
-          <input type="text" id="reportRequestedBy" placeholder="e.g. Jane Smith, CISO" value="${session.answers.reportRequestedBy || ""}">
-        </div>
-      </div>
-
-      ${
-        prevRun
-          ? `
-      <div class="delta-box">
-        <h3>Change since your last assessment (${new Date(prevRun.ts).toLocaleDateString()})</h3>
-        <div class="delta-score ${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "+" : ""}${delta}% overall</div>
-        ${resolvedSincePrev.length ? `<div class="delta-resolved"><b>Resolved:</b> ${resolvedSincePrev.length} item(s) closed since last time</div>` : ""}
-        ${newSincePrev.length ? `<div class="delta-new"><b>New:</b> ${newSincePrev.length} item(s) newly flagged</div>` : ""}
-      </div>`
-          : ""
-      }
-
+  // The deterministic report body - scores, snapshot, compounding-risk
+  // flags, vendor notes, framework recommendations, and the ranked priority
+  // list. ASSESSMENT-EXPERIENCE-BRIEF.md §6: the Sample Report must be
+  // "generated by running a fixed, realistic set of sample answers through
+  // the actual real engine... so it automatically stays correct as the
+  // real scoring/rules logic evolves" rather than a second, hand-maintained
+  // copy - so this is the one place that markup exists, shared by
+  // renderResults() and renderSampleReport() alike.
+  function reportBodyHtml({ session: s, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities }) {
+    return `
       <div class="snapshot">
         <h3>Infrastructure snapshot (self-reported)</h3>
-        ${snapshotRows(session.answers)
-          .map(([k, v]) => `<div class="snapshot-row"><div class="skey">${k}</div><div>${v}</div></div>`)
+        ${snapshotRows(s.answers)
+          .map(([k, v]) => `<div class="snapshot-row"><div class="skey">${k}</div><div>${escapeHtml(v)}</div></div>`)
           .join("")}
       </div>
 
       <div class="gauge-row">
-        <div class="gauge" style="background:${conic}">
+        <div class="gauge" style="background:${conicFor(funcScores)}">
           <div class="gauge-inner">
             <div class="pct">${overall}%</div>
             <div class="verdict">${verdictLabel(overall)}</div>
@@ -707,7 +812,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           .map(
             (f) => `
           <div class="flag-item"><b>Combined finding -</b> ${f.text}</div>
-          ${mitrePanel(guidanceForFlag(f, session.answers), `flag-${f.id}`)}
+          ${mitrePanel(guidanceForFlag(f, s.answers), `flag-${f.id}`)}
         `
           )
           .join("")}
@@ -761,11 +866,93 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
             <div class="priority-rank">${String(i + 1).padStart(2, "0")}</div>
             <div><b>${FUNC_DISPLAY[p2.fn]}:</b> ${p2.gap}</div>
           </div>
-          ${mitrePanel(guidanceForGapItem(p2, session.answers), `gap-${p2.id}`)}
+          ${mitrePanel(guidanceForGapItem(p2, s.answers), `gap-${p2.id}`)}
         `
           )
           .join("")}
       </div>
+    `;
+  }
+
+  // ---------- results ----------
+  async function renderResults() {
+    const p = panel();
+    p.innerHTML = `<div class="step-eyebrow">Synthesis - all functions considered jointly</div><h2 class="step-title">Calculating your reading…</h2>`;
+
+    const funcScores = computeFuncScores(session);
+    const overall = computeOverall(funcScores);
+    const flags = computeFlags(session);
+    const gapItems = computeGapItems(session);
+    const priorities = computePriorities(session);
+    const vendorNotes = matchedVendorNotes(session.answers);
+    const frameworkRecs = computeFrameworkRecommendations(session);
+    const currentGapTexts = gapItems.map((i) => i.gap);
+    // §2: the in-progress save exists to resume an incomplete run - once
+    // it's actually complete, there's nothing left to resume into.
+    clearProgress();
+
+    let prevRun = null,
+      historyCount = 0;
+    try {
+      const lr = await storage.list("runs:", false);
+      if (lr && lr.keys && lr.keys.length) {
+        historyCount = lr.keys.length;
+        const gets = await Promise.all(lr.keys.map((k) => storage.get(k, false).catch(() => null)));
+        const runs = gets
+          .filter(Boolean)
+          .map((g) => JSON.parse(g.value))
+          .sort((a, b) => a.ts - b.ts);
+        if (runs.length) prevRun = runs[runs.length - 1];
+      }
+    } catch (e) {
+      /* storage unavailable - proceed without history */
+    }
+
+    let resolvedSincePrev = [],
+      newSincePrev = [];
+    if (prevRun && prevRun.gapTexts) {
+      resolvedSincePrev = prevRun.gapTexts.filter((g) => !currentGapTexts.includes(g));
+      newSincePrev = currentGapTexts.filter((g) => !prevRun.gapTexts.includes(g));
+    }
+
+    const runRecord = { ts: Date.now(), overall, gapTexts: currentGapTexts, industry: session.answers.industry };
+    try {
+      await storage.set(`runs:${runRecord.ts}`, JSON.stringify(runRecord), false);
+    } catch (e) {
+      /* ignore save failure */
+    }
+
+    const delta = prevRun ? overall - prevRun.overall : null;
+
+    p.innerHTML = `
+      <div class="step-eyebrow">Synthesis - all functions considered jointly</div>
+      <h2 class="step-title">Health Reading</h2>
+      <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f) => session.answers[f.id]).map((f) => " + " + f.name).join("")}${session.answers.industry ? " · " + INDUSTRIES.find((i) => i.id === session.answers.industry).label : ""}</p>
+
+      <div class="report-meta-fields">
+        <div class="field">
+          <label>Company / firm name <span class="opt-tag">optional</span></label>
+          <input type="text" id="reportCompanyName" placeholder="e.g. Acme Corp" value="${escapeHtml(session.answers.companyName || "")}">
+        </div>
+        <div class="field">
+          <label>Report requested by <span class="opt-tag">optional</span></label>
+          <input type="text" id="reportRequestedBy" placeholder="e.g. Jane Smith, CISO" value="${escapeHtml(session.answers.reportRequestedBy || "")}">
+        </div>
+      </div>
+
+      ${
+        prevRun
+          ? `
+      <div class="delta-box">
+        <h3>Change since your last assessment (${new Date(prevRun.ts).toLocaleDateString()})</h3>
+        <div class="delta-score ${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "+" : ""}${delta}% overall</div>
+        ${resolvedSincePrev.length ? `<div class="delta-resolved"><b>Resolved:</b> ${resolvedSincePrev.length} item(s) closed since last time</div>` : ""}
+        ${newSincePrev.length ? `<div class="delta-new"><b>New:</b> ${newSincePrev.length} item(s) newly flagged</div>` : ""}
+      </div>`
+          : ""
+      }
+
+      ${reportBodyHtml({ session, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities })}
 
       <div class="note-box">
         <b>About this report -</b> the flags and priority list above are produced by a deterministic rules
@@ -797,7 +984,6 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
 
       <div class="nav">
         <button id="backBtn2">← Review answers</button>
-        <button id="exportJsonBtn">Export as JSON ↓</button>
         <button id="exportPdfBtn">Download as PDF ↓</button>
         <a id="viewHistoryBtn" href="${pathForTab("history")}">View history (${historyCount + 1}) →</a>
       </div>
@@ -818,13 +1004,77 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       renderAssessmentCategory();
     });
     wireNavLink(document.getElementById("viewHistoryBtn"), "history");
-    document.getElementById("exportJsonBtn").addEventListener("click", () => exportProgressJson(overall));
     document.getElementById("exportPdfBtn").addEventListener("click", () => {
       buildAssessmentPdf({ session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs });
     });
     document.getElementById("aiInsightsBtn").addEventListener("click", () =>
       requestAiInsights({ session, overall, verdict: verdictLabel(overall), flags, priorities, vendorNotes, frameworkRecs })
     );
+  }
+
+  // ---------- ASSESSMENT-EXPERIENCE-BRIEF.md §6: Sample Report ----------
+  // "A recruiter clicking 'See a Sample Report' should see full depth
+  // instantly - vendor notes, MITRE mapping, AI-enhanced insights, the PDF
+  // export - with zero clicks and zero wait." The deterministic portion
+  // below runs the fixed SAMPLE_ANSWERS through the exact same scoring/
+  // flags/vendor-notes/framework-guidance functions renderResults() uses
+  // (via the shared reportBodyHtml() above), so it can never silently drift
+  // out of sync with how a real report is produced. Only AI-Enhanced
+  // Insights is static (SAMPLE_AI_INSIGHTS) - rendered through the same
+  // aiInsightCardsHtml() formatter a live response would use, just without
+  // ever calling the API, so the sample stays instant and free to view.
+  function renderSampleReport() {
+    const p = panel();
+    const sampleSession = createSessionState();
+    Object.assign(sampleSession.answers, SAMPLE_ANSWERS);
+
+    const funcScores = computeFuncScores(sampleSession);
+    const overall = computeOverall(funcScores);
+    const flags = computeFlags(sampleSession);
+    const priorities = computePriorities(sampleSession);
+    const vendorNotes = matchedVendorNotes(sampleSession.answers);
+    const frameworkRecs = computeFrameworkRecommendations(sampleSession);
+
+    p.innerHTML = `
+      <div class="sample-banner"><b>Sample</b>&nbsp;This is example data from a fixed, realistic answer set - not a real assessment result.</div>
+      <div class="step-eyebrow">Synthesis - all functions considered jointly</div>
+      <h2 class="step-title">Health Reading</h2>
+      <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f) => sampleSession.answers[f.id]).map((f) => " + " + f.name).join("")}${sampleSession.answers.industry ? " · " + INDUSTRIES.find((i) => i.id === sampleSession.answers.industry).label : ""}</p>
+
+      ${reportBodyHtml({ session: sampleSession, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities })}
+
+      <div class="note-box">
+        <b>About this report -</b> everything above is produced by running a fixed sample answer set through
+        this site's real, deterministic scoring engine - the same one every actual assessment uses - so this
+        sample stays accurate as that engine evolves, rather than being a separately-maintained mockup.
+      </div>
+
+      <div class="ai-insights-section">
+        <div class="ai-insights-intro">
+          <div>
+            <h3>AI-Enhanced Insights <span class="ai-badge">AI-generated</span></h3>
+            <p class="body-text">A static example of what the live, opt-in "Get AI-Enhanced Insights" pass on a real report looks like, shown here without an actual API call so the sample stays instant and free to view.</p>
+          </div>
+        </div>
+        <div>${aiInsightCardsHtml(SAMPLE_AI_INSIGHTS)}</div>
+      </div>
+
+      <div class="nav">
+        <button id="sampleBackBtn">← Back to assessment options</button>
+        <button id="samplePdfBtn">Download as PDF ↓</button>
+      </div>
+    `;
+    p.querySelectorAll(".acc-head").forEach((el) => {
+      el.addEventListener("click", () => el.parentElement.classList.toggle("open"));
+    });
+    document.getElementById("sampleBackBtn").addEventListener("click", () => {
+      ui.phase = "landing";
+      renderRail();
+      renderLanding();
+    });
+    document.getElementById("samplePdfBtn").addEventListener("click", () => {
+      buildAssessmentPdf({ session: sampleSession, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs });
+    });
   }
 
   // ---------- AI-Enhanced Insights (AI-RAG-HYBRID-BRIEF.md) ----------
@@ -853,14 +1103,11 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
 
   // Everything rendered here originated as a Claude API response, but that
   // response is built from a prompt containing this person's own free-text
-  // answers (vendor "Other" fields, company name) - and an assessment can
-  // be exported and re-imported by someone else entirely (see loadExport()
-  // above), so this isn't purely a self-XSS case. Escape every dynamic
-  // string field before it goes into innerHTML, same as any other
-  // server-sourced content would need.
-  function escapeHtml(s) {
-    return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  }
+  // answers (vendor "Other" fields, company name) submitted directly to a
+  // public endpoint (netlify/functions/ai-insights.mts) that has no way to
+  // know those values came from this site's own UI rather than a raw POST,
+  // so this isn't purely a self-XSS case. escapeHtml() (defined above) is
+  // used the same way any other server-sourced content would need.
   function safeHttpUrl(url) {
     try {
       const u = new URL(url, location.href);
@@ -938,20 +1185,15 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     }
   }
 
-  // Used by the Transform tab's "upload a previous export" feature - restores
-  // a prior run's answers and resets to the scope screen so the user can
-  // review/adjust before re-running. Accepts both the current export shape
-  // (everything under `answers`) and the pre-rebuild shape (separate
-  // `scope`/`answers`) so older downloaded exports still load.
-  function loadExport(data) {
-    Object.keys(session.answers).forEach((k) => delete session.answers[k]);
-    Object.assign(session.answers, data.scope || {}, data.answers || {});
-    if (!Array.isArray(session.answers.regions)) session.answers.regions = [];
-    session.asked = [];
-    session.dedupe = {};
-    ui.phase = "scope";
-    ui.screenIndex = 0;
-    ui.categoryIndex = 0;
+  // Shared by the public renderCurrentPhase() entry point and §2's
+  // resumeFromSave() - both need to render whatever ui.phase currently is.
+  function dispatchPhase() {
+    if (ui.phase === "landing") renderLanding();
+    else if (ui.phase === "scope") renderScope();
+    else if (ui.phase === "profile") renderProfileScreen();
+    else if (ui.phase === "wizard") renderAssessmentCategory();
+    else if (ui.phase === "sample") renderSampleReport();
+    else renderResults();
   }
 
   return {
@@ -959,7 +1201,6 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       return ui.phase;
     },
     session,
-    loadExport,
     renderRail,
     renderScope,
     renderProfileScreen,
@@ -969,10 +1210,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     renderCurrentPhase() {
       updateSerial();
       renderRail();
-      if (ui.phase === "scope") renderScope();
-      else if (ui.phase === "profile") renderProfileScreen();
-      else if (ui.phase === "wizard") renderAssessmentCategory();
-      else renderResults();
+      dispatchPhase();
     },
   };
 }

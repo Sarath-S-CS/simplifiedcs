@@ -89,6 +89,17 @@ function outsourcedFunctionsDedupeValue(selected) {
   return ids.includes("soc-monitoring") ? "Hybrid - some in-house, some third-party" : undefined;
 }
 
+// A vendor "Other" field's dedupeKey shouldn't resolve to an empty string
+// the instant "Other" is selected, before any text has actually been
+// typed - otherwise recordAnswer's own dedupe write ("") immediately
+// satisfies adoptDedupedAnswer on the very next render, and the node (along
+// with its own "Other" text input) vanishes before there's anything to type
+// into. Returning undefined for "" leaves the dedupe key unset until a real
+// name exists, same principle as outsourcedFunctionsDedupeValue above.
+function vendorNameDedupeValue(value) {
+  return value === "" ? undefined : value;
+}
+
 export const TEAM_STRUCTURE_NODES = [
   // ---- Step 1 ----
   {
@@ -171,6 +182,8 @@ export const TEAM_STRUCTURE_NODES = [
   {
     ...vendorField("outsourcedMspName", "Which MSP provides this coverage?", MSP_VENDORS),
     dedupeKey: "mspProviderName",
+    dedupeValue: vendorNameDedupeValue,
+    quickSkip: true,
     next: () => "socOwnership",
   },
   {
@@ -233,6 +246,8 @@ export const TEAM_STRUCTURE_NODES = [
   {
     ...vendorField("fullMspProviderName", "Which MSP is it completely outsourced to?", MSP_VENDORS),
     dedupeKey: "mspProviderName",
+    dedupeValue: vendorNameDedupeValue,
+    quickSkip: true,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("full-msp"),
     next: () => "mspSocOwner",
   },
@@ -255,6 +270,8 @@ export const TEAM_STRUCTURE_NODES = [
   {
     ...vendorField("mixedMspProviderName", "In the mixed arrangement, which MSP is involved?", MSP_VENDORS),
     dedupeKey: "mspProviderName",
+    dedupeValue: vendorNameDedupeValue,
+    quickSkip: true,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("mixed-msp-other"),
     next: () => "mixedOtherProviderDetail",
   },
@@ -276,18 +293,24 @@ export const TEAM_STRUCTURE_NODES = [
   {
     ...vendorField("mdrProviderName", "Which MDR service do you use?", MDR_VENDORS),
     dedupeKey: "mdrProviderName",
+    dedupeValue: vendorNameDedupeValue,
+    quickSkip: true,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("mdr-msp"),
     next: () => "mdrMspProviderName",
   },
   {
     ...vendorField("mdrMspProviderName", "And which MSP handles the rest of IT alongside that MDR service?", MSP_VENDORS),
     dedupeKey: "mspProviderName",
+    dedupeValue: vendorNameDedupeValue,
+    quickSkip: true,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("mdr-msp"),
     next: () => "msspProviderName",
   },
   {
     ...vendorField("msspProviderName", "Which MSSP do you use?", MSSP_VENDORS),
     dedupeKey: "msspProviderName",
+    dedupeValue: vendorNameDedupeValue,
+    quickSkip: true,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("mssp"),
     next: () => "socOwnership",
   },

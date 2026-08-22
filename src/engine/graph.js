@@ -32,6 +32,19 @@ function isAnswered(state, nodeId) {
   return v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0);
 }
 
+// ASSESSMENT-EXPERIENCE-BRIEF.md §1: quickSkip composes with visibleIf
+// rather than replacing it - a node is hidden if either its own visibility
+// condition fails, or Quick mode is on and this node is flagged as
+// vendor/specificity detail Quick mode doesn't collect. Exported (rather
+// than kept private to resolveNext) so §4's "we've skipped N questions"
+// count can use the exact same hiding rule instead of a second, driftable
+// copy of it.
+export function isNodeHidden(node, state) {
+  const hiddenByVisibleIf = node.visibleIf && !node.visibleIf(state.answers);
+  const hiddenByQuickMode = state.quickMode && node.quickSkip;
+  return Boolean(hiddenByVisibleIf || hiddenByQuickMode);
+}
+
 // Given the flow and the id of the node just answered (or null for "start
 // of flow"), returns the next node the user should actually see - skipping
 // any nodes whose visibleIf() fails, and auto-resolving (without prompting)
@@ -41,7 +54,7 @@ export function resolveNext(flow, currentId, state) {
   while (id !== null) {
     const node = getNode(flow, id);
     if (!node) return null;
-    if (node.visibleIf && !node.visibleIf(state.answers)) {
+    if (isNodeHidden(node, state)) {
       id = nextIdFrom(flow, id, state);
       continue;
     }
