@@ -1905,6 +1905,16 @@ function renderMaturityTab(container){
   wireNavLink(document.getElementById('linkMetricsFromMaturity'), 'metrics');
 }
 
+// UX-VISUAL-CREDIBILITY-BRIEF.md §4: SVG-native SMIL animation
+// (<animateMotion>) isn't CSS, so no @media (prefers-reduced-motion) rule
+// can gate it - the two moving-dot diagrams below (Runbooks' lifecycle
+// loop, Playbooks' flow) need this JS-level check instead, unlike every
+// other animation on the site which is plain CSS and already covered by
+// app.css's own reduced-motion blocks.
+function prefersReducedMotion(){
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 function buildLifecycleSvg(){
   const stages = ['Draft','Review','Approve','Publish','Periodic Review'];
   const cx=200, cy=170, r=110;
@@ -1913,6 +1923,12 @@ function buildLifecycleSvg(){
     return { x: cx + r*Math.cos(a), y: cy + r*Math.sin(a), label:s };
   });
   const pathD = `M ${cx+r},${cy} A ${r},${r} 0 1,1 ${cx-r+0.01},${cy} A ${r},${r} 0 1,1 ${cx+r},${cy}`;
+  // Static dot sits exactly on the path's own starting point (cx+r, cy)
+  // when motion is reduced - a deliberate resting position, not a
+  // truncated animation.
+  const dot = prefersReducedMotion()
+    ? `<circle cx="${(cx+r).toFixed(1)}" cy="${cy}" r="6" fill="var(--accent-signal)"/>`
+    : `<circle r="6" fill="var(--accent-signal)"><animateMotion dur="9s" repeatCount="indefinite"><mpath href="#lifecyclePath"/></animateMotion></circle>`;
   return `
   <svg viewBox="-30 0 400 340" xmlns="http://www.w3.org/2000/svg">
     <path id="lifecyclePath" d="${pathD}" fill="none" stroke="var(--line)" stroke-width="1.5"/>
@@ -1922,11 +1938,7 @@ function buildLifecycleSvg(){
       const anchor = p.x > cx+30 ? 'start' : p.x < cx-30 ? 'end' : 'middle';
       return `<text x="${p.x.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="${anchor}" class="lifecycle-node-label">${p.label}</text>`;
     }).join('')}
-    <circle r="6" fill="var(--accent-signal)">
-      <animateMotion dur="9s" repeatCount="indefinite">
-        <mpath href="#lifecyclePath"/>
-      </animateMotion>
-    </circle>
+    ${dot}
     <text x="200" y="175" text-anchor="middle" class="lifecycle-node-label" style="font-size:12px; letter-spacing:0.05em;">continuous, not one-and-done</text>
   </svg>`;
 }
@@ -1950,6 +1962,11 @@ function buildPlaybookFlowSvg(){
   ];
   const cx = 40;
   const pathD = `M ${cx},${nodes[0].y} L ${cx},${nodes[nodes.length-1].y}`;
+  // Static dot at the path's own starting point (the first node) when
+  // motion is reduced - see prefersReducedMotion()'s comment above.
+  const dot = prefersReducedMotion()
+    ? `<circle cx="${cx}" cy="${nodes[0].y}" r="6" fill="var(--accent-signal)"/>`
+    : `<circle r="6" fill="var(--accent-signal)"><animateMotion dur="6s" repeatCount="indefinite"><mpath href="#playbookFlowPath"/></animateMotion></circle>`;
   return `
   <svg viewBox="0 0 260 220" xmlns="http://www.w3.org/2000/svg">
     <path id="playbookFlowPath" d="${pathD}" fill="none" stroke="var(--line)" stroke-width="1.5"/>
@@ -1957,11 +1974,7 @@ function buildPlaybookFlowSvg(){
       <circle cx="${cx}" cy="${n.y}" r="7" fill="var(--surface)" stroke="var(${n.color})" stroke-width="2.2"/>
       <text x="${cx+20}" y="${n.y+4}" class="lifecycle-node-label">${n.label}</text>
     `).join('')}
-    <circle r="6" fill="var(--accent-signal)">
-      <animateMotion dur="6s" repeatCount="indefinite">
-        <mpath href="#playbookFlowPath"/>
-      </animateMotion>
-    </circle>
+    ${dot}
   </svg>`;
 }
 

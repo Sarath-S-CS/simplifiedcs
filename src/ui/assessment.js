@@ -91,7 +91,14 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     else if (ui.phase === "wizard") sectionIndex = visibleProfileScreens().length + ui.categoryIndex;
     const remaining = Math.max(0, totalSections - sectionIndex);
     const baseMinutes = session.quickMode ? 2 : 5;
-    const estimateMinutes = Math.max(1, Math.round((baseMinutes * remaining) / totalSections));
+    // UX-VISUAL-CREDIBILITY-BRIEF.md §2: this genuinely recalculates every
+    // render (it's not a cached/one-time value) - the bug was Math.round()
+    // plateauing across several sections before the displayed integer
+    // finally ticked down (e.g. 12 sections into a 5-minute estimate: going
+    // from 12/12 remaining to 11/12 remaining rounds 5.0 -> 4.58 -> still
+    // "5"). Math.floor() instead guarantees the very first completed
+    // section already reads as real, visible progress.
+    const estimateMinutes = Math.max(1, Math.floor((baseMinutes * remaining) / totalSections));
     return { position: sectionIndex + 1, totalSections, estimateMinutes };
   }
   function progressMetaHtml() {
@@ -221,7 +228,6 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           <div class="mode-card-cta">Start Full →</div>
         </div>
         <div class="mode-card" id="modeSample">
-          <div class="mode-card-time">Instant</div>
           <h4>See a Sample Report</h4>
           <p>View a complete example report with no questions to answer - full depth, real scoring, nothing to fill in.</p>
           <div class="mode-card-cta">View sample →</div>
@@ -467,13 +473,28 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     const val = session.answers[node.id] ?? "";
     if (node.type === "info") return `<div class="info-box">${node.text}</div>`;
     if (node.type === "select") {
+      // UX-VISUAL-CREDIBILITY-BRIEF.md §1: every profile "select" node has a
+      // small, fixed option set (confirmed ≤5 across every data file) - a
+      // single click beats open-then-pick, and reusing the same .question/
+      // .options/.option/.radio pattern the scored NIST questions already
+      // use keeps a consistent look across the whole wizard. Vendor fields
+      // (type "vendor") keep the dropdown - open-ended, larger lists pair
+      // better with a native select's own "Other" fallback than a wall of
+      // radio buttons would.
       return `
-        <div class="field">
-          <label>${node.text}${node.required ? "" : ' <span class="opt-tag">optional</span>'}</label>
-          <select data-fid="${node.id}">
-            <option value="" ${val === "" ? "selected" : ""} disabled>Select…</option>
-            ${node.options.map((o) => `<option value="${o}" ${val === o ? "selected" : ""}>${o}</option>`).join("")}
-          </select>
+        <div class="question">
+          <p>${node.text}${node.required ? "" : ' <span class="opt-tag">optional</span>'}</p>
+          <div class="options">
+            ${node.options
+              .map(
+                (o) => `
+              <div class="option ${val === o ? "selected" : ""}" data-fid="${node.id}" data-val="${escapeHtml(o)}">
+                <div class="radio"></div><div>${escapeHtml(o)}</div>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
         </div>`;
     }
     if (node.type === "multiselect") {
@@ -553,10 +574,10 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       document.getElementById("nextBtn").disabled = !screenComplete(screen);
     }
 
-    p.querySelectorAll("select[data-fid]").forEach((el) => {
-      el.addEventListener("change", () => {
+    p.querySelectorAll(".option[data-fid]").forEach((el) => {
+      el.addEventListener("click", () => {
         const node = screen.flow.index.get(el.dataset.fid);
-        recordAnswer(session, node, el.value);
+        recordAnswer(session, node, el.dataset.val);
         renderProfileScreen();
       });
     });
