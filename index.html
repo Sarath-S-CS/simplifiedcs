@@ -35756,7 +35756,7 @@
       else if (ui.phase === "wizard") sectionIndex = visibleProfileScreens().length + ui.categoryIndex;
       const remaining = Math.max(0, totalSections - sectionIndex);
       const baseMinutes = session.quickMode ? 2 : 5;
-      const estimateMinutes = Math.max(1, Math.round(baseMinutes * remaining / totalSections));
+      const estimateMinutes = Math.max(1, Math.floor(baseMinutes * remaining / totalSections));
       return { position: sectionIndex + 1, totalSections, estimateMinutes };
     }
     function progressMetaHtml() {
@@ -35861,7 +35861,6 @@
           <div class="mode-card-cta">Start Full \u2192</div>
         </div>
         <div class="mode-card" id="modeSample">
-          <div class="mode-card-time">Instant</div>
           <h4>See a Sample Report</h4>
           <p>View a complete example report with no questions to answer - full depth, real scoring, nothing to fill in.</p>
           <div class="mode-card-cta">View sample \u2192</div>
@@ -36094,12 +36093,17 @@
       if (node2.type === "info") return `<div class="info-box">${node2.text}</div>`;
       if (node2.type === "select") {
         return `
-        <div class="field">
-          <label>${node2.text}${node2.required ? "" : ' <span class="opt-tag">optional</span>'}</label>
-          <select data-fid="${node2.id}">
-            <option value="" ${val === "" ? "selected" : ""} disabled>Select\u2026</option>
-            ${node2.options.map((o3) => `<option value="${o3}" ${val === o3 ? "selected" : ""}>${o3}</option>`).join("")}
-          </select>
+        <div class="question">
+          <p>${node2.text}${node2.required ? "" : ' <span class="opt-tag">optional</span>'}</p>
+          <div class="options">
+            ${node2.options.map(
+          (o3) => `
+              <div class="option ${val === o3 ? "selected" : ""}" data-fid="${node2.id}" data-val="${escapeHtml(o3)}">
+                <div class="radio"></div><div>${escapeHtml(o3)}</div>
+              </div>
+            `
+        ).join("")}
+          </div>
         </div>`;
       }
       if (node2.type === "multiselect") {
@@ -36168,10 +36172,10 @@
       function refreshNext() {
         document.getElementById("nextBtn").disabled = !screenComplete(screen);
       }
-      p3.querySelectorAll("select[data-fid]").forEach((el) => {
-        el.addEventListener("change", () => {
+      p3.querySelectorAll(".option[data-fid]").forEach((el) => {
+        el.addEventListener("click", () => {
           const node2 = screen.flow.index.get(el.dataset.fid);
-          recordAnswer(session, node2, el.value);
+          recordAnswer(session, node2, el.dataset.val);
           renderProfileScreen();
         });
       });
@@ -59014,6 +59018,9 @@ ${suffix}`;
     wireNavLink(document.getElementById("ctaMaturityDocs"), "runbook");
     wireNavLink(document.getElementById("linkMetricsFromMaturity"), "metrics");
   }
+  function prefersReducedMotion() {
+    return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
   function buildLifecycleSvg() {
     const stages = ["Draft", "Review", "Approve", "Publish", "Periodic Review"];
     const cx = 200, cy = 170, r2 = 110;
@@ -59022,6 +59029,7 @@ ${suffix}`;
       return { x: cx + r2 * Math.cos(a4), y: cy + r2 * Math.sin(a4), label: s3 };
     });
     const pathD = `M ${cx + r2},${cy} A ${r2},${r2} 0 1,1 ${cx - r2 + 0.01},${cy} A ${r2},${r2} 0 1,1 ${cx + r2},${cy}`;
+    const dot = prefersReducedMotion() ? `<circle cx="${(cx + r2).toFixed(1)}" cy="${cy}" r="6" fill="var(--accent-signal)"/>` : `<circle r="6" fill="var(--accent-signal)"><animateMotion dur="9s" repeatCount="indefinite"><mpath href="#lifecyclePath"/></animateMotion></circle>`;
     return `
   <svg viewBox="-30 0 400 340" xmlns="http://www.w3.org/2000/svg">
     <path id="lifecyclePath" d="${pathD}" fill="none" stroke="var(--line)" stroke-width="1.5"/>
@@ -59031,11 +59039,7 @@ ${suffix}`;
       const anchor = p3.x > cx + 30 ? "start" : p3.x < cx - 30 ? "end" : "middle";
       return `<text x="${p3.x.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="${anchor}" class="lifecycle-node-label">${p3.label}</text>`;
     }).join("")}
-    <circle r="6" fill="var(--accent-signal)">
-      <animateMotion dur="9s" repeatCount="indefinite">
-        <mpath href="#lifecyclePath"/>
-      </animateMotion>
-    </circle>
+    ${dot}
     <text x="200" y="175" text-anchor="middle" class="lifecycle-node-label" style="font-size:12px; letter-spacing:0.05em;">continuous, not one-and-done</text>
   </svg>`;
   }
@@ -59048,6 +59052,7 @@ ${suffix}`;
     ];
     const cx = 40;
     const pathD = `M ${cx},${nodes[0].y} L ${cx},${nodes[nodes.length - 1].y}`;
+    const dot = prefersReducedMotion() ? `<circle cx="${cx}" cy="${nodes[0].y}" r="6" fill="var(--accent-signal)"/>` : `<circle r="6" fill="var(--accent-signal)"><animateMotion dur="6s" repeatCount="indefinite"><mpath href="#playbookFlowPath"/></animateMotion></circle>`;
     return `
   <svg viewBox="0 0 260 220" xmlns="http://www.w3.org/2000/svg">
     <path id="playbookFlowPath" d="${pathD}" fill="none" stroke="var(--line)" stroke-width="1.5"/>
@@ -59055,11 +59060,7 @@ ${suffix}`;
       <circle cx="${cx}" cy="${n2.y}" r="7" fill="var(--surface)" stroke="var(${n2.color})" stroke-width="2.2"/>
       <text x="${cx + 20}" y="${n2.y + 4}" class="lifecycle-node-label">${n2.label}</text>
     `).join("")}
-    <circle r="6" fill="var(--accent-signal)">
-      <animateMotion dur="6s" repeatCount="indefinite">
-        <mpath href="#playbookFlowPath"/>
-      </animateMotion>
-    </circle>
+    ${dot}
   </svg>`;
   }
   function renderMetricsTab(container) {

@@ -1115,6 +1115,9 @@
   .fb-error{ color:var(--accent-critical); font-size:12.5px; margin-bottom:14px; }
   .roadmap-loop svg{ flex-shrink:0; animation:spin 6s linear infinite; }
   @keyframes spin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
+  @media (prefers-reduced-motion: reduce){
+    .roadmap-loop svg{ animation:none; }
+  }
 
   /* --- animated document lifecycle diagram --- */
   .lifecycle-row{ display:flex; align-items:center; gap:24px; margin:24px 0 32px; flex-wrap:wrap; }
@@ -1235,6 +1238,9 @@
   .hero-infinity svg{ width:100%; height:auto; display:block; }
   .infinity-flow{ stroke-dasharray:18 26; animation:infinityFlow 6s linear infinite; }
   @keyframes infinityFlow{ to{ stroke-dashoffset:-445; } }
+  @media (prefers-reduced-motion: reduce){
+    .infinity-flow{ animation:none; }
+  }
   .infinity-caption{ display:flex; justify-content:space-between; gap:14px; margin-top:12px; font-family:var(--mono); font-size:16px; letter-spacing:0.03em; font-weight:600; }
   .infinity-caption span{ white-space:nowrap; }
   .site-tile-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:28px 0 8px; }
