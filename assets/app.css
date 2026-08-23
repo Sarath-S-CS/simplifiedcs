@@ -936,6 +936,15 @@
   .page h2.page-title{ font-size:44px; font-weight:600; margin:0 0 14px; line-height:1.15; }
   .page .page-lede{ color:var(--text-muted); font-size:15.5px; max-width:640px; margin:0 0 32px; line-height:1.6; }
   .page-lede + .page-lede{ margin-top:-16px; }
+  /* METRICS-ANIMATION-ABOUT-FIXES-BRIEF.md §3: .page-lede already caps its
+     own width at 640px, but never centers itself - on a page whose
+     paragraphs are its only content (About), that left the reading column
+     pinned to the left edge with a large empty gap on the right for the
+     section's full height. Centering the column itself, not just capping
+     each paragraph's width, fixes that without changing .page-lede's
+     shared rule (still used un-centered inside .page-intro-row layouts
+     elsewhere, alongside a side illustration). */
+  .about-narrative{ max-width:640px; margin:0 auto; }
   .page h3.section-h{ font-size:22px; font-weight:600; margin:36px 0 14px; }
   .page h3.section-h:first-of-type{ margin-top:0; }
   .page p.body-text{ font-size:14px; color:var(--text-muted); line-height:1.7; max-width:680px; margin:0 0 14px; }
@@ -1213,6 +1222,25 @@
   }
   @media (prefers-reduced-motion: reduce){
     .pipeline-flow-dot{ animation:none; opacity:0; }
+  }
+
+  /* --- Metrics intro (and Home's Risk Score Matrix): scoring-rubric
+     pulse (METRICS-ANIMATION-ABOUT-FIXES-BRIEF.md §1) - three fixed
+     0/1/2 circles, each with its own glow ring that lights up in turn via
+     the same staggered animation-delay technique as .climb-bar above,
+     applied to opacity/scale instead of height so exactly one is bright
+     at a time. Sits in .page-intro-row same as the other three intro
+     animations. --- */
+  .metrics-rubric-wrap{ flex-shrink:0; width:220px; max-width:100%; }
+  .metrics-rubric-wrap svg{ width:100%; height:auto; display:block; }
+  .rubric-score-label{ font-family:var(--mono); font-size:15px; font-weight:600; }
+  @keyframes rubricPulse{
+    0%, 22%{ opacity:1; transform:scale(1.1); }
+    33%, 100%{ opacity:0.15; transform:scale(0.85); }
+  }
+  .rubric-glow{ transform-box:fill-box; transform-origin:50% 50%; animation:rubricPulse 4.5s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce){
+    .rubric-glow{ animation:none; opacity:0; }
   }
 
   /* --- learning resources (News tab) --- */
