@@ -58888,64 +58888,20 @@ ${suffix}`;
   }
   function stageIllustration(stageId) {
     const svgs = {
-      // Discovery: gradient-shaded binoculars surveying outward across every
-      // category of what exists - cloud, server, device, person - each in
-      // its own distinct color rather than uniform, per the brief.
       discovery: `
       <svg viewBox="0 0 100 100" width="72" height="72">
-        <defs>
-          <radialGradient id="gDisc" cx="50%" cy="42%" r="60%">
-            <stop offset="0%" stop-color="var(--accent-signal)" stop-opacity="0.35"/>
-            <stop offset="100%" stop-color="var(--accent-signal)" stop-opacity="0"/>
-          </radialGradient>
-          <linearGradient id="discBinocGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="var(--illus-blue)"/>
-            <stop offset="100%" stop-color="var(--accent-signal)"/>
-          </linearGradient>
-        </defs>
+        <defs><radialGradient id="gDisc" cx="50%" cy="42%" r="60%">
+          <stop offset="0%" stop-color="var(--accent-signal)" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="var(--accent-signal)" stop-opacity="0"/>
+        </radialGradient></defs>
         <circle cx="50" cy="50" r="46" fill="url(#gDisc)"/>
-        <line x1="50" y1="50" x2="26" y2="26" stroke="var(--illus-blue)" stroke-width="1.6" stroke-dasharray="2.5 3" opacity="0.65"/>
-        <line x1="50" y1="50" x2="74" y2="26" stroke="var(--accent-signal)" stroke-width="1.6" stroke-dasharray="2.5 3" opacity="0.65"/>
-        <line x1="50" y1="50" x2="74" y2="74" stroke="var(--accent-amber)" stroke-width="1.6" stroke-dasharray="2.5 3" opacity="0.65"/>
-        <line x1="50" y1="50" x2="26" y2="74" stroke="var(--illus-purple)" stroke-width="1.6" stroke-dasharray="2.5 3" opacity="0.65"/>
-        <!-- cloud -->
-        <g fill="var(--illus-blue)">
-          <circle cx="18" cy="20" r="4.2"/>
-          <circle cx="23.5" cy="17.3" r="5.3"/>
-          <circle cx="29.5" cy="20.3" r="3.9"/>
-          <rect x="15.5" y="20" width="17.5" height="5.6" rx="2.8"/>
-        </g>
-        <!-- server / database -->
-        <g fill="var(--accent-signal)">
-          <rect x="68" y="16" width="15" height="6" rx="1.5"/>
-          <rect x="68" y="23.5" width="15" height="6" rx="1.5"/>
-          <circle cx="71.2" cy="19" r="1.1" fill="var(--text-on-accent)"/>
-          <circle cx="71.2" cy="26.5" r="1.1" fill="var(--text-on-accent)"/>
-        </g>
-        <!-- monitor / device -->
-        <g fill="var(--accent-amber)">
-          <rect x="65.5" y="65.5" width="18.5" height="13" rx="1.8"/>
-          <rect x="73.3" y="78.5" width="3.4" height="3.2"/>
-          <rect x="69.5" y="81.7" width="11" height="1.9" rx="0.95"/>
-        </g>
-        <!-- person -->
-        <g fill="var(--illus-purple)">
-          <circle cx="24" cy="70" r="4.4"/>
-          <path d="M15.7 82.8a8.3 8.3 0 0 1 16.6 0v3.7H15.7z"/>
-        </g>
-        <g fill="none" stroke="url(#discBinocGrad)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="40" y="42" width="9" height="17" rx="4"/>
-          <rect x="51" y="42" width="9" height="17" rx="4"/>
-          <path d="M44.5 42v-3.5a2.5 2.5 0 0 1 2.5-2.5h6a2.5 2.5 0 0 1 2.5 2.5V42"/>
-        </g>
-        <circle cx="44.5" cy="50.5" r="2.1" fill="var(--illus-blue)" opacity="0.65"/>
-        <circle cx="55.5" cy="50.5" r="2.1" fill="var(--accent-signal)" opacity="0.65"/>
+        <circle cx="30" cy="26" r="3" fill="var(--accent-signal)" opacity="0.6"/>
+        <circle cx="72" cy="30" r="2.4" fill="var(--accent-signal)" opacity="0.5"/>
+        <circle cx="68" cy="70" r="3" fill="var(--accent-signal)" opacity="0.6"/>
+        <circle cx="24" cy="66" r="2" fill="var(--accent-signal)" opacity="0.5"/>
+        <circle cx="43" cy="43" r="17" fill="none" stroke="var(--accent-signal)" stroke-width="4.5"/>
+        <line x1="55" y1="55" x2="74" y2="74" stroke="var(--accent-signal)" stroke-width="5.5" stroke-linecap="round"/>
       </svg>`,
-      // Transformation (Three Phases version): a simpler, more geometric
-      // composition than the How It Works version below - an undefined
-      // process (dashed-outline gear) becoming documented and verified (a
-      // solid gear, now a rich green-to-teal gradient with its own glow,
-      // rather than the earlier flat single-tone fill).
       transformation: `
       <svg viewBox="0 0 100 100" width="72" height="72">
         <defs>
@@ -58953,57 +58909,34 @@ ${suffix}`;
             <stop offset="0%" stop-color="var(--accent-secure)" stop-opacity="0.35"/>
             <stop offset="100%" stop-color="var(--accent-secure)" stop-opacity="0"/>
           </radialGradient>
-          <linearGradient id="transGearGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="var(--accent-signal)"/>
+          <linearGradient id="gTransFlow" x1="30" y1="50" x2="62" y2="50" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="var(--accent-amber)"/>
             <stop offset="100%" stop-color="var(--accent-secure)"/>
           </linearGradient>
-          <radialGradient id="transGearGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="var(--accent-signal)" stop-opacity="0.45"/>
-            <stop offset="100%" stop-color="var(--accent-signal)" stop-opacity="0"/>
-          </radialGradient>
         </defs>
         <circle cx="50" cy="50" r="46" fill="url(#gTrans)"/>
-        <path d="M35.12,48.19 L38.75,47.46 L38.75,52.54 L35.12,51.81 L33.73,55.17 L36.81,57.22 L33.22,60.81 L31.17,57.73 L27.81,59.12 L28.54,62.75 L23.46,62.75 L24.19,59.12 L20.83,57.73 L18.78,60.81 L15.19,57.22 L18.27,55.17 L16.88,51.81 L13.25,52.54 L13.25,47.46 L16.88,48.19 L18.27,44.83 L15.19,42.78 L18.78,39.19 L20.83,42.27 L24.19,40.88 L23.46,37.25 L28.54,37.25 L27.81,40.88 L31.17,42.27 L33.22,39.19 L36.81,42.78 L33.73,44.83 Z" fill="none" stroke="var(--text-muted)" stroke-width="2.2" stroke-dasharray="3 2.5" opacity="0.7"/>
-        <line x1="44" y1="50" x2="58" y2="50" stroke="var(--accent-secure)" stroke-width="4" stroke-linecap="round"/>
-        <path d="M52 42l8 8-8 8" fill="none" stroke="var(--accent-secure)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="76" cy="50" r="18" fill="url(#transGearGlow)"/>
-        <path d="M86.49,47.91 L90.71,47.07 L90.71,52.93 L86.49,52.09 L84.9,55.94 L88.47,58.33 L84.33,62.47 L81.94,58.9 L78.09,60.49 L78.93,64.71 L73.07,64.71 L73.91,60.49 L70.06,58.9 L67.67,62.47 L63.53,58.33 L67.1,55.94 L65.51,52.09 L61.29,52.93 L61.29,47.07 L65.51,47.91 L67.1,44.06 L63.53,41.67 L67.67,37.53 L70.06,41.1 L73.91,39.51 L73.07,35.29 L78.93,35.29 L78.09,39.51 L81.94,41.1 L84.33,37.53 L88.47,41.67 L84.9,44.06 Z" fill="url(#transGearGrad)"/>
-        <path d="M72 50l3.5 3.5 7-7" fill="none" stroke="var(--text-on-accent)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- scattered, disconnected findings on the left... -->
+        <circle cx="26" cy="38" r="3.5" fill="var(--accent-amber)" opacity="0.85"/>
+        <circle cx="23" cy="53" r="3" fill="var(--accent-critical)" opacity="0.75"/>
+        <circle cx="29" cy="66" r="3" fill="var(--accent-pop)" opacity="0.8"/>
+        <!-- ...flowing through the transformation... -->
+        <path d="M33 52 Q45 44 58 50" fill="none" stroke="url(#gTransFlow)" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M52 44l8 6-8 6" fill="none" stroke="var(--accent-secure)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- ...into one verified, engineered control on the right -->
+        <path d="M68 37l11 6.5v13l-11 6.5-11-6.5v-13z" fill="var(--accent-secure)"/>
+        <path d="M62 50l4.5 4.5 9-9" fill="none" stroke="var(--text-on-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>`,
-      // Optimization: a speedometer whose arc now runs the same red-to-
-      // amber-to-green gradient as this site's own Risk Score Matrix slider
-      // (echoing that established risk-to-safe color logic), paired with a
-      // rocket whose exhaust is a colorful, multi-tone blue/teal gradient
-      // instead of the earlier flat amber/red flame.
       optimization: `
       <svg viewBox="0 0 100 100" width="72" height="72">
-        <defs>
-          <radialGradient id="gOpt" cx="50%" cy="50%" r="60%">
-            <stop offset="0%" stop-color="var(--accent-violet)" stop-opacity="0.35"/>
-            <stop offset="100%" stop-color="var(--accent-violet)" stop-opacity="0"/>
-          </radialGradient>
-          <linearGradient id="optGaugeGrad" x1="0%" y1="100%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="var(--accent-critical)"/>
-            <stop offset="50%" stop-color="var(--accent-amber)"/>
-            <stop offset="100%" stop-color="var(--accent-signal)"/>
-          </linearGradient>
-          <linearGradient id="optRocketFlame" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="var(--accent-signal)"/>
-            <stop offset="100%" stop-color="var(--illus-blue)"/>
-          </linearGradient>
-        </defs>
+        <defs><radialGradient id="gOpt" cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stop-color="var(--accent-violet)" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="var(--accent-violet)" stop-opacity="0"/>
+        </radialGradient></defs>
         <circle cx="50" cy="50" r="46" fill="url(#gOpt)"/>
-        <path d="M24 58a26 26 0 0 1 52 0" fill="none" stroke="url(#optGaugeGrad)" stroke-width="5" stroke-linecap="round"/>
-        <line x1="50" y1="58" x2="65" y2="41" stroke="var(--illus-purple)" stroke-width="3.5" stroke-linecap="round"/>
-        <circle cx="50" cy="58" r="4.5" fill="var(--illus-purple)"/>
-        <g transform="translate(64,16) rotate(35)">
-          <path d="M5 0c3 3 5 8 5 14v3H0v-3c0-6 2-11 5-14z" fill="var(--illus-blue)"/>
-          <circle cx="5" cy="8" r="2.2" fill="var(--surface)"/>
-          <path d="M0 14l-4 7 4-2.5z" fill="url(#optRocketFlame)"/>
-          <path d="M10 14l4 7-4-2.5z" fill="url(#optRocketFlame)"/>
-          <path d="M2 17l3 8 3-8z" fill="var(--accent-signal)" opacity="0.85"/>
-        </g>
-        <path d="M62 26l6 5M67 19l7 4M69 30l6-1" stroke="var(--accent-signal)" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
+        <rect x="24" y="55" width="10" height="21" fill="var(--accent-violet)" opacity="0.55"/>
+        <rect x="45" y="40" width="10" height="36" fill="var(--accent-violet)" opacity="0.78"/>
+        <rect x="66" y="24" width="10" height="52" fill="var(--accent-violet)"/>
+        <path d="M22 50l16-14 12 8 24-22" fill="none" stroke="var(--accent-violet)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>`
     };
     return svgs[stageId] || "";
@@ -59065,184 +58998,63 @@ ${suffix}`;
     { tab: "playbooks", icon: "checklist", title: "Playbooks", desc: "OWASP Top 10 and AI-threat playbooks, mapped to MITRE ATT&CK." },
     { tab: "roadmap", icon: "clock", title: "Roadmap", desc: "What's shipped, in progress, and planned for this site itself." }
   ];
-  function gearPath(cx, cy, rOuter, rInner, teeth) {
-    const pts = [];
-    const step = Math.PI / teeth;
-    for (let i3 = 0; i3 < teeth * 2; i3++) {
-      const r2 = i3 % 2 === 0 ? rOuter : rInner;
-      const a4 = i3 * step;
-      pts.push(`${(cx + r2 * Math.cos(a4)).toFixed(2)},${(cy + r2 * Math.sin(a4)).toFixed(2)}`);
-    }
-    return `M${pts.join(" L")} Z`;
-  }
   function howItWorksIllustration(id) {
     const svgs = {
-      // Data Collection: three distinct, differently-colored input types
-      // (document, chat, connectivity) with particle-dot trails converging
-      // inward through a blue-to-teal gradient funnel into a focused stream.
       "hiw-clipboard": `
       <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <linearGradient id="hiwFunnelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="var(--illus-blue)"/>
-            <stop offset="100%" stop-color="var(--accent-signal)"/>
-          </linearGradient>
-        </defs>
-        <g transform="translate(58,10)">
-          <rect x="0" y="0" width="16" height="20" rx="2" fill="var(--illus-blue)"/>
-          <rect x="3" y="5" width="10" height="1.6" rx="0.8" fill="var(--text-on-accent)" opacity="0.85"/>
-          <rect x="3" y="9" width="10" height="1.6" rx="0.8" fill="var(--text-on-accent)" opacity="0.85"/>
-          <rect x="3" y="13" width="7" height="1.6" rx="0.8" fill="var(--text-on-accent)" opacity="0.85"/>
-        </g>
-        <path d="M114 8h24a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-9l-7 7v-7h-8a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z" fill="var(--accent-signal)"/>
-        <circle cx="121" cy="17" r="1.6" fill="var(--text-on-accent)"/>
-        <circle cx="127" cy="17" r="1.6" fill="var(--text-on-accent)"/>
-        <circle cx="133" cy="17" r="1.6" fill="var(--text-on-accent)"/>
-        <g transform="translate(168,14)" stroke="var(--illus-purple)" stroke-width="2.6" stroke-linecap="round" fill="none">
-          <path d="M0 8a17 17 0 0 1 24 0"/>
-          <path d="M5.5 14a9.5 9.5 0 0 1 13 0"/>
-        </g>
-        <circle cx="180" cy="34" r="2" fill="var(--illus-purple)"/>
-        <g fill="var(--illus-blue)">
-          <circle cx="66" cy="34" r="2" opacity="0.85"/>
-          <circle cx="82" cy="40" r="1.6" opacity="0.7"/>
-          <circle cx="97" cy="45" r="2.2" opacity="0.9"/>
-        </g>
-        <g fill="var(--accent-signal)">
-          <circle cx="126" cy="32" r="2" opacity="0.85"/>
-          <circle cx="128" cy="42" r="1.6" opacity="0.7"/>
-          <circle cx="130" cy="48" r="2" opacity="0.9"/>
-        </g>
-        <g fill="var(--illus-purple)">
-          <circle cx="178" cy="38" r="2" opacity="0.85"/>
-          <circle cx="163" cy="43" r="1.6" opacity="0.7"/>
-          <circle cx="148" cy="47" r="2" opacity="0.9"/>
-        </g>
-        <path d="M96 50h60l-22 28h-16z" fill="url(#hiwFunnelGrad)" stroke="var(--illus-blue-deep)" stroke-width="1.5" stroke-linejoin="round"/>
-        <rect x="118" y="78" width="16" height="4" fill="var(--accent-secure)"/>
-        <circle cx="126" cy="88" r="2.4" fill="var(--accent-secure)"/>
-        <circle cx="119" cy="94" r="1.8" fill="var(--accent-secure)" opacity="0.7"/>
-        <circle cx="133" cy="94" r="1.8" fill="var(--accent-secure)" opacity="0.7"/>
+        <line x1="50" y1="26" x2="118" y2="58" stroke="var(--accent-signal)" stroke-width="1.5" opacity="0.5"/>
+        <line x1="110" y1="26" x2="124" y2="55" stroke="var(--accent-secure)" stroke-width="1.5" opacity="0.5"/>
+        <line x1="170" y1="26" x2="138" y2="55" stroke="var(--accent-violet)" stroke-width="1.5" opacity="0.5"/>
+        <line x1="212" y1="26" x2="144" y2="58" stroke="var(--accent-amber)" stroke-width="1.5" opacity="0.5"/>
+        <circle cx="50" cy="20" r="9" fill="var(--accent-signal)" opacity="0.85"/>
+        <rect x="100" y="11" width="18" height="18" rx="3" fill="var(--accent-secure)" opacity="0.85"/>
+        <polygon points="170,10 180,28 160,28" fill="var(--accent-violet)" opacity="0.85"/>
+        <circle cx="212" cy="20" r="8" fill="var(--accent-amber)" opacity="0.85"/>
+        <rect x="106" y="52" width="48" height="38" rx="5" fill="var(--surface-raised)" stroke="var(--accent-signal)" stroke-width="2"/>
+        <rect x="120" y="46" width="20" height="10" rx="2" fill="var(--accent-signal)"/>
+        <line x1="114" y1="66" x2="146" y2="66" stroke="var(--accent-signal)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+        <line x1="114" y1="74" x2="146" y2="74" stroke="var(--accent-signal)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+        <line x1="114" y1="82" x2="134" y2="82" stroke="var(--accent-signal)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
       </svg>`,
-      // Analysis: loose, mixed-tone raw data particles flowing into a
-      // gradient-rimmed lens, resolving into a node graph whose nodes each
-      // carry a different color (reflecting different risk levels) - a
-      // glowing checkmark badge at the lens's corner signals verification.
       "hiw-magnify": `
       <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <radialGradient id="hiwLensGrad" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="var(--illus-blue)"/>
-            <stop offset="100%" stop-color="var(--illus-purple-deep)"/>
-          </radialGradient>
-          <radialGradient id="hiwCheckGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="var(--accent-secure)" stop-opacity="0.55"/>
-            <stop offset="100%" stop-color="var(--accent-secure)" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <circle cx="34" cy="28" r="3.4" fill="var(--illus-blue)" opacity="0.85"/>
-        <circle cx="56" cy="18" r="2.6" fill="var(--accent-signal)" opacity="0.8"/>
-        <circle cx="48" cy="48" r="3" fill="var(--illus-purple)" opacity="0.8"/>
-        <circle cx="26" cy="52" r="2.2" fill="var(--accent-amber)" opacity="0.8"/>
-        <circle cx="66" cy="60" r="2.6" fill="var(--illus-blue)" opacity="0.75"/>
-        <path d="M40 38 Q88 44 116 48" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="3 4" opacity="0.5"/>
-        <circle cx="150" cy="48" r="35" fill="var(--surface-raised)" stroke="url(#hiwLensGrad)" stroke-width="5"/>
-        <circle cx="139" cy="35" r="7" fill="var(--text)" opacity="0.08"/>
-        <line x1="136" y1="40" x2="158" y2="35" stroke="var(--text-muted)" stroke-width="1.8" opacity="0.7"/>
-        <line x1="158" y1="35" x2="165" y2="57" stroke="var(--text-muted)" stroke-width="1.8" opacity="0.7"/>
-        <line x1="136" y1="40" x2="141" y2="61" stroke="var(--text-muted)" stroke-width="1.8" opacity="0.7"/>
-        <line x1="141" y1="61" x2="165" y2="57" stroke="var(--text-muted)" stroke-width="1.8" opacity="0.7"/>
-        <circle cx="136" cy="40" r="4.2" fill="var(--accent-signal)"/>
-        <circle cx="158" cy="35" r="4.2" fill="var(--accent-amber)"/>
-        <circle cx="165" cy="57" r="4.2" fill="var(--accent-critical)"/>
-        <circle cx="141" cy="61" r="4.2" fill="var(--illus-blue)"/>
-        <line x1="175" y1="73" x2="200" y2="96" stroke="var(--illus-purple-deep)" stroke-width="7.5" stroke-linecap="round"/>
-        <circle cx="179" cy="19" r="15" fill="url(#hiwCheckGlow)"/>
-        <circle cx="179" cy="19" r="10.5" fill="var(--accent-secure)"/>
-        <path d="M174 19l3.5 3.5 7-7" fill="none" stroke="var(--text-on-accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <g opacity="0.35">
+          <circle cx="60" cy="25" r="4" fill="var(--text-muted)"/>
+          <circle cx="90" cy="20" r="4" fill="var(--text-muted)"/>
+          <circle cx="120" cy="30" r="4" fill="var(--text-muted)"/>
+          <circle cx="100" cy="55" r="4" fill="var(--text-muted)"/>
+          <circle cx="135" cy="48" r="4" fill="var(--text-muted)"/>
+          <circle cx="60" cy="75" r="4" fill="var(--text-muted)"/>
+        </g>
+        <line x1="90" y1="20" x2="70" y2="50" stroke="var(--accent-critical)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="70" y1="50" x2="95" y2="80" stroke="var(--accent-critical)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="90" cy="20" r="5" fill="var(--accent-critical)"/>
+        <circle cx="70" cy="50" r="5" fill="var(--accent-critical)"/>
+        <circle cx="95" cy="80" r="5" fill="var(--accent-critical)"/>
+        <circle cx="175" cy="48" r="30" fill="none" stroke="var(--accent-signal)" stroke-width="4"/>
+        <line x1="196" y1="69" x2="215" y2="88" stroke="var(--accent-signal)" stroke-width="6" stroke-linecap="round"/>
       </svg>`,
-      // Recommendation: kept as an abstract panel, not a character/mascot
-      // (per the brief - richer detail doesn't mean introducing a robot
-      // illustration), but now a gradient-backed panel with a soft glow for
-      // depth and a differently-colored checkmark per item instead of a flat
-      // single-tone checklist.
       "hiw-lightbulb": `
       <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <linearGradient id="hiwPanelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="var(--surface-raised)"/>
-            <stop offset="100%" stop-color="var(--illus-blue-deep)" stop-opacity="0.2"/>
-          </linearGradient>
-          <radialGradient id="hiwPanelGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="var(--accent-amber)" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="var(--accent-amber)" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <ellipse cx="130" cy="50" rx="70" ry="46" fill="url(#hiwPanelGlow)"/>
-        <rect x="88" y="12" width="84" height="78" rx="7" fill="url(#hiwPanelGrad)" stroke="var(--accent-amber)" stroke-width="3"/>
-        <rect x="113" y="6" width="34" height="15" rx="4" fill="var(--accent-amber)"/>
-        <circle cx="107" cy="34" r="7" fill="var(--accent-signal)"/>
-        <path d="M104 34l2 2.5 4.5-5" fill="none" stroke="var(--text-on-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <line x1="120" y1="34" x2="160" y2="34" stroke="var(--text-muted)" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="107" cy="52" r="7" fill="var(--illus-blue)"/>
-        <path d="M104 52l2 2.5 4.5-5" fill="none" stroke="var(--text-on-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <line x1="120" y1="52" x2="160" y2="52" stroke="var(--text-muted)" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="107" cy="70" r="7" fill="var(--accent-critical)"/>
-        <path d="M104 70l2 2.5 4.5-5" fill="none" stroke="var(--text-on-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <line x1="120" y1="70" x2="152" y2="70" stroke="var(--text-muted)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="45" cy="45" r="22" fill="none" stroke="var(--accent-amber)" stroke-width="3"/>
+        <path d="M45 23a22 22 0 0 1 15 38" fill="none" stroke="var(--accent-amber)" stroke-width="3" opacity="0.4"/>
+        <line x1="45" y1="67" x2="45" y2="76" stroke="var(--accent-amber)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="38" y1="76" x2="52" y2="76" stroke="var(--accent-amber)" stroke-width="3" stroke-linecap="round"/>
+        <rect x="90" y="24" width="130" height="10" rx="5" fill="var(--accent-critical)"/>
+        <rect x="90" y="42" width="98" height="10" rx="5" fill="var(--accent-amber)"/>
+        <rect x="90" y="60" width="70" height="10" rx="5" fill="var(--accent-signal)"/>
+        <rect x="90" y="78" width="45" height="10" rx="5" fill="var(--line)"/>
       </svg>`,
-      // Transformation: the weakest of the earlier pass - now built as
-      // actual interlocking puzzle pieces (a real tab-and-notch silhouette
-      // via <mask> on every piece, not a plain rounded square with a circle
-      // stuck to it), scattered and disconnected in varied colors on one
-      // side, converging into one assembled, unified-gradient puzzle shape
-      // on the other, with a person, database, and gear as supporting
-      // accents in their own distinct colors. Deliberately a different
-      // composition from the Three Phases version above (see
-      // stageIllustration()'s 'transformation').
       "hiw-transform": `
       <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <mask id="hiwPieceMaskA"><rect x="-3" y="-3" width="31" height="31" fill="white"/><circle cx="0" cy="11" r="5" fill="black"/></mask>
-          <mask id="hiwPieceMaskB"><rect x="-3" y="-3" width="31" height="31" fill="white"/><circle cx="0" cy="11" r="5" fill="black"/></mask>
-          <mask id="hiwPieceMaskC"><rect x="-3" y="-3" width="31" height="31" fill="white"/><circle cx="0" cy="11" r="5" fill="black"/></mask>
-          <mask id="hiwAssembledNotch"><rect x="156" y="24" width="30" height="30" rx="4" fill="white"/><circle cx="156" cy="39" r="6.5" fill="black"/></mask>
-          <linearGradient id="hiwAssembledGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="var(--illus-blue)"/>
-            <stop offset="100%" stop-color="var(--accent-secure)"/>
-          </linearGradient>
-        </defs>
-        <g transform="translate(20,18) rotate(-16)">
-          <circle cx="22" cy="11" r="5" fill="var(--illus-purple)"/>
-          <rect x="0" y="0" width="22" height="22" rx="3" fill="var(--illus-purple)" mask="url(#hiwPieceMaskA)"/>
-        </g>
-        <g transform="translate(16,56) rotate(12)">
-          <circle cx="22" cy="11" r="5" fill="var(--illus-blue)"/>
-          <rect x="0" y="0" width="22" height="22" rx="3" fill="var(--illus-blue)" mask="url(#hiwPieceMaskB)"/>
-        </g>
-        <g transform="translate(50,8) rotate(20)">
-          <circle cx="22" cy="11" r="5" fill="var(--accent-signal)"/>
-          <rect x="0" y="0" width="22" height="22" rx="3" fill="var(--accent-signal)" mask="url(#hiwPieceMaskC)"/>
-        </g>
-        <line x1="92" y1="50" x2="130" y2="50" stroke="var(--accent-secure)" stroke-width="4" stroke-linecap="round"/>
-        <path d="M122 41l10 9-10 9" fill="none" stroke="var(--accent-secure)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="186" cy="39" r="6.5" fill="url(#hiwAssembledGrad)"/>
-        <rect x="186" y="24" width="30" height="30" rx="4" fill="url(#hiwAssembledGrad)"/>
-        <rect x="156" y="24" width="30" height="30" rx="4" fill="url(#hiwAssembledGrad)" mask="url(#hiwAssembledNotch)"/>
-        <g transform="translate(160,64)" fill="var(--accent-amber)">
-          <circle cx="6" cy="4" r="4"/>
-          <path d="M0 18a6 6 0 0 1 12 0v2H0z"/>
-        </g>
-        <g transform="translate(196,66)" fill="var(--illus-purple)">
-          <path d="M0 3a7 3 0 0 1 14 0v10a7 3 0 0 1-14 0z"/>
-          <path d="M0 3a7 3 0 0 0 14 0" fill="none"/>
-          <ellipse cx="7" cy="3" rx="7" ry="3" fill="var(--illus-purple)" opacity="0.75"/>
-          <path d="M0 8a7 3 0 0 0 14 0" fill="none" stroke="var(--surface)" stroke-width="1" opacity="0.5"/>
-        </g>
-        <g transform="translate(224,28)" fill="var(--accent-critical)">
-          <path d="${gearPath(7, 7, 7.2, 4.4, 8)}"/>
-          <circle cx="7" cy="7" r="2.6" fill="var(--surface)"/>
-        </g>
+        <rect x="30" y="60" width="24" height="24" fill="var(--line)" opacity="0.7"/>
+        <rect x="66" y="46" width="24" height="38" fill="var(--line)" opacity="0.85"/>
+        <line x1="115" y1="60" x2="150" y2="30" stroke="var(--accent-secure)" stroke-width="4" stroke-linecap="round"/>
+        <path d="M140 28l12-3-3 12" fill="none" stroke="var(--accent-secure)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="175" y="40" width="24" height="44" fill="var(--accent-secure)" opacity="0.65"/>
+        <rect x="205" y="20" width="24" height="64" fill="var(--accent-secure)"/>
+        <circle cx="217" cy="20" r="10" fill="var(--accent-signal)"/>
+        <path d="M212 20l3.5 3.5 7-7" fill="none" stroke="var(--text-on-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>`
     };
     return svgs[id] || "";
