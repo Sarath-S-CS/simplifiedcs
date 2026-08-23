@@ -98,7 +98,11 @@ export const INFRA_NODES = [
     visibleIf: (answers) => answers.sdwanUsed === "Yes",
     quickSkip: true,
   }),
-  select("networkArch", "infra", "How would you describe your network architecture?", ["Flat / mostly unsegmented", "Segmented (VLANs / zones)", "Zero-trust / microsegmented"], { required: true }),
+  select("networkArch", "infra", "How would you describe your network architecture?", ["Flat / mostly unsegmented", "Segmented (VLANs / zones)", "Zero-trust / microsegmented"], {
+    required: true,
+    allowOther: true,
+    otherPlaceholder: "e.g. hub-and-spoke across multiple sites, SD-WAN overlay",
+  }),
   select("externalDevices", "infra", "Do you have external-facing devices (VPN gateways, remote-access appliances, firewalls with public IPs)?", ["Yes", "No"], { required: true }),
   vendor("edgeDeviceVendor", "infra", "What firewall / VPN gateway appliance handles that external access?", EDGE_DEVICE_VENDORS, {
     visibleIf: (answers) => answers.externalDevices === "Yes",
@@ -134,7 +138,11 @@ export const DEVSEC_NODES = [
       "Security scanning exists but isn't enforced in the pipeline",
       "Security gates (SAST/dependency scanning) enforced in CI/CD",
     ],
-    { visibleIf: (answers) => answers.developsSoftware === "Yes" }
+    {
+      visibleIf: (answers) => answers.developsSoftware === "Yes",
+      allowOther: true,
+      otherPlaceholder: "e.g. manual peer code review required, no automated scanning",
+    }
   ),
   select(
     "secretsManagement",

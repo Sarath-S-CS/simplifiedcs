@@ -30,7 +30,11 @@ export function computeFrameworkRecommendations(state) {
         const val = state.answers[q.id];
         if (val >= maxOpt) return null;
         const chosen = q.options.find((o) => o.v === val);
-        return { question: q.text, chosen: chosen ? chosen.t : String(val) };
+        // ASSESSMENT-REPORT-DEPTH-BRIEF.md §6: `id` lets the results screen
+        // look up the exact same QUESTION_GUIDANCE entry used in the
+        // Priorities list, so a compliance gap gets the identical five-part
+        // treatment instead of a second, separately-maintained copy of it.
+        return { id: q.id, question: q.text, chosen: chosen ? chosen.t : String(val), severity: maxOpt - val };
       })
       .filter(Boolean);
     return {

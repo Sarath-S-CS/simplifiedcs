@@ -141,27 +141,38 @@ function drawKeyValueRow(doc, label, value, y) {
   return y + 4;
 }
 
-// Technique/explain/control detail for one finding or priority gap,
-// measured as a whole so the block page-breaks as a unit when it fits on
-// a fresh page, rather than splitting mid-explanation whenever avoidable.
+// ASSESSMENT-REPORT-DEPTH-BRIEF.md §6/§9: the PDF gets the same five-part
+// treatment as the on-screen report (always the "full" shape - a PDF export
+// has no Quick/Full rendering distinction of its own to condense for),
+// measured as a whole so the block page-breaks as a unit when it fits on a
+// fresh page, rather than splitting mid-explanation whenever avoidable.
 function measureGuidanceHeight(doc, guidance) {
   if (!guidance) return 0;
-  let h = LINE_H + 4; // technique line
-  h += measureWrappedHeight(doc, `Why this matters: ${guidance.explain}`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
-  h += measureWrappedHeight(doc, `Compensating control: ${guidance.control}`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
+  let h = 0;
+  if (guidance.traceability) h += measureWrappedHeight(doc, `Why this was flagged: ${guidance.traceability}`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
+  h += LINE_H + 4; // technique line
+  h += measureWrappedHeight(doc, `What could go wrong: ${guidance.explain}`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
+  if (guidance.control) h += measureWrappedHeight(doc, `Interim step: ${guidance.control}`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
+  if (guidance.remediation) h += measureWrappedHeight(doc, `How to fix it: ${guidance.remediation}`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
+  if (guidance.reference) h += measureWrappedHeight(doc, `Reference: ${guidance.reference.label} (${guidance.reference.url})`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
   return h;
 }
 
 function drawGuidance(doc, guidance, y) {
   const x = MARGIN + 14;
   const w = CONTENT_W - 14;
+  if (guidance.traceability) {
+    y = drawWrapped(doc, `Why this was flagged: ${guidance.traceability}`, x, y, w, { fontSize: 9.5, color: COLOR_TEXT }) + 4;
+  }
   const techniqueLabel = guidance.technique ? `MITRE ATT&CK: ${guidance.technique.id} - ${guidance.technique.name}` : "Not mapped to a specific ATT&CK technique - this is a program-level gap, not a single attacker technique.";
   y = ensureSpace(doc, y, LINE_H + 4);
   setStyle(doc, { fontSize: 9.5, style: "italic", color: COLOR_MUTED });
   doc.text(techniqueLabel, x, y);
   y += LINE_H + 4;
-  y = drawWrapped(doc, `Why this matters: ${guidance.explain}`, x, y, w, { fontSize: 9.5, color: COLOR_TEXT }) + 4;
-  y = drawWrapped(doc, `Compensating control: ${guidance.control}`, x, y, w, { fontSize: 9.5, color: COLOR_TEXT }) + 4;
+  y = drawWrapped(doc, `What could go wrong: ${guidance.explain}`, x, y, w, { fontSize: 9.5, color: COLOR_TEXT }) + 4;
+  if (guidance.control) y = drawWrapped(doc, `Interim step: ${guidance.control}`, x, y, w, { fontSize: 9.5, color: COLOR_TEXT }) + 4;
+  if (guidance.remediation) y = drawWrapped(doc, `How to fix it: ${guidance.remediation}`, x, y, w, { fontSize: 9.5, color: COLOR_TEXT }) + 4;
+  if (guidance.reference) y = drawWrapped(doc, `Reference: ${guidance.reference.label} - ${guidance.reference.url}`, x, y, w, { fontSize: 9.5, color: COLOR_MUTED }) + 4;
   return y;
 }
 
@@ -222,6 +233,18 @@ export function buildAssessmentPdfDoc(ctx) {
 
   // --- Overall score + per-function breakdown ---
   y = drawSectionHeading(doc, "Overall Score", y);
+  // ASSESSMENT-REPORT-DEPTH-BRIEF.md §9: same one-time, prominent
+  // clarification as the on-screen report - stated once here, not
+  // repeated next to every function bar below.
+  y = drawWrapped(
+    doc,
+    "Higher percentages mean a stronger security posture - not compliance completeness, not exposure level. 100% would mean every control this assessment checks for is fully in place; it doesn't mean risk-free.",
+    MARGIN,
+    y,
+    CONTENT_W,
+    { fontSize: 9, style: "italic", color: COLOR_MUTED }
+  );
+  y += 14;
   setStyle(doc, { fontSize: 28, style: "bold", color: COLOR_HEADING });
   doc.text(`${overall}%`, MARGIN, y + 6);
   setStyle(doc, { fontSize: 13, style: "normal", color: COLOR_TEXT });
@@ -280,8 +303,11 @@ export function buildAssessmentPdfDoc(ctx) {
       y += 3;
       if (r.gaps.length) {
         for (const g of r.gaps) {
+          const gapGuidance = guidanceForGapItem(g, answers);
           y = drawWrapped(doc, `Gap: ${g.question} - currently: "${g.chosen}"`, MARGIN + 14, y, CONTENT_W - 14, { fontSize: 9.5 });
           y += 2;
+          if (gapGuidance) y = drawGuidance(doc, gapGuidance, y);
+          y += 6;
         }
       } else if (r.questionCount) {
         y = drawWrapped(doc, `No gaps flagged in the ${r.name}-specific questions above.`, MARGIN + 14, y, CONTENT_W - 14, { fontSize: 9.5, color: COLOR_MUTED });
