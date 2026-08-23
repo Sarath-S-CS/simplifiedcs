@@ -915,73 +915,8 @@
   .stamp-icon svg{ width:100%; height:100%; }
   .stamp-label{ position:relative; z-index:1; font-family:var(--mono); font-size:7.5px; line-height:1.15; letter-spacing:0.01em; text-transform:uppercase; color:var(--stamp-color); }
   @media (max-width:480px){ .stamp{ width:64px; height:64px; } }
-  /* SITEWIDE-LAYOUT-OVERHAUL-BRIEF.md §1-2: full-bleed section, breaking
-     out of .app's max-width the same way .masthead already does (see the
-     long comment above .masthead) - var(--viewport-width) instead of raw
-     100vw for the identical reason: 100vw includes the scrollbar gutter
-     on desktop and would force a permanent horizontal scrollbar. Padding
-     is computed rather than a plain percentage because CSS resolves
-     padding percentages against the *containing block* (.page, ~1200px),
-     not this element's own full-bleed width - max(0px, (viewport-1200)/2)
-     reproduces .app's own centering math so a section's content lines up
-     with the rest of the page's reading column at every viewport width,
-     with no inner wrapper element needed at any of this file's 50+
-     .section-tile call sites. */
-  .section-tile{
-    width:var(--viewport-width, 100vw);
-    margin-left:calc(50% - (var(--viewport-width, 100vw) / 2));
-    padding-top:76px;
-    padding-bottom:76px;
-    padding-left:calc(max(0px, (var(--viewport-width, 100vw) - 1200px) / 2) + clamp(24px, 4vw, 64px));
-    padding-right:calc(max(0px, (var(--viewport-width, 100vw) - 1200px) / 2) + clamp(24px, 4vw, 64px));
-    border:none;
-    border-radius:0;
-    box-shadow:none;
-    backdrop-filter:none;
-    -webkit-backdrop-filter:none;
-    background:#000000;
-    /* Every section below is a deliberately bold, dark color block
-       (§2) regardless of the site's own light/dark theme setting - a
-       black or dark-green/violet section always needs light text, so
-       these re-declare the same design tokens dark theme already uses
-       at :root, scoped to this element. In dark theme this is a no-op;
-       in light theme it's what stops every card/badge/link nested inside
-       a section from resolving to light-theme's dark-on-white palette
-       and going illegible against a black background. */
-    --bg:#000000;
-    --surface:#0A0D0B;
-    --surface-raised: rgba(255,255,255,0.035);
-    --tile-bg: rgba(255,255,255,0.035);
-    --line:#243B2C;
-    --text:#E6F3EA;
-    --text-muted:#6FA083;
-    --accent-signal:#01A982;
-    --accent-secure:#017F63;
-    --accent-critical:#D6685F;
-    --accent-violet:#B48EC7;
-    --accent-amber:#E0A94A;
-    --accent-pop:#FF5FA2;
-    --text-on-accent:#04140A;
-    --illus-blue:#3E8EDE;
-    --illus-blue-deep:#1C4F86;
-    --illus-purple:#8B6FE0;
-    --illus-purple-deep:#5B3FA0;
-    --tint-signal: rgba(1,169,130,0.14);
-    --tint-signal-soft: rgba(1,169,130,0.08);
-    --tint-signal-strong: rgba(1,169,130,0.22);
-    --tint-secure: rgba(1,127,99,0.14);
-    color:var(--text);
-  }
-  @media (max-width:720px){ .section-tile{ padding-top:52px; padding-bottom:52px; } }
-  /* Exact values confirmed via live demo (SITEWIDE-LAYOUT-OVERHAUL-BRIEF.md
-     §2) - solid black, a dark green gradient, and (reserved specifically
-     for sections whose content has that same green-to-violet narrative
-     arc as the Three Phases section) a green-to-violet gradient. Applied
-     per section by hand at each call site, not a blind nth-of-type rule -
-     see the per-page reasoning at each .section-tile usage in main.js. */
-  .section-tile--black{ background:#000000; }
-  .section-tile--green{ background:linear-gradient(135deg, #0a2e22 0%, #0f3d2a 100%); }
-  .section-tile--green-violet{ background:linear-gradient(135deg, #1a1035 0%, #0a2e22 100%); }
+  .section-tile{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:32px 36px; }
+  @media (max-width:720px){ .section-tile{ padding:22px 20px; } }
   .section-tile .section-h:first-child{ margin-top:0; }
   /* .page is a flex container, and its .section-tile children have
      z-index:auto - a z-indexed overlay nested inside one can't escape to
@@ -990,21 +925,12 @@
      regardless of a descendant's own z-index). Elevating the container
      itself, only while it holds an open overlay, fixes that. */
   .section-tile.has-open-overlay{ position:relative; z-index:6; }
-  /* Full-bleed sections need to sit flush against each other for a hard
-     color change with no gap showing the page's own background through -
-     .page's flex `gap` is left alone (still needed between a .page-intro
-     and the first section, and in non-section-tile flex layouts like the
-     assessment wizard), and only cancelled here, between two adjacent
-     sections specifically. Flex `gap` behaves like margin for this
-     purpose, so a matching negative margin on the second item reliably
-     collapses it in every current browser. */
-  .section-tile + .section-tile{ margin-top:-36px; }
 
   /* --- scroll-reveal + tab transitions --- */
   .section-tile, .page-intro{
     opacity:0;
-    transform:translateY(24px);
-    transition:opacity .7s ease, transform .7s ease;
+    transform:translateY(18px);
+    transition:opacity .55s ease, transform .55s ease;
   }
   .section-tile.revealed, .page-intro.revealed{
     opacity:1;
