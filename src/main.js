@@ -1686,7 +1686,7 @@ function renderHomeTab(container){
         ${buildHeroInfinity()}
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h" id="how-it-works">How it works</h3>
         <p class="body-text">Four steps, start to finish.</p>
         <div class="phase4-grid">
@@ -1704,7 +1704,7 @@ function renderHomeTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <div class="page-intro-row">
           <div class="page-intro-text">
             <h3 class="section-h">Methodology</h3>
@@ -1730,7 +1730,7 @@ function renderHomeTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--green-violet">
+      <div class="section-tile">
         <h3 class="section-h">The three phases of the assessment</h3>
         <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage below for a quick summary of what it involves.</p>
         <div class="workflow-row">
@@ -1750,7 +1750,7 @@ function renderHomeTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Risk Score Matrix</h3>
         <p class="body-text">Every assessment runs on a scored matrix (see the <a href="${pathForTab('metrics')}" id="linkMetricsFromHome" class="inline-link">Metrics</a> page for the full breakdown). Select a number for what that risk level actually means:</p>
         <div class="risk-slider-wrap">
@@ -1764,7 +1764,7 @@ function renderHomeTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">Things to get you started</h3>
         <p class="body-text">Real, current sources - not just this site's own content.</p>
         <div class="start-links">
@@ -1793,7 +1793,7 @@ function renderHomeTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Explore the site</h3>
         <p class="body-text">Everything this platform offers, in one map.</p>
         <div class="site-tile-grid">
@@ -1940,13 +1940,13 @@ function renderMethodologyTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Why NIST CSF and CIS Controls</h3>
         <p class="body-text"><b>NIST CSF 2.0</b> was built by the U.S. National Institute of Standards and Technology as an outcomes-based framework rather than a prescriptive technical checklist - it describes <i>what</i> a mature security program achieves (govern, identify, protect, detect, respond, recover) without dictating exactly how. That makes it vendor-neutral, technology-agnostic, and adopted internationally well beyond the US, which is exactly why it works as a common baseline regardless of your size, sector, or maturity level. Nearly every other major framework - ISO 27001, SOC 2, the others in this assessment - maps cleanly onto its structure, so it functions as a shared language between them rather than one more competing standard.</p>
         <p class="body-text"><b>CIS Controls v8</b> was chosen to complement it for the opposite reason: where NIST CSF stays abstract, CIS is deliberately prescriptive and prioritized - a maintained, practical answer to "where do I actually start." Pairing the two gives this assessment both the high-level structure and the concrete, specific questions underneath it, rather than picking one at the expense of the other.</p>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">The framework backbone</h3>
         <p class="body-text">Every assessment scores six functions, matching <b>NIST CSF 2.0</b>, with question granularity drawn from <b>CIS Controls v8</b>. Each question maps to a real control - nothing here is invented.</p>
         <div class="func-legend">
@@ -1961,22 +1961,22 @@ function renderMethodologyTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Scoring, in brief</h3>
         <p class="body-text">Each question scores 0, 1, or 2 depending on the answer chosen, rolled up into a function score and an overall percentage. The full breakdown of exactly how that's calculated, what each score band means, and how to read your result lives on the <a href="${pathForTab('metrics')}" id="linkMetricsFromMethod" class="inline-link">Metrics</a> page.</p>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">Why the questions themselves change</h3>
         <p class="body-text">Before scoring starts, you choose an industry and any relevant compliance standards (ISO 27001 / NIS2 / SOC 2), which inject a handful of framework-specific questions into the relevant functions. Two further sections adapt on their own: <b>Operational Technology</b> is skipped by default for industries where it's rarely applicable (and can be included manually), and <b>DevSecOps / containerization</b> only expands if you confirm you develop software. Nobody answers questions that don't apply to them.</p>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">The part that isn't just averaging</h3>
         <p class="body-text">Before the results are shown, every answer is cross-checked against every other answer for known dangerous combinations - not just totalled. No MFA plus many unreviewed vendors, exposed remote access plus untested backups, no email authentication plus no security training: each is flagged as its own finding, because the combination is materially riskier than either gap alone. This is the difference between a scored checklist and an actual risk read.</p>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">Vendor-aware, not a scanner</h3>
         <p class="body-text">If you name specific products (a firewall vendor, hosting provider, etc.), the report can surface mitigation guidance tied to well-documented historical exploitation patterns for that product. This is intentionally illustrative, not a live vulnerability feed - it's a prompt to check current advisories, not a substitute for a real vulnerability management program.</p>
         <div class="cta-row">
@@ -2031,7 +2031,7 @@ function renderMaturityTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Model at a glance</h3>
         <p class="body-text">All ten phases side by side: what goes in, what comes out, and what "done" actually looks like before the program moves on. Use this as the quick reference; the sections below go phase by phase in depth.</p>
         <div class="table-wrap">
@@ -2053,15 +2053,9 @@ function renderMaturityTab(container){
         </div>
       </div>
   `;
-  stageOrder.forEach((stageId, stageIdx)=>{
+  stageOrder.forEach(stageId=>{
     const meta = STAGE_META[stageId];
-    // SITEWIDE-LAYOUT-OVERHAUL-BRIEF.md §2: unlike Home's single combined
-    // Three Phases section, these are three separate section-tiles - the
-    // reserved green-violet arc gradient is for one section whose content
-    // spans green-to-violet, not a single stage's own color alone, so a
-    // plain black/green alternation is used here instead.
-    const stageBg = stageIdx % 2 === 0 ? 'section-tile--green' : 'section-tile--black';
-    html += `<div class="section-tile ${stageBg}" id="maturity-${stageId}">`;
+    html += `<div class="section-tile" id="maturity-${stageId}">`;
     html += `
       <div class="stage-band" style="--stage-color:${meta.color}">
         <div class="stage-illustration stage-illustration-sm">${stageIllustration(stageId)}</div>
@@ -2080,14 +2074,14 @@ function renderMaturityTab(container){
     html += `</div>`;
   });
   html += `
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <div class="roadmap-loop">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-signal)" stroke-width="1.8" stroke-linecap="round"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"/><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"/></svg>
           <span>Phase 10 feeds back into Phase 4 - the Assessment tab is designed to be re-run on a cadence, precisely to drive this loop rather than end it.</span>
         </div>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">Maturity is a known concept - we're borrowing it deliberately</h3>
         <p class="body-text">NIST CSF itself defines four <b>Implementation Tiers</b> describing how an organization's risk management practice matures - this site's repeat-assessment design mirrors that same progression, just measured through this specific instrument instead of a qualitative review.</p>
         <div class="tier-track">
@@ -2098,7 +2092,7 @@ function renderMaturityTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">The full phase table</h3>
         <p class="body-text">Every phase, with how it's actually monitored and what it unlocks next. For how your score itself is calculated, see the <a href="${pathForTab('metrics')}" id="linkMetricsFromMaturity" class="inline-link">Metrics</a> page.</p>
         <div class="table-wrap">
@@ -2212,12 +2206,12 @@ function renderMetricsTab(container){
         <p class="page-lede">Exactly how a score is calculated, what each band means, and how to read your result - all the scoring mechanics in one place.</p>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">How the score is calculated</h3>
         <p class="body-text">Each question scores 0, 1, or 2 depending on the answer chosen. A function's score is the sum of its answers divided by the maximum possible, expressed as a percentage. The overall score is the average across all six NIST CSF functions - visible as the radial gauge on your results page. This is a straightforward roll-up, but it isn't the whole picture: see "the part that isn't just averaging" on the <a href="${pathForTab('methodology')}" id="linkMethodFromMetrics1" class="inline-link">Methodology</a> page for how compounding-risk flags factor in separately.</p>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">Reading your score</h3>
         <p class="body-text">The overall percentage is a snapshot, not a grade. It exists to be compared against your <i>own</i> next assessment - the trend matters more than any single number.</p>
         <div class="verdict-scale">
@@ -2228,7 +2222,7 @@ function renderMetricsTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Why your score is what it is</h3>
         <p class="body-text">Bands below are shown on a 0–10 scale (your overall percentage ÷ 10) - a 5–7, for example, means something specific about your organization, not just "middling." For how each phase of the <a href="${pathForTab('maturity')}" id="linkMaturityFromMetrics" class="inline-link">Maturity Model</a> connects to these bands, see that page directly.</p>
         ${SCORE_RUBRIC.map(r=>`
@@ -2242,7 +2236,7 @@ function renderMetricsTab(container){
         `).join('')}
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">How this site tracks it over time</h3>
         <p class="body-text">Every completed assessment is saved. Your next run shows the score delta, which specific findings were resolved, and which are newly flagged - the closest thing this tool has to watching an organization actually improve, run over run, rather than guessing at where it stands.</p>
         <div class="cta-row">
@@ -2333,7 +2327,7 @@ function renderRoadmapTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">Shipped &amp; accessible now</h3>
         <p class="body-text">Fully functional in the live version of this site today.</p>
         <div class="roadmap-log-grid">
@@ -2346,7 +2340,7 @@ function renderRoadmapTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Work in progress</h3>
         <p class="body-text">Being actively built right now.</p>
         ${ROADMAP_IN_PROGRESS.length ? `
@@ -2362,7 +2356,7 @@ function renderRoadmapTab(container){
         <p class="body-text">Nothing actively in progress right now.</p>`}
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">Planned / ideation</h3>
         <p class="body-text">Not yet started - scoped and intended, not yet onboarded.</p>
         <div class="roadmap-log-grid">
@@ -2412,7 +2406,7 @@ function renderRunbookTab(container){
         <p class="page-lede">Guidance on the documents every program needs, and step-by-step runbooks for the incidents most likely to happen - ransomware, phishing, DDoS, and lateral movement.</p>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Keeping documents alive, not just written</h3>
         <div class="lifecycle-row">
           <p class="body-text">A policy that's never reviewed is a policy that's already wrong. Every foundational document below should move through the same cycle continuously:</p>
@@ -2420,12 +2414,12 @@ function renderRunbookTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">Foundational Documents</h3>
         <div id="docAccordions"></div>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Incident Runbooks</h3>
         <p class="body-text">Each of these is meant to be printable and usable mid-incident - short, ordered, and specific enough that whoever's on call at 2am isn't improvising.</p>
         <div id="runbookAccordions"></div>
@@ -2475,7 +2469,7 @@ function renderMaturityModelTab(container){
         <p class="page-lede">What this tool is, how it's used, and what it covers.</p>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Contents</h3>
         <ul class="toc-list">
           <li><a href="#mm-what">What this tool is</a></li>
@@ -2485,7 +2479,7 @@ function renderMaturityModelTab(container){
         </ul>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h" id="mm-what">What this tool is</h3>
         <p class="body-text">A self-assessment and advisory instrument that scores an organization's cybersecurity health against NIST CSF 2.0 and CIS Controls v8, cross-references answers for compounding risk instead of scoring each in isolation, and tracks maturity across repeated runs over time.</p>
 
@@ -2584,7 +2578,7 @@ function renderStarterGuideTab(container){
         <p class="page-lede">A guided, in-order read for anyone starting from zero - new to cybersecurity, or standing up IT/security for a new company for the first time. Explains why each thing matters and how the pieces connect, before you touch the actual assessment.</p>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Contents</h3>
         <ul class="toc-list">
           ${STARTER_GUIDE_SECTIONS.map(s=>`<li><a href="#${s.id}" class="sg-toc-link" data-target="${s.id}">${s.title}</a></li>`).join('')}
@@ -2592,11 +2586,11 @@ function renderStarterGuideTab(container){
         </ul>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <div id="sgAccordions"></div>
       </div>
 
-      <div class="section-tile section-tile--black" id="sg-further-reading">
+      <div class="section-tile" id="sg-further-reading">
         <h3 class="section-h">Further reading</h3>
         <p class="body-text">Real, current sources beyond this site's own content - each verified directly before being listed here.</p>
         <div class="start-links">
@@ -2671,7 +2665,7 @@ async function renderNewsTab(container){
         <h2 class="page-title">Trends & News</h2>
         <p class="page-lede">A curated read of what's actually happening in the threat landscape and in AI-for-security - the same context a good consultant would bring into a conversation with you.</p>
       </div>
-      <div class="section-tile section-tile--black revealed"><p class="body-text">Loading the latest…</p></div>
+      <div class="section-tile revealed"><p class="body-text">Loading the latest…</p></div>
     </div>
   `;
   const newsData = await loadNewsData();
@@ -2697,7 +2691,7 @@ function renderNewsList(container, newsData){
         <p class="page-lede">A curated read of what's actually happening in the threat landscape and in AI-for-security - the same context a good consultant would bring into a conversation with you.</p>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <p class="news-freshness">${freshness}</p>
         <div class="news-filters">
           ${NEWS_CATS.map(c=>`<button class="filter-pill ${newsFilter===c.id?'active':''}" data-cat="${c.id}">${c.label}</button>`).join('')}
@@ -2725,7 +2719,7 @@ function renderNewsList(container, newsData){
         </div>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">Where to keep following this yourself</h3>
         <p class="body-text">This tab is a snapshot; these are live, ongoing sources across every format worth following - podcasts for the commute, newsletters for the inbox, and communities for everything in between.</p>
         <div class="resource-groups">
@@ -2855,7 +2849,7 @@ async function renderExploitsTab(container){
           <div class="exploit-radar-wrap">${buildExploitsRadarSvg()}</div>
         </div>
       </div>
-      <div class="section-tile section-tile--black revealed"><p class="body-text">Loading the latest…</p></div>
+      <div class="section-tile revealed"><p class="body-text">Loading the latest…</p></div>
     </div>
   `;
   const exploitsData = await loadExploitsData();
@@ -2886,11 +2880,11 @@ function renderExploitsList(container, exploitsData){
       </div>
 
       ${!exploitsData.live || !exploitsData.items.length ? `
-        <div class="section-tile section-tile--black">
+        <div class="section-tile">
           <p class="body-text">Live exploit data isn't available right now. Nothing's lost - this refreshes daily - but in the meantime, see <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener noreferrer" class="inline-link">CISA's KEV catalog</a> directly.</p>
         </div>
       ` : `
-        <div class="section-tile section-tile--black">
+        <div class="section-tile">
           <p class="news-freshness">Refreshed daily from CISA's Known Exploited Vulnerabilities catalog, VulnCheck's KEV, and ENISA's EU Vulnerability Database, scored with EPSS (Exploit Prediction Scoring System) from FIRST.org - a model estimating the probability a vulnerability will actually be exploited, not just how severe it could theoretically be. Ranked by priority and capped at the ${EXPLOITS_RETENTION_CAP} highest-priority entries, not just newest-first, so the list stays current without growing unbounded.</p>
           <div class="news-filters">
             ${EXPLOIT_FILTERS.map(f=>`<button class="filter-pill ${exploitsFilter===f.id?'active':''}" data-filter="${f.id}">${f.label}</button>`).join('')}
@@ -2962,7 +2956,7 @@ function renderGlossaryTab(container){
         <h2 class="page-title">Glossary</h2>
         <p class="page-lede">Every cybersecurity term used across this site, defined in plain language and sorted alphabetically.</p>
       </div>
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <div class="alpha-index">
           ${alphabet.map(l=> groups[l]
             ? `<a class="alpha-chip" href="#gl-${l}">${l}</a>`
@@ -2989,7 +2983,7 @@ function renderReferencesTab(container){
         <h2 class="page-title">References</h2>
         <p class="page-lede">The frameworks, catalogs, and reports this assessment is built on and cites.</p>
       </div>
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <ul class="ref-list">
           ${REFERENCES.map(r=>`
             <li>
@@ -3013,7 +3007,7 @@ function renderFeedbackTab(container){
         <h2 class="page-title">Send feedback</h2>
         <p class="page-lede">Found something broken, confusing, or missing? Think a feature should exist? This goes straight to the creator - no account or email of yours required.</p>
       </div>
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <div id="feedbackFormWrap">
           <form id="feedbackForm">
             <div class="field">
@@ -3099,7 +3093,7 @@ function renderAboutTab(container){
         <p class="page-lede">Most recently, the platform added a <b>hybrid AI layer</b> to the results. Every report is still built first by the same tested, deterministic scoring engine the assessment has run on from the start - that part doesn't change, and it's already complete and accurate on its own. On top of it, an optional live pass checks your named vendors and products against current CISA and NVD vulnerability data, and looks for patterns in your specific answers the fixed rule set wasn't built to anticipate. It's clearly labeled wherever it appears, and it's additive, not a replacement.</p>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">A few technical highlights, for anyone skimming</h3>
         <ul class="tech-highlights-list">
           <li>An <b>adaptive decision-graph engine</b>, not a static form - questions branch on industry, region, infrastructure, and prior answers, with a session-wide <b>de-duplication system</b> so nothing is ever asked twice</li>
@@ -3110,13 +3104,13 @@ function renderAboutTab(container){
         </ul>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">The idea behind the mark</h3>
         <p class="body-text">Fragments, scattered and disconnected, converging into a single, complete shield. That's meant to mirror what this tool actually does - individually small, disconnected gaps (a missing control here, an unpatched system there) assembling into your real security posture once they're identified and addressed together.</p>
         <div class="logo-assembly-wrap" id="logoAssemblyWrap"></div>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <p class="body-text">This section is intentionally left blank for now.</p>
       </div>
     </div>
@@ -3164,7 +3158,7 @@ function renderCorePrinciplesTab(container){
         <h2 class="page-title">Core Principles</h2>
         <p class="page-lede">The cybersecurity principles this site is designed around - not a marketing list, the actual reasoning behind how the assessment, scoring, and recommendations are built.</p>
       </div>
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <div class="principles-grid">
           ${CORE_PRINCIPLES.map((p,i)=>`
             <div class="principle-card">
@@ -3192,7 +3186,7 @@ function renderPlaybooksTab(container){
         <p class="page-lede">Top attack types curated based on OWASP Top 10, mapped through MITRE ATT&amp;CK/ATLAS to concrete mitigations.</p>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">What a playbook is</h3>
         <div class="lifecycle-row">
           <p class="body-text">A playbook is a structured, step-by-step reference that pairs a specific attack pattern with a defined set of detection and mitigation actions, so a team responds consistently rather than improvising mid-incident. Each one below is created by identifying a classified attack type, mapping it to a MITRE ATT&amp;CK or ATLAS tactic, and deriving mitigation steps from the applicable NIST CSF controls. They exist so that response knowledge lives in a document instead of one person's head - repeatable across a team and over time. In practice, a company keeps the relevant playbook accessible to whoever is on call, walks through it during tabletop exercises (see Maturity Model Phase 7 - Response Readiness & Testing), and updates it whenever a real incident exposes a gap.</p>
@@ -3200,7 +3194,7 @@ function renderPlaybooksTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">Selection criteria</h3>
         <p class="body-text">Attack types included below were chosen against four criteria:</p>
         <ol class="ordered-list">
@@ -3208,7 +3202,7 @@ function renderPlaybooksTab(container){
         </ol>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">OSINT tools referenced</h3>
         <p class="body-text">Building and validating a playbook draws on the following open-source intelligence and reconnaissance tools - used here strictly for reference and threat-model construction, not for conducting unauthorized testing.</p>
         <div class="osint-grid">
@@ -3216,14 +3210,14 @@ function renderPlaybooksTab(container){
         </div>
       </div>
 
-      <div class="section-tile section-tile--green">
+      <div class="section-tile">
         <h3 class="section-h">How MITRE ATT&amp;CK / ATLAS is used</h3>
         <p class="body-text">MITRE ATT&amp;CK organizes real-world adversary behavior into Tactics (the attacker's goal at a given stage - Initial Access, Execution, Persistence, Privilege Escalation, Defense Evasion, Credential Access, Discovery, Lateral Movement, Collection, Command and Control, Exfiltration, Impact) and Techniques (the specific method used to achieve that goal, each with a standard ID such as T1190). For AI/LLM-specific attack types, MITRE ATLAS - a parallel framework scoped specifically to adversarial threats against AI/ML systems - is referenced instead, since classic ATT&amp;CK wasn't built to describe attacks like prompt injection or model poisoning.</p>
         <h3 class="section-h">Mapping methodology</h3>
         <p class="body-text">Each playbook below follows the same construction path: the attack type is anchored to its OWASP category; the underlying attacker behavior is mapped to its corresponding MITRE ATT&amp;CK or ATLAS tactic (and technique ID where one applies); the mitigation steps are derived primarily from the NIST CSF Protect and Detect functions; and each entry is kept to four concrete, achievable steps rather than an exhaustive checklist, consistent with this site's Runbooks tab.</p>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Example playbooks</h3>
         <div id="playbookAccordions"></div>
       </div>
@@ -3259,7 +3253,7 @@ function renderCaseStudyTab(container){
         <p class="page-lede">Eight watershed cybersecurity incidents - each one traces back to a gap this site is specifically built to catch before it becomes a headline.</p>
       </div>
 
-      <div class="section-tile section-tile--black">
+      <div class="section-tile">
         <h3 class="section-h">Watershed incidents</h3>
         <div class="case-grid">
           ${CASE_STUDIES.map(c=>`
@@ -3318,7 +3312,7 @@ async function renderHistory(){
       <h2 class="page-title">Assessment History</h2>
       <p class="page-lede">${runs.length} assessment${runs.length===1?'':'s'} saved on this account.</p>
     </div>
-    <div class="section-tile section-tile--black">
+    <div class="section-tile">
       ${runs.length>=2 ? buildTrendSvg(runs) : ''}
       <div class="history-list">
         ${runs.length ? runs.slice().reverse().map(r=>`
