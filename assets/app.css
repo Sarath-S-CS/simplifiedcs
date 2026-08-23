@@ -210,6 +210,12 @@
     grid-template-columns:180px 1fr;
     gap:40px;
   }
+  /* ASSESSMENT-REPORT-DEPTH-BRIEF.md §1: the landing and sample-report
+     phases render no rail content at all - without this, the grid still
+     reserved the 180px + 40px column for an empty div, leaving the panel
+     visibly shifted right instead of centered. */
+  .rail.rail-empty{ display:none; }
+  .layout:has(.rail.rail-empty){ grid-template-columns:minmax(0,1fr); }
   @media (max-width:720px){
     /* minmax(0,1fr), not bare 1fr - same gotcha already fixed for
        .phase4-grid (PR #34): a bare 1fr track's minimum is auto (its
@@ -616,6 +622,10 @@
   /* --- results --- */
   .results{ display:none; }
   .results.show{ display:block; }
+  /* ASSESSMENT-REPORT-DEPTH-BRIEF.md §9: a one-time, prominent legend
+     clarifying score direction - not repeated next to every bar. */
+  .score-direction-legend{ font-size:13px; color:var(--text-muted); background:var(--surface-raised); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin:0 0 20px; }
+  .score-direction-legend b{ color:var(--text); }
   .gauge-row{
     display:grid;
     grid-template-columns:200px 1fr;

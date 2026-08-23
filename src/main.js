@@ -1173,6 +1173,16 @@ function renderHamburgerMenu(){
 }
 
 function goToTab(id, anchor){
+  // ASSESSMENT-REPORT-DEPTH-BRIEF.md §2: re-clicking "Assessment" while
+  // already viewing it (Sample Report, mid-wizard, results) is a deliberate
+  // "start over" action, not a same-tab no-op - requestLanding() confirms
+  // first if that would discard real in-progress work, and this is also
+  // what fixes the confirmed "does nothing while viewing a Sample Report"
+  // bug (that phase previously just re-rendered itself identically).
+  if(id === 'assessment' && activeTab === 'assessment'){
+    assessmentController.requestLanding();
+    return;
+  }
   activeTab = id;
   pendingAnchor = anchor || null;
   const path = pathForTab(id, anchor);

@@ -51,6 +51,14 @@ export function computeFlags(state) {
   if (answers.externalWebsite === "Yes" && answers.webDb === "Yes" && (answers.siem === 0 || answers.exfil === 0)) {
     flags.push({ id: "exposed-db-app-no-monitoring", text: "A public-facing web app that connects to a backend database, without centralized logging or outbound-traffic monitoring, is precisely the setup where a SQL injection or similar attack goes unnoticed long enough to exfiltrate the entire database." });
   }
+  // ASSESSMENT-REPORT-DEPTH-BRIEF.md §4: the two new database-security
+  // questions compound specifically because they attack the same data from
+  // two different directions - encryption protects the data itself, access
+  // control protects the path to it. Missing both means a single leaked
+  // shared/admin credential exposes the entire dataset in plain, readable form.
+  if (answers.webDb === "Yes" && answers.dbEncryption === 0 && answers.dbAccessControl === 0) {
+    flags.push({ id: "db-unencrypted-weak-access", text: "A database that isn't encrypted at rest, combined with routine application access through shared or admin credentials rather than least-privilege accounts, means a single leaked credential - or a misplaced backup - exposes the entire dataset in plain, readable form, not just whatever the compromised account was meant to touch." });
+  }
   // Adapted for §5.2's team-structure rebuild: the direct equivalent of the
   // old "0 in-house staff + no formal management" combination is "outsourced
   // with no internal team, and not even a formal outsourced arrangement".
@@ -94,7 +102,12 @@ export function computeGapItems(state) {
     const val = state.answers[q.id];
     const maxOpt = Math.max(...q.options.map((o) => o.v));
     if (val === undefined || val < maxOpt) {
-      items.push({ id: q.id, fn: q.fn, gap: q.text, severity: maxOpt - (val ?? 0) });
+      // ASSESSMENT-REPORT-DEPTH-BRIEF.md §6: `chosen` (the actual option
+      // label picked) is what lets guidanceForGapItem() build a real
+      // traceability line ("you indicated X") generically, for any
+      // question, without a second per-question lookup table just for that.
+      const chosenOpt = q.options.find((o) => o.v === val);
+      items.push({ id: q.id, fn: q.fn, gap: q.text, severity: maxOpt - (val ?? 0), chosen: chosenOpt ? chosenOpt.t : "Not answered" });
     }
   });
   return items;

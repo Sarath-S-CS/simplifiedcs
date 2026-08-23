@@ -209,6 +209,8 @@ export const TEAM_STRUCTURE_NODES = [
     type: "multiselect",
     text: "How is cybersecurity managed day to day? (select all that apply)",
     options: DAY_TO_DAY_OPTIONS,
+    allowOther: true,
+    otherPlaceholder: "e.g. a part-time virtual CISO shared with another company",
     required: true,
     visibleIf: (answers) => a(answers).teamDedicated !== "IT services outsourced with no internal IT team",
     next: () => "inhouseSocCapability",

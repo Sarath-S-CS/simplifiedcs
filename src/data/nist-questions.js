@@ -88,9 +88,36 @@ export const NIST_QUESTIONS = [
   scored("Protect", "mfa", "Is multi-factor authentication enforced for remote and admin access?", [
     { v: 0, t: "No" }, { v: 1, t: "Admin accounts only" }, { v: 2, t: "Yes, everywhere" },
   ]),
+  // ASSESSMENT-REPORT-DEPTH-BRIEF.md §3: confirmed gap - passkeys/WebAuthn
+  // were never asked about anywhere in the question bank. Distinct from mfa
+  // above: an org can enforce MFA (a second factor added to a password)
+  // while having no passwordless option at all - passkeys specifically
+  // remove the phishable password step itself, not just add a second gate.
+  scored("Protect", "passkeys", "Does your organization support passkeys or other passwordless authentication methods (e.g. WebAuthn/FIDO2, platform biometrics), in addition to or instead of passwords?", [
+    { v: 0, t: "No - passwords (with or without a separate MFA step) are the only option" },
+    { v: 1, t: "Available for some systems or users, not broadly adopted" },
+    { v: 2, t: "Yes, actively deployed for key systems/accounts" },
+  ]),
   scored("Protect", "patching", "How are software patches and updates managed?", [
     { v: 0, t: "Ad hoc / manual" }, { v: 1, t: "Scheduled but inconsistent" }, { v: 2, t: "Automated, with an SLA" },
   ]),
+  // ASSESSMENT-REPORT-DEPTH-BRIEF.md §4: confirmed gap - profile-questions.js's
+  // webDb ("does that service connect to a backend database?") was a dead
+  // end, flowing straight into hosting questions with no follow-up at all.
+  // These three are genuine scored questions (not descriptive detail) so a
+  // "Yes" to webDb actually feeds the compounding-risk and compliance logic
+  // the way every other infrastructure fact in this assessment does.
+  scored("Protect", "dbEncryption", "Is that database encrypted at rest?", [
+    { v: 0, t: "No / not sure" }, { v: 1, t: "Some databases, not all" }, { v: 2, t: "Yes, all of them" },
+  ], { visibleIf: (answers) => answers.webDb === "Yes" }),
+  scored("Protect", "dbAccessControl", "Does routine application access to that database use least-privilege, application-specific credentials - not a shared or admin/root account?", [
+    { v: 0, t: "No - shared or admin credentials are used for routine app access" },
+    { v: 1, t: "Partially - some services still use shared/admin credentials" },
+    { v: 2, t: "Yes, dedicated least-privilege credentials throughout" },
+  ], { visibleIf: (answers) => answers.webDb === "Yes" }),
+  scored("Protect", "dbPatching", "Is the database software itself (not just the application) kept current and patched?", [
+    { v: 0, t: "Ad hoc / rarely patched" }, { v: 1, t: "Patched, but inconsistently or behind schedule" }, { v: 2, t: "Yes, on a defined, current patch cadence" },
+  ], { visibleIf: (answers) => answers.webDb === "Yes" }),
   scored("Protect", "training", "Do employees receive security awareness training?", [
     { v: 0, t: "Never" }, { v: 1, t: "Once, at onboarding" }, { v: 2, t: "Ongoing, recurring" },
   ]),

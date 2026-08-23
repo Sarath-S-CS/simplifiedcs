@@ -22,6 +22,8 @@ function stateWithMostFlags() {
     govPolicy: 0,
     externalWebsite: "Yes",
     webDb: "Yes",
+    dbEncryption: 0,
+    dbAccessControl: 0,
     teamDedicated: "IT services outsourced with no internal IT team",
     outsourcedStructure: "No formal outsourced arrangement - handled ad hoc",
     deployModel: "Cloud-only",
@@ -50,8 +52,8 @@ test("every flag id computeFlags() can produce has a FLAG_GUIDANCE entry", () =>
   const idsB = computeFlags(stateWithPhishingSimFlag()).map((f) => f.id);
   const fired = new Set([...idsA, ...idsB]);
 
-  // Sanity: this test's two states are expected to exercise all 16 flags.
-  assert.equal(fired.size, 16, `expected 16 distinct flags to fire, got ${fired.size}: ${[...fired].join(", ")}`);
+  // Sanity: this test's two states are expected to exercise all 17 flags.
+  assert.equal(fired.size, 17, `expected 17 distinct flags to fire, got ${fired.size}: ${[...fired].join(", ")}`);
 
   for (const id of fired) {
     assert.ok(Object.prototype.hasOwnProperty.call(FLAG_GUIDANCE, id), `no FLAG_GUIDANCE entry for fired flag "${id}"`);

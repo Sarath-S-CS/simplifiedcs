@@ -23,6 +23,7 @@ import { guidanceForFlag, guidanceForGapItem } from "../engine/mitre-guidance.js
 import { buildAssessmentPdf } from "../engine/pdf-report.js";
 import { saveProgress, loadProgress, clearProgress, hasSeenSaveNotice, markSaveNoticeSeen } from "../engine/local-save.js";
 import { showToast } from "./toast.js";
+import { matchOtherText } from "../engine/other-text-match.js";
 import { SAMPLE_ANSWERS, SAMPLE_AI_INSIGHTS } from "../data/sample-scenario.js";
 
 // ASSESSMENT-EXPERIENCE-BRIEF.md §4: brief, warm section-transition lines -
@@ -148,9 +149,16 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     const rail = getRail();
     if (!rail) return;
     if (ui.phase === "landing" || ui.phase === "sample") {
+      // ASSESSMENT-REPORT-DEPTH-BRIEF.md §1: an empty rail still reserved
+      // its 180px + 40px gap grid column (see .layout in app.css), which is
+      // exactly the ~220px the panel sat shifted right by - .rail-empty
+      // lets the grid collapse to a single column instead of leaving that
+      // space allocated to nothing.
       rail.innerHTML = "";
+      rail.classList.add("rail-empty");
       return;
     }
+    rail.classList.remove("rail-empty");
     const visiblePre = visibleProfileScreens();
     const items = ["Scope", ...visiblePre.map((s) => s.title), ...FUNCTIONS.map((fn) => FUNC_DISPLAY[fn]), "Reading"];
     let activeIdx;
@@ -194,6 +202,34 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     Object.assign(ui, saved.ui || {});
     renderRail();
     dispatchPhase();
+  }
+
+  // ASSESSMENT-REPORT-DEPTH-BRIEF.md §2: the "Assessment" nav link is a
+  // deliberate "start over" action - the landing screen (with its own
+  // Resume banner) is the one true entry point, not a silent resume of
+  // wherever the wizard was left. Only warn when that would actually
+  // discard something real: genuine in-progress answers mid-scope/profile/
+  // wizard. Sample Report, Results, and the landing screen itself have
+  // nothing at risk, so they proceed with no prompt - this is also what
+  // fixes "Assessment does nothing while viewing a Sample Report", since
+  // that phase now actively resets to landing instead of re-rendering itself.
+  function requestLanding() {
+    const midAssessment = (ui.phase === "scope" || ui.phase === "profile" || ui.phase === "wizard") && Object.keys(session.answers).length > 0;
+    if (midAssessment && !confirm("Starting a new assessment will discard your current progress. Continue?")) {
+      return false;
+    }
+    Object.keys(session.answers).forEach((k) => delete session.answers[k]);
+    session.asked = [];
+    session.dedupe = {};
+    session.quickMode = false;
+    clearProgress();
+    ui.phase = "landing";
+    ui.screenIndex = 0;
+    ui.categoryIndex = 0;
+    ui.transitionNote = null;
+    renderRail();
+    renderLanding();
+    return true;
   }
 
   function renderLanding() {
@@ -481,6 +517,14 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       // (type "vendor") keep the dropdown - open-ended, larger lists pair
       // better with a native select's own "Other" fallback than a wall of
       // radio buttons would.
+      // ASSESSMENT-REPORT-DEPTH-BRIEF.md §5: "Other" added where a fixed
+      // option set could genuinely miss a real answer - node.allowOther is
+      // opt-in per question, not universal (a plain Yes/No has no
+      // meaningful "Other"). Mirrors the vendor-field pattern: an __isOther
+      // flag plus the main answer left blank/typed-text until something
+      // real is entered, so a required field isn't "complete" on selecting
+      // Other alone.
+      const isOtherSelected = Boolean(node.allowOther && session.answers[node.id + "__isOther"]);
       return `
         <div class="question">
           <p>${node.text}${node.required ? "" : ' <span class="opt-tag">optional</span>'}</p>
@@ -488,13 +532,22 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
             ${node.options
               .map(
                 (o) => `
-              <div class="option ${val === o ? "selected" : ""}" data-fid="${node.id}" data-val="${escapeHtml(o)}">
+              <div class="option ${!isOtherSelected && val === o ? "selected" : ""}" data-fid="${node.id}" data-val="${escapeHtml(o)}">
                 <div class="radio"></div><div>${escapeHtml(o)}</div>
               </div>
             `
               )
               .join("")}
+            ${
+              node.allowOther
+                ? `
+              <div class="option ${isOtherSelected ? "selected" : ""}" data-fid="${node.id}" data-val="${OTHER_VALUE}">
+                <div class="radio"></div><div>Other</div>
+              </div>`
+                : ""
+            }
           </div>
+          ${isOtherSelected ? `<input type="text" data-select-other-fid="${node.id}" value="${escapeHtml(val)}" placeholder="${escapeHtml(node.otherPlaceholder || "Please specify")}" style="margin-top:10px;">` : ""}
         </div>`;
     }
     if (node.type === "multiselect") {
@@ -577,7 +630,34 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     p.querySelectorAll(".option[data-fid]").forEach((el) => {
       el.addEventListener("click", () => {
         const node = screen.flow.index.get(el.dataset.fid);
-        recordAnswer(session, node, el.dataset.val);
+        if (el.dataset.val === OTHER_VALUE) {
+          session.answers[node.id + "__isOther"] = true;
+          recordAnswer(session, node, "");
+        } else {
+          delete session.answers[node.id + "__isOther"];
+          recordAnswer(session, node, el.dataset.val);
+        }
+        renderProfileScreen();
+      });
+    });
+    p.querySelectorAll("input[data-select-other-fid]").forEach((el) => {
+      el.addEventListener("input", () => {
+        const node = screen.flow.index.get(el.dataset.selectOtherFid);
+        recordAnswer(session, node, el.value);
+        refreshNext();
+      });
+      // Same keyword-match-first principle as the multiselect handler above,
+      // adapted for a single answer: a match converts the answer directly
+      // to the existing option's own canonical value instead of adding to a
+      // set, since a single-select only ever holds one.
+      el.addEventListener("blur", () => {
+        const node = screen.flow.index.get(el.dataset.selectOtherFid);
+        const text = (session.answers[node.id] || "").trim();
+        if (!text) return;
+        const match = matchOtherText(text, node.options.map((o) => ({ id: o, label: o })));
+        if (!match) return;
+        delete session.answers[node.id + "__isOther"];
+        recordAnswer(session, node, match.id);
         renderProfileScreen();
       });
     });
@@ -626,6 +706,25 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       el.addEventListener("input", () => {
         session.answers[el.dataset.fidOther + "__otherText"] = el.value;
         refreshNext();
+      });
+      // ASSESSMENT-REPORT-DEPTH-BRIEF.md §5: keyword-match first, checked
+      // once typing pauses (blur) rather than per keystroke - a mid-word
+      // partial match would flicker the checkbox state distractingly while
+      // someone is still typing. A match silently also checks the existing
+      // structured option (in addition to keeping their own typed text
+      // intact) so downstream logic - dedupe, compounding-risk flags -
+      // sees it exactly as if they'd picked it from the list, at zero cost.
+      el.addEventListener("blur", () => {
+        const node = screen.flow.index.get(el.dataset.fidOther);
+        const text = (session.answers[node.id + "__otherText"] || "").trim();
+        if (!text || node.type !== "multiselect") return;
+        const match = matchOtherText(text, node.options);
+        if (!match) return;
+        const current = Array.isArray(session.answers[node.id]) ? [...session.answers[node.id]] : [];
+        if (current.includes(match.id)) return;
+        current.push(match.id);
+        recordAnswer(session, node, current);
+        renderProfileScreen();
       });
     });
 
@@ -752,11 +851,29 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   // without a genuine mapping simply don't get a panel, rather than
   // fabricating one). Reuses the existing acc-card/acc-head/acc-body
   // accordion pattern verbatim so the interaction matches Runbooks/Playbooks.
+  // ASSESSMENT-REPORT-DEPTH-BRIEF.md §6/§7: renders whichever fields
+  // guidanceForFlag()/guidanceForGapItem() actually returned - Full mode's
+  // five parts (traceability, technique, consequence, interim step,
+  // remediation, plus an optional verified reference link) or Quick
+  // mode's condensed three (traceability, consequence, remediation), since
+  // those functions were already called with `full = !session.quickMode`.
+  // Escaped throughout: traceability in particular can echo a profile
+  // "Other" free-text field (e.g. devsecopsMaturity) back into the page.
   function mitrePanel(guidance, panelId) {
     if (!guidance) return "";
-    const techLine = guidance.technique
-      ? `<li><b>Attack pattern:</b> ${guidance.technique.name} (MITRE ATT&CK ${guidance.technique.id}) - ${guidance.explain}</li>`
-      : `<li><b>Why it matters:</b> ${guidance.explain}</li>`;
+    const rows = [];
+    if (guidance.traceability) rows.push(`<li><b>Why this was flagged:</b> ${escapeHtml(guidance.traceability)}</li>`);
+    if (guidance.technique) {
+      rows.push(`<li><b>Attack pattern:</b> ${escapeHtml(guidance.technique.name)} (MITRE ATT&CK ${escapeHtml(guidance.technique.id)}) - ${escapeHtml(guidance.explain)}</li>`);
+    } else {
+      rows.push(`<li><b>What could go wrong:</b> ${escapeHtml(guidance.explain)}</li>`);
+    }
+    if (guidance.control) rows.push(`<li><b>Interim step:</b> ${escapeHtml(guidance.control)}</li>`);
+    if (guidance.remediation) rows.push(`<li><b>How to fix it:</b> ${escapeHtml(guidance.remediation)}</li>`);
+    if (guidance.reference) {
+      const safeUrl = safeHttpUrl(guidance.reference.url);
+      if (safeUrl) rows.push(`<li><b>Reference:</b> <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(guidance.reference.label)}</a></li>`);
+    }
     return `
       <div class="acc-card mitre-panel" data-id="${panelId}">
         <div class="acc-head">
@@ -764,10 +881,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           <div class="acc-chevron">▸</div>
         </div>
         <div class="acc-body">
-          <ul>
-            ${techLine}
-            <li><b>Interim step:</b> ${guidance.control}</li>
-          </ul>
+          <ul>${rows.join("")}</ul>
         </div>
       </div>`;
   }
@@ -793,7 +907,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   // real scoring/rules logic evolves" rather than a second, hand-maintained
   // copy - so this is the one place that markup exists, shared by
   // renderResults() and renderSampleReport() alike.
-  function reportBodyHtml({ session: s, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities }) {
+  function reportBodyHtml({ session: s, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, otherTexts = [] }) {
     return `
       <div class="snapshot">
         <h3>Infrastructure snapshot (self-reported)</h3>
@@ -802,6 +916,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           .join("")}
       </div>
 
+      <p class="score-direction-legend">Higher percentages mean a <b>stronger security posture</b> - not compliance completeness, not exposure level. 100% would mean every control this assessment checks for is fully in place; it doesn't mean risk-free.</p>
       <div class="gauge-row">
         <div class="gauge" style="background:${conicFor(funcScores)}">
           <div class="gauge-inner">
@@ -833,7 +948,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           .map(
             (f) => `
           <div class="flag-item"><b>Combined finding -</b> ${f.text}</div>
-          ${mitrePanel(guidanceForFlag(f, s.answers), `flag-${f.id}`)}
+          ${mitrePanel(guidanceForFlag(f, s.answers, !s.quickMode), `flag-${f.id}`)}
         `
           )
           .join("")}
@@ -852,6 +967,8 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           : ""
       }
 
+      ${otherTextSectionHtml(otherTexts)}
+
       ${
         frameworkRecs.length
           ? `
@@ -864,7 +981,14 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
             <b>${r.name} -</b> ${r.summary}
             ${
               r.gaps.length
-                ? `<div class="fw-gap-list">${r.gaps.map((g) => `<div class="fw-gap-item">Gap: <i>${g.question}</i> - currently: "${g.chosen}"</div>`).join("")}</div>`
+                ? `<div class="fw-gap-list">${r.gaps
+                    .map(
+                      (g) => `
+                  <div class="fw-gap-item">Gap: <i>${g.question}</i> - currently: "${g.chosen}"</div>
+                  ${mitrePanel(guidanceForGapItem(g, s.answers, !s.quickMode), `fwgap-${r.id}-${g.id}`)}
+                `
+                    )
+                    .join("")}</div>`
                 : r.questionCount
                   ? `<div class="fw-gap-list"><div class="fw-gap-item">No gaps flagged in the ${r.name}-specific questions above.</div></div>`
                   : ""
@@ -887,7 +1011,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
             <div class="priority-rank">${String(i + 1).padStart(2, "0")}</div>
             <div><b>${FUNC_DISPLAY[p2.fn]}:</b> ${p2.gap}</div>
           </div>
-          ${mitrePanel(guidanceForGapItem(p2, s.answers), `gap-${p2.id}`)}
+          ${mitrePanel(guidanceForGapItem(p2, s.answers, !s.quickMode), `gap-${p2.id}`)}
         `
           )
           .join("")}
@@ -911,6 +1035,12 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     // §2: the in-progress save exists to resume an incomplete run - once
     // it's actually complete, there's nothing left to resume into.
     clearProgress();
+
+    // ASSESSMENT-REPORT-DEPTH-BRIEF.md §5: resolve any "Other" free text
+    // keyword-matching couldn't place, before the report's first paint -
+    // same reasoning as the history fetch below, this is data the initial
+    // render needs, not a progressive enhancement bolted on after.
+    const otherTexts = await interpretUnresolvedOtherTexts(collectUnresolvedOtherTexts(session.answers));
 
     let prevRun = null,
       historyCount = 0;
@@ -973,7 +1103,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           : ""
       }
 
-      ${reportBodyHtml({ session, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities })}
+      ${reportBodyHtml({ session, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, otherTexts })}
 
       <div class="note-box">
         <b>About this report -</b> the flags and priority list above are produced by a deterministic rules
@@ -1096,6 +1226,89 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     document.getElementById("samplePdfBtn").addEventListener("click", () => {
       buildAssessmentPdf({ session: sampleSession, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs });
     });
+  }
+
+  // ---------- ASSESSMENT-REPORT-DEPTH-BRIEF.md §5: "Other" free text ----------
+  // Fields where "Other" answers a genuinely structured, closed question
+  // (a category/function list) rather than naming a vendor/product - vendor
+  // "Other" text is already handled by the existing matchedVendorNotes()
+  // substring match plus the separate, already-opt-in AI-Insights recency
+  // lookup, so it isn't duplicated here.
+  const OTHER_TEXT_MULTISELECT_FIELDS = [
+    { fieldId: "outsourcedFunctionBreakdown", label: "Which specific functions are handled by your outsourced provider(s)?" },
+    { fieldId: "partialOutsourceFunctions", label: "Which specific functions are outsourced?" },
+    { fieldId: "mixedOtherProviderDetail", label: "Which specific functions do those other outsourced providers handle?" },
+    { fieldId: "dayToDay", label: "How is cybersecurity managed day to day?" },
+  ];
+  const OTHER_TEXT_SELECT_FIELDS = [
+    { fieldId: "networkArch", label: "How would you describe your network architecture?" },
+    { fieldId: "devsecopsMaturity", label: "How would you describe your DevSecOps practice?" },
+  ];
+
+  // Keyword matching (other-text-match.js) already runs the moment each
+  // field is answered, converting a match into the real structured option
+  // immediately - anything still sitting here as free text at report time
+  // is exactly the "no reasonable match" case the brief scopes the AI
+  // fallback to.
+  function collectUnresolvedOtherTexts(answers) {
+    const items = [];
+    for (const f of OTHER_TEXT_MULTISELECT_FIELDS) {
+      const selected = answers[f.fieldId];
+      const text = answers[f.fieldId + "__otherText"];
+      if (Array.isArray(selected) && selected.includes(OTHER_VALUE) && text && text.trim()) {
+        items.push({ fieldLabel: f.label, freeText: text.trim() });
+      }
+    }
+    for (const f of OTHER_TEXT_SELECT_FIELDS) {
+      if (answers[f.fieldId + "__isOther"] && answers[f.fieldId] && String(answers[f.fieldId]).trim()) {
+        items.push({ fieldLabel: f.label, freeText: String(answers[f.fieldId]).trim() });
+      }
+    }
+    return items;
+  }
+
+  // Fires automatically as part of building the report - independent of
+  // the separate, opt-in "Get AI-Enhanced Insights" button below, per the
+  // brief ("it fires automatically when needed... The report should never
+  // simply ignore or silently drop 'Other' text"). A failure here degrades
+  // to showing the raw typed text unexplained, never to hiding it.
+  async function interpretUnresolvedOtherTexts(items) {
+    if (!items.length) return items.map((it) => ({ ...it, interpretation: null }));
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20_000);
+      const res = await fetch("/.netlify/functions/other-text-interpret", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ items }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`other-text-interpret returned ${res.status}`);
+      const result = await res.json();
+      const byIndex = new Map((result.interpretations || []).map((r) => [r.index, r.interpretation]));
+      return items.map((it, i) => ({ ...it, interpretation: byIndex.get(i) || null }));
+    } catch {
+      return items.map((it) => ({ ...it, interpretation: null }));
+    }
+  }
+
+  function otherTextSectionHtml(resolvedOtherTexts) {
+    if (!resolvedOtherTexts.length) return "";
+    return `
+      <div class="flags">
+        <h3>Additional context you provided</h3>
+        ${resolvedOtherTexts
+          .map(
+            (it) => `
+          <div class="vendor-note-item">
+            <b>${escapeHtml(it.fieldLabel)} -</b> "${escapeHtml(it.freeText)}"
+            ${it.interpretation ? `<br>${escapeHtml(it.interpretation)}` : `<br><span class="scope-hint">Noted, but not incorporated into the scoring or findings above.</span>`}
+          </div>
+        `
+          )
+          .join("")}
+      </div>`;
   }
 
   // ---------- AI-Enhanced Insights (AI-RAG-HYBRID-BRIEF.md) ----------
@@ -1227,6 +1440,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     renderProfileScreen,
     renderAssessmentCategory,
     renderResults,
+    requestLanding,
     // entry point used by renderActiveTab() when switching into the assessment tab
     renderCurrentPhase() {
       updateSerial();
