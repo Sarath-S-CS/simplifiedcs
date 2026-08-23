@@ -29,6 +29,16 @@
     --accent-amber:#E0A94A;
     --accent-pop:#FF5FA2;
     --text-on-accent:#04140A;
+    /* ICON-THEME-QUALITY-BRIEF.md Part 1: a genuine blue and a richer,
+       more saturated purple than --accent-violet (which reads as a pale
+       lavender) - purely for the How It Works/Three Phases illustrations,
+       which the brief explicitly asks to draw from a wider palette than
+       this site's narrow core accent set, while still resolving per-theme
+       like every other color here rather than being hardcoded into the SVGs. */
+    --illus-blue:#3E8EDE;
+    --illus-blue-deep:#1C4F86;
+    --illus-purple:#8B6FE0;
+    --illus-purple-deep:#5B3FA0;
     --tint-signal: rgba(1,169,130,0.14);
     --tint-signal-soft: rgba(1,169,130,0.08);
     --tint-signal-strong: rgba(1,169,130,0.22);
@@ -54,6 +64,10 @@
     --accent-amber:#A8710A;
     --accent-pop:#C9186B;
     --text-on-accent:#04140A;
+    --illus-blue:#2668B0;
+    --illus-blue-deep:#123A63;
+    --illus-purple:#6647B8;
+    --illus-purple-deep:#402A73;
     --tint-signal: rgba(1,169,130,0.12);
     --tint-signal-soft: rgba(1,169,130,0.07);
     --tint-signal-strong: rgba(1,169,130,0.20);
@@ -1099,6 +1113,17 @@
   .tech-highlights-list b{ color:var(--text); font-weight:600; }
   .logo-assembly-wrap{ display:flex; justify-content:center; padding:32px 0 8px; }
   .logo-assembly-stage{ position:relative; width:260px; height:260px; display:flex; align-items:center; justify-content:center; }
+  /* ICON-THEME-QUALITY-BRIEF_1.md Part 3: unlike the other five animations
+     on this site (hero infinity, maturity climb, exploit radar, lifecycle
+     loop), the fragments here fly in from fixed pixel offsets up to
+     -250px from center (see renderLogoAssembly()'s `fragments` array) -
+     verified live at mobile widths, several genuinely clip against the
+     real viewport edge below ~760px since nothing here previously scaled
+     down. A transform:scale() on the whole stage shrinks the fragments'
+     travel distance proportionally without touching their JS-generated
+     per-fragment offsets. */
+  @media (max-width:760px){ .logo-assembly-stage{ transform:scale(0.62); } }
+  @media (max-width:400px){ .logo-assembly-stage{ transform:scale(0.5); } }
   .assembly-logo{
     width:150px; height:150px; position:relative; z-index:2;
     animation:assemblyLogoIn 4.2s ease-out infinite;
