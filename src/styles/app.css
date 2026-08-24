@@ -1224,23 +1224,39 @@
     .pipeline-flow-dot{ animation:none; opacity:0; }
   }
 
-  /* --- Metrics intro (and Home's Risk Score Matrix): scoring-rubric
-     pulse (METRICS-ANIMATION-ABOUT-FIXES-BRIEF.md §1) - three fixed
-     0/1/2 circles, each with its own glow ring that lights up in turn via
-     the same staggered animation-delay technique as .climb-bar above,
-     applied to opacity/scale instead of height so exactly one is bright
-     at a time. Sits in .page-intro-row same as the other three intro
-     animations. --- */
-  .metrics-rubric-wrap{ flex-shrink:0; width:220px; max-width:100%; }
+  /* --- Metrics intro (and Home's Risk Score Matrix): scored-answers-into-
+     a-gauge (METRICS-ANIMATION-REVISION-BRIEF.md) - dots travel their own
+     SMIL <animateMotion> path (built in buildScoringRubricSvg()) into a
+     radial gauge whose arc/needle/readout are the CSS-driven parts here.
+     Sits in .page-intro-row same as the other three intro animations. --- */
+  .metrics-rubric-wrap{ flex-shrink:0; width:260px; max-width:100%; }
   .metrics-rubric-wrap svg{ width:100%; height:auto; display:block; }
-  .rubric-score-label{ font-family:var(--mono); font-size:15px; font-weight:600; }
-  @keyframes rubricPulse{
-    0%, 22%{ opacity:1; transform:scale(1.1); }
-    33%, 100%{ opacity:0.15; transform:scale(0.85); }
+  @keyframes metricsArcFill{
+    0%, 8%{ stroke-dashoffset:107; }
+    55%, 85%{ stroke-dashoffset:24; }
+    100%{ stroke-dashoffset:107; }
   }
-  .rubric-glow{ transform-box:fill-box; transform-origin:50% 50%; animation:rubricPulse 4.5s ease-in-out infinite; }
+  .metrics-gauge-arc{ animation:metricsArcFill 5s ease-in-out infinite; }
+  @keyframes metricsNeedleSweep{
+    0%, 8%{ transform:rotate(-75deg); }
+    55%, 85%{ transform:rotate(47deg); }
+    100%{ transform:rotate(-75deg); }
+  }
+  .metrics-gauge-needle{ animation:metricsNeedleSweep 5s ease-in-out infinite; }
+  @keyframes metricsReadoutFade{
+    0%, 50%{ opacity:0; }
+    60%, 85%{ opacity:1; }
+    95%, 100%{ opacity:0; }
+  }
+  .metrics-gauge-readout{ font-family:var(--mono); font-size:16px; font-weight:600; fill:var(--accent-signal); animation:metricsReadoutFade 5s ease-in-out infinite; }
+  /* Settled, not hidden - a completed gauge reading is the meaningful
+     resting state here (matching the lifecycle dot's own "deliberate
+     resting position, not a truncated animation" convention above),
+     unlike the purely decorative radar-ring pulses this page doesn't use. */
   @media (prefers-reduced-motion: reduce){
-    .rubric-glow{ animation:none; opacity:0; }
+    .metrics-gauge-arc{ animation:none; stroke-dashoffset:24; }
+    .metrics-gauge-needle{ animation:none; transform:rotate(47deg); }
+    .metrics-gauge-readout{ animation:none; opacity:1; }
   }
 
   /* --- learning resources (News tab) --- */
