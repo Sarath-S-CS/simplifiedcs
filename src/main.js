@@ -1542,8 +1542,13 @@ function renderHomeTab(container){
       </div>
 
       <div class="section-tile">
-        <h3 class="section-h">Risk Score Matrix</h3>
-        <p class="body-text">Every assessment runs on a scored matrix (see the <a href="${pathForTab('metrics')}" id="linkMetricsFromHome" class="inline-link">Metrics</a> page for the full breakdown). Select a number for what that risk level actually means:</p>
+        <div class="page-intro-row">
+          <div class="page-intro-text">
+            <h3 class="section-h">Risk Score Matrix</h3>
+            <p class="body-text">Every assessment runs on a scored matrix (see the <a href="${pathForTab('metrics')}" id="linkMetricsFromHome" class="inline-link">Metrics</a> page for the full breakdown). Select a number for what that risk level actually means:</p>
+          </div>
+          <div class="metrics-rubric-wrap">${buildScoringRubricSvg()}</div>
+        </div>
         <div class="risk-slider-wrap">
           <div class="risk-slider-label">Interactive risk scale - the lower the score, the stronger the security posture</div>
           <div class="risk-slider-track">
@@ -1988,13 +1993,51 @@ function buildPlaybookFlowSvg(){
   </svg>`;
 }
 
+// METRICS-ANIMATION-ABOUT-FIXES-BRIEF.md §1: a "scoring rubric" visual for
+// the Metrics intro - deliberately distinct from the other three
+// page-intro animations (not progression like Maturity's climbing bars,
+// not live threats like Exploits' radar, not a status pipeline like
+// Roadmap's traveling dot). Three fixed, always-visible 0/1/2 score
+// circles in the same red/amber/green as the risk-scale gradient already
+// used on Home's Risk Score Matrix, each with its own glow ring that
+// pulses bright in turn - same staggered-animation-delay technique
+// buildMaturityClimbSvg already uses, just applied to an opacity/scale
+// pulse instead of a bar height, so only one score is "lit" at a time,
+// cycling 0 -> 1 -> 2 -> repeat. Represents how a single answer resolves
+// to one of three point values, not a live number changing. Sits in
+// .page-intro-row next to the page title on the standalone Metrics page;
+// on Home it's placed inside the Risk Score Matrix section instead,
+// alongside (not replacing) that section's existing interactive 1-10
+// scale.
+function buildScoringRubricSvg(){
+  const stops = [
+    { cx:34, label:'0', color:'--accent-critical', delay:'0s' },
+    { cx:110, label:'1', color:'--accent-amber', delay:'1.5s' },
+    { cx:186, label:'2', color:'--accent-signal', delay:'3s' },
+  ];
+  return `
+  <svg viewBox="0 0 220 90" xmlns="http://www.w3.org/2000/svg">
+    <line x1="34" y1="45" x2="186" y2="45" stroke="var(--line)" stroke-width="1.5"/>
+    ${stops.map(s=>`
+      <circle class="rubric-glow" cx="${s.cx}" cy="45" r="24" fill="none" stroke="var(${s.color})" stroke-width="3" style="animation-delay:${s.delay}"/>
+      <circle cx="${s.cx}" cy="45" r="20" fill="var(--surface)" stroke="var(${s.color})" stroke-width="2.5"/>
+      <text x="${s.cx}" y="52" text-anchor="middle" class="rubric-score-label" fill="var(${s.color})">${s.label}</text>
+    `).join('')}
+  </svg>`;
+}
+
 function renderMetricsTab(container){
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
-        <div class="page-eyebrow">Scoring & Calculation</div>
-        <h2 class="page-title">Metrics</h2>
-        <p class="page-lede">Exactly how a score is calculated, what each band means, and how to read your result - all the scoring mechanics in one place.</p>
+        <div class="page-intro-row">
+          <div class="page-intro-text">
+            <div class="page-eyebrow">Scoring & Calculation</div>
+            <h2 class="page-title">Metrics</h2>
+            <p class="page-lede">Exactly how a score is calculated, what each band means, and how to read your result - all the scoring mechanics in one place.</p>
+          </div>
+          <div class="metrics-rubric-wrap">${buildScoringRubricSvg()}</div>
+        </div>
       </div>
 
       <div class="section-tile">
@@ -2085,6 +2128,9 @@ const ROADMAP_PLANNED = [
   { module:'Persistent History & Score Tracking', desc:'Replacing today\'s session-only History with real, persistent storage, so completed assessment results are still there - and comparable over time - the next time you visit.' },
   { module:'Cross-Device Resume', desc:'A securely-generated link to pick up an in-progress assessment from any device, complementing the current same-device browser save above - a future, more advanced capability layered on top of it, not a replacement for it.' },
   { module:'Chatbot Assistant', desc:'A conversational assistant to help visitors navigate the site, answer cybersecurity basics questions, and potentially help fill out the assessment conversationally.' },
+  { module:'Blog', desc:'Longer-form original writing - the reasoning behind specific tool and framework choices, and lessons drawn from real incidents - separate from the existing Trends & News feed, which curates external sources rather than publishing original posts.' },
+  { module:'Learning', desc:'A structured, sequenced path for building cybersecurity knowledge over time, distinct from the Starter Guide (a one-time on-ramp) and the Glossary (lookup as needed, not a course).' },
+  { module:'Personal Projects', desc:'A page highlighting other work outside SimplifiedCS itself, for visitors arriving through a portfolio context rather than looking for the assessment tool specifically.' },
 ];
 
 // --- Roadmap intro: three-stage pipeline flow (ROADMAP-FIX-BRIEF.md) - a
@@ -2203,6 +2249,8 @@ function renderRunbookTab(container){
           <p class="body-text">A policy that's never reviewed is a policy that's already wrong. Every foundational document below should move through the same cycle continuously:</p>
           <div class="lifecycle-wrap">${buildLifecycleSvg()}</div>
         </div>
+        <p class="body-text">A document that was accurate the day it was written starts drifting the moment anything around it changes. An incident response plan naming a specific person as the point of contact is already wrong the day that person leaves the company; a backup runbook referencing a tool the organization decommissioned two years ago sends whoever's following it during an actual incident down a dead end - exactly when there's no time left to improvise.</p>
+        <p class="body-text"><b>Periodic review means a real cadence on a real calendar, with a real owner.</b> Most organizations review foundational documents at least annually, and more often - quarterly, or after any significant infrastructure or staffing change - for anything genuinely operational, like an incident response plan or a backup/DR runbook. Ownership matters as much as cadence: a document with no named owner tends to drift indefinitely until an actual incident exposes how stale it's gotten. Assign a specific role, not just "the team," responsible for confirming it's still accurate on schedule, whether or not anything obviously changed in the meantime.</p>
       </div>
 
       <div class="section-tile">
@@ -2875,17 +2923,14 @@ function renderAboutTab(container){
       <div class="page-intro">
         <div class="page-eyebrow">About</div>
         <h2 class="page-title">About this project</h2>
-        <p class="page-lede">Hey there - my name is Sarath, creator of SimplifiedCS. I built this site with one goal: making cybersecurity accessible to everyone.</p>
-        <p class="page-lede">With over 9 years of experience in cybersecurity and IT, I've seen the hurdles most companies actually run into firsthand, and wanted to design a simpler workflow for getting past them. This isn't meant to be a last-resort or final solution for every cyber need you have - the goal is to minimize risk as much as realistically possible, using existing tools and minimal cost, not to replace a real security program entirely.</p>
-        <p class="page-lede">This is a work in progress, and feedback is genuinely welcome - if you think a feature is missing or something could work better, I'd like to hear about it.</p>
-        <p class="page-lede">This project is an <b>adaptive</b> cybersecurity assessment and compliance-readiness platform designed for small and medium-sized businesses. It helps organizations understand their current security posture, identify weaknesses, and receive practical recommendations to strengthen their cybersecurity defenses.</p>
-        <p class="page-lede">The platform is based primarily on the NIST Cybersecurity Framework and CIS Critical Security Controls v8. It guides organizations through structured assessments, highlights security gaps, and provides actionable suggestions to improve their overall resilience.</p>
-        <p class="page-lede">In addition to security assessments, the platform supports compliance-readiness initiatives across <b>eight frameworks</b> - ISO/IEC 27001, NIS2, SOC 2, HIPAA, GDPR, SOX, Cyber Essentials, and PCI DSS - layered in based on your industry and the regions you operate in, with more frameworks planned as the tool grows. Its long-term goal is to provide businesses with a centralized solution for continuously monitoring, improving, and demonstrating their security and compliance posture.</p>
-        <p class="page-lede">Most recently, the platform added a <b>hybrid AI layer</b> to the results. Every report is still built first by the same tested, deterministic scoring engine the assessment has run on from the start - that part doesn't change, and it's already complete and accurate on its own. On top of it, an optional live pass checks your named vendors and products against current CISA and NVD vulnerability data, and looks for patterns in your specific answers the fixed rule set wasn't built to anticipate. It's clearly labeled wherever it appears, and it's additive, not a replacement.</p>
+        <div class="about-narrative">
+          <p class="page-lede">Hey there - my name is Sarath, creator of SimplifiedCS. I built this site with one goal: making cybersecurity accessible to everyone.</p>
+          <p class="page-lede">With over 9 years of experience in cybersecurity and IT, I've seen the hurdles most companies actually run into firsthand, and wanted to design a simpler workflow for getting past them. This isn't meant to be a last-resort or final solution for every cyber need you have - the goal is to minimize risk as much as realistically possible, using existing tools and minimal cost, not to replace a real security program entirely.</p>
+        </div>
       </div>
 
       <div class="section-tile">
-        <h3 class="section-h">A few technical highlights, for anyone skimming</h3>
+        <h3 class="section-h">A few technical highlights</h3>
         <ul class="tech-highlights-list">
           <li>An <b>adaptive decision-graph engine</b>, not a static form - questions branch on industry, region, infrastructure, and prior answers, with a session-wide <b>de-duplication system</b> so nothing is ever asked twice</li>
           <li><b>Compounding-risk detection</b> that flags dangerous <i>combinations</i> of gaps, not just individual weak answers - each one mapped to a real <b>MITRE ATT&amp;CK technique</b>, not a generic warning</li>
@@ -2896,13 +2941,19 @@ function renderAboutTab(container){
       </div>
 
       <div class="section-tile">
-        <h3 class="section-h">The idea behind the mark</h3>
-        <p class="body-text">Fragments, scattered and disconnected, converging into a single, complete shield. That's meant to mirror what this tool actually does - individually small, disconnected gaps (a missing control here, an unpatched system there) assembling into your real security posture once they're identified and addressed together.</p>
-        <div class="logo-assembly-wrap" id="logoAssemblyWrap"></div>
+        <div class="about-narrative">
+          <p class="page-lede">This is a work in progress, and feedback is genuinely welcome - if you think a feature is missing or something could work better, I'd like to hear about it.</p>
+          <p class="page-lede">This project is an <b>adaptive</b> cybersecurity assessment and compliance-readiness platform designed for small and medium-sized businesses. It helps organizations understand their current security posture, identify weaknesses, and receive practical recommendations to strengthen their cybersecurity defenses.</p>
+          <p class="page-lede">The platform is based primarily on the NIST Cybersecurity Framework and CIS Critical Security Controls v8. It guides organizations through structured assessments, highlights security gaps, and provides actionable suggestions to improve their overall resilience.</p>
+          <p class="page-lede">In addition to security assessments, the platform supports compliance-readiness initiatives across <b>eight frameworks</b> - ISO/IEC 27001, NIS2, SOC 2, HIPAA, GDPR, SOX, Cyber Essentials, and PCI DSS - layered in based on your industry and the regions you operate in, with more frameworks planned as the tool grows. Its long-term goal is to provide businesses with a centralized solution for continuously monitoring, improving, and demonstrating their security and compliance posture.</p>
+          <p class="page-lede">Most recently, the platform added a <b>hybrid AI layer</b> to the results. Every report is still built first by the same tested, deterministic scoring engine the assessment has run on from the start - that part doesn't change, and it's already complete and accurate on its own. On top of it, an optional live pass checks your named vendors and products against current CISA and NVD vulnerability data, and looks for patterns in your specific answers the fixed rule set wasn't built to anticipate. It's clearly labeled wherever it appears, and it's additive, not a replacement.</p>
+        </div>
       </div>
 
       <div class="section-tile">
-        <p class="body-text">This section is intentionally left blank for now.</p>
+        <h3 class="section-h">The idea behind the mark</h3>
+        <p class="body-text">Fragments, scattered and disconnected, converging into a single, complete shield. That's meant to mirror what this tool actually does - individually small, disconnected gaps (a missing control here, an unpatched system there) assembling into your real security posture once they're identified and addressed together.</p>
+        <div class="logo-assembly-wrap" id="logoAssemblyWrap"></div>
       </div>
     </div>
   `;
