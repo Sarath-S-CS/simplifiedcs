@@ -2153,7 +2153,6 @@ const ROADMAP_SHIPPED = [
 ];
 
 const ROADMAP_IN_PROGRESS = [
-  { module:'History & Score Tracking', desc:'Every completed run compared against your last, with resolved/new-finding tracking between assessments - currently backed by session-local storage rather than a real database, so it doesn\'t yet persist reliably for every visitor. See "Persistent History & Score Tracking" below.' },
   { module:'Save & Resume (same browser)', desc:'In-progress answers are saved to your browser\'s own local storage as you go - close the tab, close the browser, even restart the device, and resuming picks up where you left off, as long as it\'s the same browser on the same device. This is what\'s actively being built and hardened right now.' },
   { module:'Feedback Form', desc:'The submission mechanism is built and wired to Netlify Forms, but Netlify Forms is not currently enabled for this site at the account level - confirmed directly, not assumed - so a real submission likely isn\'t being captured yet. Worth enabling and testing with a real submission before calling this shipped.' },
 ];
