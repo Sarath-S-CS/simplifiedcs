@@ -1993,36 +1993,70 @@ function buildPlaybookFlowSvg(){
   </svg>`;
 }
 
-// METRICS-ANIMATION-ABOUT-FIXES-BRIEF.md §1: a "scoring rubric" visual for
-// the Metrics intro - deliberately distinct from the other three
-// page-intro animations (not progression like Maturity's climbing bars,
-// not live threats like Exploits' radar, not a status pipeline like
-// Roadmap's traveling dot). Three fixed, always-visible 0/1/2 score
-// circles in the same red/amber/green as the risk-scale gradient already
-// used on Home's Risk Score Matrix, each with its own glow ring that
-// pulses bright in turn - same staggered-animation-delay technique
-// buildMaturityClimbSvg already uses, just applied to an opacity/scale
-// pulse instead of a bar height, so only one score is "lit" at a time,
-// cycling 0 -> 1 -> 2 -> repeat. Represents how a single answer resolves
-// to one of three point values, not a live number changing. Sits in
-// .page-intro-row next to the page title on the standalone Metrics page;
-// on Home it's placed inside the Risk Score Matrix section instead,
-// alongside (not replacing) that section's existing interactive 1-10
-// scale.
+// METRICS-ANIMATION-REVISION-BRIEF.md: replaces the first pass (three
+// static circles, no motion tying them together - too basic and, per
+// direct review, "several disconnected static elements placed near each
+// other"). The corrected concept is one connected composition telling
+// the actual story of how Metrics works: individual 0/1/2 answers
+// (small red/amber/green dots, each following its own short curved
+// path via <animateMotion> - same SMIL technique buildLifecycleSvg
+// already uses for its moving dot, staggered so they arrive in a
+// flowing stream rather than all at once) converging into a radial
+// gauge, which fills along a red-amber-green arc (matching the exact
+// exposure-band language on this page's own "Reading your score"
+// section) as a needle sweeps up and settles, with a percentage readout
+// fading in at the same moment. Faint dashed trail lines behind each dot
+// are always rendered (not just during motion) so the "many inputs feed
+// one gauge" story still reads with reduced motion. SMIL isn't
+// controllable via CSS media queries (see prefersReducedMotion()'s own
+// comment above buildLifecycleSvg), so the dots are omitted entirely
+// when motion is reduced, leaving only the gauge - itself CSS-driven and
+// covered by app.css's own reduced-motion block, shown at its settled
+// reading rather than hidden. Sits in .page-intro-row next to the page
+// title on the standalone Metrics page; on Home it's placed inside the
+// Risk Score Matrix section instead, alongside (not replacing) that
+// section's existing interactive 1-10 scale.
 function buildScoringRubricSvg(){
-  const stops = [
-    { cx:34, label:'0', color:'--accent-critical', delay:'0s' },
-    { cx:110, label:'1', color:'--accent-amber', delay:'1.5s' },
-    { cx:186, label:'2', color:'--accent-signal', delay:'3s' },
+  const dots = [
+    { x:18, y:18, color:'--accent-critical' },
+    { x:44, y:14, color:'--accent-signal' },
+    { x:12, y:46, color:'--accent-amber' },
+    { x:38, y:52, color:'--accent-signal' },
+    { x:16, y:78, color:'--accent-critical' },
+    { x:46, y:82, color:'--accent-amber' },
+    { x:26, y:100, color:'--accent-signal' },
   ];
+  const convergeX = 128, convergeY = 96;
+  const n = dots.length;
+  const reduced = prefersReducedMotion();
+  const paths = dots.map(d=>{
+    const midX = (d.x+convergeX)/2, midY = (d.y+convergeY)/2 - 10;
+    return `M${d.x},${d.y} Q${midX},${midY} ${convergeX},${convergeY}`;
+  });
   return `
-  <svg viewBox="0 0 220 90" xmlns="http://www.w3.org/2000/svg">
-    <line x1="34" y1="45" x2="186" y2="45" stroke="var(--line)" stroke-width="1.5"/>
-    ${stops.map(s=>`
-      <circle class="rubric-glow" cx="${s.cx}" cy="45" r="24" fill="none" stroke="var(${s.color})" stroke-width="3" style="animation-delay:${s.delay}"/>
-      <circle cx="${s.cx}" cy="45" r="20" fill="var(--surface)" stroke="var(${s.color})" stroke-width="2.5"/>
-      <text x="${s.cx}" y="52" text-anchor="middle" class="rubric-score-label" fill="var(${s.color})">${s.label}</text>
-    `).join('')}
+  <svg viewBox="0 0 260 130" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="metricsArcGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+        <stop offset="0%" stop-color="var(--accent-critical)"/>
+        <stop offset="50%" stop-color="var(--accent-amber)"/>
+        <stop offset="100%" stop-color="var(--accent-signal)"/>
+      </linearGradient>
+    </defs>
+    ${paths.map(p=>`<path d="${p}" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>`).join('')}
+    ${reduced ? '' : dots.map((d,i)=>{
+      const start = (i/n)*0.5;
+      const end = start + 0.16;
+      return `
+        <circle r="3.2" fill="var(${d.color})">
+          <animateMotion dur="5s" repeatCount="indefinite" calcMode="linear" path="${paths[i]}" keyPoints="0;0;1;1" keyTimes="0;${start.toFixed(2)};${end.toFixed(2)};1"/>
+          <animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;${(end-0.02).toFixed(2)};${end.toFixed(2)};1"/>
+        </circle>`;
+    }).join('')}
+    <path d="M151,92 a34,34 0 0 1 68,0" fill="none" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/>
+    <path class="metrics-gauge-arc" d="M151,92 a34,34 0 0 1 68,0" fill="none" stroke="url(#metricsArcGrad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="107" stroke-dashoffset="107"/>
+    <line class="metrics-gauge-needle" x1="185" y1="92" x2="185" y2="62" stroke="var(--text)" stroke-width="3" stroke-linecap="round" style="transform-origin:185px 92px;"/>
+    <circle cx="185" cy="92" r="4" fill="var(--text)"/>
+    <text class="metrics-gauge-readout" x="185" y="118" text-anchor="middle">76%</text>
   </svg>`;
 }
 
