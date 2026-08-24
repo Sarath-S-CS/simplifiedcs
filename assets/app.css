@@ -1156,6 +1156,26 @@
   .lifecycle-wrap svg{ width:410px; max-width:100%; height:auto; display:block; }
   .lifecycle-node-label{ font-family:var(--mono); font-size:11px; fill:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
   @media (max-width:760px){ .lifecycle-row{ flex-direction:column; } .lifecycle-wrap{ order:2; } .lifecycle-row .body-text{ order:1; } }
+  /* RUNBOOKS-SECTION-LAYOUT-FIX-BRIEF.md: Runbooks' own lifecycle-row now
+     carries a full multi-paragraph column (the original one-liner plus
+     two explanatory paragraphs added in an earlier brief, previously
+     stuck below the row as a disconnected full-width block) instead of
+     Playbooks' single short paragraph - .lifecycle-text wraps all of it
+     as one flex item so .lifecycle-row's existing align-items:center
+     centers the diagram against this column's full height, same as it
+     already does for Playbooks' shorter one. The plain .lifecycle-row
+     .body-text rule above (margin:0, no wrapper) is untouched and still
+     governs Playbooks' row exactly as before. */
+  .lifecycle-text{ flex:1 1 180px; min-width:180px; max-width:360px; }
+  .lifecycle-text p.body-text{ margin:0 0 14px; }
+  .lifecycle-text p.body-text:last-child{ margin-bottom:0; }
+  @media (max-width:760px){ .lifecycle-text{ order:1; } }
+  /* Centered against .lifecycle-text's now-taller column, the diagram at
+     its original 410px width reads noticeably short relative to it
+     (measured ~60% of the text column's height) - a modest bump closes
+     that gap without changing Playbooks' own shorter row, which still
+     uses plain .lifecycle-wrap unmodified. */
+  .lifecycle-wrap--tall svg{ width:460px; }
 
   /* --- Maturity Model intro: climbing/progression bars (ANIMATIONS-BRIEF.md)
      - staggered per-bar CSS animation, not JS-per-frame, scaling each bar

@@ -59819,11 +59819,13 @@ ${suffix}`;
       <div class="section-tile">
         <h3 class="section-h">Keeping documents alive, not just written</h3>
         <div class="lifecycle-row">
-          <p class="body-text">A policy that's never reviewed is a policy that's already wrong. Every foundational document below should move through the same cycle continuously:</p>
-          <div class="lifecycle-wrap">${buildLifecycleSvg()}</div>
+          <div class="lifecycle-text">
+            <p class="body-text">A policy that's never reviewed is a policy that's already wrong. Every foundational document below should move through the same cycle continuously:</p>
+            <p class="body-text">A document that was accurate the day it was written starts drifting the moment anything around it changes. An incident response plan naming a specific person as the point of contact is already wrong the day that person leaves the company; a backup runbook referencing a tool the organization decommissioned two years ago sends whoever's following it during an actual incident down a dead end - exactly when there's no time left to improvise.</p>
+            <p class="body-text"><b>Periodic review means a real cadence on a real calendar, with a real owner.</b> Most organizations review foundational documents at least annually, and more often - quarterly, or after any significant infrastructure or staffing change - for anything genuinely operational, like an incident response plan or a backup/DR runbook. Ownership matters as much as cadence: a document with no named owner tends to drift indefinitely until an actual incident exposes how stale it's gotten. Assign a specific role, not just "the team," responsible for confirming it's still accurate on schedule, whether or not anything obviously changed in the meantime.</p>
+          </div>
+          <div class="lifecycle-wrap lifecycle-wrap--tall">${buildLifecycleSvg()}</div>
         </div>
-        <p class="body-text">A document that was accurate the day it was written starts drifting the moment anything around it changes. An incident response plan naming a specific person as the point of contact is already wrong the day that person leaves the company; a backup runbook referencing a tool the organization decommissioned two years ago sends whoever's following it during an actual incident down a dead end - exactly when there's no time left to improvise.</p>
-        <p class="body-text"><b>Periodic review means a real cadence on a real calendar, with a real owner.</b> Most organizations review foundational documents at least annually, and more often - quarterly, or after any significant infrastructure or staffing change - for anything genuinely operational, like an incident response plan or a backup/DR runbook. Ownership matters as much as cadence: a document with no named owner tends to drift indefinitely until an actual incident exposes how stale it's gotten. Assign a specific role, not just "the team," responsible for confirming it's still accurate on schedule, whether or not anything obviously changed in the meantime.</p>
       </div>
 
       <div class="section-tile">
