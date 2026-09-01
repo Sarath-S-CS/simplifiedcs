@@ -1301,6 +1301,34 @@
     .metrics-gauge-readout{ animation:none; opacity:1; }
   }
 
+  /* --- Threat Modeling & Forensics intro: split attack-tree/timeline
+     visual (CONSOLIDATED-WORK-BRIEF.md §5) - the tree's leaf nodes pulse
+     in sequence (same staggered-delay technique as .climb-bar/
+     .rubric-glow above, applied to a small scale/opacity pop) as if
+     exploring each branch in turn; the scattered forensic points drift
+     gently, distinct from the already-aligned dots on the timeline line
+     beneath them, before settling back. Sits in .page-intro-row same as
+     the other four intro animations. --- */
+  .tmf-wrap{ flex-shrink:0; width:260px; max-width:100%; }
+  .tmf-wrap svg{ width:100%; height:auto; display:block; }
+  @keyframes tmfLeafPop{
+    0%, 100%{ opacity:0.55; transform:scale(1); }
+    15%{ opacity:1; transform:scale(1.35); }
+    30%{ opacity:0.55; transform:scale(1); }
+  }
+  .tmf-leaf{ transform-box:fill-box; transform-origin:50% 50%; animation:tmfLeafPop 2.8s ease-in-out infinite; }
+  @keyframes tmfScatterDrift{
+    0%, 100%{ transform:translateY(0); opacity:0.85; }
+    50%{ transform:translateY(-3px); opacity:1; }
+  }
+  .tmf-scatter circle{ transform-box:fill-box; transform-origin:50% 50%; animation:tmfScatterDrift 3.4s ease-in-out infinite; }
+  .tmf-scatter circle:nth-child(2){ animation-delay:0.5s; }
+  .tmf-scatter circle:nth-child(3){ animation-delay:1s; }
+  @media (prefers-reduced-motion: reduce){
+    .tmf-leaf{ animation:none; opacity:1; }
+    .tmf-scatter circle{ animation:none; }
+  }
+
   /* --- learning resources (News tab) --- */
   .resource-groups{ display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:20px; }
   @media (max-width:720px){ .resource-groups{ grid-template-columns:1fr; } }
