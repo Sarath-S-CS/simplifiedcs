@@ -870,6 +870,14 @@ function scrollToPendingAnchor(){
   if(!pendingAnchor) return;
   const el = document.getElementById(pendingAnchor);
   if(el && typeof el.scrollIntoView === 'function'){
+    // CONSOLIDATED-WORK-BRIEF.md §2: landing directly on a specific
+    // Playbook entry (e.g. from a report's "see the matching Playbook"
+    // link) previously just scrolled to its still-collapsed accordion
+    // header - technically correct, but the content the link promised
+    // stayed hidden. Generic on purpose (not Playbooks-specific): any
+    // anchor-linked .acc-card, on any page, opens when landed on.
+    const card = el.closest('.acc-card');
+    if(card) card.classList.add('open');
     el.scrollIntoView({ behavior:'smooth', block:'start' });
     pendingAnchor = null;
   }
@@ -3104,7 +3112,7 @@ function renderPlaybooksTab(container){
   const pbContainer = document.getElementById('playbookAccordions');
   pbContainer.innerHTML = PLAYBOOKS.map((p,i)=>`
     <div class="acc-card" data-id="${p.ref}">
-      <div class="acc-head">
+      <div class="acc-head" id="${p.ref}">
         <div class="icon-badge" ${accentIconStyle(i)}>${icon('urgent')}</div>
         <div>
           <h4>${p.title} <span class="q-badge">${p.cat}</span></h4>

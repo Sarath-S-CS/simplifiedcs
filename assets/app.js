@@ -21581,6 +21581,29 @@
     });
   }
 
+  // src/engine/owasp-guidance.js
+  var OWASP_FLAG_MAP = {
+    "hardcoded-secrets-no-gates": { ref: "A08:2021", title: "Software and Data Integrity Failures" },
+    "exposed-db-app-no-monitoring": { ref: "A09:2021", title: "Security Logging and Monitoring Failures" },
+    "db-unencrypted-weak-access": { ref: "A02:2021", title: "Cryptographic Failures" }
+  };
+  var OWASP_QUESTION_MAP = {
+    dbEncryption: { ref: "A02:2021", title: "Cryptographic Failures" },
+    dbAccessControl: { ref: "A01:2021", title: "Broken Access Control" },
+    dbPatching: { ref: "A06:2021", title: "Vulnerable and Outdated Components" }
+  };
+  function developsSoftware(answers) {
+    return answers?.developsSoftware === "Yes";
+  }
+  function owaspForFlag(flagId, answers) {
+    if (!developsSoftware(answers)) return null;
+    return OWASP_FLAG_MAP[flagId] || null;
+  }
+  function owaspForQuestion(questionId, answers) {
+    if (!developsSoftware(answers)) return null;
+    return OWASP_QUESTION_MAP[questionId] || null;
+  }
+
   // src/engine/mitre-guidance.js
   function t(id, name) {
     return { id, name };
@@ -22093,7 +22116,12 @@
       ...base,
       technique: g2.technique,
       control: g2.compensatingControl(answers),
-      reference: g2.reference || null
+      reference: g2.reference || null,
+      // CONSOLIDATED-WORK-BRIEF.md §2: null for every org that hasn't said
+      // it develops custom/web-facing software, and for every flag that
+      // isn't genuinely a web-application-layer concern even when it has -
+      // see owasp-guidance.js's own comment for why this stays narrow.
+      owasp: owaspForFlag(flag.id, answers)
     };
   }
   function guidanceForGapItem(item, answers, full = true) {
@@ -22107,6 +22135,7 @@
     if (!full) return base;
     return {
       ...base,
+      owasp: owaspForQuestion(item.id, answers),
       technique: g2.technique,
       control: g2.compensatingControl(answers),
       reference: g2.reference || null
@@ -36783,6 +36812,9 @@
       }
       if (guidance.control) rows.push(`<li><b>Interim step:</b> ${escapeHtml(guidance.control)}</li>`);
       if (guidance.remediation) rows.push(`<li><b>How to fix it:</b> ${escapeHtml(guidance.remediation)}</li>`);
+      if (guidance.owasp) {
+        rows.push(`<li><b>OWASP Top 10:</b> <a href="${pathForTab2("playbooks", guidance.owasp.ref)}" class="inline-link">${escapeHtml(guidance.owasp.ref)} - ${escapeHtml(guidance.owasp.title)}, with the matching Playbook \u2192</a></li>`);
+      }
       if (guidance.reference) {
         const safeUrl = safeHttpUrl(guidance.reference.url);
         if (safeUrl) rows.push(`<li><b>Reference:</b> <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(guidance.reference.label)}</a></li>`);
@@ -58586,6 +58618,8 @@ ${suffix}`;
     if (!pendingAnchor) return;
     const el = document.getElementById(pendingAnchor);
     if (el && typeof el.scrollIntoView === "function") {
+      const card = el.closest(".acc-card");
+      if (card) card.classList.add("open");
       el.scrollIntoView({ behavior: "smooth", block: "start" });
       pendingAnchor = null;
     }
@@ -59694,7 +59728,7 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMethodFromMetrics1"), "methodology");
     wireNavLink(document.getElementById("linkMaturityFromMetrics"), "maturity");
   }
-  var SITE_LAST_UPDATED = "August 24, 2026";
+  var SITE_LAST_UPDATED = "September 1, 2026";
   var ROADMAP_SHIPPED = [
     { module: "Adaptive Assessment Engine", desc: "Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice." },
     { module: "AI-Enhanced Insights", desc: "A live, opt-in second pass on your completed results: checks your named vendors/products against CISA's KEV catalog and NVD's CVE database for anything current a fixed rule set can't know by nature, plus a look for patterns this specific answer combination raises beyond it. Clearly labeled as AI-generated - the deterministic report above it is already complete either way." },
@@ -60558,7 +60592,7 @@ ${suffix}`;
     const pbContainer = document.getElementById("playbookAccordions");
     pbContainer.innerHTML = PLAYBOOKS.map((p3, i3) => `
     <div class="acc-card" data-id="${p3.ref}">
-      <div class="acc-head">
+      <div class="acc-head" id="${p3.ref}">
         <div class="icon-badge" ${accentIconStyle(i3)}>${icon("urgent")}</div>
         <div>
           <h4>${p3.title} <span class="q-badge">${p3.cat}</span></h4>
