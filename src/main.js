@@ -2164,6 +2164,8 @@ const ROADMAP_PLANNED = [
   { module:'Blog', desc:'Longer-form original writing - the reasoning behind specific tool and framework choices, and lessons drawn from real incidents - separate from the existing Trends & News feed, which curates external sources rather than publishing original posts.' },
   { module:'Learning', desc:'A structured, sequenced path for building cybersecurity knowledge over time, distinct from the Starter Guide (a one-time on-ramp) and the Glossary (lookup as needed, not a course).' },
   { module:'Personal Projects', desc:'A page highlighting other work outside SimplifiedCS itself, for visitors arriving through a portfolio context rather than looking for the assessment tool specifically.' },
+  { module:'Cyber Threat Intelligence', desc:'Deeper, structured threat-intelligence analysis - threat actor behavior, campaign tracking, industry-specific context - beyond what the curated Trends & News feed currently provides.' },
+  { module:'Social Engineering Simulation Tools', desc:'Letting IT administrators test their own employees against realistic phishing and social-engineering scenarios, turning the concept the Starter Guide already introduces under phishing simulation into an actual feature.' },
 ];
 
 // --- Roadmap intro: three-stage pipeline flow (ROADMAP-FIX-BRIEF.md) - a
