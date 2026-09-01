@@ -1697,6 +1697,14 @@ function renderHomeTab(container){
   container.querySelectorAll('.risk-slider-tick').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       e.stopPropagation();
+      // CONSOLIDATED-WORK-BRIEF.md §1a: re-clicking the already-selected
+      // tick used to just replay the same open animation with identical
+      // content - standard toggle behavior means it should close instead.
+      if(btn.classList.contains('active')){
+        btn.classList.remove('active');
+        closeRiskDesc();
+        return;
+      }
       const n = btn.dataset.risk;
       container.querySelectorAll('.risk-slider-tick').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
@@ -2650,10 +2658,20 @@ let exploitsCache = null;
 async function loadExploitsData(){
   if(exploitsCache) return exploitsCache;
   try {
+    // CONSOLIDATED-WORK-BRIEF.md §1b: confirmed live against the real
+    // exploit_items table - priority_score itself is correct (ransomware
+    // bonus + EPSS + a decaying recency bonus, genuinely overriding pure
+    // chronological order, exactly as this page's own copy says), but
+    // ties on it (a real 3-way tie exists in production data) had no
+    // secondary key, so Postgres returned them in whatever order its
+    // query plan happened to produce - unstable, not actually sorted.
+    // date_added as the tie-break matches the pattern loadNewsData()
+    // already uses (priority_score desc, then published_at desc).
     const { data, error } = await supabase
       .from('exploit_items')
       .select('cve_id, vendor, product, headline, description, explainer, safe_guidance, sectors_impacted, is_ransomware, epss_score, epss_percentile, source, source_url, date_added, due_date, priority_score')
-      .order('priority_score', { ascending:false });
+      .order('priority_score', { ascending:false })
+      .order('date_added', { ascending:false });
     if(error) throw error;
     exploitsCache = { live:true, items: data || [] };
   } catch(e) {

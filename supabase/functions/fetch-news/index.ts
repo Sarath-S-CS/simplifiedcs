@@ -25,18 +25,29 @@ const OT_KEYWORDS = [
 ];
 const AI_PATTERN = /\b(ai|artificial intelligence|llm|large language model|agentic|chatbot|genai|generative ai)\b/i;
 const VULN_PATTERN = /\b(cve-|vulnerability|vulnerabilities|exploit|patch|flaw|rce|zero-day|0-day|remote code execution)\b/i;
+// CONSOLIDATED-WORK-BRIEF.md §1c: categorize() used to fall through to
+// "landscape" unconditionally for anything that didn't match AI/OT/VULN -
+// not a filter at all, just a default bucket. Confirmed live: BleepingComputer's
+// feed is site-wide (Security, Gaming, Deals, general tech...), not a
+// security-only feed, so unrelated stories (a Windows gaming bug, a ChatGPT
+// outage, an Anthropic pricing change, a piracy sentencing) were landing in
+// "Threat Landscape" by default. This is the actual relevance gate that was
+// missing - "landscape" now requires a genuine threat/incident signal
+// instead of being the catch-all for "matched nothing else."
+const LANDSCAPE_PATTERN = /\b(breach(ed)?|hack(ed|er|ing)?|cyberattack|cyber[- ]attack|ransomware|malware|spyware|phishing|threat actor|nation[- ]state|espionage|data leak|data breach|compromised|infosec|cybersecurity|cyber security|security incident|intrusion|backdoor|botnet|ddos|denial[- ]of[- ]service|apt\d|threat intelligence|dark web|extortion|credential stuffing|social engineering|supply chain attack|cybercrime|cyber crime|stolen data|hacktivis|state-sponsored)\b/i;
 
 function detectOt(text: string): boolean {
   const lower = text.toLowerCase();
   return OT_KEYWORDS.some((k) => lower.includes(k));
 }
 
-function categorize(title: string, body: string): string {
+function categorize(title: string, body: string): string | null {
   const text = `${title} ${body}`;
   if (AI_PATTERN.test(text)) return "ai";
   if (detectOt(text)) return "ot";
   if (VULN_PATTERN.test(text)) return "vuln";
-  return "landscape";
+  if (LANDSCAPE_PATTERN.test(text)) return "landscape";
+  return null;
 }
 
 function recencyBonus(dateStr: string, maxBonus: number, decayDays: number): number {
@@ -157,6 +168,7 @@ function parseRssItems(xml: string, source: string, sourceUrl: string, maxItems:
     const published = new Date(pubDate);
     if (isNaN(published.getTime())) continue;
     const category = categorize(title, description);
+    if (!category) continue; // not security-relevant - see categorize()'s comment
     const priority = 35 + recencyBonus(published.toISOString(), 15, 10) + (category === "ai" ? 5 : 0);
     items.push({
       external_id: `rss:${link}`,
@@ -179,6 +191,99 @@ async function fetchRss(feedUrl: string, source: string, maxItems: number) {
   return parseRssItems(xml, source, feedUrl, maxItems);
 }
 
+// CONSOLIDATED-WORK-BRIEF.md §1d: OT/Industrial had exactly one entry
+// total in production - a structurally starved category, not just bad
+// luck. These sources are genuinely OT-dedicated BY SOURCE (not just
+// keyword-matched), so every item they produce is forced into "ot"
+// directly, bypassing categorize()'s relevance gate entirely - a real
+// ICS advisory can easily fail every AI/OT-vendor/VULN/LANDSCAPE keyword
+// pattern in its title (e.g. "Rockwell Automation OTTO Fleet Manager")
+// and would otherwise get silently dropped by the §1c relevance fix
+// meant for BleepingComputer's un-dedicated general feed.
+//
+// CISA doesn't appear to publish a dedicated ICS-advisories feed at any
+// URL checked directly (icsA-advisories.xml, /uscert/ics/advisories.xml,
+// and the page's own apparent .xml suffix all 404) - but their general
+// "All CISA Advisories" feed at cybersecurity-advisories/all.xml (verified
+// live, real RSS 2.0) mixes genuine ICS advisories in with everything
+// else, and every one of those has a <link> under the stable
+// /news-events/ics-advisories/ path, so filtering on that path is a
+// reliable substitute for a dedicated feed. Dragos's own feed
+// (dragos.com/blog.rss, found via <link rel="alternate"> autodiscovery -
+// their site doesn't expose one at the more obvious /feed/ path) returned
+// a genuinely empty response when fetched live, so it isn't wired in here -
+// a real, discoverable URL that isn't currently a usable data source.
+async function fetchOtDedicatedRss(feedUrl: string, source: string, maxItems: number, linkMustInclude?: string) {
+  const res = await fetch(feedUrl, { headers: { "User-Agent": "SimplifiedCS-NewsFetch/1.0 (+https://simplifiedcs.net)" } });
+  if (!res.ok) throw new Error(`RSS fetch failed for ${source}: ${res.status}`);
+  const xml = await res.text();
+  const itemBlocks = xml.match(/<item[\s\S]*?<\/item>/gi) ?? [];
+  const items: any[] = [];
+  for (const block of itemBlocks) {
+    if (items.length >= maxItems) break;
+    const pick = (tag: string) => {
+      const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+      if (!m) return "";
+      return m[1]
+        .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&#8217;/g, "'")
+        .replace(/&#8220;|&#8221;/g, '"')
+        .trim();
+    };
+    const title = pick("title");
+    const link = pick("link");
+    const pubDate = pick("pubDate");
+    const description = pick("description");
+    if (!title || !link || !pubDate) continue;
+    if (linkMustInclude && !link.includes(linkMustInclude)) continue;
+    const published = new Date(pubDate);
+    if (isNaN(published.getTime())) continue;
+    const priority = 40 + recencyBonus(published.toISOString(), 15, 14);
+    items.push({
+      external_id: `rss:${link}`,
+      headline: truncate(title, 200),
+      body: truncate(description || title, 500),
+      source,
+      source_url: link,
+      category: "ot",
+      published_at: published.toISOString(),
+      priority_score: Math.round(priority),
+    });
+  }
+  return items;
+}
+
+// CONSOLIDATED-WORK-BRIEF.md §1d: one specific, real, significant OT
+// incident worth guaranteeing directly rather than hoping a live source
+// happens to still carry it - CISA's advisory feeds only carry per-
+// product vulnerability bulletins, never incident narratives like this
+// one, so no source above would ever surface it on its own. This is
+// explicitly a one-time bootstrap for a category that had exactly one
+// entry total in production, not a permanent fixture - once the sources
+// above keep "ot" genuinely populated, this is free to eventually roll
+// off via the normal retention/priority rules below like anything else.
+// Both facts and the source URL verified directly (CERT Polska's own
+// report, read in full) before writing this - the report itself
+// attributes the attack to the actor CERT Polska ties to Static Tundra/
+// Berserk Bear/Dragonfly via infrastructure overlap, a real, publicly
+// documented cluster, not an invented attribution.
+const MANUAL_OT_BACKFILL = [
+  {
+    external_id: "manual:poland-energy-cert-2025",
+    headline: "Coordinated destructive cyberattack hit 30+ Polish energy facilities and a heat plant serving 500,000 customers",
+    body: "On 29 December 2025, a Russia-linked actor - CERT Polska's own analysis shows strong infrastructure overlap with the cluster tracked elsewhere as Static Tundra/Berserk Bear/Dragonfly - carried out coordinated, purely destructive attacks against more than 30 wind and photovoltaic facilities plus a large combined heat and power plant supplying nearly half a million customers, using wiper malware and firmware-damaging techniques against RTUs, HMIs, and protection relays. Ongoing energy production wasn't disrupted, but CERT Polska calls it a significant escalation - the first publicly documented destructive activity attributed to this actor.",
+    source: "CERT Polska",
+    source_url: "https://cert.pl/en/posts/2026/01/incident-report-energy-sector-2025/",
+    category: "ot",
+    published_at: new Date("2026-01-30").toISOString(),
+    priority_score: 65,
+  },
+];
+
 Deno.serve(async (_req) => {
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -192,10 +297,12 @@ Deno.serve(async (_req) => {
     fetchNvd(),
     fetchRss("https://www.bleepingcomputer.com/feed/", "BleepingComputer", 15),
     fetchRss("https://krebsonsecurity.com/feed/", "Krebs on Security", 15),
+    fetchOtDedicatedRss("https://www.cisa.gov/cybersecurity-advisories/all.xml", "CISA ICS Advisories", 10, "/news-events/ics-advisories/"),
+    fetchOtDedicatedRss("https://industrialcyber.co/feed/", "Industrial Cyber", 10),
   ]);
 
   const errors: string[] = [];
-  const [kev, nvd, bleeping, krebs] = results.map((r, i) => {
+  const [kev, nvd, bleeping, krebs, cisaIcs, industrialCyber] = results.map((r, i) => {
     if (r.status === "rejected") {
       errors.push(`source ${i}: ${r.reason}`);
       return [];
@@ -211,7 +318,7 @@ Deno.serve(async (_req) => {
     if (error) errors.push(`kev upsert: ${error.message}`);
     else inserted += kev.length;
   }
-  const rest = [...nvd, ...bleeping, ...krebs];
+  const rest = [...nvd, ...bleeping, ...krebs, ...cisaIcs, ...industrialCyber, ...MANUAL_OT_BACKFILL];
   if (rest.length) {
     const { error } = await supabase.from("news_items").upsert(rest, { onConflict: "external_id", ignoreDuplicates: true });
     if (error) errors.push(`rest upsert: ${error.message}`);
@@ -246,7 +353,7 @@ Deno.serve(async (_req) => {
   }
 
   return Response.json({
-    fetched: { kev: kev.length, nvd: nvd.length, bleeping: bleeping.length, krebs: krebs.length },
+    fetched: { kev: kev.length, nvd: nvd.length, bleeping: bleeping.length, krebs: krebs.length, cisaIcs: cisaIcs.length, industrialCyber: industrialCyber.length },
     upserted: inserted,
     deleted,
     errors,

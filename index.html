@@ -59410,6 +59410,11 @@ ${suffix}`;
     container.querySelectorAll(".risk-slider-tick").forEach((btn) => {
       btn.addEventListener("click", (e2) => {
         e2.stopPropagation();
+        if (btn.classList.contains("active")) {
+          btn.classList.remove("active");
+          closeRiskDesc();
+          return;
+        }
         const n2 = btn.dataset.risk;
         container.querySelectorAll(".risk-slider-tick").forEach((b2) => b2.classList.remove("active"));
         btn.classList.add("active");
@@ -59761,7 +59766,7 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMethodFromMetrics1"), "methodology");
     wireNavLink(document.getElementById("linkMaturityFromMetrics"), "maturity");
   }
-  var SITE_LAST_UPDATED = "August 24, 2026";
+  var SITE_LAST_UPDATED = "September 1, 2026";
   var ROADMAP_SHIPPED = [
     { module: "Adaptive Assessment Engine", desc: "Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice." },
     { module: "AI-Enhanced Insights", desc: "A live, opt-in second pass on your completed results: checks your named vendors/products against CISA's KEV catalog and NVD's CVE database for anything current a fixed rule set can't know by nature, plus a look for patterns this specific answer combination raises beyond it. Clearly labeled as AI-generated - the deterministic report above it is already complete either way." },
@@ -60203,7 +60208,7 @@ ${suffix}`;
   async function loadExploitsData() {
     if (exploitsCache) return exploitsCache;
     try {
-      const { data, error } = await supabase.from("exploit_items").select("cve_id, vendor, product, headline, description, explainer, safe_guidance, sectors_impacted, is_ransomware, epss_score, epss_percentile, source, source_url, date_added, due_date, priority_score").order("priority_score", { ascending: false });
+      const { data, error } = await supabase.from("exploit_items").select("cve_id, vendor, product, headline, description, explainer, safe_guidance, sectors_impacted, is_ransomware, epss_score, epss_percentile, source, source_url, date_added, due_date, priority_score").order("priority_score", { ascending: false }).order("date_added", { ascending: false });
       if (error) throw error;
       exploitsCache = { live: true, items: data || [] };
     } catch (e2) {
