@@ -60142,7 +60142,7 @@ ${suffix}`;
     { id: "tm-why-deliberate", icon: "checklist", title: "Why it's worth doing deliberately", body: `
     <p class="body-text">Every organization does some threat modeling whether they call it that or not - deciding where to put a firewall is an implicit threat model. Doing it deliberately catches what informal intuition misses: the compounding combination of two individually-minor gaps, the assumption nobody questioned because it was never written down, the attack path that only becomes obvious once it's drawn out.</p>
   ` },
-    { id: "tm-methodologies", icon: "cycle", title: "How organizations actually do it", body: `
+    { id: "tm-methodologies", icon: "cycle", title: "How organizations do it - STRIDE, PASTA, and other real methodologies", body: `
     <p class="body-text">Real, named methodologies - none require a dedicated team to start using, even a small organization can walk through STRIDE's six categories against its most important system in an afternoon:</p>
     <ul>
       <li><b>STRIDE</b> (Microsoft's framework) - Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege - a checklist-style lens for walking through a system component by component.</li>

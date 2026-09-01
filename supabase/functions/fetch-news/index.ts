@@ -191,7 +191,8 @@ async function fetchRss(feedUrl: string, source: string, maxItems: number) {
   return parseRssItems(xml, source, feedUrl, maxItems);
 }
 
-// CONSOLIDATED-WORK-BRIEF.md §1d: OT/Industrial had exactly one entry
+// CONSOLIDATED-WORK-BRIEF.md §1d, corrected/extended by
+// FOLLOWUP-CORRECTIONS-BRIEF.md §3: OT/Industrial had exactly one entry
 // total in production - a structurally starved category, not just bad
 // luck. These sources are genuinely OT-dedicated BY SOURCE (not just
 // keyword-matched), so every item they produce is forced into "ot"
@@ -208,12 +209,26 @@ async function fetchRss(feedUrl: string, source: string, maxItems: number) {
 // live, real RSS 2.0) mixes genuine ICS advisories in with everything
 // else, and every one of those has a <link> under the stable
 // /news-events/ics-advisories/ path, so filtering on that path is a
-// reliable substitute for a dedicated feed. Dragos's own feed
-// (dragos.com/blog.rss, found via <link rel="alternate"> autodiscovery -
-// their site doesn't expose one at the more obvious /feed/ path) returned
-// a genuinely empty response when fetched live, so it isn't wired in here -
-// a real, discoverable URL that isn't currently a usable data source.
-async function fetchOtDedicatedRss(feedUrl: string, source: string, maxItems: number, linkMustInclude?: string) {
+// reliable substitute for a dedicated feed.
+//
+// Two sources checked and NOT wired in, both confirmed live rather than
+// assumed: Dragos's own feed (dragos.com/blog.rss, found via <link
+// rel="alternate"> autodiscovery) returned a genuinely empty response.
+// Nozomi Networks Labs (nozominetworks.com/blog) has no RSS/Atom feed
+// anywhere on the site at all (checked <link> autodiscovery on the blog
+// page directly - a Webflow-built blog with no feed exposed, not a
+// dedicated-feed URL that happened to 404). Both are real, discoverable
+// pages that just aren't currently machine-readable data sources.
+//
+// Claroty's Team82 disclosure-dashboard feed (found via <link
+// rel="alternate"> autodiscovery on claroty.com/team82/research - the
+// site doesn't expose a separate, richer feed for narrative blog posts,
+// only this one) IS real and live, but every item is a bare "CVE-2026-
+// XXXXX" title with no <description> at all - genuinely fetchable
+// content, just thin, which is a different situation from Dragos's
+// outright empty response. fallbackBody covers exactly this case
+// instead of letting body duplicate the bare CVE-only headline verbatim.
+async function fetchOtDedicatedRss(feedUrl: string, source: string, maxItems: number, linkMustInclude?: string, fallbackBody?: string) {
   const res = await fetch(feedUrl, { headers: { "User-Agent": "SimplifiedCS-NewsFetch/1.0 (+https://simplifiedcs.net)" } });
   if (!res.ok) throw new Error(`RSS fetch failed for ${source}: ${res.status}`);
   const xml = await res.text();
@@ -246,7 +261,7 @@ async function fetchOtDedicatedRss(feedUrl: string, source: string, maxItems: nu
     items.push({
       external_id: `rss:${link}`,
       headline: truncate(title, 200),
-      body: truncate(description || title, 500),
+      body: truncate(description || fallbackBody || title, 500),
       source,
       source_url: link,
       category: "ot",
@@ -299,10 +314,11 @@ Deno.serve(async (_req) => {
     fetchRss("https://krebsonsecurity.com/feed/", "Krebs on Security", 15),
     fetchOtDedicatedRss("https://www.cisa.gov/cybersecurity-advisories/all.xml", "CISA ICS Advisories", 10, "/news-events/ics-advisories/"),
     fetchOtDedicatedRss("https://industrialcyber.co/feed/", "Industrial Cyber", 10),
+    fetchOtDedicatedRss("https://claroty.com/team82/disclosure-dashboard/feed", "Claroty Team82", 8, undefined, "A new XIoT/OT vulnerability disclosed by Claroty's Team82 research team."),
   ]);
 
   const errors: string[] = [];
-  const [kev, nvd, bleeping, krebs, cisaIcs, industrialCyber] = results.map((r, i) => {
+  const [kev, nvd, bleeping, krebs, cisaIcs, industrialCyber, claroty] = results.map((r, i) => {
     if (r.status === "rejected") {
       errors.push(`source ${i}: ${r.reason}`);
       return [];
@@ -318,7 +334,7 @@ Deno.serve(async (_req) => {
     if (error) errors.push(`kev upsert: ${error.message}`);
     else inserted += kev.length;
   }
-  const rest = [...nvd, ...bleeping, ...krebs, ...cisaIcs, ...industrialCyber, ...MANUAL_OT_BACKFILL];
+  const rest = [...nvd, ...bleeping, ...krebs, ...cisaIcs, ...industrialCyber, ...claroty, ...MANUAL_OT_BACKFILL];
   if (rest.length) {
     const { error } = await supabase.from("news_items").upsert(rest, { onConflict: "external_id", ignoreDuplicates: true });
     if (error) errors.push(`rest upsert: ${error.message}`);
@@ -353,7 +369,7 @@ Deno.serve(async (_req) => {
   }
 
   return Response.json({
-    fetched: { kev: kev.length, nvd: nvd.length, bleeping: bleeping.length, krebs: krebs.length, cisaIcs: cisaIcs.length, industrialCyber: industrialCyber.length },
+    fetched: { kev: kev.length, nvd: nvd.length, bleeping: bleeping.length, krebs: krebs.length, cisaIcs: cisaIcs.length, industrialCyber: industrialCyber.length, claroty: claroty.length },
     upserted: inserted,
     deleted,
     errors,
