@@ -1320,9 +1320,9 @@ function buildHeroInfinity(){
       <path d="${d}" fill="none" stroke="var(--accent-signal)" stroke-width="7" stroke-linecap="round" class="infinity-flow"/>
     </svg>
     <div class="infinity-caption">
-      <span style="color:var(--accent-signal)">Discovery</span>
+      <span style="color:var(--accent-signal)">Discover</span>
       <span style="color:var(--accent-secure)">Transform</span>
-      <span style="color:var(--accent-violet)">Optimization</span>
+      <span style="color:var(--accent-violet)">Optimize</span>
     </div>
   </div>`;
 }

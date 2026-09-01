@@ -25,7 +25,7 @@
     --accent-signal:#01A982;
     --accent-secure:#017F63;
     --accent-critical:#D6685F;
-    --accent-violet:#B48EC7;
+    --accent-violet:#A855F7;
     --accent-amber:#E0A94A;
     --accent-pop:#FF5FA2;
     --text-on-accent:#04140A;
@@ -50,7 +50,7 @@
     --accent-signal:#01A982;
     --accent-secure:#017F63;
     --accent-critical:#B5443C;
-    --accent-violet:#7C5B93;
+    --accent-violet:#A855F7;
     --accent-amber:#A8710A;
     --accent-pop:#C9186B;
     --text-on-accent:#04140A;
@@ -184,7 +184,7 @@
      back to its original plain, ungradiented styling. The S/CS swap
      itself already matched this exact assignment from the earlier pass,
      so only .brand-mid's gradient needed reverting here. */
-  .brand-s{ color:var(--accent-critical); }
+  .brand-s{ color:#FF4136; }
   .brand-mid{ color:var(--text); }
   .brand-cs{ color:var(--accent-signal); }
   .theme-toggle{
