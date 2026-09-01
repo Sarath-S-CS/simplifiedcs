@@ -870,6 +870,9 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     }
     if (guidance.control) rows.push(`<li><b>Interim step:</b> ${escapeHtml(guidance.control)}</li>`);
     if (guidance.remediation) rows.push(`<li><b>How to fix it:</b> ${escapeHtml(guidance.remediation)}</li>`);
+    if (guidance.owasp) {
+      rows.push(`<li><b>OWASP Top 10:</b> <a href="${pathForTab("playbooks", guidance.owasp.ref)}" class="inline-link">${escapeHtml(guidance.owasp.ref)} - ${escapeHtml(guidance.owasp.title)}, with the matching Playbook →</a></li>`);
+    }
     if (guidance.reference) {
       const safeUrl = safeHttpUrl(guidance.reference.url);
       if (safeUrl) rows.push(`<li><b>Reference:</b> <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(guidance.reference.label)}</a></li>`);

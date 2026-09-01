@@ -24,6 +24,7 @@
 // compensatingControl are the "deeper layering" §7 explicitly trades away
 // for Quick's shorter runtime, not a data-availability limitation.
 import { NIST_QUESTIONS } from "../data/nist-questions.js";
+import { owaspForFlag, owaspForQuestion } from "./owasp-guidance.js";
 
 function t(id, name) {
   return { id, name };
@@ -667,6 +668,11 @@ export function guidanceForFlag(flag, answers, full = true) {
     technique: g.technique,
     control: g.compensatingControl(answers),
     reference: g.reference || null,
+    // CONSOLIDATED-WORK-BRIEF.md §2: null for every org that hasn't said
+    // it develops custom/web-facing software, and for every flag that
+    // isn't genuinely a web-application-layer concern even when it has -
+    // see owasp-guidance.js's own comment for why this stays narrow.
+    owasp: owaspForFlag(flag.id, answers),
   };
 }
 
@@ -681,6 +687,7 @@ export function guidanceForGapItem(item, answers, full = true) {
   if (!full) return base;
   return {
     ...base,
+    owasp: owaspForQuestion(item.id, answers),
     technique: g.technique,
     control: g.compensatingControl(answers),
     reference: g.reference || null,
