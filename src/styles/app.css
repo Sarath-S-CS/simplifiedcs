@@ -174,9 +174,31 @@
     margin:4px 0 0;
     letter-spacing:0.06em;
   }
-  .brand-s{ color:var(--accent-signal); }
-  .brand-mid{ color:var(--text); }
-  .brand-cs{ color:var(--accent-critical); }
+  /* CONSOLIDATED-WORK-BRIEF.md §3: colors interchanged from the original
+     (S was signal-green, CS was critical-red) - S is now the "critical"
+     end of the wordmark, CS the "secure" end. "implified" fills in the
+     gap between them as a real gradient rather than a flat color, using
+     only colors already established elsewhere on this site: the same
+     --accent-critical/--accent-violet/--accent-signal tokens used
+     throughout, plus one exact color sampled directly from the header's
+     own logo icon graphic (a canvas pixel-sample of the actual PNG, not
+     guessed) as the blue transition point - #0070E0 is what's already
+     sitting a few pixels to the left of this text in both themes, since
+     the icon itself doesn't change between them. Text-as-gradient needs
+     the background-clip:text technique (a plain `color` can't be a
+     gradient) - both the unprefixed and -webkit- forms are included for
+     the widest support, and -webkit-text-fill-color:transparent is the
+     actual property Safari/Chrome respect for the fill (a merely
+     transparent `color` isn't enough to reveal the background there). */
+  .brand-s{ color:var(--accent-critical); }
+  .brand-mid{
+    background:linear-gradient(90deg, var(--accent-critical) 0%, var(--accent-violet) 33%, #0070E0 66%, var(--accent-signal) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    -webkit-text-fill-color:transparent;
+  }
+  .brand-cs{ color:var(--accent-signal); }
   .theme-toggle{
     display:flex; align-items:center; flex-shrink:0;
     background:transparent; border:none; padding:0; cursor:pointer;
