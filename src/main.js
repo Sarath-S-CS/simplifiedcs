@@ -2380,7 +2380,7 @@ function renderMaturityModelTab(container){
       <div class="page-intro">
         <div class="page-eyebrow">Reference</div>
         <h2 class="page-title">What is SimplifiedCS?</h2>
-        <p class="page-lede">This isn't a checklist that asks the same twenty questions to every visitor and calls it an assessment. It's an adaptive engine that changes based on your industry, your infrastructure, your region, and your own answers as you give them - cross-references what you tell it for risk combinations a static form would never catch - and hands back a report with real teeth: specific findings, mapped to specific frameworks, tied to real attacker behavior, with an optional AI layer checking your exact vendors against what's actually being exploited right now. Here's everything it actually does.</p>
+        <p class="page-lede">Most security assessments ask every organization the same static list of questions, no matter what's actually true about their environment. This one doesn't. It's an adaptive engine that changes based on your industry, your infrastructure, your region, and your own answers as you give them - cross-referencing everything you provide to catch risk combinations a static form would never surface. What comes back is a report built to be used, not filed away: specific findings, mapped to specific frameworks, tied to real attacker behavior, with an optional AI layer checking your exact vendors against what's actively being exploited right now. Here's a closer look at what it actually does.</p>
       </div>
 
       <div class="section-tile">
@@ -2390,7 +2390,7 @@ function renderMaturityModelTab(container){
           <li><a href="#ws-how">How an assessment works, start to finish</a></li>
           <li><a href="#ws-reasoning">What makes the reasoning genuinely good, not just automated</a></li>
           <li><a href="#ws-frameworks">Every framework and standard it's built on</a></li>
-          <li><a href="#ws-rest">The rest of the site</a></li>
+          <li><a href="#ws-rest">The rest of the site - reference material, live threat data, and where to start if you're new</a></li>
         </ul>
       </div>
 
