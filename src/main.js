@@ -111,31 +111,58 @@ function wireNavLinksByDataset(container, selector, onNavigate){
 
 let activeTab = tabForPath(location.pathname);
 let theme = 'dark';
+// HEADER-REDESIGN-BRIEF.md: six top-level categories, each holding its own
+// real destinations - Home and Assessment are themselves real pages in
+// addition to being dropdown parents (categoryOnly is absent so their
+// label stays a real link), while Framework/Learn/Resources/Insights exist
+// only as groupings with no page of their own (categoryOnly:true - see
+// renderTabNav()/renderHamburgerMenu() for how that's rendered as a
+// toggle-only trigger instead of a dead link to "/").
 const TOP_TABS = [
   { id:'home', label:'Home' },
-  { id:'methodology', label:'Methodology' },
-  { id:'maturity', label:'Maturity Model' },
-  { id:'news', label:'Trends & News' },
-  { id:'exploits', label:'Exploits' },
+  { id:'framework', label:'Framework', categoryOnly:true },
+  { id:'learn', label:'Learn', categoryOnly:true },
+  { id:'resources', label:'Resources', categoryOnly:true },
+  { id:'insights', label:'Insights', categoryOnly:true },
   { id:'assessment', label:'Assessment' },
 ];
 const HOME_DROPDOWN = [
   { id:'maturitymodel', label:'What is SimplifiedCS?' },
+  { id:'methodology', label:'Methodology' },
+  { id:'roadmap', label:'Roadmap' },
+  { id:'about', label:'About' },
+];
+const FRAMEWORK_DROPDOWN = [
+  { id:'maturity', label:'Maturity Model' },
+  { id:'coreprinciples', label:'Core Principles' },
+  { id:'metrics', label:'Metrics' },
+];
+const LEARN_DROPDOWN = [
   { id:'starterguide', label:'Starter Guide' },
   { id:'threatmodeling', label:'Threat Modeling & Forensics' },
-  { id:'coreprinciples', label:'Core Principles' },
-  { id:'roadmap', label:'Roadmap' },
-  { id:'metrics', label:'Metrics' },
+  { id:'glossary', label:'Glossary' },
+];
+const RESOURCES_DROPDOWN = [
   { id:'runbook', label:'Runbooks' },
   { id:'playbooks', label:'Playbooks' },
+];
+const INSIGHTS_DROPDOWN = [
+  { id:'news', label:'Trends & News' },
+  { id:'exploits', label:'Exploits' },
   { id:'casestudy', label:'Case Studies' },
-  { id:'glossary', label:'Glossary' },
-  { id:'about', label:'About' },
 ];
 const ASSESSMENT_DROPDOWN = [
   { id:'assessment', label:'Take Assessment' },
   { id:'history', label:'History' },
 ];
+const NAV_DROPDOWN_MAP = {
+  home: HOME_DROPDOWN,
+  framework: FRAMEWORK_DROPDOWN,
+  learn: LEARN_DROPDOWN,
+  resources: RESOURCES_DROPDOWN,
+  insights: INSIGHTS_DROPDOWN,
+  assessment: ASSESSMENT_DROPDOWN,
+};
 
 // Curated snapshot, written in original wording from public reporting - see the
 // freshness note rendered in the News tab for how this would be kept live in production.
@@ -972,23 +999,28 @@ function observeReveals(){
 
 function renderTabNav(){
   const nav = document.getElementById('tabnav');
-  const dropdownMap = { home: HOME_DROPDOWN, assessment: ASSESSMENT_DROPDOWN };
 
   const navHtml = TOP_TABS.map(t=>{
-    const dd = dropdownMap[t.id];
-    const label = t.id==='home' ? `<span class="tab-btn-icon" aria-label="Home">${icon('home')}</span>` : t.label;
+    const dd = NAV_DROPDOWN_MAP[t.id];
     if(dd){
       const parentActive = activeTab===t.id || dd.some(d=>d.id===activeTab);
+      // categoryOnly tabs (Framework/Learn/Resources/Insights) have no page
+      // of their own - pathForTab() would silently fall back to "/" - so
+      // the whole trigger just toggles the dropdown like the caret does,
+      // rather than being a real link to a page that doesn't exist.
+      const trigger = t.categoryOnly
+        ? `<button type="button" class="tab-btn ${parentActive?'active':''}" data-toggle="1">${t.label} <span class="tab-caret">▾</span></button>`
+        : `<a class="tab-btn ${parentActive?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label} <span class="tab-caret" data-toggle="1">▾</span></a>`;
       return `
         <div class="tab-item has-dropdown">
-          <a class="tab-btn ${parentActive?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${label} <span class="tab-caret" data-toggle="1">▾</span></a>
+          ${trigger}
           <div class="tab-dropdown">
             ${dd.map(d=>`<a class="dropdown-link ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
           </div>
         </div>
       `;
     }
-    return `<a class="tab-btn ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${label}</a>`;
+    return `<a class="tab-btn ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>`;
   }).join('');
 
   nav.innerHTML = navHtml;
@@ -1049,10 +1081,11 @@ let searchIndexCache = null;
 function getSearchIndex(){
   if(searchIndexCache) return searchIndexCache;
   const idx = [];
-  const dropdownMap = { home: HOME_DROPDOWN, assessment: ASSESSMENT_DROPDOWN };
   TOP_TABS.forEach(t=>{
-    idx.push({ type:'Page', title:t.label, tab:t.id });
-    (dropdownMap[t.id] || []).forEach(d=> idx.push({ type:'Page', title:d.label, tab:d.id }));
+    // categoryOnly tabs (Framework/Learn/...) aren't a real destination -
+    // only their dropdown children are searchable pages.
+    if(!t.categoryOnly) idx.push({ type:'Page', title:t.label, tab:t.id });
+    (NAV_DROPDOWN_MAP[t.id] || []).forEach(d=> idx.push({ type:'Page', title:d.label, tab:d.id }));
   });
   GLOSSARY.forEach(g=> idx.push({ type:'Glossary', title:g.term, sub:g.def, tab:'glossary' }));
   RUNBOOKS.forEach(r=> idx.push({ type:'Runbook', title:r.title, sub:r.sub, tab:'runbook' }));
@@ -1156,14 +1189,18 @@ function renderHamburgerMenu(){
   function openMenu(){
     panelOpen = true;
     render();
-    const dropdownMap = { home: HOME_DROPDOWN, assessment: ASSESSMENT_DROPDOWN };
     const panel = document.createElement('div');
     panel.className = 'mobile-nav-panel';
     panel.id = 'mobileNavPanel';
     panel.innerHTML = TOP_TABS.map(t=>{
-      const dd = dropdownMap[t.id];
+      const dd = NAV_DROPDOWN_MAP[t.id];
+      // categoryOnly tabs render as a plain section heading (no href to a
+      // page that doesn't exist) - only Home/Assessment are real links here.
+      const heading = t.categoryOnly
+        ? `<div class="mobile-nav-heading">${t.label}</div>`
+        : `<a class="mobile-nav-link ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>`;
       return `
-        <a class="mobile-nav-link ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.id==='home' ? 'Home' : t.label}</a>
+        ${heading}
         ${(dd||[]).map(d=>`<a class="mobile-nav-sublink ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
       `;
     }).join('');

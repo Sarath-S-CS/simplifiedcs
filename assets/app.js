@@ -57600,29 +57600,49 @@ ${suffix}`;
   var theme = "dark";
   var TOP_TABS = [
     { id: "home", label: "Home" },
-    { id: "methodology", label: "Methodology" },
-    { id: "maturity", label: "Maturity Model" },
-    { id: "news", label: "Trends & News" },
-    { id: "exploits", label: "Exploits" },
+    { id: "framework", label: "Framework", categoryOnly: true },
+    { id: "learn", label: "Learn", categoryOnly: true },
+    { id: "resources", label: "Resources", categoryOnly: true },
+    { id: "insights", label: "Insights", categoryOnly: true },
     { id: "assessment", label: "Assessment" }
   ];
   var HOME_DROPDOWN = [
     { id: "maturitymodel", label: "What is SimplifiedCS?" },
+    { id: "methodology", label: "Methodology" },
+    { id: "roadmap", label: "Roadmap" },
+    { id: "about", label: "About" }
+  ];
+  var FRAMEWORK_DROPDOWN = [
+    { id: "maturity", label: "Maturity Model" },
+    { id: "coreprinciples", label: "Core Principles" },
+    { id: "metrics", label: "Metrics" }
+  ];
+  var LEARN_DROPDOWN = [
     { id: "starterguide", label: "Starter Guide" },
     { id: "threatmodeling", label: "Threat Modeling & Forensics" },
-    { id: "coreprinciples", label: "Core Principles" },
-    { id: "roadmap", label: "Roadmap" },
-    { id: "metrics", label: "Metrics" },
+    { id: "glossary", label: "Glossary" }
+  ];
+  var RESOURCES_DROPDOWN = [
     { id: "runbook", label: "Runbooks" },
-    { id: "playbooks", label: "Playbooks" },
-    { id: "casestudy", label: "Case Studies" },
-    { id: "glossary", label: "Glossary" },
-    { id: "about", label: "About" }
+    { id: "playbooks", label: "Playbooks" }
+  ];
+  var INSIGHTS_DROPDOWN = [
+    { id: "news", label: "Trends & News" },
+    { id: "exploits", label: "Exploits" },
+    { id: "casestudy", label: "Case Studies" }
   ];
   var ASSESSMENT_DROPDOWN = [
     { id: "assessment", label: "Take Assessment" },
     { id: "history", label: "History" }
   ];
+  var NAV_DROPDOWN_MAP = {
+    home: HOME_DROPDOWN,
+    framework: FRAMEWORK_DROPDOWN,
+    learn: LEARN_DROPDOWN,
+    resources: RESOURCES_DROPDOWN,
+    insights: INSIGHTS_DROPDOWN,
+    assessment: ASSESSMENT_DROPDOWN
+  };
   var NEWS_ITEMS = [
     {
       date: "2026-08-01",
@@ -58674,22 +58694,21 @@ ${suffix}`;
   }
   function renderTabNav() {
     const nav = document.getElementById("tabnav");
-    const dropdownMap = { home: HOME_DROPDOWN, assessment: ASSESSMENT_DROPDOWN };
     const navHtml = TOP_TABS.map((t4) => {
-      const dd = dropdownMap[t4.id];
-      const label = t4.id === "home" ? `<span class="tab-btn-icon" aria-label="Home">${icon("home")}</span>` : t4.label;
+      const dd = NAV_DROPDOWN_MAP[t4.id];
       if (dd) {
         const parentActive = activeTab === t4.id || dd.some((d2) => d2.id === activeTab);
+        const trigger = t4.categoryOnly ? `<button type="button" class="tab-btn ${parentActive ? "active" : ""}" data-toggle="1">${t4.label} <span class="tab-caret">\u25BE</span></button>` : `<a class="tab-btn ${parentActive ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label} <span class="tab-caret" data-toggle="1">\u25BE</span></a>`;
         return `
         <div class="tab-item has-dropdown">
-          <a class="tab-btn ${parentActive ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${label} <span class="tab-caret" data-toggle="1">\u25BE</span></a>
+          ${trigger}
           <div class="tab-dropdown">
             ${dd.map((d2) => `<a class="dropdown-link ${activeTab === d2.id ? "active" : ""}" href="${pathForTab(d2.id)}" data-tab="${d2.id}">${d2.label}</a>`).join("")}
           </div>
         </div>
       `;
       }
-      return `<a class="tab-btn ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${label}</a>`;
+      return `<a class="tab-btn ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>`;
     }).join("");
     nav.innerHTML = navHtml;
     wireNavLinksByDataset(nav, "[data-tab]");
@@ -58743,10 +58762,9 @@ ${suffix}`;
   function getSearchIndex() {
     if (searchIndexCache) return searchIndexCache;
     const idx = [];
-    const dropdownMap = { home: HOME_DROPDOWN, assessment: ASSESSMENT_DROPDOWN };
     TOP_TABS.forEach((t4) => {
-      idx.push({ type: "Page", title: t4.label, tab: t4.id });
-      (dropdownMap[t4.id] || []).forEach((d2) => idx.push({ type: "Page", title: d2.label, tab: d2.id }));
+      if (!t4.categoryOnly) idx.push({ type: "Page", title: t4.label, tab: t4.id });
+      (NAV_DROPDOWN_MAP[t4.id] || []).forEach((d2) => idx.push({ type: "Page", title: d2.label, tab: d2.id }));
     });
     GLOSSARY.forEach((g2) => idx.push({ type: "Glossary", title: g2.term, sub: g2.def, tab: "glossary" }));
     RUNBOOKS.forEach((r2) => idx.push({ type: "Runbook", title: r2.title, sub: r2.sub, tab: "runbook" }));
@@ -58846,14 +58864,14 @@ ${suffix}`;
     function openMenu() {
       panelOpen = true;
       render();
-      const dropdownMap = { home: HOME_DROPDOWN, assessment: ASSESSMENT_DROPDOWN };
       const panel = document.createElement("div");
       panel.className = "mobile-nav-panel";
       panel.id = "mobileNavPanel";
       panel.innerHTML = TOP_TABS.map((t4) => {
-        const dd = dropdownMap[t4.id];
+        const dd = NAV_DROPDOWN_MAP[t4.id];
+        const heading = t4.categoryOnly ? `<div class="mobile-nav-heading">${t4.label}</div>` : `<a class="mobile-nav-link ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>`;
         return `
-        <a class="mobile-nav-link ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.id === "home" ? "Home" : t4.label}</a>
+        ${heading}
         ${(dd || []).map((d2) => `<a class="mobile-nav-sublink ${activeTab === d2.id ? "active" : ""}" href="${pathForTab(d2.id)}" data-tab="${d2.id}">${d2.label}</a>`).join("")}
       `;
       }).join("");
@@ -59737,7 +59755,7 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMethodFromMetrics1"), "methodology");
     wireNavLink(document.getElementById("linkMaturityFromMetrics"), "maturity");
   }
-  var SITE_LAST_UPDATED = "September 2, 2026";
+  var SITE_LAST_UPDATED = "September 8, 2026";
   var ROADMAP_SHIPPED = [
     { module: "Adaptive Assessment Engine", desc: "Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice." },
     { module: "AI-Enhanced Insights", desc: "A live, opt-in second pass on your completed results: checks your named vendors/products against CISA's KEV catalog and NVD's CVE database for anything current a fixed rule set can't know by nature, plus a look for patterns this specific answer combination raises beyond it. Clearly labeled as AI-generated - the deterministic report above it is already complete either way." },
