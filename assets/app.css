@@ -312,14 +312,20 @@
   .dropdown-link:hover{ color:var(--accent-signal); background:var(--tint-signal-soft); }
   .dropdown-link.active{ color:var(--accent-signal); }
 
-  /* Home's dropdown specifically (not Assessment's, which shares this same
-     .dropdown-link class with no other distinguishing container) reads its
-     items in the mono/13.5px treatment meant for nav chrome, not body
-     copy - inconsistent with the actual body font used everywhere else on
-     the site. Scoped via :has() to the Home tab-item rather than
-     enumerating individual dropdown items, so it stays correct as items
-     are added/removed from HOME_DROPDOWN. */
-  .tab-item:has(> .tab-btn[data-tab="home"]) .tab-dropdown .dropdown-link{
+  /* HEADER-REDESIGN-BRIEF.md: every dropdown now holds real page
+     destinations (Home/Framework/Learn/Resources/Insights), not just
+     Home's old mega-menu - all of them read better in the sans/14px
+     treatment used for body copy than the mono/nav-chrome sizing.
+     Assessment's dropdown (Take Assessment / History) is excluded on
+     purpose - it's two simple actions, not content navigation, so it
+     keeps the original compact mono style. Framework/Learn/Resources/
+     Insights render their trigger as a <button> (categoryOnly - see
+     renderTabNav()), so targeting that tag catches all four without
+     naming each one; Home stays an <a data-tab="home"> since it's also a
+     real page. Scoped via :has() so it stays correct as dropdown
+     contents change. */
+  .tab-item:has(> a.tab-btn[data-tab="home"]) .tab-dropdown .dropdown-link,
+  .tab-item:has(> button.tab-btn) .tab-dropdown .dropdown-link{
     font-family:var(--sans);
     font-size:14px;
   }
@@ -381,8 +387,12 @@
 
   /* While search is expanded, dim/blur whichever nav control is currently
      visible (.tabnav on wide viewports, .nav-hamburger below the
-     breakpoint) instead of letting the expanding input push it around. */
-  .masthead-right.search-active .tabnav,
+     breakpoint) instead of letting the expanding input push it around.
+     .tabnav is a sibling of .masthead-right now (HEADER-REDESIGN-BRIEF.md -
+     moved out so the nav sits between the brand and the actions cluster,
+     not bundled inside it), so reaching it needs :has() on their shared
+     parent rather than a plain descendant selector. */
+  .masthead-inner:has(.masthead-right.search-active) .tabnav,
   .masthead-right.search-active .nav-hamburger{
     filter:blur(3px); opacity:0.4; pointer-events:none;
   }
@@ -401,6 +411,13 @@
     padding:12px clamp(24px, 4vw, 64px); cursor:pointer;
   }
   .mobile-nav-link.active{ color:var(--accent-signal); }
+  /* categoryOnly tabs (Framework/Learn/Resources/Insights) have no page of
+     their own on mobile either - a plain, non-interactive section label
+     above their sublinks, not a link to a page that doesn't exist. */
+  .mobile-nav-heading{
+    font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--text-muted); padding:12px clamp(24px, 4vw, 64px) 4px;
+  }
   .mobile-nav-sublink{
     font-family:var(--mono); font-size:12px; color:var(--text-muted);
     background:transparent; border:none; text-align:left;
