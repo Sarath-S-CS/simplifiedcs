@@ -60559,13 +60559,15 @@ ${suffix}`;
 
       <div class="section-tile">
         <h3 class="section-h">A few technical highlights</h3>
-        <ul class="tech-highlights-list">
-          <li>An <b>adaptive decision-graph engine</b>, not a static form - questions branch on industry, region, infrastructure, and prior answers, with a session-wide <b>de-duplication system</b> so nothing is ever asked twice</li>
-          <li><b>Compounding-risk detection</b> that flags dangerous <i>combinations</i> of gaps, not just individual weak answers - each one mapped to a real <b>MITRE ATT&amp;CK technique</b>, not a generic warning</li>
-          <li>A deliberate <b>hybrid AI architecture</b>: a tested, deterministic scoring engine as the guaranteed-correct core, with an optional live layer checking named vendors against current threat data on top of it</li>
-          <li><b>Live threat intelligence</b> pulled from CISA's KEV catalog, VulnCheck, ENISA, and NVD, scored by real-world exploitation likelihood via FIRST.org's <b>EPSS</b> model</li>
-          <li>A programmatically-built, <b>selectable-text PDF export</b>, and a real <b>client-side router</b> with working back/forward navigation and shareable URLs - not the "everything is one page pretending to be many" shortcut it's easy to settle for</li>
-        </ul>
+        <div class="about-narrative">
+          <ul class="tech-highlights-list">
+            <li>An <b>adaptive decision-graph engine</b>, not a static form - questions branch on industry, region, infrastructure, and prior answers, with a session-wide <b>de-duplication system</b> so nothing is ever asked twice</li>
+            <li><b>Compounding-risk detection</b> that flags dangerous <i>combinations</i> of gaps, not just individual weak answers - each one mapped to a real <b>MITRE ATT&amp;CK technique</b>, not a generic warning</li>
+            <li>A deliberate <b>hybrid AI architecture</b>: a tested, deterministic scoring engine as the guaranteed-correct core, with an optional live layer checking named vendors against current threat data on top of it</li>
+            <li><b>Live threat intelligence</b> pulled from CISA's KEV catalog, VulnCheck, ENISA, and NVD, scored by real-world exploitation likelihood via FIRST.org's <b>EPSS</b> model</li>
+            <li>A programmatically-built, <b>selectable-text PDF export</b>, and a real <b>client-side router</b> with working back/forward navigation and shareable URLs - not the "everything is one page pretending to be many" shortcut it's easy to settle for</li>
+          </ul>
+        </div>
       </div>
 
       <div class="section-tile">
@@ -60580,7 +60582,9 @@ ${suffix}`;
 
       <div class="section-tile">
         <h3 class="section-h">The idea behind the mark</h3>
-        <p class="body-text">Fragments, scattered and disconnected, converging into a single, complete shield. That's meant to mirror what this tool actually does - individually small, disconnected gaps (a missing control here, an unpatched system there) assembling into your real security posture once they're identified and addressed together.</p>
+        <div class="about-narrative">
+          <p class="body-text">Fragments, scattered and disconnected, converging into a single, complete shield. That's meant to mirror what this tool actually does - individually small, disconnected gaps (a missing control here, an unpatched system there) assembling into your real security posture once they're identified and addressed together.</p>
+        </div>
         <div class="logo-assembly-wrap" id="logoAssemblyWrap"></div>
       </div>
     </div>
