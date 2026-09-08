@@ -184,7 +184,14 @@
      back to its original plain, ungradiented styling. The S/CS swap
      itself already matched this exact assignment from the earlier pass,
      so only .brand-mid's gradient needed reverting here. */
-  .brand-s{ color:#FF4136; }
+  /* "S" white per WORDMARK-COLOR-BRIEF.md - reuses --text rather than a
+     literal #fff so it stays legible in light mode too, where the masthead
+     background is white (a literal white "S" would be invisible there).
+     --text already reads as white/off-white against the dark masthead
+     (#E6F3EA), the same token .brand-mid already uses, so "S" and
+     "implified" now render as one continuous color - only "CS" stays
+     distinct. */
+  .brand-s{ color:var(--text); }
   .brand-mid{ color:var(--text); }
   .brand-cs{ color:var(--accent-signal); }
   .theme-toggle{
