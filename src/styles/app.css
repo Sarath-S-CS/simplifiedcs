@@ -1664,11 +1664,13 @@
   .site-footer{ margin-top:40px; padding:32px clamp(20px, 4vw, 36px) 20px; background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); }
   @media (max-width:720px){ .site-footer{ padding:24px 20px 20px; } }
 
-  /* FOOTER-REDESIGN-BRIEF.md: brand block anchored left, options
-     categorized into columns on the right - replaces the old single row
-     of icon pills plus a separate centered brand strip below it. */
+  /* FOOTER-REDESIGN-BRIEF.md, trimmed and re-aligned per
+     FOOTER-TRIM-BRIEF.md: brand block anchored and text-aligned left;
+     the three remaining categories (Framework/Resources/About - Home,
+     Learn, and Insights and their links were dropped entirely, not
+     folded elsewhere) sit right-aligned as a group. */
   .footer-top{ display:flex; justify-content:space-between; gap:40px clamp(24px, 5vw, 64px); flex-wrap:wrap; padding-bottom:24px; border-bottom:1px solid var(--line); margin-bottom:16px; }
-  .footer-left{ display:flex; flex-direction:column; gap:10px; flex-shrink:0; max-width:260px; }
+  .footer-left{ display:flex; flex-direction:column; gap:10px; flex-shrink:0; max-width:260px; text-align:left; }
   /* Text-only echo of the masthead's brand.brand-s/brand-mid/brand-cs
      treatment, not the full logo image again (avoids a second ~36KB
      inline base64 payload for a purely decorative footer repeat). */
@@ -1686,7 +1688,7 @@
     transition:background .2s ease, border-color .2s ease, color .2s ease, transform .15s ease;
   }
   .footer-social-icon:hover{ background:var(--accent-signal); border-color:var(--accent-signal); color:var(--text-on-accent); transform:translateY(-1px); }
-  .footer-links{ display:flex; gap:32px clamp(24px, 4vw, 48px); flex-wrap:wrap; }
+  .footer-links{ display:flex; gap:32px clamp(24px, 4vw, 48px); flex-wrap:wrap; text-align:right; }
   .footer-col{ display:flex; flex-direction:column; gap:9px; min-width:130px; }
   .footer-col-title{ font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:3px; }
   .footer-col a{ font-size:13px; color:var(--text); text-decoration:none; }
