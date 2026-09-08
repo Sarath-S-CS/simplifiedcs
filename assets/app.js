@@ -59035,74 +59035,12 @@ ${suffix}`;
     { tab: "playbooks", icon: "checklist", title: "Playbooks", desc: "OWASP Top 10 and AI-threat playbooks, mapped to MITRE ATT&CK." },
     { tab: "roadmap", icon: "clock", title: "Roadmap", desc: "What's shipped, in progress, and planned for this site itself." }
   ];
-  function howItWorksIllustration(id) {
-    const svgs = {
-      "hiw-clipboard": `
-      <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
-        <line x1="50" y1="26" x2="118" y2="58" stroke="var(--accent-signal)" stroke-width="1.5" opacity="0.5"/>
-        <line x1="110" y1="26" x2="124" y2="55" stroke="var(--accent-secure)" stroke-width="1.5" opacity="0.5"/>
-        <line x1="170" y1="26" x2="138" y2="55" stroke="var(--accent-violet)" stroke-width="1.5" opacity="0.5"/>
-        <line x1="212" y1="26" x2="144" y2="58" stroke="var(--accent-amber)" stroke-width="1.5" opacity="0.5"/>
-        <circle cx="50" cy="20" r="9" fill="var(--accent-signal)" opacity="0.85"/>
-        <rect x="100" y="11" width="18" height="18" rx="3" fill="var(--accent-secure)" opacity="0.85"/>
-        <polygon points="170,10 180,28 160,28" fill="var(--accent-violet)" opacity="0.85"/>
-        <circle cx="212" cy="20" r="8" fill="var(--accent-amber)" opacity="0.85"/>
-        <rect x="106" y="52" width="48" height="38" rx="5" fill="var(--surface-raised)" stroke="var(--accent-signal)" stroke-width="2"/>
-        <rect x="120" y="46" width="20" height="10" rx="2" fill="var(--accent-signal)"/>
-        <line x1="114" y1="66" x2="146" y2="66" stroke="var(--accent-signal)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
-        <line x1="114" y1="74" x2="146" y2="74" stroke="var(--accent-signal)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
-        <line x1="114" y1="82" x2="134" y2="82" stroke="var(--accent-signal)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
-      </svg>`,
-      "hiw-magnify": `
-      <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
-        <g opacity="0.35">
-          <circle cx="60" cy="25" r="4" fill="var(--text-muted)"/>
-          <circle cx="90" cy="20" r="4" fill="var(--text-muted)"/>
-          <circle cx="120" cy="30" r="4" fill="var(--text-muted)"/>
-          <circle cx="100" cy="55" r="4" fill="var(--text-muted)"/>
-          <circle cx="135" cy="48" r="4" fill="var(--text-muted)"/>
-          <circle cx="60" cy="75" r="4" fill="var(--text-muted)"/>
-        </g>
-        <line x1="90" y1="20" x2="70" y2="50" stroke="var(--accent-critical)" stroke-width="2" stroke-linecap="round"/>
-        <line x1="70" y1="50" x2="95" y2="80" stroke="var(--accent-critical)" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="90" cy="20" r="5" fill="var(--accent-critical)"/>
-        <circle cx="70" cy="50" r="5" fill="var(--accent-critical)"/>
-        <circle cx="95" cy="80" r="5" fill="var(--accent-critical)"/>
-        <circle cx="175" cy="48" r="30" fill="none" stroke="var(--accent-signal)" stroke-width="4"/>
-        <line x1="196" y1="69" x2="215" y2="88" stroke="var(--accent-signal)" stroke-width="6" stroke-linecap="round"/>
-      </svg>`,
-      "hiw-lightbulb": `
-      <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
-        <circle cx="45" cy="45" r="22" fill="none" stroke="var(--accent-amber)" stroke-width="3"/>
-        <path d="M45 23a22 22 0 0 1 15 38" fill="none" stroke="var(--accent-amber)" stroke-width="3" opacity="0.4"/>
-        <line x1="45" y1="67" x2="45" y2="76" stroke="var(--accent-amber)" stroke-width="3" stroke-linecap="round"/>
-        <line x1="38" y1="76" x2="52" y2="76" stroke="var(--accent-amber)" stroke-width="3" stroke-linecap="round"/>
-        <rect x="90" y="24" width="130" height="10" rx="5" fill="var(--accent-critical)"/>
-        <rect x="90" y="42" width="98" height="10" rx="5" fill="var(--accent-amber)"/>
-        <rect x="90" y="60" width="70" height="10" rx="5" fill="var(--accent-signal)"/>
-        <rect x="90" y="78" width="45" height="10" rx="5" fill="var(--line)"/>
-      </svg>`,
-      "hiw-transform": `
-      <svg viewBox="0 0 260 100" preserveAspectRatio="xMidYMid meet">
-        <rect x="30" y="60" width="24" height="24" fill="var(--line)" opacity="0.7"/>
-        <rect x="66" y="46" width="24" height="38" fill="var(--line)" opacity="0.85"/>
-        <line x1="115" y1="60" x2="150" y2="30" stroke="var(--accent-secure)" stroke-width="4" stroke-linecap="round"/>
-        <path d="M140 28l12-3-3 12" fill="none" stroke="var(--accent-secure)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-        <rect x="175" y="40" width="24" height="44" fill="var(--accent-secure)" opacity="0.65"/>
-        <rect x="205" y="20" width="24" height="64" fill="var(--accent-secure)"/>
-        <circle cx="217" cy="20" r="10" fill="var(--accent-signal)"/>
-        <path d="M212 20l3.5 3.5 7-7" fill="none" stroke="var(--text-on-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>`
-    };
-    return svgs[id] || "";
-  }
   var HOW_IT_WORKS = [
     {
       n: "01",
       title: "Data Collection",
       sub: "Assessment",
       tagline: "Know exactly where you stand",
-      icon: "hiw-clipboard",
       bullets: [
         "Answer an adaptive questionnaire shaped by your industry and infrastructure",
         "Only relevant questions appear - nothing generic, nothing wasted",
@@ -59114,7 +59052,6 @@ ${suffix}`;
       title: "Analysis",
       sub: null,
       tagline: "See risks a checklist would miss",
-      icon: "hiw-magnify",
       bullets: [
         "Every answer cross-referenced against every other answer",
         "Compounding risk flagged, not just scored in isolation",
@@ -59126,7 +59063,6 @@ ${suffix}`;
       title: "Recommendation",
       sub: null,
       tagline: "Know what to fix first",
-      icon: "hiw-lightbulb",
       bullets: [
         "A ranked, prioritized action list - not a wall of findings",
         "Each item tied to why it matters more than the rest",
@@ -59138,7 +59074,6 @@ ${suffix}`;
       title: "Transformation",
       sub: null,
       tagline: "Prove the change actually worked",
-      icon: "hiw-transform",
       bullets: [
         "Implement fixes using the matching Runbook or Playbook",
         "Re-assess on a cadence to track real progress",
@@ -59181,7 +59116,6 @@ ${suffix}`;
         <div class="phase4-grid">
           ${HOW_IT_WORKS.map((s3) => `
             <div class="phase4-card">
-              <div class="phase4-banner">${howItWorksIllustration(s3.icon)}</div>
               <div class="vnum">${s3.n}</div>
               <h4>${s3.title}${s3.sub ? ` <span style="color:var(--text-muted); font-weight:400;">(${s3.sub})</span>` : ""}</h4>
               <div class="phase4-tagline">${s3.tagline}</div>
@@ -59737,7 +59671,7 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMethodFromMetrics1"), "methodology");
     wireNavLink(document.getElementById("linkMaturityFromMetrics"), "maturity");
   }
-  var SITE_LAST_UPDATED = "September 2, 2026";
+  var SITE_LAST_UPDATED = "September 8, 2026";
   var ROADMAP_SHIPPED = [
     { module: "Adaptive Assessment Engine", desc: "Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice." },
     { module: "AI-Enhanced Insights", desc: "A live, opt-in second pass on your completed results: checks your named vendors/products against CISA's KEV catalog and NVD's CVE database for anything current a fixed rule set can't know by nature, plus a look for patterns this specific answer combination raises beyond it. Clearly labeled as AI-generated - the deterministic report above it is already complete either way." },
