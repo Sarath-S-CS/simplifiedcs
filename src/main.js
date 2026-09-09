@@ -272,6 +272,7 @@ function icon(name){
     route: `<svg ${common}><path d="M5 21V3"/><path d="M5 4.5c3-2 5 2 8 0s5 2 8 0v9c-3 2-5-2-8 0s-5-2-8 0"/></svg>`,
     signal: `<svg ${common}><path d="M12 19.3v.01"/><path d="M8.2 15.8a5.2 5.2 0 0 1 7.6 0"/><path d="M5 12.3a9.2 9.2 0 0 1 14 0"/></svg>`,
     checklist: `<svg ${common}><rect x="6" y="4" width="12" height="17" rx="1.4"/><rect x="9" y="2.3" width="6" height="3" rx="1"/><path d="M9 12l1.8 1.8L15 10" /></svg>`,
+    ranked: `<svg ${common}><path d="M4 6h16M4 12h11M4 18h6"/></svg>`,
     clock: `<svg ${common}><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2.3h6M12 2.3V5"/></svg>`,
     sun: `<svg ${common}><circle cx="12" cy="12" r="4.3"/><path d="M12 3v2.3M12 18.7V21M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M3 12h2.3M18.7 12H21M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>`,
     moon: `<svg ${common}><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z"/></svg>`,
@@ -1385,30 +1386,14 @@ const SITE_TILES = [
 ];
 
 const HOW_IT_WORKS = [
-  { n:'01', title:'Data Collection', sub:'Assessment', tagline:'Know exactly where you stand',
-    bullets:[
-      'Answer an adaptive questionnaire shaped by your industry and infrastructure',
-      'Only relevant questions appear - nothing generic, nothing wasted',
-      'All six NIST CSF functions scored individually',
-    ]},
-  { n:'02', title:'Analysis', sub:null, tagline:'See risks a checklist would miss',
-    bullets:[
-      'Every answer cross-referenced against every other answer',
-      'Compounding risk flagged, not just scored in isolation',
-      'Vendor-specific mitigation notes where you\'ve named a product',
-    ]},
-  { n:'03', title:'Recommendation', sub:null, tagline:'Know what to fix first',
-    bullets:[
-      'A ranked, prioritized action list - not a wall of findings',
-      'Each item tied to why it matters more than the rest',
-      'Mapped back to the specific control it strengthens',
-    ]},
-  { n:'04', title:'Transformation', sub:null, tagline:'Prove the change actually worked',
-    bullets:[
-      'Implement fixes using the matching Runbook or Playbook',
-      'Re-assess on a cadence to track real progress',
-      'See the score delta since your last run',
-    ]},
+  { n:'01', title:'Data Collection', tagline:'Know exactly where you stand', icon:'checklist',
+    desc:'Answer an adaptive questionnaire shaped by your industry and infrastructure - only relevant questions appear, and all six NIST CSF functions are scored individually.' },
+  { n:'02', title:'Analysis', tagline:'See risks a checklist would miss', icon:'signal',
+    desc:'Every answer is cross-referenced against every other answer, so compounding risk gets flagged instead of scored in isolation - with vendor-specific mitigation notes wherever you\'ve named a product.' },
+  { n:'03', title:'Recommendation', tagline:'Know what to fix first', icon:'ranked',
+    desc:'A ranked, prioritized action list, not a wall of findings - each item tied to why it matters more than the rest, and mapped back to the specific control it strengthens.' },
+  { n:'04', title:'Transformation', tagline:'Prove the change actually worked', icon:'cycle',
+    desc:'Implement fixes using the matching Runbook or Playbook, then re-assess on a cadence to track real progress and see the score delta since your last run.' },
 ];
 
 const START_LINKS = [
@@ -1509,15 +1494,13 @@ function renderHomeTab(container){
       <div class="section-tile">
         <h3 class="section-h" id="how-it-works">How it works</h3>
         <p class="body-text">Four steps, start to finish - and then it runs again.</p>
-        <div class="phase4-grid">
+        <div class="hiw-grid">
           ${HOW_IT_WORKS.map((s,i)=>`
-            <div class="phase4-card">
-              <div class="vnum">${s.n}</div>
-              <h4>${s.title}${s.sub ? ` <span style="color:var(--text-muted); font-weight:400;">(${s.sub})</span>` : ''}</h4>
-              <div class="phase4-tagline">${s.tagline}</div>
-              <ul class="phase4-bullets">
-                ${s.bullets.map(b=>`<li>${b}</li>`).join('')}
-              </ul>
+            <div class="hiw-item${i === HOW_IT_WORKS.length - 1 ? ' loop' : ''}" style="transition-delay:${(i*0.1).toFixed(2)}s">
+              <div class="hiw-icon">${icon(s.icon)}</div>
+              <h4>${s.n} &middot; ${s.title}</h4>
+              <p>${s.desc}</p>
+              <span class="hiw-outcome">Outcome: ${s.tagline}</span>
             </div>
           `).join('')}
         </div>
