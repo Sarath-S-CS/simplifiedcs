@@ -1167,18 +1167,30 @@ function renderHamburgerMenu(){
     panel.id = 'mobileNavPanel';
     panel.innerHTML = TOP_TABS.map(t=>{
       const dd = NAV_DROPDOWN_MAP[t.id];
-      // categoryOnly tabs render as a plain section heading (no href to a
-      // page that doesn't exist) - only Home/Assessment are real links here.
-      const heading = t.categoryOnly
-        ? `<div class="mobile-nav-heading">${t.label}</div>`
-        : `<a class="mobile-nav-link ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>`;
+      if(!t.categoryOnly){
+        // Home/Assessment: real single links, unaffected by the accordion.
+        return `<a class="mobile-nav-link ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>`;
+      }
+      const containsActive = (dd||[]).some(d=>d.id===activeTab);
       return `
-        ${heading}
-        ${(dd||[]).map(d=>`<a class="mobile-nav-sublink ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
+        <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t.id}" aria-expanded="${containsActive}">
+          ${t.label} <span class="mobile-nav-chevron">&#9662;</span>
+        </button>
+        <div class="mobile-nav-sublist ${containsActive ? 'open' : ''}" id="mobileSublist-${t.id}">
+          ${(dd||[]).map(d=>`<a class="mobile-nav-sublink ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
+        </div>
       `;
     }).join('');
     document.querySelector('.masthead').appendChild(panel);
     wireNavLinksByDataset(panel, '[data-tab]', closeMenu);
+    panel.querySelectorAll('.mobile-nav-toggle').forEach(toggle=>{
+      toggle.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const sublist = document.getElementById(`mobileSublist-${toggle.dataset.category}`);
+        const isOpen = sublist.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', String(isOpen));
+      });
+    });
     requestAnimationFrame(()=> panel.classList.add('open'));
   }
   render();

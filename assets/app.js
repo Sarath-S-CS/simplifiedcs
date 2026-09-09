@@ -58864,14 +58864,29 @@ ${suffix}`;
       panel.id = "mobileNavPanel";
       panel.innerHTML = TOP_TABS.map((t4) => {
         const dd = NAV_DROPDOWN_MAP[t4.id];
-        const heading = t4.categoryOnly ? `<div class="mobile-nav-heading">${t4.label}</div>` : `<a class="mobile-nav-link ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>`;
+        if (!t4.categoryOnly) {
+          return `<a class="mobile-nav-link ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>`;
+        }
+        const containsActive = (dd || []).some((d2) => d2.id === activeTab);
         return `
-        ${heading}
-        ${(dd || []).map((d2) => `<a class="mobile-nav-sublink ${activeTab === d2.id ? "active" : ""}" href="${pathForTab(d2.id)}" data-tab="${d2.id}">${d2.label}</a>`).join("")}
+        <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t4.id}" aria-expanded="${containsActive}">
+          ${t4.label} <span class="mobile-nav-chevron">&#9662;</span>
+        </button>
+        <div class="mobile-nav-sublist ${containsActive ? "open" : ""}" id="mobileSublist-${t4.id}">
+          ${(dd || []).map((d2) => `<a class="mobile-nav-sublink ${activeTab === d2.id ? "active" : ""}" href="${pathForTab(d2.id)}" data-tab="${d2.id}">${d2.label}</a>`).join("")}
+        </div>
       `;
       }).join("");
       document.querySelector(".masthead").appendChild(panel);
       wireNavLinksByDataset(panel, "[data-tab]", closeMenu);
+      panel.querySelectorAll(".mobile-nav-toggle").forEach((toggle) => {
+        toggle.addEventListener("click", (e2) => {
+          e2.stopPropagation();
+          const sublist = document.getElementById(`mobileSublist-${toggle.dataset.category}`);
+          const isOpen = sublist.classList.toggle("open");
+          toggle.setAttribute("aria-expanded", String(isOpen));
+        });
+      });
       requestAnimationFrame(() => panel.classList.add("open"));
     }
     render();
