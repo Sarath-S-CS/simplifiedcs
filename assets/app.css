@@ -425,7 +425,7 @@
   .mobile-nav-sublist{ max-height:0; overflow:hidden; transition:max-height .25s ease; }
   .mobile-nav-sublist.open{ max-height:400px; }
   .mobile-nav-sublink{
-    font-family:var(--mono); font-size:12px; color:var(--text-muted);
+    font-family:var(--mono); font-size:13px; color:var(--text-muted);
     background:transparent; border:none; text-align:left;
     padding:9px clamp(24px, 4vw, 64px) 9px calc(clamp(24px, 4vw, 64px) + 16px); cursor:pointer;
   }
