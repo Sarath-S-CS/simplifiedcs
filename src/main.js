@@ -3834,6 +3834,101 @@ async function renderHistory(){
   observeReveals();
 }
 
+function initAnimatedBackground(){
+  const canvas = document.getElementById('bgCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let particles = [];
+  let rafId = null;
+  let gradient = null;
+  let width = 0, height = 0;
+
+  function isLight(){ return document.documentElement.getAttribute('data-theme') === 'light'; }
+
+  function sizeCanvas(){
+    const rect = canvas.parentElement.getBoundingClientRect();
+    width = rect.width; height = rect.height;
+    canvas.width = Math.max(1, width * devicePixelRatio);
+    canvas.height = Math.max(1, height * devicePixelRatio);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    buildGradient(width, height);
+  }
+
+  function buildGradient(w, h){
+    const g = ctx.createRadialGradient(w*0.15, h*-0.05, 0, w*0.15, h*-0.05, Math.max(w,h)*0.8);
+    const tint = isLight() ? 'rgba(47,111,255,0.10)' : 'rgba(47,111,255,0.18)';
+    g.addColorStop(0, tint);
+    g.addColorStop(1, 'rgba(47,111,255,0)');
+    gradient = g;
+  }
+
+  function initParticles(){
+    particles = Array.from({ length: 50 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.15,
+      r: 1 + Math.random() * 1.8,
+    }));
+  }
+
+  function draw(){
+    const bg = isLight() ? '#FFFFFF' : '#000000';
+    const dotColor = isLight() ? '47,111,255' : '90,150,255';
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+    if(gradient){ ctx.fillStyle = gradient; ctx.fillRect(0, 0, width, height); }
+
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if(p.x < 0 || p.x > width) p.vx *= -1;
+      if(p.y < 0 || p.y > height) p.vy *= -1;
+    });
+    for(let i = 0; i < particles.length; i++){
+      for(let j = i + 1; j < particles.length; j++){
+        const a = particles[i], b = particles[j];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if(d < 120){
+          ctx.strokeStyle = `rgba(${dotColor},${0.12 * (1 - d / 120)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+      }
+    }
+    particles.forEach(p => {
+      ctx.fillStyle = `rgba(${dotColor},${isLight() ? 0.55 : 0.75})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    });
+
+    if(!reduceMotion) rafId = requestAnimationFrame(draw);
+  }
+
+  function stop(){ if(rafId){ cancelAnimationFrame(rafId); rafId = null; } }
+  function start(){ if(!rafId && !reduceMotion) draw(); }
+
+  sizeCanvas();
+  initParticles();
+  draw();
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { sizeCanvas(); initParticles(); }, 120);
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) stop(); else start();
+  });
+
+  new MutationObserver(() => {
+    buildGradient(width, height);
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+}
+
 (async function init(){
   // The browser's own automatic scroll restoration on back/forward fights
   // with renderApp()'s own scroll-to-top-or-anchor handling below - without
@@ -3863,6 +3958,7 @@ async function renderHistory(){
     }
   } catch(e){ /* default to dark */ }
   document.documentElement.setAttribute('data-theme', theme);
+  initAnimatedBackground();
   renderSearchWidget();
   renderHamburgerMenu();
   renderApp();

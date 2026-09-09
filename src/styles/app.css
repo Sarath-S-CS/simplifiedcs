@@ -28,6 +28,7 @@
     --accent-violet:#A855F7;
     --accent-amber:#E0A94A;
     --accent-pop:#FF5FA2;
+    --accent-electric:#2F6FFF;
     --text-on-accent:#04140A;
     --tint-signal: rgba(1,169,130,0.14);
     --tint-signal-soft: rgba(1,169,130,0.08);
@@ -57,6 +58,7 @@
     --accent-violet:#A855F7;
     --accent-amber:#A8710A;
     --accent-pop:#C9186B;
+    --accent-electric:#2F6FFF;
     --text-on-accent:#04140A;
     --tint-signal: rgba(1,169,130,0.12);
     --tint-signal-soft: rgba(1,169,130,0.07);
@@ -66,13 +68,14 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--bg);
     color:var(--text);
     font-family:var(--sans);
     min-height:100vh;
     line-height:1.5;
     transition:background-color .2s ease, color .2s ease;
   }
+  #bgLayer{ position:fixed; inset:0; z-index:-1; pointer-events:none; background:var(--bg); }
+  #bgCanvas{ width:100%; height:100%; display:block; }
   *{ transition:background-color .15s ease, border-color .15s ease, color .15s ease; }
 
   /* --- global rounded-corner treatment for all card/tile/section elements --- */
