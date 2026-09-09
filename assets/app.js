@@ -59191,8 +59191,7 @@ ${suffix}`;
         <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage below for a quick summary of what it involves.</p>
         <div class="workflow-row">
           ${stageOrder.map((sid, i3) => `
-            ${i3 > 0 ? `<div class="workflow-arrow" style="transition-delay:${(i3 * 0.12).toFixed(2)}s"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ""}
-            <div class="workflow-step" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}; transition-delay:${(i3 * 0.12).toFixed(2)}s">
+            <div class="workflow-step" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}; transition-delay:${(i3 * 0.12).toFixed(2)}s; position:sticky; top:${96 + i3 * 40}px; z-index:${i3 + 1};">
               <div class="workflow-phase-tag">Phase ${i3 + 1}</div>
               <div class="stage-illustration">${stageIllustration(sid)}</div>
               <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
@@ -59291,7 +59290,7 @@ ${suffix}`;
       if (tile) tile.classList.remove("has-open-overlay");
       setTimeout(() => {
         if (!panel.classList.contains("open")) panel.style.display = "none";
-      }, 220);
+      }, 300);
     }
     container.querySelectorAll("[data-stage-detail]").forEach((el) => {
       el.addEventListener("click", (e2) => {
@@ -59307,16 +59306,7 @@ ${suffix}`;
         openStageDetail = sid;
         container.querySelectorAll("[data-stage-detail]").forEach((c4) => c4.classList.remove("stage-active"));
         el.classList.add("stage-active");
-        const row = el.closest(".workflow-row") || el.parentElement;
-        const stacked = window.matchMedia("(max-width:700px)").matches;
-        if (stacked) {
-          panel.classList.add("stage-detail-panel-inline");
-          el.insertAdjacentElement("afterend", panel);
-        } else {
-          panel.classList.remove("stage-detail-panel-inline");
-          row.appendChild(panel);
-          panel.style.top = el.offsetTop + el.offsetHeight + "px";
-        }
+        el.appendChild(panel);
         const openTile = el.closest(".section-tile");
         if (openTile) openTile.classList.add("has-open-overlay");
         panel.innerHTML = `

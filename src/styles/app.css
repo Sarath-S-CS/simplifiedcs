@@ -404,11 +404,11 @@
   }
   .mobile-nav-panel.open{ opacity:1; transform:translateY(0); }
   .mobile-nav-link{
-    font-family:var(--mono); font-size:13px; text-transform:uppercase; letter-spacing:0.04em;
-    color:var(--text); background:transparent; border:none; text-align:left;
+    font-family:var(--mono); font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
+    color:var(--text); background:transparent; border:none; border-left:2px solid transparent; text-align:left;
     padding:12px clamp(24px, 4vw, 64px); cursor:pointer;
   }
-  .mobile-nav-link.active{ color:var(--accent-signal); }
+  .mobile-nav-link.active{ color:var(--text); background:var(--tint-signal-soft); border-left-color:var(--accent-signal); }
   /* categoryOnly tabs (Framework/Learn/Resources/Insights) have no page of
      their own on mobile either - a plain, non-interactive section label
      above their sublinks, not a link to a page that doesn't exist. */
@@ -1493,19 +1493,17 @@
   .phase4-bullets li{ font-size:12.5px; color:var(--text-muted); line-height:1.6; margin-bottom:6px; }
   .phase4-bullets li:last-child{ margin-bottom:0; }
 
-  .workflow-row{ display:flex; align-items:stretch; gap:0; margin:20px 0 32px; flex-wrap:wrap; position:relative; }
-  .section-tile:not(.revealed) .workflow-step,
-  .section-tile:not(.revealed) .workflow-arrow{ opacity:0; transform:translateY(16px); }
-  .section-tile.revealed .workflow-step,
-  .section-tile.revealed .workflow-arrow{
+  .workflow-row{ display:flex; flex-direction:column; gap:20px; margin:20px 0 32px; position:relative; }
+  .section-tile:not(.revealed) .workflow-step{ opacity:0; transform:translateY(16px); }
+  .section-tile.revealed .workflow-step{
     opacity:1; transform:translateY(0);
     transition:opacity .5s ease, transform .5s ease;
   }
   .workflow-step{
-    flex:1; min-width:160px; background:var(--surface-raised); padding:18px 20px; text-align:center;
+    background:var(--surface); border:1px solid var(--line); padding:18px 20px; text-align:center;
     display:block; text-decoration:none; color:inherit; cursor:pointer;
     transition:background .18s ease, transform .18s ease;
-    position:relative;
+    position:relative; box-shadow:0 8px 24px rgba(0,0,0,0.18);
   }
   .workflow-step:hover{ background:var(--tint-signal-soft); transform:translateY(-2px); }
   .workflow-step.stage-active{ background:var(--tint-signal); box-shadow:inset 0 -2px 0 var(--accent-signal); }
@@ -1513,19 +1511,13 @@
      .tab-dropdown) so opening it never resizes the step or reflows its
      siblings - it overlays below, it doesn't push. */
   .stage-detail-panel{
-    position:absolute; top:100%; left:0; right:0; z-index:5;
     text-align:left;
-    margin-top:8px; padding:20px 22px; background:var(--overlay-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line);
-    opacity:0; transform:translateY(-8px); transition:opacity .22s ease, transform .22s ease;
+    margin-top:16px; padding:20px 22px; background:var(--overlay-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line);
+    opacity:0; max-height:0; overflow:hidden; transition:opacity .22s ease, max-height .3s ease, margin-top .3s ease;
     pointer-events:none;
   }
-  .stage-detail-panel.open{ opacity:1; transform:translateY(0); pointer-events:auto; }
-  /* Used below the 700px breakpoint, where .workflow-row stacks into a
-     column - static/in-flow so opening a panel pushes the remaining
-     stacked steps down instead of floating over them (position:absolute
-     can't affect sibling layout, which is exactly correct on desktop
-     where nothing follows the row on the same line, but wrong here). */
-  .stage-detail-panel-inline{ position:static; top:auto; left:auto; right:auto; margin:10px 0; }
+  .stage-detail-panel.open{ opacity:1; max-height:600px; pointer-events:auto; }
+  .stage-detail-panel:empty{ margin-top:0; }
   .stage-detail-panel h4{ font-size:15px; margin:0 0 10px; }
   .risk-slider-wrap{ margin-top:28px; padding-top:20px; border-top:1px solid var(--line); position:relative; }
   .risk-slider-label{ font-size:12.5px; color:var(--text-muted); margin-bottom:14px; }
@@ -1563,13 +1555,6 @@
   .workflow-phase-tag{ font-family:var(--mono); font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
   .workflow-step h4{ font-size:14.5px; margin:0 0 8px; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.03em; }
   .workflow-step p{ font-size:12.5px; color:var(--text-muted); line-height:1.6; margin:0; text-align:left; }
-  .workflow-arrow{ display:flex; align-items:center; justify-content:center; padding:0 10px; color:var(--text-muted); flex-shrink:0; }
-  @media (max-width:700px){
-    .workflow-row{ flex-direction:column; }
-    .workflow-arrow{ transform:rotate(90deg); padding:6px 0; }
-    .section-tile:not(.revealed) .workflow-arrow{ transform:rotate(90deg) translateY(16px); }
-    .section-tile.revealed .workflow-arrow{ transform:rotate(90deg) translateY(0); }
-  }
   .stage-illustration{ display:flex; justify-content:center; margin-bottom:10px; }
   .stage-illustration-sm{ margin-bottom:0; flex-shrink:0; }
   .stage-illustration-sm svg{ width:40px; height:40px; }
