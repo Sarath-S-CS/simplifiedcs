@@ -947,36 +947,7 @@ function renderApp(){
   }
 }
 
-// Keeps --viewport-width (consumed by .masthead's full-bleed breakout in
-// app.css) equal to the real, scrollbar-excluded viewport width - see the
-// comment above .masthead for why plain 100vw isn't safe there. Called from
-// observeReveals() because that runs after every content render (initial
-// load, tab switches, and narrower re-renders like the Exploits filter
-// pills that update the DOM without going through renderApp() at all) -
-// any of those can toggle the vertical scrollbar at a constant window
-// width, and a plain resize listener alone would miss that.
-//
-// The immediate read can land mid-transition right after a viewport/DPR
-// change (observed while testing: a page load that landed just as the
-// browser was still settling a device-emulation switch briefly read a
-// clientWidth that matched neither the old nor the new size, and since
-// nothing else would have re-fired, that wrong value would've stuck
-// permanently). The setTimeout re-reads shortly after, once layout has
-// genuinely settled, correcting anything the immediate read got wrong -
-// cheap insurance against a bad reading being permanent instead of a brief
-// flash. Deliberately not requestAnimationFrame: rAF is tied to the
-// compositor and simply never fires for a backgrounded/non-visible tab
-// (confirmed while testing this fix), which would turn "briefly wrong"
-// into "wrong until the tab regains focus."
-function syncViewportWidthVar(){
-  document.documentElement.style.setProperty('--viewport-width', document.documentElement.clientWidth + 'px');
-  setTimeout(()=>{
-    document.documentElement.style.setProperty('--viewport-width', document.documentElement.clientWidth + 'px');
-  }, 100);
-}
-
 function observeReveals(){
-  syncViewportWidthVar();
   const els = document.querySelectorAll('.section-tile, .page-intro');
   if(!('IntersectionObserver' in window)){
     els.forEach(el=>el.classList.add('revealed'));
@@ -3872,7 +3843,6 @@ async function renderHistory(){
   // ownership entirely to the app, which is what a pushState-routed SPA
   // is expected to do.
   if('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  window.addEventListener('resize', syncViewportWidthVar);
   // ICON-THEME-QUALITY-BRIEF.md §2: window.storage only exists inside
   // Claude's own sandbox, not on the real deployed site - every call here
   // was silently failing in production, so the theme choice has never
