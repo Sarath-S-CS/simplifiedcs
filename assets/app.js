@@ -59108,6 +59108,47 @@ ${suffix}`;
     { title: "Recently Flagged Exploits", desc: "CISA's KEV catalog, sorted with newest entries first", href: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog", domain: "cisa.gov" },
     { title: "Ongoing Threat Actor Campaigns", desc: "CISA's cybersecurity advisories on active TTPs", href: "https://www.cisa.gov/news-events/cybersecurity-advisories", domain: "cisa.gov" }
   ];
+  function wirePhasesAssembly(container) {
+    const runway = container.querySelector("#phasesRunway");
+    if (!runway) return;
+    const focusCards = [...container.querySelectorAll(".focus-card")];
+    const stackItems = [...container.querySelectorAll(".stack-item")];
+    const connectors = [...container.querySelectorAll(".stack-connector")];
+    const loopConnector = container.querySelector("#loopConnector");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isDesktop = window.matchMedia("(min-width:761px)").matches;
+    const n2 = focusCards.length;
+    function settleComplete() {
+      focusCards.forEach((c4, i3) => c4.classList.toggle("active", i3 === n2 - 1));
+      stackItems.forEach((s3) => s3.classList.add("in"));
+      connectors.forEach((c4) => c4.classList.add("in"));
+      loopConnector.classList.add("in");
+    }
+    if (reduceMotion || !isDesktop) {
+      settleComplete();
+      return;
+    }
+    const STAGE_TOP = 96, STAGE_HEIGHT = 420;
+    function update() {
+      const rect = runway.getBoundingClientRect();
+      const total = runway.offsetHeight - STAGE_HEIGHT;
+      const scrolled = Math.min(Math.max(STAGE_TOP - rect.top, 0), total);
+      const progress = total > 0 ? scrolled / total : 0;
+      const bandWidth = 1 / n2;
+      const band = Math.min(n2 - 1, Math.floor(progress / bandWidth));
+      const bandLocal = (progress - band * bandWidth) / bandWidth;
+      focusCards.forEach((c4, i3) => c4.classList.toggle("active", i3 === band));
+      stackItems.forEach((s3, i3) => {
+        s3.classList.toggle("in", i3 < band || i3 === band && bandLocal > 0.7);
+      });
+      connectors.forEach((c4, i3) => {
+        c4.classList.toggle("in", i3 < band || i3 === band && bandLocal > 0.75);
+      });
+      loopConnector.classList.toggle("in", progress > 0.94);
+    }
+    window.addEventListener("scroll", update, { passive: true });
+    update();
+  }
   function renderHomeTab(container) {
     const stageOrder = ["discovery", "transformation", "optimization"];
     container.innerHTML = `
@@ -59167,19 +59208,37 @@ ${suffix}`;
 
       <div class="section-tile">
         <h3 class="section-h">The three phases of the assessment</h3>
-        <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage below for a quick summary of what it involves.</p>
-        <div class="phases-row">
-          ${stageOrder.map((sid, i3) => `
-            ${i3 > 0 ? `<div class="phase-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ""}
-            <div class="phase-card" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}">
-              <div class="workflow-phase-tag">Phase ${i3 + 1}</div>
-              <div class="stage-illustration">${stageIllustration(sid)}</div>
-              <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
-              <p>${STAGE_META[sid].blurb}</p>
+        <p class="body-text">Every assessment moves through three stages as a continuous workflow - scroll to watch them unfold, or select a stage for a quick summary of what it involves.</p>
+        <div class="phases-runway" id="phasesRunway">
+          <div class="phases-stage">
+            <div class="phases-content">
+              <div class="stack-col">
+                ${stageOrder.map((sid, i3) => `
+                  <div class="stack-item" data-stage-detail="${sid}" data-stack-index="${i3}">
+                    <div class="stack-badge" style="border-color:${STAGE_META[sid].color}; color:${STAGE_META[sid].color};">0${i3 + 1}</div>
+                    <div class="stack-label">${STAGE_META[sid].label}</div>
+                  </div>
+                  ${i3 < stageOrder.length - 1 ? `<div class="stack-connector" data-connector-index="${i3}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M6 13l6 6 6-6"/></svg></div>` : ""}
+                `).join("")}
+                <div class="loop-connector" id="loopConnector">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"/><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"/></svg>
+                  <span>Cycle repeats to ${STAGE_META[stageOrder[0]].label}</span>
+                </div>
+              </div>
+              <div class="focus-area">
+                ${stageOrder.map((sid, i3) => `
+                  <div class="focus-card" data-stage-detail="${sid}" data-focus-index="${i3}" style="border-top:2px solid ${STAGE_META[sid].color}">
+                    <div class="workflow-phase-tag">Phase ${i3 + 1}</div>
+                    <div class="stage-illustration">${stageIllustration(sid)}</div>
+                    <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
+                    <p>${STAGE_META[sid].blurb}</p>
+                  </div>
+                `).join("")}
+              </div>
             </div>
-          `).join("")}
+            <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
+          </div>
         </div>
-        <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
         <div class="method-link-row">
           <a href="${pathForTab("maturity")}" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon">${icon("cycle")}</span>Explore the full Maturity Model</a>
         </div>
@@ -59259,6 +59318,7 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMaturityExplore"), "maturity");
     wireNavLink(document.getElementById("linkMethodologyFromHome"), "methodology");
     wireNavLink(document.getElementById("linkPrinciplesFromHome"), "coreprinciples");
+    wirePhasesAssembly(container);
     let openStageDetail = null;
     function closeStageDetail() {
       const panel = document.getElementById("stageDetailPanel");
@@ -59304,7 +59364,7 @@ ${suffix}`;
       riskDesc.classList.remove("open");
     }
     document.addEventListener("click", (e2) => {
-      if (openStageDetail && !e2.target.closest(".phases-row") && !e2.target.closest(".stage-detail-panel")) {
+      if (openStageDetail && !e2.target.closest(".phases-content") && !e2.target.closest(".stage-detail-panel")) {
         closeStageDetail();
       }
       if (riskDesc.classList.contains("open") && !e2.target.closest(".risk-slider-wrap")) {
