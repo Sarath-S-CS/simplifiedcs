@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="./assets/app.css">
 </head>
 <body>
+<div id="bgLayer" aria-hidden="true"><canvas id="bgCanvas"></canvas></div>
 <!-- Static, hidden form purely so Netlify's build-time crawler detects the "feedback" form schema.
      The real, visible form is rendered by JS on the Feedback page and submits here via fetch. -->
 <form name="feedback" data-netlify="true" netlify-honeypot="bot-field" hidden>
@@ -11186,7 +11187,7 @@
       var IS_IOS_PEBBLE = require_environment_is_ios_pebble();
       var IS_WEBOS_WEBKIT = require_environment_is_webos_webkit();
       var IS_NODE = require_environment_is_node();
-      var MutationObserver = globalThis2.MutationObserver || globalThis2.WebKitMutationObserver;
+      var MutationObserver2 = globalThis2.MutationObserver || globalThis2.WebKitMutationObserver;
       var document2 = globalThis2.document;
       var process2 = globalThis2.process;
       var Promise2 = globalThis2.Promise;
@@ -11209,10 +11210,10 @@
           }
           if (parent) parent.enter();
         };
-        if (!IS_IOS && !IS_NODE && !IS_WEBOS_WEBKIT && MutationObserver && document2) {
+        if (!IS_IOS && !IS_NODE && !IS_WEBOS_WEBKIT && MutationObserver2 && document2) {
           toggle = true;
           node2 = document2.createTextNode("");
-          new MutationObserver(flush).observe(node2, { characterData: true });
+          new MutationObserver2(flush).observe(node2, { characterData: true });
           notify = function() {
             node2.data = toggle = !toggle;
           };
@@ -58957,14 +58958,29 @@ ${suffix}`;
       panel.id = "mobileNavPanel";
       panel.innerHTML = TOP_TABS.map((t4) => {
         const dd = NAV_DROPDOWN_MAP[t4.id];
-        const heading = t4.categoryOnly ? `<div class="mobile-nav-heading">${t4.label}</div>` : `<a class="mobile-nav-link ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>`;
+        if (!t4.categoryOnly) {
+          return `<a class="mobile-nav-link ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>`;
+        }
+        const containsActive = (dd || []).some((d2) => d2.id === activeTab);
         return `
-        ${heading}
-        ${(dd || []).map((d2) => `<a class="mobile-nav-sublink ${activeTab === d2.id ? "active" : ""}" href="${pathForTab(d2.id)}" data-tab="${d2.id}">${d2.label}</a>`).join("")}
+        <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t4.id}" aria-expanded="${containsActive}">
+          ${t4.label} <span class="mobile-nav-chevron">&#9662;</span>
+        </button>
+        <div class="mobile-nav-sublist ${containsActive ? "open" : ""}" id="mobileSublist-${t4.id}">
+          ${(dd || []).map((d2) => `<a class="mobile-nav-sublink ${activeTab === d2.id ? "active" : ""}" href="${pathForTab(d2.id)}" data-tab="${d2.id}">${d2.label}</a>`).join("")}
+        </div>
       `;
       }).join("");
       document.querySelector(".masthead").appendChild(panel);
       wireNavLinksByDataset(panel, "[data-tab]", closeMenu);
+      panel.querySelectorAll(".mobile-nav-toggle").forEach((toggle) => {
+        toggle.addEventListener("click", (e2) => {
+          e2.stopPropagation();
+          const sublist = document.getElementById(`mobileSublist-${toggle.dataset.category}`);
+          const isOpen = sublist.classList.toggle("open");
+          toggle.setAttribute("aria-expanded", String(isOpen));
+        });
+      });
       requestAnimationFrame(() => panel.classList.add("open"));
     }
     render();
@@ -59221,9 +59237,13 @@ ${suffix}`;
         <h3 class="section-h" id="how-it-works">How it works</h3>
         <p class="body-text">Four steps, start to finish.</p>
         <div class="phase4-grid">
-          ${HOW_IT_WORKS.map((s3) => `
+          ${HOW_IT_WORKS.map((s3, i3) => `
             <div class="phase4-card">
-              <div class="vnum">${s3.n}</div>
+              <div class="vnum">${s3.n}${i3 === HOW_IT_WORKS.length - 1 ? `
+                <svg class="vnum-arrow vnum-loop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"/><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"/></svg>` : `
+                <svg class="vnum-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`}
+              </div>
+              ${i3 === HOW_IT_WORKS.length - 1 ? '<span class="phase4-loop-label">Cycle repeats &rarr; Data Collection</span>' : ""}
               <h4>${s3.title}${s3.sub ? ` <span style="color:var(--text-muted); font-weight:400;">(${s3.sub})</span>` : ""}</h4>
               <div class="phase4-tagline">${s3.tagline}</div>
               <ul class="phase4-bullets">
@@ -59265,8 +59285,8 @@ ${suffix}`;
         <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage below for a quick summary of what it involves.</p>
         <div class="workflow-row">
           ${stageOrder.map((sid, i3) => `
-            ${i3 > 0 ? `<div class="workflow-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ""}
-            <div class="workflow-step" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}">
+            ${i3 > 0 ? `<div class="workflow-arrow" style="transition-delay:${(i3 * 0.12).toFixed(2)}s"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ""}
+            <div class="workflow-step" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}; transition-delay:${(i3 * 0.12).toFixed(2)}s">
               <div class="workflow-phase-tag">Phase ${i3 + 1}</div>
               <div class="stage-illustration">${stageIllustration(sid)}</div>
               <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
@@ -61343,6 +61363,110 @@ ${suffix}`;
     }
     observeReveals();
   }
+  function initAnimatedBackground() {
+    const canvas = document.getElementById("bgCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let particles = [];
+    let rafId = null;
+    let gradient = null;
+    let width = 0, height = 0;
+    function isLight() {
+      return document.documentElement.getAttribute("data-theme") === "light";
+    }
+    function sizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.max(1, width * devicePixelRatio);
+      canvas.height = Math.max(1, height * devicePixelRatio);
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      buildGradient(width, height);
+    }
+    function buildGradient(w2, h3) {
+      const g2 = ctx.createRadialGradient(w2 * 0.15, h3 * -0.05, 0, w2 * 0.15, h3 * -0.05, Math.max(w2, h3) * 0.8);
+      const tint = isLight() ? "rgba(47,111,255,0.10)" : "rgba(47,111,255,0.18)";
+      g2.addColorStop(0, tint);
+      g2.addColorStop(1, "rgba(47,111,255,0)");
+      gradient = g2;
+    }
+    function initParticles() {
+      particles = Array.from({ length: 50 }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() - 0.5) * 0.15,
+        r: 1 + Math.random() * 1.8
+      }));
+    }
+    function draw() {
+      const bg = isLight() ? "#FFFFFF" : "#000000";
+      const dotColor = isLight() ? "47,111,255" : "90,150,255";
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, width, height);
+      if (gradient) {
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+      }
+      particles.forEach((p3) => {
+        p3.x += p3.vx;
+        p3.y += p3.vy;
+        if (p3.x < 0 || p3.x > width) p3.vx *= -1;
+        if (p3.y < 0 || p3.y > height) p3.vy *= -1;
+      });
+      for (let i3 = 0; i3 < particles.length; i3++) {
+        for (let j2 = i3 + 1; j2 < particles.length; j2++) {
+          const a4 = particles[i3], b2 = particles[j2];
+          const d2 = Math.hypot(a4.x - b2.x, a4.y - b2.y);
+          if (d2 < 120) {
+            ctx.strokeStyle = `rgba(${dotColor},${0.12 * (1 - d2 / 120)})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(a4.x, a4.y);
+            ctx.lineTo(b2.x, b2.y);
+            ctx.stroke();
+          }
+        }
+      }
+      particles.forEach((p3) => {
+        ctx.fillStyle = `rgba(${dotColor},${isLight() ? 0.55 : 0.75})`;
+        ctx.beginPath();
+        ctx.arc(p3.x, p3.y, p3.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      if (!reduceMotion) rafId = requestAnimationFrame(draw);
+    }
+    function stop() {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    }
+    function start() {
+      if (!rafId && !reduceMotion) draw();
+    }
+    sizeCanvas();
+    initParticles();
+    draw();
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        sizeCanvas();
+        initParticles();
+      }, 120);
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stop();
+      else start();
+    });
+    new MutationObserver(() => {
+      buildGradient(width, height);
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  }
   (async function init() {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
     try {
@@ -61355,6 +61479,7 @@ ${suffix}`;
     } catch (e2) {
     }
     document.documentElement.setAttribute("data-theme", theme);
+    initAnimatedBackground();
     renderSearchWidget();
     renderHamburgerMenu();
     renderApp();

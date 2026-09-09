@@ -1167,18 +1167,30 @@ function renderHamburgerMenu(){
     panel.id = 'mobileNavPanel';
     panel.innerHTML = TOP_TABS.map(t=>{
       const dd = NAV_DROPDOWN_MAP[t.id];
-      // categoryOnly tabs render as a plain section heading (no href to a
-      // page that doesn't exist) - only Home/Assessment are real links here.
-      const heading = t.categoryOnly
-        ? `<div class="mobile-nav-heading">${t.label}</div>`
-        : `<a class="mobile-nav-link ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>`;
+      if(!t.categoryOnly){
+        // Home/Assessment: real single links, unaffected by the accordion.
+        return `<a class="mobile-nav-link ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>`;
+      }
+      const containsActive = (dd||[]).some(d=>d.id===activeTab);
       return `
-        ${heading}
-        ${(dd||[]).map(d=>`<a class="mobile-nav-sublink ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
+        <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t.id}" aria-expanded="${containsActive}">
+          ${t.label} <span class="mobile-nav-chevron">&#9662;</span>
+        </button>
+        <div class="mobile-nav-sublist ${containsActive ? 'open' : ''}" id="mobileSublist-${t.id}">
+          ${(dd||[]).map(d=>`<a class="mobile-nav-sublink ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
+        </div>
       `;
     }).join('');
     document.querySelector('.masthead').appendChild(panel);
     wireNavLinksByDataset(panel, '[data-tab]', closeMenu);
+    panel.querySelectorAll('.mobile-nav-toggle').forEach(toggle=>{
+      toggle.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const sublist = document.getElementById(`mobileSublist-${toggle.dataset.category}`);
+        const isOpen = sublist.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', String(isOpen));
+      });
+    });
     requestAnimationFrame(()=> panel.classList.add('open'));
   }
   render();
@@ -1438,9 +1450,13 @@ function renderHomeTab(container){
         <h3 class="section-h" id="how-it-works">How it works</h3>
         <p class="body-text">Four steps, start to finish.</p>
         <div class="phase4-grid">
-          ${HOW_IT_WORKS.map(s=>`
+          ${HOW_IT_WORKS.map((s,i)=>`
             <div class="phase4-card">
-              <div class="vnum">${s.n}</div>
+              <div class="vnum">${s.n}${i === HOW_IT_WORKS.length - 1 ? `
+                <svg class="vnum-arrow vnum-loop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"/><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"/></svg>` : `
+                <svg class="vnum-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`}
+              </div>
+              ${i === HOW_IT_WORKS.length - 1 ? '<span class="phase4-loop-label">Cycle repeats &rarr; Data Collection</span>' : ''}
               <h4>${s.title}${s.sub ? ` <span style="color:var(--text-muted); font-weight:400;">(${s.sub})</span>` : ''}</h4>
               <div class="phase4-tagline">${s.tagline}</div>
               <ul class="phase4-bullets">
@@ -1482,8 +1498,8 @@ function renderHomeTab(container){
         <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage below for a quick summary of what it involves.</p>
         <div class="workflow-row">
           ${stageOrder.map((sid,i)=>`
-            ${i>0 ? `<div class="workflow-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ''}
-            <div class="workflow-step" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}">
+            ${i>0 ? `<div class="workflow-arrow" style="transition-delay:${(i*0.12).toFixed(2)}s"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ''}
+            <div class="workflow-step" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}; transition-delay:${(i*0.12).toFixed(2)}s">
               <div class="workflow-phase-tag">Phase ${i+1}</div>
               <div class="stage-illustration">${stageIllustration(sid)}</div>
               <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
@@ -3834,6 +3850,101 @@ async function renderHistory(){
   observeReveals();
 }
 
+function initAnimatedBackground(){
+  const canvas = document.getElementById('bgCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let particles = [];
+  let rafId = null;
+  let gradient = null;
+  let width = 0, height = 0;
+
+  function isLight(){ return document.documentElement.getAttribute('data-theme') === 'light'; }
+
+  function sizeCanvas(){
+    const rect = canvas.parentElement.getBoundingClientRect();
+    width = rect.width; height = rect.height;
+    canvas.width = Math.max(1, width * devicePixelRatio);
+    canvas.height = Math.max(1, height * devicePixelRatio);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    buildGradient(width, height);
+  }
+
+  function buildGradient(w, h){
+    const g = ctx.createRadialGradient(w*0.15, h*-0.05, 0, w*0.15, h*-0.05, Math.max(w,h)*0.8);
+    const tint = isLight() ? 'rgba(47,111,255,0.10)' : 'rgba(47,111,255,0.18)';
+    g.addColorStop(0, tint);
+    g.addColorStop(1, 'rgba(47,111,255,0)');
+    gradient = g;
+  }
+
+  function initParticles(){
+    particles = Array.from({ length: 50 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.15,
+      r: 1 + Math.random() * 1.8,
+    }));
+  }
+
+  function draw(){
+    const bg = isLight() ? '#FFFFFF' : '#000000';
+    const dotColor = isLight() ? '47,111,255' : '90,150,255';
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+    if(gradient){ ctx.fillStyle = gradient; ctx.fillRect(0, 0, width, height); }
+
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if(p.x < 0 || p.x > width) p.vx *= -1;
+      if(p.y < 0 || p.y > height) p.vy *= -1;
+    });
+    for(let i = 0; i < particles.length; i++){
+      for(let j = i + 1; j < particles.length; j++){
+        const a = particles[i], b = particles[j];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if(d < 120){
+          ctx.strokeStyle = `rgba(${dotColor},${0.12 * (1 - d / 120)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+      }
+    }
+    particles.forEach(p => {
+      ctx.fillStyle = `rgba(${dotColor},${isLight() ? 0.55 : 0.75})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    });
+
+    if(!reduceMotion) rafId = requestAnimationFrame(draw);
+  }
+
+  function stop(){ if(rafId){ cancelAnimationFrame(rafId); rafId = null; } }
+  function start(){ if(!rafId && !reduceMotion) draw(); }
+
+  sizeCanvas();
+  initParticles();
+  draw();
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { sizeCanvas(); initParticles(); }, 120);
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) stop(); else start();
+  });
+
+  new MutationObserver(() => {
+    buildGradient(width, height);
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+}
+
 (async function init(){
   // The browser's own automatic scroll restoration on back/forward fights
   // with renderApp()'s own scroll-to-top-or-anchor handling below - without
@@ -3863,6 +3974,7 @@ async function renderHistory(){
     }
   } catch(e){ /* default to dark */ }
   document.documentElement.setAttribute('data-theme', theme);
+  initAnimatedBackground();
   renderSearchWidget();
   renderHamburgerMenu();
   renderApp();
