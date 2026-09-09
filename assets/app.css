@@ -80,7 +80,7 @@
 
   /* --- global rounded-corner treatment for all card/tile/section elements --- */
   .section-tile, .page-intro, .hero-banner, .fw-card, .acc-card, .case-card,
-  .industry-card, .region-chip, .site-tile, .start-link, .phase4-card, .workflow-step,
+  .industry-card, .region-chip, .site-tile, .start-link, .phase4-card, .phase-card,
   .rubric-card, .toc-list, .delta-box, .info-box, .note-box,
   .news-card, .tier-row, .phase-row, .stage-band, .resource-group, .osint-item,
   .footer-social-icon, .region-note, .ot-skip-note, .ot-likely-note,
@@ -112,7 +112,7 @@
   /* --- genuine glass (not flat color) for the larger --surface-raised
      containers; small decorative elements and form/table chrome are
      deliberately excluded --- */
-  .workflow-step, .rubric-card, .fw-card, .industry-card, .region-chip,
+  .phase-card, .rubric-card, .fw-card, .industry-card, .region-chip,
   .acc-card, .stage-band, .info-box, .delta-box, .filter-pill, .toc-list{
     backdrop-filter:blur(14px);
     -webkit-backdrop-filter:blur(14px);
@@ -1466,33 +1466,34 @@
      makes the tracks genuinely equal-width instead, and .phase4-card h4's
      overflow-wrap:break-word below lets that same word break within its
      now-correctly-sized column instead of overflowing it. */
-  .cycle-map{ position:relative; width:260px; height:260px; max-width:100%; margin:16px auto 8px; }
-  .cycle-ring{ position:absolute; inset:30px; border-radius:50%; border:1.5px dashed var(--line); }
-  .cycle-node{
-    position:absolute; top:50%; left:50%; width:96px; margin:-48px 0 0 -48px;
-    transform:rotate(calc(var(--pos) * 90deg)) translateY(-100px) rotate(calc(var(--pos) * -90deg));
-    display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center;
+  /* aspect-ratio locks the container to the SVG viewBox's own 520:420 ratio
+     at every width, so the triangle (drawn in viewBox units) and the node
+     divs (positioned in plain percentages below) always scale together -
+     a fixed pixel height here would let the SVG's own aspect-fit scaling
+     drift away from the nodes' positions at any width other than 520px. */
+  .pyramid-stage{ position:relative; width:100%; max-width:520px; aspect-ratio:520/420; margin:16px auto 8px; }
+  .pyramid-stage svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .pyramid-outline{ stroke:var(--line); stroke-dasharray:4 6; }
+  .pyramid-pulse{ stroke:var(--accent-electric); }
+  .pyramid-node{
+    position:absolute; width:150px; margin-left:-75px; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    opacity:0; transform:translateY(16px); transition:opacity .5s ease, transform .5s ease;
   }
-  .cycle-node-badge{
-    width:44px; height:44px; border-radius:50%; border:1.5px solid var(--accent-signal); color:var(--accent-signal);
-    display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:13px; font-weight:700;
-    background:var(--surface); box-shadow:0 4px 14px rgba(0,0,0,0.2);
+  .pyramid-node.in{ opacity:1; transform:translateY(0); }
+  .pyramid-node-badge{
+    width:52px; height:52px; border-radius:50%; border:2px solid var(--accent-signal); color:var(--accent-signal);
+    background:var(--surface); display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-weight:700; font-size:15px; box-shadow:0 6px 18px rgba(0,0,0,0.3);
   }
-  .cycle-node-badge-loop{ border-color:var(--accent-electric); color:var(--accent-electric); }
-  .cycle-node-label{ font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-muted); max-width:92px; line-height:1.3; }
-  .cycle-arrow{
-    position:absolute; top:50%; left:50%; width:14px; height:14px; margin:-7px 0 0 -7px;
-    transform:rotate(calc(var(--pos) * 90deg)) translateY(-100px);
-    color:var(--text-muted);
-  }
-  .cycle-arrow-loop{ color:var(--accent-electric); }
-  @media (max-width:420px){
-    .cycle-map{ width:220px; height:220px; }
-    .cycle-ring{ inset:24px; }
-    .cycle-node{ width:80px; margin:-40px 0 0 -40px; transform:rotate(calc(var(--pos) * 90deg)) translateY(-84px) rotate(calc(var(--pos) * -90deg)); }
-    .cycle-node-badge{ width:38px; height:38px; font-size:11px; }
-    .cycle-node-label{ font-size:9px; max-width:78px; }
-    .cycle-arrow{ transform:rotate(calc(var(--pos) * 90deg)) translateY(-84px); }
+  .pyramid-node.apex .pyramid-node-badge{ border-color:var(--accent-electric); color:var(--accent-electric); width:60px; height:60px; font-size:16px; }
+  .pyramid-node-label{ font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-muted); }
+  .pyramid-node.apex .pyramid-node-label{ color:var(--text); font-weight:600; }
+  @media (max-width:560px){
+    .pyramid-node{ width:110px; margin-left:-55px; }
+    .pyramid-node-label{ font-size:9.5px; }
+    .pyramid-node-badge{ width:44px; height:44px; font-size:13px; }
+    .pyramid-node.apex .pyramid-node-badge{ width:50px; height:50px; font-size:14px; }
   }
   .phase4-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin:20px 0 32px; }
   @media (max-width:760px){ .phase4-grid{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
@@ -1501,49 +1502,46 @@
     .phase4-card{ padding:20px 18px; }
   }
   .phase4-card{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:28px 26px; }
-  .phase4-card .vnum{ font-family:var(--mono); color:var(--accent-signal); font-size:15px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
-  .vnum-arrow{ color:var(--accent-signal); opacity:0; transform:scale(0.5); transition:opacity .4s ease, transform .4s ease; }
-  .section-tile.revealed .vnum-arrow{ opacity:1; transform:scale(1); }
-  .phase4-card:nth-child(1) .vnum-arrow{ transition-delay:0s; }
-  .phase4-card:nth-child(2) .vnum-arrow{ transition-delay:.4s; }
-  .phase4-card:nth-child(3) .vnum-arrow{ transition-delay:.8s; }
-  .phase4-card:nth-child(4) .vnum-arrow{ transition-delay:1.2s; }
-  .vnum-loop{
-    color:var(--accent-electric); border:1px solid var(--accent-electric);
-    border-radius:50%; padding:2px; box-sizing:content-box;
-  }
-  .section-tile.revealed .vnum-loop{
-    animation:vnum-loop-spin 8s linear infinite, vnum-loop-glow 4s ease-in-out infinite;
-  }
-  @keyframes vnum-loop-spin{ to{ transform:rotate(360deg); } }
-  @keyframes vnum-loop-glow{ 0%,100%{ box-shadow:0 0 0 0 rgba(47,111,255,0.4); } 50%{ box-shadow:0 0 6px 2px rgba(47,111,255,0.35); } }
-  .phase4-loop-label{
-    display:block; margin-top:-8px; margin-bottom:14px; font-family:var(--mono); font-size:10.5px;
-    letter-spacing:0.04em; text-transform:uppercase; color:var(--accent-electric);
-  }
+  .phase4-card .vnum{ font-family:var(--mono); color:var(--accent-signal); font-size:15px; font-weight:600; margin-bottom:12px; }
   .phase4-card h4{ font-size:20.5px; margin:0 0 6px; overflow-wrap:break-word; }
   .phase4-tagline{ font-family:var(--mono); font-size:12px; color:var(--accent-secure); letter-spacing:0.02em; margin-bottom:14px; font-weight:600; }
   .phase4-bullets{ margin:0; padding-left:18px; }
   .phase4-bullets li{ font-size:12.5px; color:var(--text-muted); line-height:1.6; margin-bottom:6px; }
   .phase4-bullets li:last-child{ margin-bottom:0; }
 
-  .workflow-row{ display:flex; flex-direction:column; gap:20px; margin:20px 0 32px; position:relative; }
-  .section-tile:not(.revealed) .workflow-step{ opacity:0; transform:translateY(16px); }
-  .section-tile.revealed .workflow-step{
-    opacity:1; transform:translateY(0);
-    transition:opacity .5s ease, transform .5s ease;
+  /* .phasesRunway is a fixed scroll "budget" (independent of its children's
+     actual rendered height - see wirePhasesAssembly() in main.js), so
+     .phases-stage growing taller when the detail panel opens never feeds
+     back into the scroll-progress math. */
+  .phases-runway{ position:relative; height:140vh; margin:20px 0 32px; }
+  .phases-stage{ position:sticky; top:96px; }
+  .phases-row{ display:flex; align-items:center; justify-content:center; flex-wrap:nowrap; gap:20px; }
+  .phase-card{
+    background:var(--surface-raised); border:1px solid var(--line); padding:18px 20px; text-align:center;
+    width:220px; flex-shrink:0; cursor:pointer;
+    transition:background .18s ease, opacity .45s ease, transform .45s ease;
+    position:relative;
+    opacity:0; transform:translateY(40px) scale(0.94);
   }
-  .workflow-step{
-    background:var(--surface); border:1px solid var(--line); padding:18px 20px; text-align:center;
-    display:block; text-decoration:none; color:inherit; cursor:pointer;
-    transition:background .18s ease, transform .18s ease;
-    position:relative; box-shadow:0 8px 24px rgba(0,0,0,0.18);
+  .phase-card.in{ opacity:1; transform:translateY(0) scale(1); }
+  .phase-card:hover{ background:var(--tint-signal-soft); }
+  .phase-card.stage-active{ background:var(--tint-signal); box-shadow:inset 0 -2px 0 var(--accent-signal); }
+  .phase-arrow{
+    display:flex; align-items:center; justify-content:center; color:var(--accent-electric); flex-shrink:0;
+    opacity:0; transform:scale(0.6); transition:opacity .3s ease, transform .3s ease;
   }
-  .workflow-step:hover{ background:var(--tint-signal-soft); transform:translateY(-2px); }
-  .workflow-step.stage-active{ background:var(--tint-signal); box-shadow:inset 0 -2px 0 var(--accent-signal); }
-  /* Dropdown from the clicked step specifically (same anchor pattern as
-     .tab-dropdown) so opening it never resizes the step or reflows its
-     siblings - it overlays below, it doesn't push. */
+  .phase-arrow.in{ opacity:1; transform:scale(1); }
+  @media (max-width:760px){
+    .phases-runway{ height:auto; }
+    .phases-stage{ position:static; top:auto; }
+    .phases-row{ flex-direction:column; flex-wrap:wrap; }
+    .phase-card{ width:100%; max-width:320px; }
+    .phase-arrow{ transform:scale(0.6) rotate(90deg); }
+    .phase-arrow.in{ transform:scale(1) rotate(90deg); }
+  }
+  /* The panel is a normal in-flow child of .phases-stage now (always right
+     after .phases-row, regardless of which card was clicked), not a
+     per-card overlay - see the click handler in renderHomeTab() for why. */
   .stage-detail-panel{
     text-align:left;
     margin-top:16px; padding:20px 22px; background:var(--overlay-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line);
@@ -1587,8 +1585,8 @@
   .risk-slider-desc.open{ opacity:1; transform:translateY(0); display:block; pointer-events:auto; }
   .risk-slider-desc b{ color:var(--text); }
   .workflow-phase-tag{ font-family:var(--mono); font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
-  .workflow-step h4{ font-size:14.5px; margin:0 0 8px; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.03em; }
-  .workflow-step p{ font-size:12.5px; color:var(--text-muted); line-height:1.6; margin:0; text-align:left; }
+  .phase-card h4{ font-size:14.5px; margin:0 0 8px; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.03em; }
+  .phase-card p{ font-size:12.5px; color:var(--text-muted); line-height:1.6; margin:0; text-align:left; }
   .stage-illustration{ display:flex; justify-content:center; margin-bottom:10px; }
   .stage-illustration-sm{ margin-bottom:0; flex-shrink:0; }
   .stage-illustration-sm svg{ width:40px; height:40px; }
