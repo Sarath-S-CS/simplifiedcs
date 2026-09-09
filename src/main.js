@@ -1430,31 +1430,125 @@ const OFFICIAL_SOURCE_LINKS = [
   { title:'Ongoing Threat Actor Campaigns', desc:'CISA\'s cybersecurity advisories on active TTPs', href:'https://www.cisa.gov/news-events/cybersecurity-advisories', domain:'cisa.gov' },
 ];
 
-// A compact circular "map" placed above the detailed How It Works cards -
-// the 4 steps genuinely narrate a loop (step 04 ends by pointing back to
-// step 01), so this gives that structure an actual circular layout instead
-// of just a decorative icon on one card. Positioned via the standard
-// rotate/translate/rotate-back CSS trick (see .cycle-node in app.css) rather
-// than fixed pixel coordinates per node, so it stays correct if the step
-// count or labels ever change.
-function buildCycleMap(){
-  const last = HOW_IT_WORKS.length - 1;
-  const nodes = HOW_IT_WORKS.map((s,i)=>`
-    <div class="cycle-node" style="--pos:${i}">
-      <div class="cycle-node-badge${i===last ? ' cycle-node-badge-loop' : ''}">${s.n}</div>
-      <div class="cycle-node-label">${s.title}</div>
-    </div>
-  `).join('');
-  const arrowSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-  const arrows = HOW_IT_WORKS.map((_,i)=>`
-    <div class="cycle-arrow${i===last ? ' cycle-arrow-loop' : ''}" style="--pos:${i + 0.5}">${arrowSvg}</div>
-  `).join('');
+// A pyramid layout for How It Works, replacing the earlier circular map and
+// the per-card "Cycle repeats" label per feedback that neither read as a
+// real structural change. Data Collection sits at the apex - it's both
+// where the cycle starts and where step 04 loops back to - with the other
+// three forming the base. wirePyramidMap() below animates a glowing pulse
+// that continuously traces apex -> base-left -> base-mid -> base-right ->
+// apex, showing the cycle's direction directly rather than via a label.
+function buildPyramidMap(){
+  const [apex, baseLeft, baseMid, baseRight] = HOW_IT_WORKS;
+  // Percentages of the SVG's own 520x420 viewBox (e.g. 300/420 = 71.43%),
+  // not independently-chosen values - see .pyramid-stage's aspect-ratio
+  // comment in app.css for why these two coordinate systems must agree.
+  const node = (s, extraCls, topPct, leftPct) => `
+    <div class="pyramid-node ${extraCls}" style="top:${topPct}%; left:${leftPct}%;">
+      <div class="pyramid-node-badge">${s.n}</div>
+      <div class="pyramid-node-label">${s.title}</div>
+    </div>`;
   return `
-  <div class="cycle-map">
-    <div class="cycle-ring"></div>
-    ${nodes}
-    ${arrows}
+  <div class="pyramid-stage" id="pyramidStage">
+    <svg viewBox="0 0 520 420" preserveAspectRatio="none">
+      <path class="pyramid-outline" d="M260,40 L90,340 L260,340 L430,340 Z" fill="none" stroke-width="2"/>
+      <path class="pyramid-pulse" id="pyramidPulse" d="M260,40 L90,340 L260,340 L430,340 Z" fill="none" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    ${node(apex, 'apex', 0, 50)}
+    ${node(baseLeft, '', 71.43, 17.31)}
+    ${node(baseMid, '', 71.43, 50)}
+    ${node(baseRight, '', 71.43, 82.69)}
   </div>`;
+}
+
+// Continuous pulse along the pyramid's perimeter, paused off-screen and
+// under prefers-reduced-motion (a single static reveal instead).
+function wirePyramidMap(container){
+  const stage = container.querySelector('#pyramidStage');
+  if(!stage) return;
+  const pulse = stage.querySelector('#pyramidPulse');
+  const pathLen = pulse.getTotalLength();
+  pulse.style.strokeDasharray = `${pathLen * 0.04} ${pathLen}`;
+  const nodes = [...stage.querySelectorAll('.pyramid-node')];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if(reduceMotion){
+    nodes.forEach(n=>n.classList.add('in'));
+    pulse.style.strokeDashoffset = '0';
+    return;
+  }
+
+  let rafId = null;
+  let start = null;
+  function tick(ts){
+    if(!start) start = ts;
+    const elapsed = (ts - start) / 3200; // one full loop every 3.2s
+    pulse.style.strokeDashoffset = String(pathLen - (elapsed % 1) * pathLen);
+    rafId = requestAnimationFrame(tick);
+  }
+  function play(){
+    nodes.forEach((n,i)=> setTimeout(()=> n.classList.add('in'), i * 180));
+    if(!rafId) rafId = requestAnimationFrame(tick);
+  }
+  function stop(){
+    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  }
+  new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{ if(entry.isIntersecting) play(); else stop(); });
+  }, { threshold:0.35 }).observe(stage);
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden) stop(); });
+}
+
+// Scroll-driven progressive reveal for "The three phases of the assessment".
+// Desktop: .phases-stage is pinned (position:sticky in CSS) while the user
+// scrolls through .phasesRunway's fixed height, and each card/arrow reveals
+// at its own progress threshold - the tiles genuinely assemble into a row as
+// you scroll, rather than just fading in together. Mobile has no room for a
+// side-by-side row, so it falls back to a plain per-card reveal with no
+// pinning. renders freshly each time renderHomeTab runs, so a breakpoint
+// change is picked up correctly on the next navigation to this page.
+function wirePhasesAssembly(container){
+  const runway = container.querySelector('#phasesRunway');
+  if(!runway) return;
+  const cards = [...container.querySelectorAll('.phase-card')];
+  const arrows = [...container.querySelectorAll('.phase-arrow')];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isDesktop = window.matchMedia('(min-width:761px)').matches;
+
+  if(reduceMotion){
+    cards.forEach(c=>c.classList.add('in'));
+    arrows.forEach(a=>a.classList.add('in'));
+    return;
+  }
+
+  if(!isDesktop){
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold:0.3 });
+    cards.forEach(c=>io.observe(c));
+    arrows.forEach(a=>a.classList.add('in'));
+    return;
+  }
+
+  // Must match .phases-stage's CSS top offset and its own approximate
+  // rendered height - fixed constants, not read live from the DOM, so the
+  // detail panel opening (which grows .phases-stage) can never feed back
+  // into this calculation.
+  const STAGE_TOP = 96, STAGE_HEIGHT = 280;
+  function update(){
+    const rect = runway.getBoundingClientRect();
+    const total = runway.offsetHeight - STAGE_HEIGHT;
+    const scrolled = Math.min(Math.max(STAGE_TOP - rect.top, 0), total);
+    const progress = total > 0 ? scrolled / total : 0;
+    cards.forEach((c,i)=> c.classList.toggle('in', progress > i * 0.28 + 0.06));
+    arrows.forEach((a,i)=> a.classList.toggle('in', progress > (i + 1) * 0.28 + 0.16));
+  }
+  window.addEventListener('scroll', update, { passive:true });
+  update();
 }
 
 function renderHomeTab(container){
@@ -1476,15 +1570,11 @@ function renderHomeTab(container){
       <div class="section-tile">
         <h3 class="section-h" id="how-it-works">How it works</h3>
         <p class="body-text">Four steps, start to finish - and then it runs again.</p>
-        ${buildCycleMap()}
+        ${buildPyramidMap()}
         <div class="phase4-grid">
           ${HOW_IT_WORKS.map((s,i)=>`
             <div class="phase4-card">
-              <div class="vnum">${s.n}${i === HOW_IT_WORKS.length - 1 ? `
-                <svg class="vnum-arrow vnum-loop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"/><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"/></svg>` : `
-                <svg class="vnum-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`}
-              </div>
-              ${i === HOW_IT_WORKS.length - 1 ? '<span class="phase4-loop-label">Cycle repeats &rarr; Data Collection</span>' : ''}
+              <div class="vnum">${s.n}</div>
               <h4>${s.title}${s.sub ? ` <span style="color:var(--text-muted); font-weight:400;">(${s.sub})</span>` : ''}</h4>
               <div class="phase4-tagline">${s.tagline}</div>
               <ul class="phase4-bullets">
@@ -1523,18 +1613,23 @@ function renderHomeTab(container){
 
       <div class="section-tile">
         <h3 class="section-h">The three phases of the assessment</h3>
-        <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage below for a quick summary of what it involves.</p>
-        <div class="workflow-row">
-          ${stageOrder.map((sid,i)=>`
-            <div class="workflow-step" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}; transition-delay:${(i*0.12).toFixed(2)}s; position:sticky; top:${96 + i*40}px; z-index:${i+1};">
-              <div class="workflow-phase-tag">Phase ${i+1}</div>
-              <div class="stage-illustration">${stageIllustration(sid)}</div>
-              <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
-              <p>${STAGE_META[sid].blurb}</p>
+        <p class="body-text">Every assessment moves through three stages as a continuous workflow. Scroll to watch them assemble, or select a stage for a quick summary of what it involves.</p>
+        <div class="phases-runway" id="phasesRunway">
+          <div class="phases-stage">
+            <div class="phases-row">
+              ${stageOrder.map((sid,i)=>`
+                ${i>0 ? `<div class="phase-arrow" data-arrow-index="${i-1}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ''}
+                <div class="phase-card" data-stage-detail="${sid}" data-phase-index="${i}" style="border-top:2px solid ${STAGE_META[sid].color}">
+                  <div class="workflow-phase-tag">Phase ${i+1}</div>
+                  <div class="stage-illustration">${stageIllustration(sid)}</div>
+                  <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
+                  <p>${STAGE_META[sid].blurb}</p>
+                </div>
+              `).join('')}
             </div>
-          `).join('')}
+            <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
+          </div>
         </div>
-        <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
         <div class="method-link-row">
           <a href="${pathForTab('maturity')}" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon">${icon('cycle')}</span>Explore the full Maturity Model</a>
         </div>
@@ -1614,6 +1709,8 @@ function renderHomeTab(container){
   wireNavLink(document.getElementById('linkMaturityExplore'), 'maturity');
   wireNavLink(document.getElementById('linkMethodologyFromHome'), 'methodology');
   wireNavLink(document.getElementById('linkPrinciplesFromHome'), 'coreprinciples');
+  wirePyramidMap(container);
+  wirePhasesAssembly(container);
 
   let openStageDetail = null;
   function closeStageDetail(){
@@ -1637,13 +1734,13 @@ function renderHomeTab(container){
       openStageDetail = sid;
       container.querySelectorAll('[data-stage-detail]').forEach(c=>c.classList.remove('stage-active'));
       el.classList.add('stage-active');
-      // Each .workflow-step is now position:sticky (the Niva-style scroll
-      // stack), so its rendered position no longer matches its document-flow
-      // position while stuck - a sibling inserted "after" it would render at
-      // the wrong spot. Appending the panel as a CHILD of the clicked step
-      // instead means it inherits that step's actual stuck position for
-      // free, since .workflow-step already has position:relative.
-      el.appendChild(panel);
+      // The panel has one fixed home now - a normal in-flow child of
+      // .phases-stage, right after .phases-row - rather than being
+      // re-parented into whichever card was clicked. The cards sit in a
+      // simple flex row (no per-card sticky/absolute positioning to
+      // desync from), so there's no need to chase the clicked card's
+      // position; the panel's own heading/color identify which phase it's
+      // showing.
       const openTile = el.closest('.section-tile');
       if(openTile) openTile.classList.add('has-open-overlay');
       panel.innerHTML = `
@@ -1662,22 +1759,19 @@ function renderHomeTab(container){
     riskDesc.classList.remove('open');
   }
   document.addEventListener('click', (e)=>{
-    if(openStageDetail && !e.target.closest('.workflow-row') && !e.target.closest('.stage-detail-panel')){
+    if(openStageDetail && !e.target.closest('.phases-row') && !e.target.closest('.stage-detail-panel')){
       closeStageDetail();
     }
     if(riskDesc.classList.contains('open') && !e.target.closest('.risk-slider-wrap')){
       closeRiskDesc();
     }
   });
-  // stage-detail-panel still overlays content instead of pushing it, so
-  // scrolling past it should tuck it away automatically rather than
-  // leaving it drifting under the cursor. riskDesc is in-flow (it pushes
-  // "Things to get you started" down instead of floating over it), so it
-  // has no such drift to guard against and can just stay open on scroll
-  // like any other content.
-  window.addEventListener('scroll', ()=>{
-    if(openStageDetail) closeStageDetail();
-  }, { passive:true });
+  // Unlike the old absolute-overlay panel, this one is a normal in-flow
+  // child of .phases-stage now, so it no longer "drifts" under the cursor
+  // during scroll - and this section's whole point is scrolling further to
+  // trigger the next phase's reveal, so auto-closing on scroll would close
+  // the panel the moment someone kept reading. It only needs to close on an
+  // outside click now, same as riskDesc.
 
   container.querySelectorAll('.risk-slider-tick').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
