@@ -1486,8 +1486,8 @@ function renderHomeTab(container){
         <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage below for a quick summary of what it involves.</p>
         <div class="workflow-row">
           ${stageOrder.map((sid,i)=>`
-            ${i>0 ? `<div class="workflow-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ''}
-            <div class="workflow-step" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}">
+            ${i>0 ? `<div class="workflow-arrow" style="transition-delay:${(i*0.12).toFixed(2)}s"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ''}
+            <div class="workflow-step" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}; transition-delay:${(i*0.12).toFixed(2)}s">
               <div class="workflow-phase-tag">Phase ${i+1}</div>
               <div class="stage-illustration">${stageIllustration(sid)}</div>
               <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>

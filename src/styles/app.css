@@ -1486,6 +1486,13 @@
   .phase4-bullets li:last-child{ margin-bottom:0; }
 
   .workflow-row{ display:flex; align-items:stretch; gap:0; margin:20px 0 32px; flex-wrap:wrap; position:relative; }
+  .section-tile:not(.revealed) .workflow-step,
+  .section-tile:not(.revealed) .workflow-arrow{ opacity:0; transform:translateY(16px); }
+  .section-tile.revealed .workflow-step,
+  .section-tile.revealed .workflow-arrow{
+    opacity:1; transform:translateY(0);
+    transition:opacity .5s ease, transform .5s ease;
+  }
   .workflow-step{
     flex:1; min-width:160px; background:var(--surface-raised); padding:18px 20px; text-align:center;
     display:block; text-decoration:none; color:inherit; cursor:pointer;
@@ -1549,7 +1556,12 @@
   .workflow-step h4{ font-size:14.5px; margin:0 0 8px; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.03em; }
   .workflow-step p{ font-size:12.5px; color:var(--text-muted); line-height:1.6; margin:0; text-align:left; }
   .workflow-arrow{ display:flex; align-items:center; justify-content:center; padding:0 10px; color:var(--text-muted); flex-shrink:0; }
-  @media (max-width:700px){ .workflow-row{ flex-direction:column; } .workflow-arrow{ transform:rotate(90deg); padding:6px 0; } }
+  @media (max-width:700px){
+    .workflow-row{ flex-direction:column; }
+    .workflow-arrow{ transform:rotate(90deg); padding:6px 0; }
+    .section-tile:not(.revealed) .workflow-arrow{ transform:rotate(90deg) translateY(16px); }
+    .section-tile.revealed .workflow-arrow{ transform:rotate(90deg) translateY(0); }
+  }
   .stage-illustration{ display:flex; justify-content:center; margin-bottom:10px; }
   .stage-illustration-sm{ margin-bottom:0; flex-shrink:0; }
   .stage-illustration-sm svg{ width:40px; height:40px; }
