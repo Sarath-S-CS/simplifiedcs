@@ -35,6 +35,10 @@
     --tint-secure: rgba(1,127,99,0.14);
     --mono: 'IBM Plex Mono', monospace;
     --sans: 'IBM Plex Sans', sans-serif;
+    --radius-pill: 999px;
+    --radius-card: 20px;
+    --radius-input: 14px;
+    --radius-nav: 24px;
   }
   html[data-theme="light"]{
     color-scheme: light;
@@ -76,15 +80,18 @@
   .industry-card, .region-chip, .site-tile, .start-link, .phase4-card, .workflow-step,
   .rubric-card, .toc-list, .delta-box, .info-box, .note-box,
   .news-card, .tier-row, .phase-row, .stage-band, .resource-group, .osint-item,
-  .link-pill, .footer-social-icon, .region-note, .ot-skip-note, .ot-likely-note,
-  .exploit-card, .exploit-score-box, .exploit-safety,
+  .footer-social-icon, .region-note, .ot-skip-note, .ot-likely-note,
+  .exploit-card, .exploit-score-box, .exploit-safety{
+    border-radius:var(--radius-card);
+  }
   select, input[type="text"], input[type="file"]{
-    border-radius:12px;
+    border-radius:var(--radius-input);
   }
-  .q-badge, .priority-tag, .alpha-chip, .news-cat, .checkbox, .tab-btn.active,
+  .q-badge, .priority-tag, .alpha-chip, .news-cat,
   .footer-social-icon, .icon-badge, .exploit-ransomware-badge, .exploit-sector-chip{
-    border-radius:6px;
+    border-radius:var(--radius-pill);
   }
+  .checkbox{ border-radius:4px; }
   .icon-badge, .footer-social-icon{ border-radius:50%; }
 
   /* --- anchor reset for nav elements retagged from button/div to <a> per
@@ -113,49 +120,29 @@
     margin-right:auto;
     padding:40px clamp(24px, 4vw, 64px) 80px;
   }
-  /* The masthead used to bleed only to .app's own padding edge via a
-     clamp-based negative margin - which meant its available width was
-     still capped by .app's max-width:1200px reading-width limit, since
-     that padding-cancelling trick can't escape the parent's own box. Past
-     roughly 1330px viewport width, .app stops growing (hits its cap) and
-     so did the header - no matter how much wider the browser got, the nav
-     was stuck fighting for the same ~1080px, which is exactly why a user
-     saw it wrap on a maximized/wide screen but not at a wide-BUT-under-cap
-     width like 1400px. The 50vw-centering breakout below makes .masthead
-     itself genuinely span the full viewport regardless of .app's cap, with
-     .masthead-inner giving its actual content a separate, wider max-width
-     that no longer inherits .app's narrower reading-width limit.
-
-     --viewport-width (set from document.documentElement.clientWidth by
-     syncViewportWidthVar() in main.js, on every content render and window
-     resize) stands in for 100vw here instead of the raw unit: vw is based
-     on the initial containing block and includes the vertical scrollbar
-     gutter on desktop, while clientWidth - like every other length in this
-     breakout's math - doesn't, so plain 100vw made .masthead a few px wider
-     than the page itself and forced a permanent horizontal scrollbar.
-     Falls back to 100vw before JS runs. */
+  /* Floating inset nav (Niva-inspired layout pass) - a normal
+     .app-constrained block, not a full-bleed breakout; .app's own side
+     padding IS the float margin. */
   .masthead{
     position:sticky;
-    top:0;
+    top:16px;
     z-index:10;
-    width:var(--viewport-width, 100vw);
-    margin-left:calc(50% - (var(--viewport-width, 100vw) / 2));
-    margin-top:-40px;
+    margin-top:16px;
     margin-bottom:32px;
-    border-bottom:1px solid var(--line);
+    border:1px solid var(--line);
+    border-radius:var(--radius-nav);
     background:var(--masthead-bg);
     backdrop-filter:blur(16px);
     -webkit-backdrop-filter:blur(16px);
+    box-shadow:0 8px 24px rgba(0,0,0,0.12);
   }
   .masthead-inner{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:48px;
+    gap:32px;
     flex-wrap:wrap;
-    max-width:1600px;
-    margin:0 auto;
-    padding:16px clamp(24px, 4vw, 64px);
+    padding:14px 24px;
   }
   .masthead-brand{ flex-shrink:0; text-decoration:none; display:flex; align-items:center; gap:10px; }
   .brand-logo{ width:34px; height:34px; display:block; }
@@ -275,6 +262,7 @@
     gap:6px;
   }
   .tab-btn:hover{ color:var(--accent-signal); background:var(--tint-signal-soft); }
+  .tab-btn.active{ border-radius:var(--radius-pill); }
   .tab-btn.active{ background:var(--accent-signal); color:var(--text-on-accent); }
   .tab-caret{ font-size:9px; opacity:0.8; padding:4px; margin:-4px; }
   .tab-btn-icon{ display:flex; align-items:center; }
@@ -457,6 +445,7 @@
     .brand-logo{ width:26px; height:26px; }
     .masthead h1{ font-size:15px; }
     .masthead-right{ gap:8px; }
+    .masthead{ margin-top:10px; border-radius:16px; }
   }
   /* The 480px compaction above still doesn't leave enough room on the
      smallest real phone widths (iPhone SE 1st-gen at 320px, and similar
@@ -921,7 +910,7 @@
 
   /* --- content pages (Home / Methodology / Maturity / News) --- */
   .page{ display:flex; flex-direction:column; gap:36px; }
-  .page-intro{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:32px 36px; }
+  .page-intro{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:36px 40px; }
   @media (max-width:720px){ .page-intro{ padding:22px 20px; } }
   .page-intro-row{ display:flex; align-items:center; justify-content:space-between; gap:28px; flex-wrap:wrap; }
   .page-intro-row .page-intro-text{ flex:1; min-width:260px; }
@@ -935,7 +924,7 @@
   .stamp-icon svg{ width:100%; height:100%; }
   .stamp-label{ position:relative; z-index:1; font-family:var(--mono); font-size:7.5px; line-height:1.15; letter-spacing:0.01em; text-transform:uppercase; color:var(--stamp-color); }
   @media (max-width:480px){ .stamp{ width:64px; height:64px; } }
-  .section-tile{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:32px 36px; }
+  .section-tile{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:36px 40px; }
   @media (max-width:720px){ .section-tile{ padding:22px 20px; } }
   .section-tile .section-h:first-child{ margin-top:0; }
   /* .page is a flex container, and its .section-tile children have
@@ -967,7 +956,7 @@
     font-family:var(--mono); font-size:11px; color:var(--accent-signal);
     letter-spacing:0.08em; text-transform:uppercase; margin-bottom:10px;
   }
-  .page h2.page-title{ font-size:44px; font-weight:600; margin:0 0 14px; line-height:1.15; }
+  .page h2.page-title{ font-size:54px; font-weight:700; margin:0 0 14px; line-height:1.1; }
   .page .page-lede{ color:var(--text-muted); font-size:15.5px; max-width:640px; margin:0 0 32px; line-height:1.6; }
   .page-lede + .page-lede{ margin-top:-16px; }
   /* METRICS-ANIMATION-ABOUT-FIXES-BRIEF.md §3, broadened per
@@ -982,7 +971,7 @@
      renderAboutTab()), without changing .page-lede/.body-text's own
      shared rules, still used un-centered everywhere else on the site. */
   .about-narrative{ max-width:640px; margin:0 auto; }
-  .page h3.section-h{ font-size:22px; font-weight:600; margin:36px 0 14px; }
+  .page h3.section-h{ font-size:24px; font-weight:600; margin:36px 0 14px; }
   .page h3.section-h:first-of-type{ margin-top:0; }
   .page p.body-text{ font-size:14px; color:var(--text-muted); line-height:1.7; max-width:680px; margin:0 0 14px; }
   .inline-link{ color:var(--accent-signal); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
@@ -993,6 +982,7 @@
   .cta-btn{
     font-family:var(--sans); font-size:14px; font-weight:600; padding:13px 26px;
     border:1px solid var(--accent-signal); background:var(--accent-signal); color:var(--text-on-accent); cursor:pointer;
+    border-radius:var(--radius-pill);
   }
   .cta-btn:hover{ filter:brightness(1.08); }
   .cta-btn.secondary{ background:transparent; color:var(--text); border-color:var(--line); }
@@ -1030,6 +1020,7 @@
     font-family:var(--mono); font-size:11px; letter-spacing:0.04em; text-transform:uppercase;
     color:var(--text-muted); background:var(--surface-raised); border:1px solid var(--line);
     padding:7px 14px; cursor:pointer; transition:all .15s ease;
+    border-radius:var(--radius-pill);
   }
   .filter-pill:hover{ border-color:var(--accent-signal); color:var(--accent-signal); }
   .filter-pill.active{ border-color:var(--accent-signal); color:var(--accent-signal); }
@@ -1594,7 +1585,7 @@
   .toc-list a{ display:block; padding:10px 16px; color:var(--text-muted); text-decoration:none; font-family:var(--mono); font-size:12.5px; }
   .toc-list a:hover{ color:var(--accent-signal); background:var(--tint-signal-soft); }
 
-  .table-wrap{ overflow-x:auto; margin:20px 0 32px; }
+  .table-wrap{ overflow-x:auto; margin:20px 0 32px; border-radius:var(--radius-card); border:1px solid var(--line); }
   .data-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:640px; }
   .data-table th{ text-align:left; font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); padding:10px 12px; border-bottom:1px solid var(--line); background:var(--surface-raised); }
   .data-table td{ padding:12px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--text-muted); line-height:1.55; }
@@ -1604,7 +1595,7 @@
 
   .glance-table td{ min-width:150px; }
   .glance-table td:nth-child(4), .glance-table td:nth-child(5), .glance-table td:nth-child(6){ min-width:190px; }
-  .stage-chip{ display:inline-block; font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; padding:3px 8px; border:1px solid var(--stage-color); color:var(--stage-color); white-space:nowrap; }
+  .stage-chip{ display:inline-block; font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; padding:3px 8px; border:1px solid var(--stage-color); color:var(--stage-color); white-space:nowrap; border-radius:var(--radius-pill); }
 
   .rubric-card{ border:1px solid var(--line); background:var(--surface-raised); padding:18px 20px; margin-bottom:12px; }
   .rubric-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:12px; flex-wrap:wrap; }
@@ -1620,7 +1611,7 @@
     position:fixed; left:50%; bottom:24px; transform:translate(-50%, 12px);
     display:flex; align-items:center; gap:14px; max-width:min(440px, calc(100vw - 32px));
     padding:13px 16px; background:var(--overlay-bg); border:1px solid var(--line);
-    border-radius:12px; font-size:13px; color:var(--text); line-height:1.5;
+    border-radius:var(--radius-card); font-size:13px; color:var(--text); line-height:1.5;
     box-shadow:0 8px 28px rgba(0,0,0,0.28); opacity:0; transition:opacity .25s ease, transform .25s ease;
     z-index:500; pointer-events:none;
   }
@@ -1629,11 +1620,11 @@
   .save-toast-close:hover{ color:var(--text); }
 
   /* --- ASSESSMENT-EXPERIENCE-BRIEF.md §5: mode-selection landing screen --- */
-  .resume-banner{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:14px 18px; margin-bottom:22px; border:1px solid var(--accent-signal); border-radius:12px; background:var(--tint-signal-soft); }
+  .resume-banner{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:14px 18px; margin-bottom:22px; border:1px solid var(--accent-signal); border-radius:var(--radius-card); background:var(--tint-signal-soft); }
   .resume-banner-text b{ color:var(--text); }
   .resume-banner-actions{ display:flex; gap:10px; flex-shrink:0; }
   .mode-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin:22px 0; }
-  .mode-card{ display:flex; flex-direction:column; gap:10px; padding:22px 20px; border:1px solid var(--line); border-radius:12px; background:var(--tile-bg); cursor:pointer; text-align:left; }
+  .mode-card{ display:flex; flex-direction:column; gap:10px; padding:22px 20px; border:1px solid var(--line); border-radius:var(--radius-card); background:var(--tile-bg); cursor:pointer; text-align:left; }
   .mode-card:hover{ border-color:var(--accent-signal); }
   /* UX-VISUAL-CREDIBILITY-BRIEF.md §5: icon + naturally-worded text ("~5
      minutes") instead of an all-caps abbreviated badge ("~5 MIN") - the
@@ -1653,7 +1644,7 @@
   .section-transition{ font-size:14px; color:var(--accent-signal); margin:0 0 10px; }
 
   /* --- ASSESSMENT-EXPERIENCE-BRIEF.md §6: sample report banner --- */
-  .sample-banner{ display:flex; align-items:center; gap:10px; padding:12px 16px; margin-bottom:18px; border:1px solid var(--accent-amber); border-radius:12px; background:var(--surface-raised); font-size:13px; color:var(--text); }
+  .sample-banner{ display:flex; align-items:center; gap:10px; padding:12px 16px; margin-bottom:18px; border:1px solid var(--accent-amber); border-radius:var(--radius-card); background:var(--surface-raised); font-size:13px; color:var(--text); }
   .sample-banner b{ text-transform:uppercase; letter-spacing:0.04em; font-size:11px; font-family:var(--mono); color:var(--accent-amber); }
 
   /* --- footer --- */

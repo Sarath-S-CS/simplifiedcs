@@ -58671,14 +58671,7 @@ ${suffix}`;
       scrollToPendingAnchor();
     }
   }
-  function syncViewportWidthVar() {
-    document.documentElement.style.setProperty("--viewport-width", document.documentElement.clientWidth + "px");
-    setTimeout(() => {
-      document.documentElement.style.setProperty("--viewport-width", document.documentElement.clientWidth + "px");
-    }, 100);
-  }
   function observeReveals() {
-    syncViewportWidthVar();
     const els = document.querySelectorAll(".section-tile, .page-intro");
     if (!("IntersectionObserver" in window)) {
       els.forEach((el) => el.classList.add("revealed"));
@@ -59692,7 +59685,7 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMethodFromMetrics1"), "methodology");
     wireNavLink(document.getElementById("linkMaturityFromMetrics"), "maturity");
   }
-  var SITE_LAST_UPDATED = "September 8, 2026";
+  var SITE_LAST_UPDATED = "September 9, 2026";
   var ROADMAP_SHIPPED = [
     { module: "Adaptive Assessment Engine", desc: "Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice." },
     { module: "AI-Enhanced Insights", desc: "A live, opt-in second pass on your completed results: checks your named vendors/products against CISA's KEV catalog and NVD's CVE database for anything current a fixed rule set can't know by nature, plus a look for patterns this specific answer combination raises beyond it. Clearly labeled as AI-generated - the deterministic report above it is already complete either way." },
@@ -61259,7 +61252,6 @@ ${suffix}`;
   }
   (async function init() {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-    window.addEventListener("resize", syncViewportWidthVar);
     try {
       const stored = localStorage.getItem("simplifiedcs:theme");
       if (stored === "light" || stored === "dark") {
