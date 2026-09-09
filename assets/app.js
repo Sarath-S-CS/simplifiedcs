@@ -59128,9 +59128,13 @@ ${suffix}`;
         <h3 class="section-h" id="how-it-works">How it works</h3>
         <p class="body-text">Four steps, start to finish.</p>
         <div class="phase4-grid">
-          ${HOW_IT_WORKS.map((s3) => `
+          ${HOW_IT_WORKS.map((s3, i3) => `
             <div class="phase4-card">
-              <div class="vnum">${s3.n}</div>
+              <div class="vnum">${s3.n}${i3 === HOW_IT_WORKS.length - 1 ? `
+                <svg class="vnum-arrow vnum-loop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"/><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"/></svg>` : `
+                <svg class="vnum-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`}
+              </div>
+              ${i3 === HOW_IT_WORKS.length - 1 ? '<span class="phase4-loop-label">Cycle repeats &rarr; Data Collection</span>' : ""}
               <h4>${s3.title}${s3.sub ? ` <span style="color:var(--text-muted); font-weight:400;">(${s3.sub})</span>` : ""}</h4>
               <div class="phase4-tagline">${s3.tagline}</div>
               <ul class="phase4-bullets">
