@@ -59217,6 +59217,25 @@ ${suffix}`;
     { title: "Recently Flagged Exploits", desc: "CISA's KEV catalog, sorted with newest entries first", href: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog", domain: "cisa.gov" },
     { title: "Ongoing Threat Actor Campaigns", desc: "CISA's cybersecurity advisories on active TTPs", href: "https://www.cisa.gov/news-events/cybersecurity-advisories", domain: "cisa.gov" }
   ];
+  function buildCycleMap() {
+    const last = HOW_IT_WORKS.length - 1;
+    const nodes = HOW_IT_WORKS.map((s3, i3) => `
+    <div class="cycle-node" style="--pos:${i3}">
+      <div class="cycle-node-badge${i3 === last ? " cycle-node-badge-loop" : ""}">${s3.n}</div>
+      <div class="cycle-node-label">${s3.title}</div>
+    </div>
+  `).join("");
+    const arrowSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+    const arrows = HOW_IT_WORKS.map((_3, i3) => `
+    <div class="cycle-arrow${i3 === last ? " cycle-arrow-loop" : ""}" style="--pos:${i3 + 0.5}">${arrowSvg}</div>
+  `).join("");
+    return `
+  <div class="cycle-map">
+    <div class="cycle-ring"></div>
+    ${nodes}
+    ${arrows}
+  </div>`;
+  }
   function renderHomeTab(container) {
     const stageOrder = ["discovery", "transformation", "optimization"];
     container.innerHTML = `
@@ -59235,7 +59254,8 @@ ${suffix}`;
 
       <div class="section-tile">
         <h3 class="section-h" id="how-it-works">How it works</h3>
-        <p class="body-text">Four steps, start to finish.</p>
+        <p class="body-text">Four steps, start to finish - and then it runs again.</p>
+        ${buildCycleMap()}
         <div class="phase4-grid">
           ${HOW_IT_WORKS.map((s3, i3) => `
             <div class="phase4-card">

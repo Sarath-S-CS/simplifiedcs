@@ -1430,6 +1430,33 @@ const OFFICIAL_SOURCE_LINKS = [
   { title:'Ongoing Threat Actor Campaigns', desc:'CISA\'s cybersecurity advisories on active TTPs', href:'https://www.cisa.gov/news-events/cybersecurity-advisories', domain:'cisa.gov' },
 ];
 
+// A compact circular "map" placed above the detailed How It Works cards -
+// the 4 steps genuinely narrate a loop (step 04 ends by pointing back to
+// step 01), so this gives that structure an actual circular layout instead
+// of just a decorative icon on one card. Positioned via the standard
+// rotate/translate/rotate-back CSS trick (see .cycle-node in app.css) rather
+// than fixed pixel coordinates per node, so it stays correct if the step
+// count or labels ever change.
+function buildCycleMap(){
+  const last = HOW_IT_WORKS.length - 1;
+  const nodes = HOW_IT_WORKS.map((s,i)=>`
+    <div class="cycle-node" style="--pos:${i}">
+      <div class="cycle-node-badge${i===last ? ' cycle-node-badge-loop' : ''}">${s.n}</div>
+      <div class="cycle-node-label">${s.title}</div>
+    </div>
+  `).join('');
+  const arrowSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  const arrows = HOW_IT_WORKS.map((_,i)=>`
+    <div class="cycle-arrow${i===last ? ' cycle-arrow-loop' : ''}" style="--pos:${i + 0.5}">${arrowSvg}</div>
+  `).join('');
+  return `
+  <div class="cycle-map">
+    <div class="cycle-ring"></div>
+    ${nodes}
+    ${arrows}
+  </div>`;
+}
+
 function renderHomeTab(container){
   const stageOrder = ['discovery','transformation','optimization'];
   container.innerHTML = `
@@ -1448,7 +1475,8 @@ function renderHomeTab(container){
 
       <div class="section-tile">
         <h3 class="section-h" id="how-it-works">How it works</h3>
-        <p class="body-text">Four steps, start to finish.</p>
+        <p class="body-text">Four steps, start to finish - and then it runs again.</p>
+        ${buildCycleMap()}
         <div class="phase4-grid">
           ${HOW_IT_WORKS.map((s,i)=>`
             <div class="phase4-card">
