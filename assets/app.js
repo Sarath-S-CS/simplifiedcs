@@ -59123,103 +59123,6 @@ ${suffix}`;
     { title: "Recently Flagged Exploits", desc: "CISA's KEV catalog, sorted with newest entries first", href: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog", domain: "cisa.gov" },
     { title: "Ongoing Threat Actor Campaigns", desc: "CISA's cybersecurity advisories on active TTPs", href: "https://www.cisa.gov/news-events/cybersecurity-advisories", domain: "cisa.gov" }
   ];
-  function buildPyramidMap() {
-    const [apex, baseLeft, baseMid, baseRight] = HOW_IT_WORKS;
-    const node2 = (s3, extraCls, topPct, leftPct) => `
-    <div class="pyramid-node ${extraCls}" style="top:${topPct}%; left:${leftPct}%;">
-      <div class="pyramid-node-badge">${s3.n}</div>
-      <div class="pyramid-node-label">${s3.title}</div>
-    </div>`;
-    return `
-  <div class="pyramid-stage" id="pyramidStage">
-    <svg viewBox="0 0 520 420" preserveAspectRatio="none">
-      <path class="pyramid-outline" d="M260,40 L90,340 L260,340 L430,340 Z" fill="none" stroke-width="2"/>
-      <path class="pyramid-pulse" id="pyramidPulse" d="M260,40 L90,340 L260,340 L430,340 Z" fill="none" stroke-width="3" stroke-linecap="round"/>
-    </svg>
-    ${node2(apex, "apex", 0, 50)}
-    ${node2(baseLeft, "", 71.43, 17.31)}
-    ${node2(baseMid, "", 71.43, 50)}
-    ${node2(baseRight, "", 71.43, 82.69)}
-  </div>`;
-  }
-  function wirePyramidMap(container) {
-    const stage = container.querySelector("#pyramidStage");
-    if (!stage) return;
-    const pulse = stage.querySelector("#pyramidPulse");
-    const pathLen = pulse.getTotalLength();
-    pulse.style.strokeDasharray = `${pathLen * 0.04} ${pathLen}`;
-    const nodes = [...stage.querySelectorAll(".pyramid-node")];
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) {
-      nodes.forEach((n2) => n2.classList.add("in"));
-      pulse.style.strokeDashoffset = "0";
-      return;
-    }
-    let rafId = null;
-    let start = null;
-    function tick(ts) {
-      if (!start) start = ts;
-      const elapsed = (ts - start) / 3200;
-      pulse.style.strokeDashoffset = String(pathLen - elapsed % 1 * pathLen);
-      rafId = requestAnimationFrame(tick);
-    }
-    function play() {
-      nodes.forEach((n2, i3) => setTimeout(() => n2.classList.add("in"), i3 * 180));
-      if (!rafId) rafId = requestAnimationFrame(tick);
-    }
-    function stop() {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      }
-    }
-    new IntersectionObserver((entries2) => {
-      entries2.forEach((entry) => {
-        if (entry.isIntersecting) play();
-        else stop();
-      });
-    }, { threshold: 0.35 }).observe(stage);
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) stop();
-    });
-  }
-  function wirePhasesAssembly(container) {
-    const runway = container.querySelector("#phasesRunway");
-    if (!runway) return;
-    const cards = [...container.querySelectorAll(".phase-card")];
-    const arrows = [...container.querySelectorAll(".phase-arrow")];
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const isDesktop = window.matchMedia("(min-width:761px)").matches;
-    if (reduceMotion) {
-      cards.forEach((c4) => c4.classList.add("in"));
-      arrows.forEach((a4) => a4.classList.add("in"));
-      return;
-    }
-    if (!isDesktop) {
-      const io = new IntersectionObserver((entries2) => {
-        entries2.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("in");
-            io.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.3 });
-      cards.forEach((c4) => io.observe(c4));
-      arrows.forEach((a4) => a4.classList.add("in"));
-      return;
-    }
-    const STAGE_TOP = 96, STAGE_HEIGHT = 280;
-    function update() {
-      const rect = runway.getBoundingClientRect();
-      const total = runway.offsetHeight - STAGE_HEIGHT;
-      const scrolled = Math.min(Math.max(STAGE_TOP - rect.top, 0), total);
-      const progress = total > 0 ? scrolled / total : 0;
-      cards.forEach((c4, i3) => c4.classList.toggle("in", progress > i3 * 0.28 + 0.06));
-      arrows.forEach((a4, i3) => a4.classList.toggle("in", progress > (i3 + 1) * 0.28 + 0.16));
-    }
-    window.addEventListener("scroll", update, { passive: true });
-    update();
-  }
   function renderHomeTab(container) {
     const stageOrder = ["discovery", "transformation", "optimization"];
     container.innerHTML = `
@@ -59239,7 +59142,6 @@ ${suffix}`;
       <div class="section-tile">
         <h3 class="section-h" id="how-it-works">How it works</h3>
         <p class="body-text">Four steps, start to finish - and then it runs again.</p>
-        ${buildPyramidMap()}
         <div class="phase4-grid">
           ${HOW_IT_WORKS.map((s3, i3) => `
             <div class="phase4-card">
@@ -59282,23 +59184,19 @@ ${suffix}`;
 
       <div class="section-tile">
         <h3 class="section-h">The three phases of the assessment</h3>
-        <p class="body-text">Every assessment moves through three stages as a continuous workflow. Scroll to watch them assemble, or select a stage for a quick summary of what it involves.</p>
-        <div class="phases-runway" id="phasesRunway">
-          <div class="phases-stage">
-            <div class="phases-row">
-              ${stageOrder.map((sid, i3) => `
-                ${i3 > 0 ? `<div class="phase-arrow" data-arrow-index="${i3 - 1}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ""}
-                <div class="phase-card" data-stage-detail="${sid}" data-phase-index="${i3}" style="border-top:2px solid ${STAGE_META[sid].color}">
-                  <div class="workflow-phase-tag">Phase ${i3 + 1}</div>
-                  <div class="stage-illustration">${stageIllustration(sid)}</div>
-                  <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
-                  <p>${STAGE_META[sid].blurb}</p>
-                </div>
-              `).join("")}
+        <p class="body-text">Every assessment moves through three stages as a continuous workflow. Select a stage below for a quick summary of what it involves.</p>
+        <div class="phases-row">
+          ${stageOrder.map((sid, i3) => `
+            ${i3 > 0 ? `<div class="phase-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ""}
+            <div class="phase-card" data-stage-detail="${sid}" style="border-top:2px solid ${STAGE_META[sid].color}">
+              <div class="workflow-phase-tag">Phase ${i3 + 1}</div>
+              <div class="stage-illustration">${stageIllustration(sid)}</div>
+              <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
+              <p>${STAGE_META[sid].blurb}</p>
             </div>
-            <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
-          </div>
+          `).join("")}
         </div>
+        <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
         <div class="method-link-row">
           <a href="${pathForTab("maturity")}" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon">${icon("cycle")}</span>Explore the full Maturity Model</a>
         </div>
@@ -59378,8 +59276,6 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMaturityExplore"), "maturity");
     wireNavLink(document.getElementById("linkMethodologyFromHome"), "methodology");
     wireNavLink(document.getElementById("linkPrinciplesFromHome"), "coreprinciples");
-    wirePyramidMap(container);
-    wirePhasesAssembly(container);
     let openStageDetail = null;
     function closeStageDetail() {
       const panel = document.getElementById("stageDetailPanel");
