@@ -1415,35 +1415,27 @@ const OFFICIAL_SOURCE_LINKS = [
   { title:'Ongoing Threat Actor Campaigns', desc:'CISA\'s cybersecurity advisories on active TTPs', href:'https://www.cisa.gov/news-events/cybersecurity-advisories', domain:'cisa.gov' },
 ];
 
-// Scroll-driven "stack on the left" effect for the Three Phases section.
-// Desktop: .phases-stage pins (position:sticky in CSS) while the user
-// scrolls through .phasesRunway's fixed height. Each phase takes focus in
-// .focus-area one at a time; near the end of its turn it also joins the
-// growing .stack-col on the left (badge + connecting arrow), and once all
-// three have stacked, a loop icon appears connecting the last phase back to
-// the first - showing the cycle explicitly. Mobile has no room for a
-// two-column stack+focus layout, so it falls back to a plain always-visible
-// list with no pinning (see the max-width:760px rule in app.css).
+// Scroll-driven assembly for the Three Phases section. Desktop pins
+// .phases-stage (position:sticky in CSS) while the user scrolls through
+// .phasesRunway's fixed height; each phase card slides in from the right
+// and settles into its slot in the row as its own scroll threshold is
+// crossed, and stays there - cards never hide again once revealed, so by
+// the end all three sit side by side as a plain step-by-step row. Mobile
+// has no meaningful scroll-driven moment for a single-column list, so it
+// falls back to showing everything immediately, no pinning (see the
+// max-width:760px rule in app.css).
 function wirePhasesAssembly(container){
   const runway = container.querySelector('#phasesRunway');
   if(!runway) return;
-  const focusCards = [...container.querySelectorAll('.focus-card')];
-  const stackItems = [...container.querySelectorAll('.stack-item')];
-  const connectors = [...container.querySelectorAll('.stack-connector')];
-  const loopConnector = container.querySelector('#loopConnector');
+  const cards = [...container.querySelectorAll('.phase-card')];
+  const arrows = [...container.querySelectorAll('.phase-arrow')];
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isDesktop = window.matchMedia('(min-width:761px)').matches;
-  const n = focusCards.length;
-
-  function settleComplete(){
-    focusCards.forEach((c,i)=> c.classList.toggle('active', i === n - 1));
-    stackItems.forEach(s=>s.classList.add('in'));
-    connectors.forEach(c=>c.classList.add('in'));
-    loopConnector.classList.add('in');
-  }
+  const n = cards.length;
 
   if(reduceMotion || !isDesktop){
-    settleComplete();
+    cards.forEach(c=>c.classList.add('in'));
+    arrows.forEach(a=>a.classList.add('in'));
     return;
   }
 
@@ -1451,25 +1443,19 @@ function wirePhasesAssembly(container){
   // approximate rendered height - not read live from the DOM, so the
   // detail panel opening (which grows .phases-stage) can never feed back
   // into this calculation.
-  const STAGE_TOP = 96, STAGE_HEIGHT = 420;
+  const STAGE_TOP = 96, STAGE_HEIGHT = 280;
+  const bandWidth = 1 / n;
   function update(){
     const rect = runway.getBoundingClientRect();
     const total = runway.offsetHeight - STAGE_HEIGHT;
     const scrolled = Math.min(Math.max(STAGE_TOP - rect.top, 0), total);
     const progress = total > 0 ? scrolled / total : 0;
 
-    const bandWidth = 1 / n;
-    const band = Math.min(n - 1, Math.floor(progress / bandWidth));
-    const bandLocal = (progress - band * bandWidth) / bandWidth;
-
-    focusCards.forEach((c,i)=> c.classList.toggle('active', i === band));
-    stackItems.forEach((s,i)=>{
-      s.classList.toggle('in', i < band || (i === band && bandLocal > 0.7));
-    });
-    connectors.forEach((c,i)=>{
-      c.classList.toggle('in', i < band || (i === band && bandLocal > 0.75));
-    });
-    loopConnector.classList.toggle('in', progress > 0.94);
+    // classList.add only (never removed) - once a card has arrived, it
+    // remains, matching "each tile should move to the left and remain
+    // there" rather than swapping away when the next one arrives.
+    cards.forEach((c,i)=>{ if(progress > i * bandWidth + bandWidth * 0.15) c.classList.add('in'); });
+    arrows.forEach((a,i)=>{ if(progress > (i + 1) * bandWidth + bandWidth * 0.05) a.classList.add('in'); });
   }
   window.addEventListener('scroll', update, { passive:true });
   update();
@@ -1537,30 +1523,16 @@ function renderHomeTab(container){
         <p class="body-text">Every assessment moves through three stages as a continuous workflow - scroll to watch them unfold, or select a stage for a quick summary of what it involves.</p>
         <div class="phases-runway" id="phasesRunway">
           <div class="phases-stage">
-            <div class="phases-content">
-              <div class="stack-col">
-                ${stageOrder.map((sid,i)=>`
-                  <div class="stack-item" data-stage-detail="${sid}" data-stack-index="${i}">
-                    <div class="stack-badge" style="border-color:${STAGE_META[sid].color}; color:${STAGE_META[sid].color};">0${i+1}</div>
-                    <div class="stack-label">${STAGE_META[sid].label}</div>
-                  </div>
-                  ${i < stageOrder.length-1 ? `<div class="stack-connector" data-connector-index="${i}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M6 13l6 6 6-6"/></svg></div>` : ''}
-                `).join('')}
-                <div class="loop-connector" id="loopConnector">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"/><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"/></svg>
-                  <span>Cycle repeats to ${STAGE_META[stageOrder[0]].label}</span>
+            <div class="phases-row">
+              ${stageOrder.map((sid,i)=>`
+                ${i>0 ? `<div class="phase-arrow" data-arrow-index="${i-1}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ''}
+                <div class="phase-card" data-stage-detail="${sid}" data-phase-index="${i}" style="border-top:2px solid ${STAGE_META[sid].color}">
+                  <div class="workflow-phase-tag">Phase ${i+1}</div>
+                  <div class="stage-illustration">${stageIllustration(sid)}</div>
+                  <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
+                  <p>${STAGE_META[sid].blurb}</p>
                 </div>
-              </div>
-              <div class="focus-area">
-                ${stageOrder.map((sid,i)=>`
-                  <div class="focus-card" data-stage-detail="${sid}" data-focus-index="${i}" style="border-top:2px solid ${STAGE_META[sid].color}">
-                    <div class="workflow-phase-tag">Phase ${i+1}</div>
-                    <div class="stage-illustration">${stageIllustration(sid)}</div>
-                    <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
-                    <p>${STAGE_META[sid].blurb}</p>
-                  </div>
-                `).join('')}
-              </div>
+              `).join('')}
             </div>
             <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
           </div>
@@ -1669,10 +1641,9 @@ function renderHomeTab(container){
       container.querySelectorAll('[data-stage-detail]').forEach(c=>c.classList.remove('stage-active'));
       el.classList.add('stage-active');
       // The panel has one fixed home - a normal in-flow sibling right after
-      // .phases-content, inside .phases-stage - rather than being
-      // re-parented into whichever element was clicked (a stack badge or a
-      // focus card); the panel's own heading/color identify which phase
-      // it's showing.
+      // .phases-row, inside .phases-stage - rather than being re-parented
+      // into whichever card was clicked; the panel's own heading/color
+      // identify which phase it's showing.
       const openTile = el.closest('.section-tile');
       if(openTile) openTile.classList.add('has-open-overlay');
       panel.innerHTML = `
@@ -1691,14 +1662,14 @@ function renderHomeTab(container){
     riskDesc.classList.remove('open');
   }
   document.addEventListener('click', (e)=>{
-    if(openStageDetail && !e.target.closest('.phases-content') && !e.target.closest('.stage-detail-panel')){
+    if(openStageDetail && !e.target.closest('.phases-row') && !e.target.closest('.stage-detail-panel')){
       closeStageDetail();
     }
     if(riskDesc.classList.contains('open') && !e.target.closest('.risk-slider-wrap')){
       closeRiskDesc();
     }
   });
-  // The panel is a normal in-flow sibling of .phases-content (inside the
+  // The panel is a normal in-flow sibling of .phases-row (inside the
   // sticky .phases-stage), so it doesn't drift under the cursor during
   // scroll. It only needs to close on an outside click, same as riskDesc.
 
