@@ -59111,40 +59111,29 @@ ${suffix}`;
   function wirePhasesAssembly(container) {
     const runway = container.querySelector("#phasesRunway");
     if (!runway) return;
-    const focusCards = [...container.querySelectorAll(".focus-card")];
-    const stackItems = [...container.querySelectorAll(".stack-item")];
-    const connectors = [...container.querySelectorAll(".stack-connector")];
-    const loopConnector = container.querySelector("#loopConnector");
+    const cards = [...container.querySelectorAll(".phase-card")];
+    const arrows = [...container.querySelectorAll(".phase-arrow")];
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isDesktop = window.matchMedia("(min-width:761px)").matches;
-    const n2 = focusCards.length;
-    function settleComplete() {
-      focusCards.forEach((c4, i3) => c4.classList.toggle("active", i3 === n2 - 1));
-      stackItems.forEach((s3) => s3.classList.add("in"));
-      connectors.forEach((c4) => c4.classList.add("in"));
-      loopConnector.classList.add("in");
-    }
+    const n2 = cards.length;
     if (reduceMotion || !isDesktop) {
-      settleComplete();
+      cards.forEach((c4) => c4.classList.add("in"));
+      arrows.forEach((a4) => a4.classList.add("in"));
       return;
     }
-    const STAGE_TOP = 96, STAGE_HEIGHT = 420;
+    const STAGE_TOP = 96, STAGE_HEIGHT = 280;
+    const bandWidth = 1 / n2;
     function update() {
       const rect = runway.getBoundingClientRect();
       const total = runway.offsetHeight - STAGE_HEIGHT;
       const scrolled = Math.min(Math.max(STAGE_TOP - rect.top, 0), total);
       const progress = total > 0 ? scrolled / total : 0;
-      const bandWidth = 1 / n2;
-      const band = Math.min(n2 - 1, Math.floor(progress / bandWidth));
-      const bandLocal = (progress - band * bandWidth) / bandWidth;
-      focusCards.forEach((c4, i3) => c4.classList.toggle("active", i3 === band));
-      stackItems.forEach((s3, i3) => {
-        s3.classList.toggle("in", i3 < band || i3 === band && bandLocal > 0.7);
+      cards.forEach((c4, i3) => {
+        if (progress > i3 * bandWidth + bandWidth * 0.15) c4.classList.add("in");
       });
-      connectors.forEach((c4, i3) => {
-        c4.classList.toggle("in", i3 < band || i3 === band && bandLocal > 0.75);
+      arrows.forEach((a4, i3) => {
+        if (progress > (i3 + 1) * bandWidth + bandWidth * 0.05) a4.classList.add("in");
       });
-      loopConnector.classList.toggle("in", progress > 0.94);
     }
     window.addEventListener("scroll", update, { passive: true });
     update();
@@ -59211,30 +59200,16 @@ ${suffix}`;
         <p class="body-text">Every assessment moves through three stages as a continuous workflow - scroll to watch them unfold, or select a stage for a quick summary of what it involves.</p>
         <div class="phases-runway" id="phasesRunway">
           <div class="phases-stage">
-            <div class="phases-content">
-              <div class="stack-col">
-                ${stageOrder.map((sid, i3) => `
-                  <div class="stack-item" data-stage-detail="${sid}" data-stack-index="${i3}">
-                    <div class="stack-badge" style="border-color:${STAGE_META[sid].color}; color:${STAGE_META[sid].color};">0${i3 + 1}</div>
-                    <div class="stack-label">${STAGE_META[sid].label}</div>
-                  </div>
-                  ${i3 < stageOrder.length - 1 ? `<div class="stack-connector" data-connector-index="${i3}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M6 13l6 6 6-6"/></svg></div>` : ""}
-                `).join("")}
-                <div class="loop-connector" id="loopConnector">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"/><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"/></svg>
-                  <span>Cycle repeats to ${STAGE_META[stageOrder[0]].label}</span>
+            <div class="phases-row">
+              ${stageOrder.map((sid, i3) => `
+                ${i3 > 0 ? `<div class="phase-arrow" data-arrow-index="${i3 - 1}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ""}
+                <div class="phase-card" data-stage-detail="${sid}" data-phase-index="${i3}" style="border-top:2px solid ${STAGE_META[sid].color}">
+                  <div class="workflow-phase-tag">Phase ${i3 + 1}</div>
+                  <div class="stage-illustration">${stageIllustration(sid)}</div>
+                  <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
+                  <p>${STAGE_META[sid].blurb}</p>
                 </div>
-              </div>
-              <div class="focus-area">
-                ${stageOrder.map((sid, i3) => `
-                  <div class="focus-card" data-stage-detail="${sid}" data-focus-index="${i3}" style="border-top:2px solid ${STAGE_META[sid].color}">
-                    <div class="workflow-phase-tag">Phase ${i3 + 1}</div>
-                    <div class="stage-illustration">${stageIllustration(sid)}</div>
-                    <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
-                    <p>${STAGE_META[sid].blurb}</p>
-                  </div>
-                `).join("")}
-              </div>
+              `).join("")}
             </div>
             <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
           </div>
@@ -59364,7 +59339,7 @@ ${suffix}`;
       riskDesc.classList.remove("open");
     }
     document.addEventListener("click", (e2) => {
-      if (openStageDetail && !e2.target.closest(".phases-content") && !e2.target.closest(".stage-detail-panel")) {
+      if (openStageDetail && !e2.target.closest(".phases-row") && !e2.target.closest(".stage-detail-panel")) {
         closeStageDetail();
       }
       if (riskDesc.classList.contains("open") && !e2.target.closest(".risk-slider-wrap")) {
@@ -59730,7 +59705,7 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMethodFromMetrics1"), "methodology");
     wireNavLink(document.getElementById("linkMaturityFromMetrics"), "maturity");
   }
-  var SITE_LAST_UPDATED = "September 9, 2026";
+  var SITE_LAST_UPDATED = "September 10, 2026";
   var ROADMAP_SHIPPED = [
     { module: "Adaptive Assessment Engine", desc: "Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice." },
     { module: "AI-Enhanced Insights", desc: "A live, opt-in second pass on your completed results: checks your named vendors/products against CISA's KEV catalog and NVD's CVE database for anything current a fixed rule set can't know by nature, plus a look for patterns this specific answer combination raises beyond it. Clearly labeled as AI-generated - the deterministic report above it is already complete either way." },
