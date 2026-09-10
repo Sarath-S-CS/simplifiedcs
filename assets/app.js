@@ -58865,17 +58865,31 @@ ${suffix}`;
       panel.id = "mobileNavPanel";
       panel.innerHTML = TOP_TABS.map((t4) => {
         const dd = NAV_DROPDOWN_MAP[t4.id];
-        if (!t4.categoryOnly) {
+        if (!dd || !dd.length) {
           return `<a class="mobile-nav-link ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>`;
         }
-        const containsActive = (dd || []).some((d2) => d2.id === activeTab);
-        return `
-        <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t4.id}" aria-expanded="${containsActive}">
-          ${t4.label} <span class="mobile-nav-chevron">&#9662;</span>
-        </button>
+        const containsActive = t4.id === activeTab || dd.some((d2) => d2.id === activeTab);
+        const sublist = `
         <div class="mobile-nav-sublist ${containsActive ? "open" : ""}" id="mobileSublist-${t4.id}">
-          ${(dd || []).map((d2) => `<a class="mobile-nav-sublink ${activeTab === d2.id ? "active" : ""}" href="${pathForTab(d2.id)}" data-tab="${d2.id}">${d2.label}</a>`).join("")}
+          ${dd.map((d2) => `<a class="mobile-nav-sublink ${activeTab === d2.id ? "active" : ""}" href="${pathForTab(d2.id)}" data-tab="${d2.id}">${d2.label}</a>`).join("")}
         </div>
+      `;
+        if (t4.categoryOnly) {
+          return `
+          <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t4.id}" aria-expanded="${containsActive}">
+            ${t4.label} <span class="mobile-nav-chevron">&#9662;</span>
+          </button>
+          ${sublist}
+        `;
+        }
+        return `
+        <div class="mobile-nav-heading-row">
+          <a class="mobile-nav-link mobile-nav-link-with-toggle ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>
+          <button type="button" class="mobile-nav-toggle mobile-nav-toggle-caret" data-category="${t4.id}" aria-expanded="${containsActive}" aria-label="Toggle ${t4.label} submenu">
+            <span class="mobile-nav-chevron">&#9662;</span>
+          </button>
+        </div>
+        ${sublist}
       `;
       }).join("");
       document.querySelector(".masthead").appendChild(panel);

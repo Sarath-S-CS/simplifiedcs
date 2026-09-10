@@ -1168,18 +1168,42 @@ function renderHamburgerMenu(){
     panel.id = 'mobileNavPanel';
     panel.innerHTML = TOP_TABS.map(t=>{
       const dd = NAV_DROPDOWN_MAP[t.id];
-      if(!t.categoryOnly){
-        // Home/Assessment: real single links, unaffected by the accordion.
+      if(!dd || !dd.length){
+        // No dropdown content at all - a plain link. Not currently true for
+        // any TOP_TABS entry (every one of them has a NAV_DROPDOWN_MAP
+        // entry), but kept as a safe fallback.
         return `<a class="mobile-nav-link ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>`;
       }
-      const containsActive = (dd||[]).some(d=>d.id===activeTab);
-      return `
-        <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t.id}" aria-expanded="${containsActive}">
-          ${t.label} <span class="mobile-nav-chevron">&#9662;</span>
-        </button>
+      const containsActive = t.id === activeTab || dd.some(d=>d.id===activeTab);
+      const sublist = `
         <div class="mobile-nav-sublist ${containsActive ? 'open' : ''}" id="mobileSublist-${t.id}">
-          ${(dd||[]).map(d=>`<a class="mobile-nav-sublink ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
+          ${dd.map(d=>`<a class="mobile-nav-sublink ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
         </div>
+      `;
+      if(t.categoryOnly){
+        // Framework/Learn/Resources/Insights have no page of their own -
+        // the whole header is the toggle, like the desktop nav's
+        // caret-only trigger for these same tabs.
+        return `
+          <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t.id}" aria-expanded="${containsActive}">
+            ${t.label} <span class="mobile-nav-chevron">&#9662;</span>
+          </button>
+          ${sublist}
+        `;
+      }
+      // Home/Assessment: a real link to their own page AND a dropdown of
+      // sub-pages - exactly like their desktop nav-bar trigger (a link plus
+      // a separate caret that toggles the dropdown). This branch previously
+      // rendered only a plain link, silently dropping their dropdown
+      // content on mobile even though desktop showed it correctly.
+      return `
+        <div class="mobile-nav-heading-row">
+          <a class="mobile-nav-link mobile-nav-link-with-toggle ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>
+          <button type="button" class="mobile-nav-toggle mobile-nav-toggle-caret" data-category="${t.id}" aria-expanded="${containsActive}" aria-label="Toggle ${t.label} submenu">
+            <span class="mobile-nav-chevron">&#9662;</span>
+          </button>
+        </div>
+        ${sublist}
       `;
     }).join('');
     document.querySelector('.masthead').appendChild(panel);

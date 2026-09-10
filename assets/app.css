@@ -423,6 +423,17 @@
     background:transparent; border:none; width:100%; font:inherit; cursor:pointer;
     display:flex; align-items:center; justify-content:space-between;
   }
+  /* Home/Assessment have their own real page AND dropdown sub-pages, so
+     unlike the categoryOnly headers above (where the whole button IS the
+     toggle), the link and the toggle need to be separate click targets
+     sharing one row - unclickable-into-the-wrong-thing, matching how the
+     desktop nav gives these same two tabs a real link plus a separate
+     caret. */
+  .mobile-nav-heading-row{ display:flex; align-items:center; }
+  .mobile-nav-link-with-toggle{ flex:1; padding-right:8px; }
+  .mobile-nav-toggle-caret{
+    width:auto; flex-shrink:0; padding:12px clamp(24px, 4vw, 64px) 12px 12px; justify-content:center;
+  }
   .mobile-nav-chevron{ transition:transform .2s ease; font-size:10px; }
   .mobile-nav-toggle[aria-expanded="true"] .mobile-nav-chevron{ transform:rotate(180deg); }
   .mobile-nav-sublist{ max-height:0; overflow:hidden; transition:max-height .25s ease; }
