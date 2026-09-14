@@ -1467,8 +1467,11 @@ function wirePhasesAssembly(container){
   // Fixed constants matching .phases-stage's CSS top offset and its own
   // approximate rendered height - not read live from the DOM, so the
   // detail panel opening (which grows .phases-stage) can never feed back
-  // into this calculation.
-  const STAGE_TOP = 96, STAGE_HEIGHT = 280;
+  // into this calculation. STAGE_HEIGHT includes the section title and
+  // intro paragraph now that they live inside .phases-stage too (so they
+  // stay pinned alongside the cards instead of scrolling out of view
+  // before the cards finish assembling).
+  const STAGE_TOP = 96, STAGE_HEIGHT = 405;
   const bandWidth = 1 / n;
   function update(){
     const rect = runway.getBoundingClientRect();
@@ -1544,10 +1547,10 @@ function renderHomeTab(container){
       </div>
 
       <div class="section-tile">
-        <h3 class="section-h">The three phases of the assessment</h3>
-        <p class="body-text">Every assessment moves through three stages as a continuous workflow - scroll to watch them unfold, or select a stage for a quick summary of what it involves.</p>
         <div class="phases-runway" id="phasesRunway">
           <div class="phases-stage">
+            <h3 class="section-h">The three phases of the assessment</h3>
+            <p class="body-text">Every assessment moves through three stages as a continuous workflow - scroll to watch them unfold, or select a stage for a quick summary of what it involves.</p>
             <div class="phases-row">
               ${stageOrder.map((sid,i)=>`
                 ${i>0 ? `<div class="phase-arrow" data-arrow-index="${i-1}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>` : ''}

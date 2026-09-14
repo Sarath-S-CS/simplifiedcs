@@ -123,16 +123,24 @@
     margin-right:auto;
     padding:40px clamp(24px, 4vw, 64px) 80px;
   }
-  /* Floating inset nav (Niva-inspired layout pass) - a normal
-     .app-constrained block, matching the width of the content sections
-     beneath it (a full-bleed, edge-to-edge version was tried and reverted
-     - it read as too wide against the rest of the page). */
+  /* Floating inset nav (Niva-inspired layout pass) - sized to match
+     .hero-banner exactly (same margin/width formula: cancel .app's own
+     side padding so both reach .app's full max-width:1200, not just its
+     padded content box). A viewport-relative full-bleed version was
+     tried and reverted for being wider than the rest of the page - this
+     ties the header's width to the same, already-proven-safe formula the
+     hero banner uses instead, so the two visually match and it degrades
+     the same way on narrow screens (no overflow risk, unlike vw-based
+     breakouts). */
   .masthead{
     position:sticky;
     top:16px;
     z-index:10;
     margin-top:16px;
     margin-bottom:32px;
+    margin-left:calc(-1 * clamp(24px, 4vw, 64px));
+    margin-right:calc(-1 * clamp(24px, 4vw, 64px));
+    width:calc(100% + 2 * clamp(24px, 4vw, 64px));
     border:1px solid var(--line);
     border-radius:var(--radius-nav);
     background:var(--masthead-bg);
@@ -447,14 +455,15 @@
   .mobile-nav-sublink.active{ color:var(--accent-signal); }
   .mobile-nav-link:hover, .mobile-nav-sublink:hover{ background:var(--tint-signal-soft); color:var(--accent-signal); }
 
-  /* Full nav (6 tabs + search + theme toggle) needs ~1090px alongside the
-     brand lockup at default padding. .masthead is capped at .app's own
-     max-width:1200 (see the comment on .masthead above), so once the
+  /* Full nav (6 tabs + search + theme toggle) needs well under 1152px
+     alongside the brand lockup at default padding (measured with real
+     margin to spare after the tab/gap tightening below). .masthead's
+     width formula matches .hero-banner's (see the comment on .masthead
+     above), which tops out at .app's own max-width:1200 - so once the
      viewport is wide enough to show the tabnav at all, the header's
      available content width is pinned at 1200 - 2*24 padding = 1152px
-     and never shrinks as the window grows further - comfortably above
-     the ~1090px the nav needs, so this cutoff doesn't need to track
-     viewport width past this point. */
+     and never shrinks as the window grows further, so this cutoff
+     doesn't need to track viewport width past this point. */
   @media (max-width:1200px){
     .tabnav{ display:none; }
     .nav-hamburger{ display:flex; }
@@ -1499,7 +1508,7 @@
     .hiw-grid{ grid-template-columns:1fr; gap:32px; }
   }
 
-  .phases-runway{ position:relative; height:130vh; margin:20px 0 32px; }
+  .phases-runway{ position:relative; height:145vh; margin:20px 0 32px; }
   .phases-stage{ position:sticky; top:96px; }
   .phases-row{ display:flex; align-items:center; justify-content:center; gap:20px; }
   .phase-card{
