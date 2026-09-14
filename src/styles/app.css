@@ -123,23 +123,16 @@
     margin-right:auto;
     padding:40px clamp(24px, 4vw, 64px) 80px;
   }
-  /* Floating full-bleed nav (Niva-inspired layout pass) - genuinely spans
-     the viewport independent of .app's own max-width:1200 constraint, so
-     the header reads as wider than the content column beneath it instead
-     of matching it exactly. The calc(50% - 50vw) pair is the standard
-     breakout-from-a-centered-parent trick: it cancels out .app's own
-     centering/padding for this element only, regardless of how much
-     padding .app has. .masthead-inner keeps the same padding as before so
-     the nav's own content doesn't suddenly need to fill the full width. */
+  /* Floating inset nav (Niva-inspired layout pass) - a normal
+     .app-constrained block, matching the width of the content sections
+     beneath it (a full-bleed, edge-to-edge version was tried and reverted
+     - it read as too wide against the rest of the page). */
   .masthead{
     position:sticky;
     top:16px;
     z-index:10;
     margin-top:16px;
     margin-bottom:32px;
-    margin-left:calc(50% - 50vw);
-    margin-right:calc(50% - 50vw);
-    width:100vw;
     border:1px solid var(--line);
     border-radius:var(--radius-nav);
     background:var(--masthead-bg);
@@ -455,14 +448,13 @@
   .mobile-nav-link:hover, .mobile-nav-sublink:hover{ background:var(--tint-signal-soft); color:var(--accent-signal); }
 
   /* Full nav (6 tabs + search + theme toggle) needs ~1090px alongside the
-     brand lockup at default padding. This used to need a much larger
-     cutoff here as a band-aid, because .masthead's width was secretly
-     capped by .app's max-width:1200 (see the comment on .masthead above) -
-     past ~1330px viewport the header simply couldn't grow no matter how
-     wide the window got. Now that .masthead genuinely spans the viewport
-     independent of .app, the real fit boundary is much lower and stays
-     proportional to viewport width - this cutoff has real margin below
-     that measured boundary without needing to be defensively huge. */
+     brand lockup at default padding. .masthead is capped at .app's own
+     max-width:1200 (see the comment on .masthead above), so once the
+     viewport is wide enough to show the tabnav at all, the header's
+     available content width is pinned at 1200 - 2*24 padding = 1152px
+     and never shrinks as the window grows further - comfortably above
+     the ~1090px the nav needs, so this cutoff doesn't need to track
+     viewport width past this point. */
   @media (max-width:1200px){
     .tabnav{ display:none; }
     .nav-hamburger{ display:flex; }
