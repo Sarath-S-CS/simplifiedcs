@@ -59143,10 +59143,10 @@ ${suffix}`;
       const scrolled = Math.min(Math.max(STAGE_TOP - rect.top, 0), total);
       const progress = total > 0 ? scrolled / total : 0;
       cards.forEach((c4, i3) => {
-        if (progress > i3 * bandWidth + bandWidth * 0.15) c4.classList.add("in");
+        c4.classList.toggle("in", progress > i3 * bandWidth + bandWidth * 0.15);
       });
       arrows.forEach((a4, i3) => {
-        if (progress > (i3 + 1) * bandWidth + bandWidth * 0.05) a4.classList.add("in");
+        a4.classList.toggle("in", progress > (i3 + 1) * bandWidth + bandWidth * 0.05);
       });
     }
     window.addEventListener("scroll", update, { passive: true });
@@ -59719,7 +59719,7 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMethodFromMetrics1"), "methodology");
     wireNavLink(document.getElementById("linkMaturityFromMetrics"), "maturity");
   }
-  var SITE_LAST_UPDATED = "September 11, 2026";
+  var SITE_LAST_UPDATED = "September 14, 2026";
   var ROADMAP_SHIPPED = [
     { module: "Adaptive Assessment Engine", desc: "Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice." },
     { module: "AI-Enhanced Insights", desc: "A live, opt-in second pass on your completed results: checks your named vendors/products against CISA's KEV catalog and NVD's CVE database for anything current a fixed rule set can't know by nature, plus a look for patterns this specific answer combination raises beyond it. Clearly labeled as AI-generated - the deterministic report above it is already complete either way." },
