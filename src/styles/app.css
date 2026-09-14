@@ -66,6 +66,14 @@
     --tint-secure: rgba(1,127,99,0.12);
   }
   *{box-sizing:border-box;}
+  /* overflow-x:hidden on the real scrolling element (html, not body) is a
+     deliberate safety net, not a fix for a known cause - nothing on this
+     site is meant to scroll horizontally at the page level (wide content
+     like .data-table already gets its own contained .table-wrap scroll
+     region), so this just guarantees that any stray sub-viewport-width
+     overflow can never surface as an actual horizontal scrollbar/gap on
+     mobile, regardless of what causes it. */
+  html{overflow-x:hidden;}
   html,body{margin:0;padding:0;}
   body{
     color:var(--text);
@@ -121,7 +129,7 @@
     max-width:1200px;
     margin-left:auto;
     margin-right:auto;
-    padding:40px clamp(24px, 4vw, 64px) 80px;
+    padding:20px clamp(24px, 4vw, 64px) 80px;
   }
   /* Floating inset nav (Niva-inspired layout pass) - sized to match
      .hero-banner exactly (same margin/width formula: cancel .app's own
@@ -136,8 +144,8 @@
     position:sticky;
     top:16px;
     z-index:10;
-    margin-top:16px;
-    margin-bottom:32px;
+    margin-top:8px;
+    margin-bottom:16px;
     margin-left:calc(-1 * clamp(24px, 4vw, 64px));
     margin-right:calc(-1 * clamp(24px, 4vw, 64px));
     width:calc(100% + 2 * clamp(24px, 4vw, 64px));
@@ -479,7 +487,7 @@
     .brand-logo{ width:26px; height:26px; }
     .masthead h1{ font-size:15px; }
     .masthead-right{ gap:8px; }
-    .masthead{ margin-top:10px; border-radius:16px; }
+    .masthead{ margin-top:6px; border-radius:16px; }
   }
   /* The 480px compaction above still doesn't leave enough room on the
      smallest real phone widths (iPhone SE 1st-gen at 320px, and similar
@@ -961,7 +969,16 @@
   .stamp-icon svg{ width:100%; height:100%; }
   .stamp-label{ position:relative; z-index:1; font-family:var(--mono); font-size:7.5px; line-height:1.15; letter-spacing:0.01em; text-transform:uppercase; color:var(--stamp-color); }
   @media (max-width:480px){ .stamp{ width:64px; height:64px; } }
-  .section-tile{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:36px 40px; }
+  /* min-width:0 - .page is a column flex container (see .page below), so
+     .section-tile is a flex item and gets an implicit min-width:auto by
+     default. A descendant that needs real width (e.g. .data-table's own
+     min-width:640px inside .table-wrap) would otherwise force the tile,
+     and the whole page, wider than the viewport on mobile instead of
+     scrolling within .table-wrap's own overflow-x:auto as intended -
+     the same class of bug already fixed for grid tracks elsewhere in
+     this file (bare 1fr / .phase4-grid), just via flexbox's own version
+     of the same implicit-minimum-size default. */
+  .section-tile{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:36px 40px; min-width:0; }
   @media (max-width:720px){ .section-tile{ padding:22px 20px; } }
   .section-tile .section-h:first-child{ margin-top:0; }
   /* .page is a flex container, and its .section-tile children have
@@ -1526,6 +1543,11 @@
     opacity:0; transform:scale(0.6); transition:opacity .3s ease, transform .3s ease;
   }
   .phase-arrow.in{ opacity:1; transform:scale(1); }
+  /* Scoped to the phases-stage instance only - .method-link-row is shared
+     with the always-visible link rows elsewhere on this page (e.g. under
+     How It Works), which should never fade. */
+  .phases-stage .method-link-row{ opacity:0; transform:translateY(10px); pointer-events:none; transition:opacity .5s ease, transform .5s ease; }
+  .phases-stage .method-link-row.in{ opacity:1; transform:translateY(0); pointer-events:auto; }
   @media (max-width:760px){
     .phases-runway{ height:auto; }
     .phases-stage{ position:static; top:auto; }

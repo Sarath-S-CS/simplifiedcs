@@ -271,6 +271,7 @@ function icon(name){
     urgent: `<svg ${common}><path d="M12 3l9 15.5H3z"/><path d="M12 9.5v4"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor"/></svg>`,
     route: `<svg ${common}><path d="M5 21V3"/><path d="M5 4.5c3-2 5 2 8 0s5 2 8 0v9c-3 2-5-2-8 0s-5-2-8 0"/></svg>`,
     signal: `<svg ${common}><path d="M12 19.3v.01"/><path d="M8.2 15.8a5.2 5.2 0 0 1 7.6 0"/><path d="M5 12.3a9.2 9.2 0 0 1 14 0"/></svg>`,
+    analysis: `<svg ${common}><path d="M4 20V10M9 20V4M14 20v-9M19 20V13"/><path d="M4 9.5l5-4 5 4.5 5-6.5" opacity="0.55"/></svg>`,
     checklist: `<svg ${common}><rect x="6" y="4" width="12" height="17" rx="1.4"/><rect x="9" y="2.3" width="6" height="3" rx="1"/><path d="M9 12l1.8 1.8L15 10" /></svg>`,
     ranked: `<svg ${common}><path d="M4 6h16M4 12h11M4 18h6"/></svg>`,
     clock: `<svg ${common}><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2.3h6M12 2.3V5"/></svg>`,
@@ -1412,7 +1413,7 @@ const SITE_TILES = [
 const HOW_IT_WORKS = [
   { n:'01', title:'Data Collection', tagline:'Know exactly where you stand', icon:'checklist',
     desc:'Answer an adaptive questionnaire shaped by your industry and infrastructure - only relevant questions appear, and all six NIST CSF functions are scored individually.' },
-  { n:'02', title:'Analysis', tagline:'See risks a checklist would miss', icon:'signal',
+  { n:'02', title:'Analysis', tagline:'See risks a checklist would miss', icon:'analysis',
     desc:'Every answer is cross-referenced against every other answer, so compounding risk gets flagged instead of scored in isolation - with vendor-specific mitigation notes wherever you\'ve named a product.' },
   { n:'03', title:'Recommendation', tagline:'Know what to fix first', icon:'ranked',
     desc:'A ranked, prioritized action list, not a wall of findings - each item tied to why it matters more than the rest, and mapped back to the specific control it strengthens.' },
@@ -1454,6 +1455,7 @@ function wirePhasesAssembly(container){
   if(!runway) return;
   const cards = [...container.querySelectorAll('.phase-card')];
   const arrows = [...container.querySelectorAll('.phase-arrow')];
+  const methodLink = container.querySelector('.phases-stage .method-link-row');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isDesktop = window.matchMedia('(min-width:761px)').matches;
   const n = cards.length;
@@ -1461,17 +1463,20 @@ function wirePhasesAssembly(container){
   if(reduceMotion || !isDesktop){
     cards.forEach(c=>c.classList.add('in'));
     arrows.forEach(a=>a.classList.add('in'));
+    if(methodLink) methodLink.classList.add('in');
     return;
   }
 
   // Fixed constants matching .phases-stage's CSS top offset and its own
   // approximate rendered height - not read live from the DOM, so the
   // detail panel opening (which grows .phases-stage) can never feed back
-  // into this calculation. STAGE_HEIGHT includes the section title and
-  // intro paragraph now that they live inside .phases-stage too (so they
-  // stay pinned alongside the cards instead of scrolling out of view
-  // before the cards finish assembling).
-  const STAGE_TOP = 96, STAGE_HEIGHT = 405;
+  // into this calculation. STAGE_HEIGHT includes the section title, intro
+  // paragraph, and the "Explore the full Maturity Model" link now that
+  // they all live inside .phases-stage - the title stays pinned alongside
+  // the cards instead of scrolling out of view before they finish
+  // assembling, and the link becomes visible together with the last
+  // (Optimize) card instead of only after scrolling past the whole runway.
+  const STAGE_TOP = 96, STAGE_HEIGHT = 470;
   const bandWidth = 1 / n;
   function update(){
     const rect = runway.getBoundingClientRect();
@@ -1484,6 +1489,9 @@ function wirePhasesAssembly(container){
     // it again instead of leaving the section permanently assembled.
     cards.forEach((c,i)=>{ c.classList.toggle('in', progress > i * bandWidth + bandWidth * 0.15); });
     arrows.forEach((a,i)=>{ a.classList.toggle('in', progress > (i + 1) * bandWidth + bandWidth * 0.05); });
+    // same threshold as the last card - the link appears exactly when
+    // the Optimize tile does, not after further scrolling.
+    if(methodLink) methodLink.classList.toggle('in', progress > (n - 1) * bandWidth + bandWidth * 0.15);
   }
   window.addEventListener('scroll', update, { passive:true });
   update();
@@ -1563,10 +1571,10 @@ function renderHomeTab(container){
               `).join('')}
             </div>
             <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
+            <div class="method-link-row">
+              <a href="${pathForTab('maturity')}" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon">${icon('cycle')}</span>Explore the full Maturity Model</a>
+            </div>
           </div>
-        </div>
-        <div class="method-link-row">
-          <a href="${pathForTab('maturity')}" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon">${icon('cycle')}</span>Explore the full Maturity Model</a>
         </div>
       </div>
 
