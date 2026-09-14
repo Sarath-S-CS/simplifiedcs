@@ -123,15 +123,23 @@
     margin-right:auto;
     padding:40px clamp(24px, 4vw, 64px) 80px;
   }
-  /* Floating inset nav (Niva-inspired layout pass) - a normal
-     .app-constrained block, not a full-bleed breakout; .app's own side
-     padding IS the float margin. */
+  /* Floating full-bleed nav (Niva-inspired layout pass) - genuinely spans
+     the viewport independent of .app's own max-width:1200 constraint, so
+     the header reads as wider than the content column beneath it instead
+     of matching it exactly. The calc(50% - 50vw) pair is the standard
+     breakout-from-a-centered-parent trick: it cancels out .app's own
+     centering/padding for this element only, regardless of how much
+     padding .app has. .masthead-inner keeps the same padding as before so
+     the nav's own content doesn't suddenly need to fill the full width. */
   .masthead{
     position:sticky;
     top:16px;
     z-index:10;
     margin-top:16px;
     margin-bottom:32px;
+    margin-left:calc(50% - 50vw);
+    margin-right:calc(50% - 50vw);
+    width:100vw;
     border:1px solid var(--line);
     border-radius:var(--radius-nav);
     background:var(--masthead-bg);
@@ -1499,7 +1507,7 @@
     .hiw-grid{ grid-template-columns:1fr; gap:32px; }
   }
 
-  .phases-runway{ position:relative; height:220vh; margin:20px 0 32px; }
+  .phases-runway{ position:relative; height:130vh; margin:20px 0 32px; }
   .phases-stage{ position:sticky; top:96px; }
   .phases-row{ display:flex; align-items:center; justify-content:center; gap:20px; }
   .phase-card{

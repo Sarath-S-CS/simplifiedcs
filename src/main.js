@@ -1443,11 +1443,12 @@ const OFFICIAL_SOURCE_LINKS = [
 // .phases-stage (position:sticky in CSS) while the user scrolls through
 // .phasesRunway's fixed height; each phase card slides in from the right
 // and settles into its slot in the row as its own scroll threshold is
-// crossed, and stays there - cards never hide again once revealed, so by
-// the end all three sit side by side as a plain step-by-step row. Mobile
-// has no meaningful scroll-driven moment for a single-column list, so it
-// falls back to showing everything immediately, no pinning (see the
-// max-width:760px rule in app.css).
+// crossed. The reveal is bidirectional - scrolling back up past a card's
+// threshold hides it again - so scrolling back to the top of the page
+// always finds the section in its original, pre-scroll state instead of
+// permanently stuck mid-assembly. Mobile has no meaningful scroll-driven
+// moment for a single-column list, so it falls back to showing everything
+// immediately, no pinning (see the max-width:760px rule in app.css).
 function wirePhasesAssembly(container){
   const runway = container.querySelector('#phasesRunway');
   if(!runway) return;
@@ -1475,11 +1476,11 @@ function wirePhasesAssembly(container){
     const scrolled = Math.min(Math.max(STAGE_TOP - rect.top, 0), total);
     const progress = total > 0 ? scrolled / total : 0;
 
-    // classList.add only (never removed) - once a card has arrived, it
-    // remains, matching "each tile should move to the left and remain
-    // there" rather than swapping away when the next one arrives.
-    cards.forEach((c,i)=>{ if(progress > i * bandWidth + bandWidth * 0.15) c.classList.add('in'); });
-    arrows.forEach((a,i)=>{ if(progress > (i + 1) * bandWidth + bandWidth * 0.05) a.classList.add('in'); });
+    // toggle, not add-only - a card is "in" exactly when the current
+    // scroll progress is past its threshold, so scrolling back up hides
+    // it again instead of leaving the section permanently assembled.
+    cards.forEach((c,i)=>{ c.classList.toggle('in', progress > i * bandWidth + bandWidth * 0.15); });
+    arrows.forEach((a,i)=>{ a.classList.toggle('in', progress > (i + 1) * bandWidth + bandWidth * 0.05); });
   }
   window.addEventListener('scroll', update, { passive:true });
   update();
