@@ -1010,7 +1010,13 @@
     font-family:var(--mono); font-size:11px; color:var(--accent-signal);
     letter-spacing:0.08em; text-transform:uppercase; margin-bottom:10px;
   }
-  .page h2.page-title{ font-size:54px; font-weight:700; margin:0 0 14px; line-height:1.1; }
+  /* clamp(), not a flat 54px - on narrow mobile widths, a single long
+     unbroken word in a title (e.g. "SimplifiedCS", "Methodology") could
+     overflow past the card's edge instead of wrapping, since there's no
+     space to break on. overflow-wrap is a safety net for the same case;
+     the clamp is the real fix, since it keeps a comfortable margin
+     instead of a font size that only barely happens to fit. */
+  .page h2.page-title{ font-size:clamp(32px, 9vw, 54px); font-weight:700; margin:0 0 14px; line-height:1.1; overflow-wrap:break-word; word-break:break-word; }
   .page .page-lede{ color:var(--text-muted); font-size:15.5px; max-width:640px; margin:0 0 32px; line-height:1.6; }
   .page-lede + .page-lede{ margin-top:-16px; }
   /* METRICS-ANIMATION-ABOUT-FIXES-BRIEF.md §3, broadened per
