@@ -57866,6 +57866,7 @@ ${suffix}`;
       urgent: `<svg ${common2}><path d="M12 3l9 15.5H3z"/><path d="M12 9.5v4"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor"/></svg>`,
       route: `<svg ${common2}><path d="M5 21V3"/><path d="M5 4.5c3-2 5 2 8 0s5 2 8 0v9c-3 2-5-2-8 0s-5-2-8 0"/></svg>`,
       signal: `<svg ${common2}><path d="M12 19.3v.01"/><path d="M8.2 15.8a5.2 5.2 0 0 1 7.6 0"/><path d="M5 12.3a9.2 9.2 0 0 1 14 0"/></svg>`,
+      analysis: `<svg ${common2}><path d="M4 20V10M9 20V4M14 20v-9M19 20V13"/><path d="M4 9.5l5-4 5 4.5 5-6.5" opacity="0.55"/></svg>`,
       checklist: `<svg ${common2}><rect x="6" y="4" width="12" height="17" rx="1.4"/><rect x="9" y="2.3" width="6" height="3" rx="1"/><path d="M9 12l1.8 1.8L15 10" /></svg>`,
       ranked: `<svg ${common2}><path d="M4 6h16M4 12h11M4 18h6"/></svg>`,
       clock: `<svg ${common2}><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2.3h6M12 2.3V5"/></svg>`,
@@ -59185,7 +59186,7 @@ ${suffix}`;
       n: "02",
       title: "Analysis",
       tagline: "See risks a checklist would miss",
-      icon: "signal",
+      icon: "analysis",
       desc: "Every answer is cross-referenced against every other answer, so compounding risk gets flagged instead of scored in isolation - with vendor-specific mitigation notes wherever you've named a product."
     },
     {
@@ -59221,15 +59222,17 @@ ${suffix}`;
     if (!runway) return;
     const cards = [...container.querySelectorAll(".phase-card")];
     const arrows = [...container.querySelectorAll(".phase-arrow")];
+    const methodLink = container.querySelector(".phases-stage .method-link-row");
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isDesktop = window.matchMedia("(min-width:761px)").matches;
     const n2 = cards.length;
     if (reduceMotion || !isDesktop) {
       cards.forEach((c4) => c4.classList.add("in"));
       arrows.forEach((a4) => a4.classList.add("in"));
+      if (methodLink) methodLink.classList.add("in");
       return;
     }
-    const STAGE_TOP = 96, STAGE_HEIGHT = 405;
+    const STAGE_TOP = 96, STAGE_HEIGHT = 470;
     const bandWidth = 1 / n2;
     function update() {
       const rect = runway.getBoundingClientRect();
@@ -59242,6 +59245,7 @@ ${suffix}`;
       arrows.forEach((a4, i3) => {
         a4.classList.toggle("in", progress > (i3 + 1) * bandWidth + bandWidth * 0.05);
       });
+      if (methodLink) methodLink.classList.toggle("in", progress > (n2 - 1) * bandWidth + bandWidth * 0.15);
     }
     window.addEventListener("scroll", update, { passive: true });
     update();
@@ -59320,10 +59324,10 @@ ${suffix}`;
               `).join("")}
             </div>
             <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
+            <div class="method-link-row">
+              <a href="${pathForTab("maturity")}" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon">${icon("cycle")}</span>Explore the full Maturity Model</a>
+            </div>
           </div>
-        </div>
-        <div class="method-link-row">
-          <a href="${pathForTab("maturity")}" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon">${icon("cycle")}</span>Explore the full Maturity Model</a>
         </div>
       </div>
 
