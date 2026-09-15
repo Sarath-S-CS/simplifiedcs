@@ -1178,25 +1178,31 @@ function renderHamburgerMenu(){
         // entry), but kept as a safe fallback.
         return `<a class="mobile-nav-link ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>`;
       }
-      // Sublists always start collapsed, even when the active tab (or one
-      // of its sub-pages) lives in this category - auto-expanding on load
-      // meant Home's submenu (the default landing tab) was always shown
-      // open, while every other category stayed collapsed, an
-      // inconsistency reported as "the home dropdown lists all sub options
-      // by default". The active sub-link still gets its own highlighted
-      // color once expanded (see .mobile-nav-sublink.active), so "you are
-      // here" isn't lost - it's just not forced open unasked.
+      // A category auto-expands, and shows a "you're in here" accent
+      // color on its own heading/link, whenever the active page is one of
+      // its sub-pages - explicitly requested: the user wants the current
+      // location visible at both the top-level and sub-option level, and
+      // is fine with the dropdown being shown open to achieve that.
+      // isExactActive (the category's OWN page, only possible for
+      // Home/Assessment) and containsOnlyChildActive (a sub-page under it
+      // is active) are kept separate so a plain "contains" accent never
+      // overrides the stronger "this exact page" .active treatment.
+      const isExactActive = activeTab === t.id;
+      const containsChildActive = dd.some(d=>d.id===activeTab);
+      const expanded = isExactActive || containsChildActive;
       const sublist = `
-        <div class="mobile-nav-sublist" id="mobileSublist-${t.id}">
+        <div class="mobile-nav-sublist ${expanded ? 'open' : ''}" id="mobileSublist-${t.id}">
           ${dd.map(d=>`<a class="mobile-nav-sublink ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
         </div>
       `;
       if(t.categoryOnly){
         // Framework/Learn/Resources/Insights have no page of their own -
         // the whole header is the toggle, like the desktop nav's
-        // caret-only trigger for these same tabs.
+        // caret-only trigger for these same tabs. containsChildActive is
+        // the only "you are here" signal they can ever show, since they
+        // have no page of their own to be exactly active.
         return `
-          <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t.id}" aria-expanded="false">
+          <button type="button" class="mobile-nav-heading mobile-nav-toggle ${containsChildActive ? 'contains-active' : ''}" data-category="${t.id}" aria-expanded="${expanded}">
             ${t.label} <span class="mobile-nav-chevron">&#9662;</span>
           </button>
           ${sublist}
@@ -1209,8 +1215,8 @@ function renderHamburgerMenu(){
       // content on mobile even though desktop showed it correctly.
       return `
         <div class="mobile-nav-heading-row">
-          <a class="mobile-nav-link mobile-nav-link-with-toggle ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>
-          <button type="button" class="mobile-nav-toggle mobile-nav-toggle-caret" data-category="${t.id}" aria-expanded="false" aria-label="Toggle ${t.label} submenu">
+          <a class="mobile-nav-link mobile-nav-link-with-toggle ${isExactActive ? 'active' : containsChildActive ? 'contains-active' : ''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>
+          <button type="button" class="mobile-nav-toggle mobile-nav-toggle-caret" data-category="${t.id}" aria-expanded="${expanded}" aria-label="Toggle ${t.label} submenu">
             <span class="mobile-nav-chevron">&#9662;</span>
           </button>
         </div>
@@ -1532,7 +1538,7 @@ function renderHomeTab(container){
         <p class="body-text">Four steps, start to finish - and then it runs again.</p>
         <div class="hiw-grid">
           ${HOW_IT_WORKS.map((s,i)=>`
-            <div class="hiw-item${i === HOW_IT_WORKS.length - 1 ? ' loop' : ''}" style="transition-delay:${(i*0.1).toFixed(2)}s">
+            <div class="hiw-item" style="transition-delay:${(i*0.1).toFixed(2)}s">
               <div class="hiw-icon">${icon(s.icon)}</div>
               <h4>${s.n} &middot; ${s.title}</h4>
               <p>${s.desc}</p>
