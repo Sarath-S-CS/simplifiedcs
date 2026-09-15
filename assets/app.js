@@ -58876,14 +58876,17 @@ ${suffix}`;
         if (!dd || !dd.length) {
           return `<a class="mobile-nav-link ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>`;
         }
+        const isExactActive = activeTab === t4.id;
+        const containsChildActive = dd.some((d2) => d2.id === activeTab);
+        const expanded = isExactActive || containsChildActive;
         const sublist = `
-        <div class="mobile-nav-sublist" id="mobileSublist-${t4.id}">
+        <div class="mobile-nav-sublist ${expanded ? "open" : ""}" id="mobileSublist-${t4.id}">
           ${dd.map((d2) => `<a class="mobile-nav-sublink ${activeTab === d2.id ? "active" : ""}" href="${pathForTab(d2.id)}" data-tab="${d2.id}">${d2.label}</a>`).join("")}
         </div>
       `;
         if (t4.categoryOnly) {
           return `
-          <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t4.id}" aria-expanded="false">
+          <button type="button" class="mobile-nav-heading mobile-nav-toggle ${containsChildActive ? "contains-active" : ""}" data-category="${t4.id}" aria-expanded="${expanded}">
             ${t4.label} <span class="mobile-nav-chevron">&#9662;</span>
           </button>
           ${sublist}
@@ -58891,8 +58894,8 @@ ${suffix}`;
         }
         return `
         <div class="mobile-nav-heading-row">
-          <a class="mobile-nav-link mobile-nav-link-with-toggle ${activeTab === t4.id ? "active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>
-          <button type="button" class="mobile-nav-toggle mobile-nav-toggle-caret" data-category="${t4.id}" aria-expanded="false" aria-label="Toggle ${t4.label} submenu">
+          <a class="mobile-nav-link mobile-nav-link-with-toggle ${isExactActive ? "active" : containsChildActive ? "contains-active" : ""}" href="${pathForTab(t4.id)}" data-tab="${t4.id}">${t4.label}</a>
+          <button type="button" class="mobile-nav-toggle mobile-nav-toggle-caret" data-category="${t4.id}" aria-expanded="${expanded}" aria-label="Toggle ${t4.label} submenu">
             <span class="mobile-nav-chevron">&#9662;</span>
           </button>
         </div>
@@ -59185,7 +59188,7 @@ ${suffix}`;
         <p class="body-text">Four steps, start to finish - and then it runs again.</p>
         <div class="hiw-grid">
           ${HOW_IT_WORKS.map((s3, i3) => `
-            <div class="hiw-item${i3 === HOW_IT_WORKS.length - 1 ? " loop" : ""}" style="transition-delay:${(i3 * 0.1).toFixed(2)}s">
+            <div class="hiw-item" style="transition-delay:${(i3 * 0.1).toFixed(2)}s">
               <div class="hiw-icon">${icon(s3.icon)}</div>
               <h4>${s3.n} &middot; ${s3.title}</h4>
               <p>${s3.desc}</p>

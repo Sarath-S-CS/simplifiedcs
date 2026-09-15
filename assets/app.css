@@ -423,21 +423,41 @@
     max-height:calc(100vh - 60px); overflow-y:auto;
   }
   .mobile-nav-panel.open{ opacity:1; transform:translateY(0); }
+  /* Same type size/weight/spacing as .mobile-nav-heading below (13px bold
+     vs. 11px regular used to make Home/Assessment look like a different
+     kind of control than Framework/Learn/Resources/Insights, for no
+     reason tied to actual page state) - now the two only ever differ by
+     color/background, driven purely by whether this is the active page. */
   .mobile-nav-link{
-    font-family:var(--mono); font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
+    font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
     color:var(--text-muted); background:transparent; border:none; border-left:2px solid transparent; text-align:left;
     padding:12px clamp(24px, 4vw, 64px); cursor:pointer;
   }
   .mobile-nav-link.active{ color:var(--text); background:var(--tint-signal-soft); border-left-color:var(--accent-signal); }
+  /* A sub-page under this link is active, but not this link's own page -
+     a lighter cue than .active (no background/border), just enough to
+     show "you're in here" at the collapsed level too. */
+  .mobile-nav-link.contains-active{ color:var(--accent-signal); }
   /* categoryOnly tabs (Framework/Learn/Resources/Insights) have no page of
      their own on mobile either - a plain, non-interactive section label
      above their sublinks, not a link to a page that doesn't exist. */
   .mobile-nav-heading{
-    font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+    font-family:var(--mono); font-size:11px; font-weight:400; text-transform:uppercase; letter-spacing:0.08em;
     color:var(--text-muted); padding:12px clamp(24px, 4vw, 64px) 4px;
   }
+  .mobile-nav-heading.contains-active{ color:var(--accent-signal); }
+  /* No font:inherit here (removed) - it was silently overriding
+     .mobile-nav-heading's own font-family/size/letter-spacing on the
+     shared <button class="mobile-nav-heading mobile-nav-toggle">
+     element (same specificity, declared later wins), so the category
+     headers rendered at the browser's inherited ~16px instead of the
+     intended 11px - the real cause of Home/Assessment and the category
+     headers visibly not matching in size. .mobile-nav-toggle-caret (the
+     other .mobile-nav-toggle usage) has no text of its own to inherit a
+     font for - its chevron sets its own font-size already - so nothing
+     here relied on the inherited font. */
   .mobile-nav-toggle{
-    background:transparent; border:none; width:100%; font:inherit; cursor:pointer;
+    background:transparent; border:none; width:100%; cursor:pointer;
     display:flex; align-items:center; justify-content:space-between;
   }
   /* Home/Assessment have their own real page AND dropdown sub-pages, so
@@ -1525,8 +1545,6 @@
     display:inline-block; font-family:var(--mono); font-size:11.5px; letter-spacing:0.02em; padding:8px 14px;
     background:var(--tile-bg); border:1px solid var(--line); border-radius:var(--radius-input); color:var(--accent-signal);
   }
-  .hiw-item.loop .hiw-icon{ color:var(--accent-electric); }
-  .hiw-item.loop .hiw-outcome{ color:var(--accent-electric); border-color:rgba(47,111,255,0.3); }
   @media (max-width:640px){
     .hiw-grid{ grid-template-columns:1fr; gap:32px; }
   }
