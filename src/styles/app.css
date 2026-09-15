@@ -425,7 +425,7 @@
   .mobile-nav-panel.open{ opacity:1; transform:translateY(0); }
   .mobile-nav-link{
     font-family:var(--mono); font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
-    color:var(--text); background:transparent; border:none; border-left:2px solid transparent; text-align:left;
+    color:var(--text-muted); background:transparent; border:none; border-left:2px solid transparent; text-align:left;
     padding:12px clamp(24px, 4vw, 64px); cursor:pointer;
   }
   .mobile-nav-link.active{ color:var(--text); background:var(--tint-signal-soft); border-left-color:var(--accent-signal); }
@@ -1769,6 +1769,12 @@
   @media (max-width:720px){
     .footer-top{ flex-direction:column; gap:28px; }
     .footer-left{ max-width:none; }
+    /* .footer-links' right-align is a deliberate desktop choice (see the
+       comment above it) that only makes sense while it sits opposite
+       .footer-left in a row - once .footer-top stacks to a column above,
+       right-aligning link text against the left-aligned brand block
+       above it just reads as misaligned, so flip to left here. */
+    .footer-links{ text-align:left; }
   }
   .footer-bottom{ text-align:center; font-size:11px; color:var(--text-muted); padding-top:10px; font-family:var(--mono); }
 

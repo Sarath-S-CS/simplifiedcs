@@ -1178,9 +1178,16 @@ function renderHamburgerMenu(){
         // entry), but kept as a safe fallback.
         return `<a class="mobile-nav-link ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>`;
       }
-      const containsActive = t.id === activeTab || dd.some(d=>d.id===activeTab);
+      // Sublists always start collapsed, even when the active tab (or one
+      // of its sub-pages) lives in this category - auto-expanding on load
+      // meant Home's submenu (the default landing tab) was always shown
+      // open, while every other category stayed collapsed, an
+      // inconsistency reported as "the home dropdown lists all sub options
+      // by default". The active sub-link still gets its own highlighted
+      // color once expanded (see .mobile-nav-sublink.active), so "you are
+      // here" isn't lost - it's just not forced open unasked.
       const sublist = `
-        <div class="mobile-nav-sublist ${containsActive ? 'open' : ''}" id="mobileSublist-${t.id}">
+        <div class="mobile-nav-sublist" id="mobileSublist-${t.id}">
           ${dd.map(d=>`<a class="mobile-nav-sublink ${activeTab===d.id?'active':''}" href="${pathForTab(d.id)}" data-tab="${d.id}">${d.label}</a>`).join('')}
         </div>
       `;
@@ -1189,7 +1196,7 @@ function renderHamburgerMenu(){
         // the whole header is the toggle, like the desktop nav's
         // caret-only trigger for these same tabs.
         return `
-          <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t.id}" aria-expanded="${containsActive}">
+          <button type="button" class="mobile-nav-heading mobile-nav-toggle" data-category="${t.id}" aria-expanded="false">
             ${t.label} <span class="mobile-nav-chevron">&#9662;</span>
           </button>
           ${sublist}
@@ -1203,7 +1210,7 @@ function renderHamburgerMenu(){
       return `
         <div class="mobile-nav-heading-row">
           <a class="mobile-nav-link mobile-nav-link-with-toggle ${activeTab===t.id?'active':''}" href="${pathForTab(t.id)}" data-tab="${t.id}">${t.label}</a>
-          <button type="button" class="mobile-nav-toggle mobile-nav-toggle-caret" data-category="${t.id}" aria-expanded="${containsActive}" aria-label="Toggle ${t.label} submenu">
+          <button type="button" class="mobile-nav-toggle mobile-nav-toggle-caret" data-category="${t.id}" aria-expanded="false" aria-label="Toggle ${t.label} submenu">
             <span class="mobile-nav-chevron">&#9662;</span>
           </button>
         </div>
