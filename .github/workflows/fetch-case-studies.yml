@@ -1,0 +1,18 @@
+name: Fetch Case Studies
+
+on:
+  schedule:
+    - cron: '30 10 * * *'  # Runs daily at 10:30 UTC (a different slot than fetch-news/fetch-exploits - see fetch-exploits.yml's note on scheduling drift)
+  workflow_dispatch:      # Lets you also trigger it manually from the Actions tab
+
+jobs:
+  fetch-case-studies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger fetch-case-studies Edge Function
+        run: |
+          curl -s -w "\nHTTP %{http_code}\n" \
+            -X POST "https://xufqgrcxufptlptpwlfi.supabase.co/functions/v1/fetch-case-studies" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZnFncmN4dWZwdGxwdHB3bGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDg0MzIsImV4cCI6MjEwMTUyNDQzMn0.owZP8GssYpD1I3-eIgSgS8pk8rDAIrO_pQYEPAyVeZM" \
+            -H "Content-Type: application/json" \
+            --fail-with-body
