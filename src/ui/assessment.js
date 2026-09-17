@@ -44,6 +44,18 @@ const SECTION_TRANSITIONS = {
   Respond: "Respond done - last section: getting back to normal.",
 };
 
+// /assessment/sample is the one sub-state of this tab worth a real,
+// shareable URL - it's a fixed, deterministic view with no in-progress
+// work to lose, unlike scope/profile/wizard/results, which stay
+// deliberately unrouted (ROUTING-FIX-BRIEF.md's "single /assessment route,
+// not step-by-step"). currentPathIsSample() is the one thing that reads
+// this path; everywhere else still only knows about the /assessment tab.
+const ASSESSMENT_PATH = "/assessment";
+const ASSESSMENT_SAMPLE_PATH = "/assessment/sample";
+function currentPathIsSample() {
+  return location.pathname.replace(/\/+$/, "") === ASSESSMENT_SAMPLE_PATH;
+}
+
 export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink, storage }) {
   const session = createSessionState();
   const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null };
@@ -223,6 +235,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     session.dedupe = {};
     session.quickMode = false;
     clearProgress();
+    if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
     ui.phase = "landing";
     ui.screenIndex = 0;
     ui.categoryIndex = 0;
@@ -274,6 +287,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     document.getElementById("modeFull").addEventListener("click", () => startFresh(false));
     document.getElementById("modeSample").addEventListener("click", () => {
       ui.phase = "sample";
+      if (!currentPathIsSample()) history.pushState({}, "", ASSESSMENT_SAMPLE_PATH);
       renderRail();
       renderSampleReport();
     });
@@ -1223,6 +1237,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     });
     document.getElementById("sampleBackBtn").addEventListener("click", () => {
       ui.phase = "landing";
+      if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
       renderRail();
       renderLanding();
     });
@@ -1446,6 +1461,12 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     requestLanding,
     // entry point used by renderActiveTab() when switching into the assessment tab
     renderCurrentPhase() {
+      // Sync just the landing<->sample boundary from the URL on every
+      // (re)entry - covers a direct /assessment/sample load, popstate
+      // back/forward, and switching tabs away and back. Never touches
+      // scope/profile/wizard/results, which have no URL of their own.
+      if (currentPathIsSample() && ui.phase !== "sample") ui.phase = "sample";
+      else if (!currentPathIsSample() && ui.phase === "sample") ui.phase = "landing";
       updateSerial();
       renderRail();
       dispatchPhase();

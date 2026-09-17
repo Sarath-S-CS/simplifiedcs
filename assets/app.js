@@ -36134,6 +36134,11 @@
     Detect: "Detect done - the first hour of a real incident, next.",
     Respond: "Respond done - last section: getting back to normal."
   };
+  var ASSESSMENT_PATH = "/assessment";
+  var ASSESSMENT_SAMPLE_PATH = "/assessment/sample";
+  function currentPathIsSample() {
+    return location.pathname.replace(/\/+$/, "") === ASSESSMENT_SAMPLE_PATH;
+  }
   function createAssessmentController({ getPanel, getRail, icon: icon2, pathForTab: pathForTab2, wireNavLink: wireNavLink2, storage }) {
     const session = createSessionState();
     const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null };
@@ -36253,6 +36258,7 @@
       session.dedupe = {};
       session.quickMode = false;
       clearProgress();
+      if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
       ui.phase = "landing";
       ui.screenIndex = 0;
       ui.categoryIndex = 0;
@@ -36299,6 +36305,7 @@
       document.getElementById("modeFull").addEventListener("click", () => startFresh(false));
       document.getElementById("modeSample").addEventListener("click", () => {
         ui.phase = "sample";
+        if (!currentPathIsSample()) history.pushState({}, "", ASSESSMENT_SAMPLE_PATH);
         renderRail();
         renderSampleReport();
       });
@@ -37084,6 +37091,7 @@
       });
       document.getElementById("sampleBackBtn").addEventListener("click", () => {
         ui.phase = "landing";
+        if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
         renderRail();
         renderLanding();
       });
@@ -37257,6 +37265,8 @@
       requestLanding,
       // entry point used by renderActiveTab() when switching into the assessment tab
       renderCurrentPhase() {
+        if (currentPathIsSample() && ui.phase !== "sample") ui.phase = "sample";
+        else if (!currentPathIsSample() && ui.phase === "sample") ui.phase = "landing";
         updateSerial();
         renderRail();
         dispatchPhase();
@@ -57597,6 +57607,7 @@ ${suffix}`;
   }
   function tabForPath(pathname) {
     const clean = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+    if (clean === "/assessment/sample") return "assessment";
     return PATH_TO_TAB[clean] || "home";
   }
   function isPlainLeftClick(e2) {

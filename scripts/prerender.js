@@ -48,8 +48,13 @@ const ROUTES = {
   "/references": "references",
   "/about": "about",
   "/history": "history",
-  // /feedback and /assessment deliberately excluded - a feedback form and a
-  // stateful in-progress wizard have nothing crawlable to gain from a
+  // /assessment/sample is the one sub-state of the assessment tab with a
+  // real URL (src/ui/assessment.js's currentPathIsSample()) - fixed,
+  // deterministic sample data, so unlike the wizard itself it's a real
+  // shareable page worth a snapshot.
+  "/assessment/sample": "assessment",
+  // /feedback and bare /assessment deliberately excluded - a feedback form
+  // and a stateful in-progress wizard have nothing crawlable to gain from a
   // frozen snapshot, same reasoning that already excluded /feedback from
   // sitemap.xml.
 };

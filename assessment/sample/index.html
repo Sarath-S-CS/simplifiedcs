@@ -11,9 +11,9 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Core Principles - SimplifiedCS</title>
+<title>Assessment - SimplifiedCS</title>
 <meta name="description" content="SimplifiedCS is a free, adaptive cybersecurity self-assessment platform for small and medium businesses - answer a few questions, get a scored, prioritized, evidence-based report mapped to NIST CSF 2.0, CIS Controls, and other real frameworks.">
-<link rel="canonical" href="https://simplifiedcs.net/core-principles">
+<link rel="canonical" href="https://simplifiedcs.net/assessment/sample">
 <!-- Open Graph / link-preview bots (LinkedIn, Slack, WhatsApp, iMessage,
      Facebook, ...) never execute JavaScript, so these static tags are the
      only thing they ever see - without them a shared link previews with no
@@ -64,9 +64,9 @@
         </div>
       
         <div class="tab-item has-dropdown">
-          <button type="button" class="tab-btn active" data-toggle="1">Framework <span class="tab-caret">▾</span></button>
+          <button type="button" class="tab-btn " data-toggle="1">Framework <span class="tab-caret">▾</span></button>
           <div class="tab-dropdown">
-            <a class="dropdown-link " href="/maturity-model" data-tab="maturity">Maturity Model</a><a class="dropdown-link active" href="/core-principles" data-tab="coreprinciples">Core Principles</a><a class="dropdown-link " href="/metrics" data-tab="metrics">Metrics</a>
+            <a class="dropdown-link " href="/maturity-model" data-tab="maturity">Maturity Model</a><a class="dropdown-link " href="/core-principles" data-tab="coreprinciples">Core Principles</a><a class="dropdown-link " href="/metrics" data-tab="metrics">Metrics</a>
           </div>
         </div>
       
@@ -92,9 +92,9 @@
         </div>
       
         <div class="tab-item has-dropdown">
-          <a class="tab-btn " href="/assessment" data-tab="assessment">Assessment <span class="tab-caret" data-toggle="1">▾</span></a>
+          <a class="tab-btn active" href="/assessment" data-tab="assessment">Assessment <span class="tab-caret" data-toggle="1">▾</span></a>
           <div class="tab-dropdown">
-            <a class="dropdown-link " href="/assessment" data-tab="assessment">Take Assessment</a><a class="dropdown-link " href="/history" data-tab="history">History</a>
+            <a class="dropdown-link active" href="/assessment" data-tab="assessment">Take Assessment</a><a class="dropdown-link " href="/history" data-tab="history">History</a>
           </div>
         </div>
       </div>
@@ -115,80 +115,265 @@
   </div>
 
   <div id="tabContent" class="">
-    <div class="page">
-      <div class="page-intro revealed">
-        <div class="page-eyebrow">Philosophy</div>
-        <h2 class="page-title">Core Principles</h2>
-        <p class="page-lede">The cybersecurity principles this site is designed around - not a marketing list, the actual reasoning behind how the assessment, scoring, and recommendations are built.</p>
+    <div class="assessment-serial" id="serial">SIMPLIFIEDCS / PROTOTYPE&nbsp;v0.1 · NIST CSF 2.0 · CIS Controls v8</div>
+    <div class="layout">
+      <div class="rail rail-empty" id="rail"></div>
+      <div><div class="panel" id="panel">
+      <div class="sample-banner"><b>Sample</b>&nbsp;This is example data from a fixed, realistic answer set - not a real assessment result.</div>
+      <div class="step-eyebrow">Synthesis - all functions considered jointly</div>
+      <h2 class="step-title">Health Reading</h2>
+      <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8 + HIPAA · Healthcare</p>
+
+      
+      <div class="snapshot">
+        <h3>Infrastructure snapshot (self-reported)</h3>
+        <div class="snapshot-row"><div class="skey">Organization size</div><div>201–1,000</div></div><div class="snapshot-row"><div class="skey">Dedicated IT/security team</div><div>Yes, dedicated IT and cybersecurity team - 3–10 (+1–2 cybersecurity)</div></div><div class="snapshot-row"><div class="skey">Security managed by</div><div>In-house team manages everything, no services outsourced</div></div><div class="snapshot-row"><div class="skey">EDR / antivirus</div><div>CrowdStrike Falcon</div></div><div class="snapshot-row"><div class="skey">Email security gateway</div><div>Mimecast</div></div><div class="snapshot-row"><div class="skey">Awareness / LMS platform</div><div>KnowBe4</div></div><div class="snapshot-row"><div class="skey">DLP solution</div><div>Yes - Microsoft Purview</div></div><div class="snapshot-row"><div class="skey">Deployment model</div><div>Hybrid (on-prem + cloud) - Microsoft Azure</div></div><div class="snapshot-row"><div class="skey">Network architecture</div><div>Segmented (VLANs / zones)</div></div><div class="snapshot-row"><div class="skey">SD-WAN</div><div>No</div></div><div class="snapshot-row"><div class="skey">External-facing devices</div><div>Yes</div></div><div class="snapshot-row"><div class="skey">Firewall / VPN appliance</div><div>Fortinet FortiGate</div></div><div class="snapshot-row"><div class="skey">External-facing services</div><div>Yes, DB-connected: Yes</div></div><div class="snapshot-row"><div class="skey">Hosting / web stack</div><div>Amazon Web Services (AWS) - Nginx on Ubuntu 22.04</div></div><div class="snapshot-row"><div class="skey">Containerization</div><div>Yes, some workloads</div></div><div class="snapshot-row"><div class="skey">Virtualization</div><div>Yes, on-prem hypervisor (e.g. VMware, Hyper-V)</div></div><div class="snapshot-row"><div class="skey">Develops custom software</div><div>Yes</div></div><div class="snapshot-row"><div class="skey">DevSecOps maturity</div><div>Security scanning exists but isn't enforced in the pipeline</div></div><div class="snapshot-row"><div class="skey">Secrets management</div><div>Environment variables, informally managed</div></div><div class="snapshot-row"><div class="skey">OT / ICS environment</div><div>No</div></div>
       </div>
-      <div class="section-tile revealed">
-        <div class="principles-grid">
+
+      <p class="score-direction-legend">Higher percentages mean a <b>stronger security posture</b> - not compliance completeness, not exposure level. 100% would mean every control this assessment checks for is fully in place; it doesn't mean risk-free.</p>
+      <div class="gauge-row">
+        <div class="gauge" style="background:conic-gradient(#B48EC7 0deg 60deg,#E0A94A 60deg 120deg,var(--accent-signal) 120deg 180deg,#6FA8DC 180deg 240deg,#D6685F 240deg 300deg,#3FC7C0 300deg 360deg)">
+          <div class="gauge-inner">
+            <div class="pct">60%</div>
+            <div class="verdict">Moderate exposure</div>
+          </div>
+        </div>
+        <div class="func-bars">
           
-            <div class="principle-card">
-              <div class="principle-num">01</div>
-              <h4>Proactive, not reactive</h4>
-              <p>Waiting for an incident to find your gaps is the most expensive way to learn about them. Assessing, monitoring, and fixing ahead of time is consistently cheaper than recovering afterward - the entire reason this site exists is to move that discovery earlier.</p>
+            <div class="func-bar-row">
+              <div class="fname">Your Team &amp; Vendors</div>
+              <div class="func-bar-track"><div class="func-bar-fill" style="width:58%; background:#B48EC7"></div></div>
+              <div class="fpct">58%</div>
             </div>
           
-            <div class="principle-card">
-              <div class="principle-num">02</div>
-              <h4>People, process, and technology - not technology alone</h4>
-              <p>A well-configured firewall behind an untrained employee and no documented process is still a weak posture. Real security improvement requires progress across all three, together, not a single expensive tool standing in for the other two.</p>
+            <div class="func-bar-row">
+              <div class="fname">Data &amp; Systems</div>
+              <div class="func-bar-track"><div class="func-bar-fill" style="width:63%; background:#E0A94A"></div></div>
+              <div class="fpct">63%</div>
             </div>
           
-            <div class="principle-card">
-              <div class="principle-num">03</div>
-              <h4>A culture, not a department</h4>
-              <p>Security isn't something the IT team owns on everyone else's behalf. Every person who clicks a link, sets a password, or handles data is part of the control surface - the goal is a culture people grow into, not a policy document nobody reads.</p>
+            <div class="func-bar-row">
+              <div class="fname">Access &amp; Identity</div>
+              <div class="func-bar-track"><div class="func-bar-fill" style="width:58%; background:var(--accent-signal)"></div></div>
+              <div class="fpct">58%</div>
             </div>
           
-            <div class="principle-card">
-              <div class="principle-num">04</div>
-              <h4>Defense in depth</h4>
-              <p>No single control is perfect, so no single control should be load-bearing. Layer defenses so that one failure - a missed patch, a clicked phishing link - doesn't cascade into a full compromise on its own.</p>
+            <div class="func-bar-row">
+              <div class="fname">Detection &amp; Monitoring</div>
+              <div class="func-bar-track"><div class="func-bar-fill" style="width:50%; background:#6FA8DC"></div></div>
+              <div class="fpct">50%</div>
             </div>
           
-            <div class="principle-card">
-              <div class="principle-num">05</div>
-              <h4>Zero trust</h4>
-              <p>Trust is not something a network location should grant automatically. Every request gets verified explicitly, regardless of whether it originates inside or outside the perimeter - the perimeter itself is no longer the control.</p>
+            <div class="func-bar-row">
+              <div class="fname">Incident Readiness</div>
+              <div class="func-bar-track"><div class="func-bar-fill" style="width:83%; background:#D6685F"></div></div>
+              <div class="fpct">83%</div>
             </div>
           
-            <div class="principle-card">
-              <div class="principle-num">06</div>
-              <h4>Least privilege</h4>
-              <p>Access should match what a role genuinely needs to do its job, nothing more. Excess privilege sits quietly until the one day an account is compromised, at which point it becomes the attacker's privilege too.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">07</div>
-              <h4>The CIA triad</h4>
-              <p>Confidentiality, Integrity, and Availability - the three properties "secure" actually breaks down into. A control that protects one can quietly undermine another; good security design keeps all three in view at once, not just the one that feels most urgent.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">08</div>
-              <h4>Segment the problem, not just the network</h4>
-              <p>Looking at an entire security program at once is paralyzing. Breaking it into smaller, contained pieces - by function, by system, by risk - the same way network segmentation contains a breach, makes the work tractable and the containment real.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">09</div>
-              <h4>Decide from data, not instinct</h4>
-              <p>Gut feeling about where the risk is usually points at the most visible problem, not the most likely one. Structured assessment, scoring, and trend tracking exist precisely to replace that instinct with evidence.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">10</div>
-              <h4>Improvement is a loop, not a destination</h4>
-              <p>There's no final state where an organization is simply "done" being secure. Threats, infrastructure, and staff all change continuously, so the assessment is built to be re-run on a cadence, not completed once and filed away - the same loop this site's own animation is built around.</p>
+            <div class="func-bar-row">
+              <div class="fname">Recovery &amp; Continuity</div>
+              <div class="func-bar-track"><div class="func-bar-fill" style="width:50%; background:#3FC7C0"></div></div>
+              <div class="fpct">50%</div>
             </div>
           
         </div>
-        <div class="cta-row">
-          <a class="cta-btn" href="/assessment" id="ctaPrinciplesAssess">See these principles in practice →</a>
+      </div>
+
+      
+      <div class="flags">
+        <h3>Compounding risk - patterns across steps</h3>
+        
+          <div class="flag-item"><b>Combined finding -</b> A public-facing web app that connects to a backend database, without centralized logging or outbound-traffic monitoring, is precisely the setup where a SQL injection or similar attack goes unnoticed long enough to exfiltrate the entire database.</div>
+          
+      <div class="acc-card mitre-panel" data-id="flag-exposed-db-app-no-monitoring">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul><li><b>Why this was flagged:</b> You indicated you operate an externally-reachable customer-facing service ("Yes") connected to a backend database ("Yes"), with logging "Yes" and outbound-traffic monitoring "No".</li><li><b>Attack pattern:</b> Exploit Public-Facing Application (MITRE ATT&amp;CK T1190) - A public web app connected to a database is a direct target for this technique - things like SQL injection against the app itself. Centralized logging and outbound-traffic monitoring are what typically catch the follow-on data exfiltration; without them, a successful exploit can run for a long time before anyone notices.</li><li><b>Interim step:</b> Regular vulnerability scanning helps catch some exploitable issues before they're used, but it doesn't replace monitoring for exfiltration after the fact. As an immediate step, turn on your hosting or cloud provider's built-in access/traffic logging - most include this at no extra cost, and it beats having no visibility at all.</li><li><b>How to fix it:</b> Put a web application firewall in front of the app (most cloud providers and CDNs offer one), run an authenticated vulnerability/injection scan against it, and enable outbound-traffic alerting for unusually large data transfers - together these address the entry point, the flaw, and the exfiltration step.</li><li><b>OWASP Top 10:</b> <a href="/playbooks#A09:2021" class="inline-link">A09:2021 - Security Logging and Monitoring Failures, with the matching Playbook →</a></li><li><b>Reference:</b> <a href="https://owasp.org/www-project-top-ten/" target="_blank" rel="noopener noreferrer">OWASP Top 10</a></li></ul>
         </div>
       </div>
+        
+          <div class="flag-item"><b>Combined finding -</b> A database that isn't encrypted at rest, combined with routine application access through shared or admin credentials rather than least-privilege accounts, means a single leaked credential - or a misplaced backup - exposes the entire dataset in plain, readable form, not just whatever the compromised account was meant to touch.</div>
+          
+      <div class="acc-card mitre-panel" data-id="flag-db-unencrypted-weak-access">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul><li><b>Why this was flagged:</b> You indicated the database is encrypted at rest: "No / not sure", and routine application access uses least-privilege credentials: "No - shared or admin credentials are used for routine app access".</li><li><b>Attack pattern:</b> Data from Local System (MITRE ATT&amp;CK T1005) - A database that isn't encrypted at rest, combined with routine application access through shared or admin credentials rather than least-privilege accounts, means a single leaked credential - or a misplaced backup - exposes the entire dataset in plain, readable form, not just whatever the compromised account was meant to touch.</li><li><b>Interim step:</b> As an immediate step, rotate the shared/admin credential currently used for routine app access and restrict it to only the specific tables/operations the application actually needs, even before a fully separate least-privilege account is provisioned.</li><li><b>How to fix it:</b> Enable at-rest encryption (a native feature on every major database engine and managed cloud database service - typically a configuration change, not a migration) and create a dedicated, least-privilege application account scoped to only what the app needs, retiring the shared/admin credential from routine use.</li><li><b>OWASP Top 10:</b> <a href="/playbooks#A02:2021" class="inline-link">A02:2021 - Cryptographic Failures, with the matching Playbook →</a></li><li><b>Reference:</b> <a href="https://owasp.org/www-project-top-ten/" target="_blank" rel="noopener noreferrer">OWASP Top 10</a></li></ul>
+        </div>
+      </div>
+        
+          <div class="flag-item"><b>Combined finding -</b> Cloud or hybrid infrastructure without MFA enforced is a materially larger exposure than the same gap on a purely on-premises setup - cloud admin consoles are reachable from anywhere a leaked password reaches.</div>
+          
+      <div class="acc-card mitre-panel" data-id="flag-cloud-no-mfa">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul><li><b>Why this was flagged:</b> You indicated your infrastructure is "Hybrid (on-prem + cloud)" with MFA enforcement "No".</li><li><b>Attack pattern:</b> Valid Accounts: Cloud Accounts (MITRE ATT&amp;CK T1078.004) - The cloud-specific version of credential-based access - a leaked password alone is enough to reach admin consoles that are reachable from anywhere in the world, not just from inside your office network.</li><li><b>Interim step:</b> A strong password policy is already enforced, which raises the bar somewhat - but it doesn't stop a reused or phished password. Prioritize MFA on the cloud admin console / root account specifically first; that single account is the highest-value target and the fastest thing to lock down.</li><li><b>How to fix it:</b> Enforce MFA on every cloud account, starting with the root/global-admin account today, then every account with any administrative role, then all remaining users - most cloud providers (AWS, Azure, GCP) let you enforce this org-wide from a single console setting.</li><li><b>Reference:</b> <a href="https://learn.microsoft.com/en-us/entra/identity/authentication/concept-mfa-howitworks" target="_blank" rel="noopener noreferrer">Microsoft Entra: multifactor authentication overview</a></li></ul>
+        </div>
+      </div>
+        
+      </div>
+
+      
+      <div class="flags">
+        <h3>Vendor-specific mitigation notes</h3>
+        <div class="vendor-note-item"><b>Fortinet -</b> Fortinet's FortiOS/FortiGate line has had multiple critical, actively-exploited authentication-bypass and RCE vulnerabilities in recent years. Regardless of current patch level: confirm firmware is on a currently-supported, patched release; avoid exposing the management interface to the internet; and enforce MFA on SSL-VPN.</div><div class="vendor-note-item"><b>Mimecast -</b> Mimecast email security deployments are commonly found with misconfigured DMARC alignment or impersonation-protection settings left at default - confirm these are actively enforced, not merely available in the license.</div><div class="vendor-note-item"><b>KnowBe4 -</b> Awareness platforms like KnowBe4 are only as effective as their completion and simulated-phishing-failure rates are actually reviewed by someone - track those metrics on a schedule, don't just deploy the training and move on.</div>
+        <p class="scope-hint">Illustrative, based on well-documented historical exploitation patterns for named products - not a live feed. This tool intentionally doesn't do vulnerability scanning; treat this as a prompt to check current vendor advisories for your exact version, not a substitute for doing so.</p>
+      </div>
+
+      
+
+      
+      <div class="flags">
+        <h3>Compliance considerations</h3>
+        
+          <div class="vendor-note-item">
+            <b>HIPAA -</b> HIPAA's Security Rule requires a documented risk analysis, executed Business Associate Agreements with every vendor touching PHI, and encryption of PHI - gaps in any of these are among the most commonly cited findings in HHS OCR enforcement actions.
+            <div class="fw-gap-list">
+                  <div class="fw-gap-item">Gap: <i>Do you have signed Business Associate Agreements (BAAs) with every vendor that accesses, stores, or transmits PHI?</i> - currently: "With some, not all"</div>
+                  
+      <div class="acc-card mitre-panel" data-id="fwgap-hipaa-hipaaBAA">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul><li><b>Why this was flagged:</b> You indicated "With some, not all" for: "Do you have signed Business Associate Agreements (BAAs) with every vendor that accesses, stores, or transmits PHI?"</li><li><b>Attack pattern:</b> Supply Chain Compromise (MITRE ATT&amp;CK T1195) - A vendor touching PHI without a signed BAA means there's no contractual assurance of their security controls, and a breach at their end becomes your HIPAA liability with no documented risk allocation.</li><li><b>Interim step:</b> Identify which current vendors touch PHI without a signed BAA and prioritize outreach to just that list first.</li><li><b>How to fix it:</b> Execute a BAA with every vendor that creates, receives, maintains, or transmits PHI before continuing to share data with them.</li></ul>
+        </div>
+      </div>
+                
+                  <div class="fw-gap-item">Gap: <i>Have you conducted a HIPAA-required security risk analysis covering all systems that create, receive, maintain, or transmit ePHI?</i> - currently: "Yes, but outdated or partial"</div>
+                  
+      <div class="acc-card mitre-panel" data-id="fwgap-hipaa-hipaaRiskAnalysis">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul><li><b>Why this was flagged:</b> You indicated "Yes, but outdated or partial" for: "Have you conducted a HIPAA-required security risk analysis covering all systems that create, receive, maintain, or transmit ePHI?"</li><li><b>What could go wrong:</b> A HIPAA risk analysis has to cover every system that creates, receives, maintains, or transmits ePHI - letting it go stale or skipping it means you can't demonstrate you actually know where your PHI exposure is, one of the most commonly cited findings in real OCR enforcement actions.</li><li><b>Interim step:</b> List every system that touches ePHI today as an interim inventory, even before a full risk analysis is redone.</li><li><b>How to fix it:</b> Commission or conduct a current, comprehensive HIPAA security risk analysis covering all ePHI systems, and track remediation of findings on a schedule.</li></ul>
+        </div>
+      </div>
+                </div>
+          </div>
+        
+        <p class="scope-hint">This is pattern-based guidance from your own answers, not a certification audit or legal compliance determination.</p>
+      </div>
+
+      <div class="priorities">
+        <h3>Where to act first, ranked</h3>
+        
+          <div class="priority-item">
+            <div class="priority-rank">01</div>
+            <div><b>Access &amp; Identity:</b> Is multi-factor authentication enforced for remote and admin access?</div>
+          </div>
+          
+      <div class="acc-card mitre-panel" data-id="gap-mfa">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul><li><b>Why this was flagged:</b> You indicated "No" for: "Is multi-factor authentication enforced for remote and admin access?"</li><li><b>Attack pattern:</b> Valid Accounts (MITRE ATT&amp;CK T1078) - MFA is the specific control that stops a leaked or guessed password alone from being enough to log in as a legitimate user.</li><li><b>Interim step:</b> A strong password policy is enforced, which helps somewhat - prioritize MFA on admin and remote-access accounts first, since those are the highest-value targets.</li><li><b>How to fix it:</b> Enforce MFA for every account, not just admins - most identity providers (Microsoft Entra, Google Workspace, Okta) support org-wide enforcement from one setting.</li><li><b>Reference:</b> <a href="https://www.cisa.gov/audiences/small-and-medium-businesses/secure-your-business/require-multifactor-authentication" target="_blank" rel="noopener noreferrer">CISA: Require Multifactor Authentication</a></li></ul>
+        </div>
+      </div>
+        
+          <div class="priority-item">
+            <div class="priority-rank">02</div>
+            <div><b>Access &amp; Identity:</b> Does your organization support passkeys or other passwordless authentication methods (e.g. WebAuthn/FIDO2, platform biometrics), in addition to or instead of passwords?</div>
+          </div>
+          
+      <div class="acc-card mitre-panel" data-id="gap-passkeys">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul><li><b>Why this was flagged:</b> You indicated "No - passwords (with or without a separate MFA step) are the only option" for: "Does your organization support passkeys or other passwordless authentication methods (e.g. WebAuthn/FIDO2, platform biometrics), in addition to or instead of passwords?"</li><li><b>Attack pattern:</b> Brute Force (MITRE ATT&amp;CK T1110) - Even with MFA, a password can still be phished, reused, or brute-forced as the first factor. Passkeys remove that weakness structurally - there's no shared secret for an attacker to ever obtain in the first place, since the private key never leaves the device.</li><li><b>Interim step:</b> If passkeys aren't feasible organization-wide yet, ensure MFA is at minimum fully enforced as the interim mitigation for the same underlying credential-theft risk.</li><li><b>How to fix it:</b> Enable passkey/WebAuthn support in your identity provider (Microsoft Entra, Google Workspace, and Okta all support this natively) starting with admin and highest-risk accounts, then expand.</li><li><b>Reference:</b> <a href="https://learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-passkeys-fido2" target="_blank" rel="noopener noreferrer">Microsoft Entra: passkey (FIDO2) authentication</a></li></ul>
+        </div>
+      </div>
+        
+          <div class="priority-item">
+            <div class="priority-rank">03</div>
+            <div><b>Access &amp; Identity:</b> Is that database encrypted at rest?</div>
+          </div>
+          
+      <div class="acc-card mitre-panel" data-id="gap-dbEncryption">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul><li><b>Why this was flagged:</b> You indicated "No / not sure" for: "Is that database encrypted at rest?"</li><li><b>Attack pattern:</b> Data from Local System (MITRE ATT&amp;CK T1005) - An unencrypted database means a stolen backup, a misconfigured storage bucket, or a leaked credential exposes the data in plain, immediately-usable form - encryption at rest is what makes a stolen copy alone insufficient.</li><li><b>Interim step:</b> As an interim step, confirm at minimum that any database backups or exports are encrypted, even if the live database itself isn't yet.</li><li><b>How to fix it:</b> Enable at-rest encryption - a native, typically low-effort setting on every major database engine and managed cloud database service, not a migration project.</li><li><b>OWASP Top 10:</b> <a href="/playbooks#A02:2021" class="inline-link">A02:2021 - Cryptographic Failures, with the matching Playbook →</a></li></ul>
+        </div>
+      </div>
+        
+          <div class="priority-item">
+            <div class="priority-rank">04</div>
+            <div><b>Access &amp; Identity:</b> Does routine application access to that database use least-privilege, application-specific credentials - not a shared or admin/root account?</div>
+          </div>
+          
+      <div class="acc-card mitre-panel" data-id="gap-dbAccessControl">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul><li><b>Why this was flagged:</b> You indicated "No - shared or admin credentials are used for routine app access" for: "Does routine application access to that database use least-privilege, application-specific credentials - not a shared or admin/root account?"</li><li><b>Attack pattern:</b> Valid Accounts (MITRE ATT&amp;CK T1078) - Routine application access through a shared or admin database credential means a single compromised credential (from the app server, a leaked config file, or a former employee) grants broad, often unaudited access to the entire database.</li><li><b>Interim step:</b> As an interim step, restrict the current shared/admin credential to only the specific tables or operations the application actually needs.</li><li><b>How to fix it:</b> Provision a dedicated, least-privilege application account scoped to only what the app requires, and retire the shared/admin credential from routine use.</li><li><b>OWASP Top 10:</b> <a href="/playbooks#A01:2021" class="inline-link">A01:2021 - Broken Access Control, with the matching Playbook →</a></li></ul>
+        </div>
+      </div>
+        
+          <div class="priority-item">
+            <div class="priority-rank">05</div>
+            <div><b>Detection &amp; Monitoring:</b> Do you monitor for data exfiltration or unusual outbound traffic?</div>
+          </div>
+          
+      <div class="acc-card mitre-panel" data-id="gap-exfil">
+        <div class="acc-head">
+          <div><h4>Why this matters, and what to do now</h4></div>
+          <div class="acc-chevron">▸</div>
+        </div>
+        <div class="acc-body">
+          <ul><li><b>Why this was flagged:</b> You indicated "No" for: "Do you monitor for data exfiltration or unusual outbound traffic?"</li><li><b>Attack pattern:</b> Exfiltration Over C2 Channel (MITRE ATT&amp;CK T1041) - Without monitoring for unusual outbound traffic, this is how a breach goes from "contained" to "data actually left the building" without anyone noticing at the time.</li><li><b>Interim step:</b> Centralized logging exists - as an interim step, add a basic alert for large or unusual outbound data transfers using what's already being collected, rather than waiting on a dedicated exfiltration-monitoring tool.</li><li><b>How to fix it:</b> Enable outbound traffic monitoring with alerting on unusually large or unusual-destination transfers - most modern firewalls and cloud platforms support this as a built-in feature.</li></ul>
+        </div>
+      </div>
+        
+      </div>
+    
+
+      <div class="note-box">
+        <b>About this report -</b> everything above is produced by running a fixed sample answer set through
+        this site's real, deterministic scoring engine - the same one every actual assessment uses - so this
+        sample stays accurate as that engine evolves, rather than being a separately-maintained mockup.
+      </div>
+
+      <div class="ai-insights-section">
+        <div class="ai-insights-intro">
+          <div>
+            <h3>AI-Enhanced Insights <span class="ai-badge">AI-generated</span></h3>
+            <p class="body-text">A static example of what the live, opt-in "Get AI-Enhanced Insights" pass on a real report looks like, shown here without an actual API call so the sample stays instant and free to view.</p>
+          </div>
+        </div>
+        <div>
+      <h4>Live vendor/product check</h4>
+        <div class="vendor-note-item"><b>Fortinet FortiGate -</b> FortiGate/FortiOS has a recent history of critical, actively-exploited authentication-bypass CVEs. No CVE specific to this exact configuration was found, but firmware currency is worth confirming directly given that track record. <span class="ai-source">(CISA KEV catalog (pattern match, illustrative))</span></div>
+        <div class="vendor-note-item"><b>Mimecast -</b> No current actively-exploited CVEs found against Mimecast's email security platform. <span class="ai-source">(NVD CVE database (illustrative))</span></div>
+      <h4>Beyond the rules engine</h4><div class="vendor-note-item"><b>Segmented network architecture, but MFA not enforced at all</b><br>A segmented network limits lateral movement after a breach, but doesn't stop the initial compromise - and with MFA off entirely, a single leaked password is enough to get in. These two answers don't individually look alarming, but MFA is usually the higher-leverage fix precisely because it blocks the step that happens before segmentation would even matter.</div>
+      <h4>Synthesis</h4><p class="body-text">This is a reasonably well-run environment for its size - recurring security training, enforced logging, and a segmented network are all real, working fundamentals. The two flagged gaps (no MFA enforcement, and no outbound-traffic monitoring on a database-connected public app) are specific and fixable rather than symptomatic of a broader absence of controls, which is a meaningfully different starting point than an org with no program at all.</p>
+    </div>
+      </div>
+
+      <div class="nav">
+        <button id="sampleBackBtn">← Back to assessment options</button>
+        <button id="samplePdfBtn">Download as PDF ↓</button>
+      </div>
+    </div></div>
     </div>
   </div>
 
