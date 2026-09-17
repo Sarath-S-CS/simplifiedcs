@@ -99,6 +99,11 @@ function pathForTab(id, anchor){
 }
 function tabForPath(pathname){
   const clean = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  // /assessment/sample is the one sub-state of the assessment tab with its
+  // own real URL (see ui/assessment.js's currentPathIsSample()) - every
+  // other assessment phase (scope/profile/wizard/results) stays unrouted,
+  // so this is a one-off rather than a second entry in ROUTES/PATH_TO_TAB.
+  if(clean === '/assessment/sample') return 'assessment';
   return PATH_TO_TAB[clean] || 'home';
 }
 
