@@ -33,7 +33,10 @@ function assembleHtml() {
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
-${head}<link rel="stylesheet" href="./assets/app.css">
+${head}<!-- Absolute, not "./assets/app.css" - scripts/prerender.js writes this
+     same head into per-route files like methodology/index.html, where a
+     relative href would resolve to methodology/assets/app.css and 404. -->
+<link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
 ${shellBody}

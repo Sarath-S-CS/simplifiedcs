@@ -11,9 +11,9 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SimplifiedCS</title>
+<title>Runbooks - SimplifiedCS</title>
 <meta name="description" content="SimplifiedCS is a free, adaptive cybersecurity self-assessment platform for small and medium businesses - answer a few questions, get a scored, prioritized, evidence-based report mapped to NIST CSF 2.0, CIS Controls, and other real frameworks.">
-<link rel="canonical" href="https://simplifiedcs.net/">
+<link rel="canonical" href="https://simplifiedcs.net/runbooks">
 <!-- Open Graph / link-preview bots (LinkedIn, Slack, WhatsApp, iMessage,
      Facebook, ...) never execute JavaScript, so these static tags are the
      only thing they ever see - without them a shared link previews with no
@@ -57,7 +57,7 @@
     </a>
     <div class="tabnav" id="tabnav">
         <div class="tab-item has-dropdown">
-          <a class="tab-btn active" href="/" data-tab="home">Home <span class="tab-caret" data-toggle="1">▾</span></a>
+          <a class="tab-btn " href="/" data-tab="home">Home <span class="tab-caret" data-toggle="1">▾</span></a>
           <div class="tab-dropdown">
             <a class="dropdown-link " href="/what-is-simplifiedcs" data-tab="maturitymodel">What is SimplifiedCS?</a><a class="dropdown-link " href="/methodology" data-tab="methodology">Methodology</a><a class="dropdown-link " href="/roadmap" data-tab="roadmap">Roadmap</a><a class="dropdown-link " href="/about" data-tab="about">About</a>
           </div>
@@ -78,9 +78,9 @@
         </div>
       
         <div class="tab-item has-dropdown">
-          <button type="button" class="tab-btn " data-toggle="1">Resources <span class="tab-caret">▾</span></button>
+          <button type="button" class="tab-btn active" data-toggle="1">Resources <span class="tab-caret">▾</span></button>
           <div class="tab-dropdown">
-            <a class="dropdown-link " href="/runbooks" data-tab="runbook">Runbooks</a><a class="dropdown-link " href="/playbooks" data-tab="playbooks">Playbooks</a>
+            <a class="dropdown-link active" href="/runbooks" data-tab="runbook">Runbooks</a><a class="dropdown-link " href="/playbooks" data-tab="playbooks">Playbooks</a>
           </div>
         </div>
       
@@ -114,409 +114,188 @@
    </div>
   </div>
 
-  <div id="tabContent" class="tab-fade">
+  <div id="tabContent" class="">
     <div class="page">
-      <div class="hero-banner">
-        <div class="hero-banner-inner">
-          <h2 class="page-title">Cybersecurity posture assessment, made simple.</h2>
-          <p class="page-lede">Answer a few adaptive questions. Get a scored, prioritized, evidence-based read on your cybersecurity health - and a clear path to improve it.</p>
-          <div class="hero-links">
-            <a href="/assessment" id="heroTakeAssessment" class="link-pill"><span class="link-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="1.4"></rect><rect x="9" y="2.3" width="6" height="3" rx="1"></rect><path d="M9 12l1.8 1.8L15 10"></path></svg></span>Take the assessment</a>
-            <a href="#how-it-works" class="link-pill secondary"><span class="link-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3"></path><path d="M5 4.5c3-2 5 2 8 0s5 2 8 0v9c-3 2-5-2-8 0s-5-2-8 0"></path></svg></span>How it works</a>
+      <div class="page-intro revealed">
+        <div class="page-eyebrow">Documentation &amp; Runbooks</div>
+        <h2 class="page-title">Runbooks your team can actually use</h2>
+        <p class="page-lede">Guidance on the documents every program needs, and step-by-step runbooks for the incidents most likely to happen - ransomware, phishing, DDoS, and lateral movement.</p>
+      </div>
+
+      <div class="section-tile revealed">
+        <h3 class="section-h">Keeping documents alive, not just written</h3>
+        <div class="lifecycle-row">
+          <div class="lifecycle-text">
+            <p class="body-text">A policy that's never reviewed is a policy that's already wrong. Every foundational document below should move through the same cycle continuously:</p>
+            <p class="body-text">A document that was accurate the day it was written starts drifting the moment anything around it changes. An incident response plan naming a specific person as the point of contact is already wrong the day that person leaves the company; a backup runbook referencing a tool the organization decommissioned two years ago sends whoever's following it during an actual incident down a dead end - exactly when there's no time left to improvise.</p>
+            <p class="body-text"><b>Periodic review means a real cadence on a real calendar, with a real owner.</b> Most organizations review foundational documents at least annually, and more often - quarterly, or after any significant infrastructure or staffing change - for anything genuinely operational, like an incident response plan or a backup/DR runbook. Ownership matters as much as cadence: a document with no named owner tends to drift indefinitely until an actual incident exposes how stale it's gotten. Assign a specific role, not just "the team," responsible for confirming it's still accurate on schedule, whether or not anything obviously changed in the meantime.</p>
           </div>
+          <div class="lifecycle-wrap lifecycle-wrap--tall">
+  <svg viewBox="-30 0 400 340" xmlns="http://www.w3.org/2000/svg">
+    <path id="lifecyclePath" d="M 310,170 A 110,110 0 1,1 90.01,170 A 110,110 0 1,1 310,170" fill="none" stroke="var(--line)" stroke-width="1.5"></path>
+    <circle cx="200.0" cy="60.0" r="5" fill="var(--surface)" stroke="var(--accent-secure)" stroke-width="1.6"></circle><circle cx="304.6" cy="136.0" r="5" fill="var(--surface)" stroke="var(--accent-secure)" stroke-width="1.6"></circle><circle cx="264.7" cy="259.0" r="5" fill="var(--surface)" stroke="var(--accent-secure)" stroke-width="1.6"></circle><circle cx="135.3" cy="259.0" r="5" fill="var(--surface)" stroke="var(--accent-secure)" stroke-width="1.6"></circle><circle cx="95.4" cy="136.0" r="5" fill="var(--surface)" stroke="var(--accent-secure)" stroke-width="1.6"></circle>
+    <text x="200.0" y="46.0" text-anchor="middle" class="lifecycle-node-label">Draft</text><text x="304.6" y="122.0" text-anchor="start" class="lifecycle-node-label">Review</text><text x="264.7" y="281.0" text-anchor="start" class="lifecycle-node-label">Approve</text><text x="135.3" y="281.0" text-anchor="end" class="lifecycle-node-label">Publish</text><text x="95.4" y="122.0" text-anchor="end" class="lifecycle-node-label">Periodic Review</text>
+    <circle r="6" fill="var(--accent-signal)"><animateMotion dur="9s" repeatCount="indefinite"><mpath href="#lifecyclePath"></mpath></animateMotion></circle>
+    <text x="200" y="175" text-anchor="middle" class="lifecycle-node-label" style="font-size:12px; letter-spacing:0.05em;">continuous, not one-and-done</text>
+  </svg></div>
         </div>
-        
-  <div class="hero-infinity">
-    <svg viewBox="0 0 260 136" xmlns="http://www.w3.org/2000/svg">
-      <path d="M130.00,68.00 L127.13,65.14 L124.24,62.29 L121.29,59.48 L118.25,56.71 L115.11,54.00 L111.82,51.39 L108.37,48.90 L104.72,46.57 L100.87,44.43 L96.78,42.55 L92.46,41.00 L87.91,39.84 L83.14,39.15 L78.21,39.04 L73.19,39.59 L68.18,40.90 L63.33,43.02 L58.81,46.00 L54.83,49.82 L51.61,54.39 L49.33,59.57 L48.15,65.14 L48.15,70.86 L49.33,76.43 L51.61,81.61 L54.83,86.18 L58.81,90.00 L63.33,92.98 L68.18,95.10 L73.19,96.41 L78.21,96.96 L83.14,96.85 L87.91,96.16 L92.46,95.00 L96.78,93.45 L100.87,91.57 L104.72,89.43 L108.37,87.10 L111.82,84.61 L115.11,82.00 L118.25,79.29 L121.29,76.52 L124.24,73.71 L127.13,70.86 L130.00,68.00 L132.87,65.14 L135.76,62.29 L138.71,59.48 L141.75,56.71 L144.89,54.00 L148.18,51.39 L151.63,48.90 L155.28,46.57 L159.13,44.43 L163.22,42.55 L167.54,41.00 L172.09,39.84 L176.86,39.15 L181.79,39.04 L186.81,39.59 L191.82,40.90 L196.67,43.02 L201.19,46.00 L205.17,49.82 L208.39,54.39 L210.67,59.57 L211.85,65.14 L211.85,70.86 L210.67,76.43 L208.39,81.61 L205.17,86.18 L201.19,90.00 L196.67,92.98 L191.82,95.10 L186.81,96.41 L181.79,96.96 L176.86,96.85 L172.09,96.16 L167.54,95.00 L163.22,93.45 L159.13,91.57 L155.28,89.43 L151.63,87.10 L148.18,84.61 L144.89,82.00 L141.75,79.29 L138.71,76.52 L135.76,73.71 L132.87,70.86 L130.00,68.00 Z" fill="none" stroke="var(--line)" stroke-width="7"></path>
-      <path d="M130.00,68.00 L127.13,65.14 L124.24,62.29 L121.29,59.48 L118.25,56.71 L115.11,54.00 L111.82,51.39 L108.37,48.90 L104.72,46.57 L100.87,44.43 L96.78,42.55 L92.46,41.00 L87.91,39.84 L83.14,39.15 L78.21,39.04 L73.19,39.59 L68.18,40.90 L63.33,43.02 L58.81,46.00 L54.83,49.82 L51.61,54.39 L49.33,59.57 L48.15,65.14 L48.15,70.86 L49.33,76.43 L51.61,81.61 L54.83,86.18 L58.81,90.00 L63.33,92.98 L68.18,95.10 L73.19,96.41 L78.21,96.96 L83.14,96.85 L87.91,96.16 L92.46,95.00 L96.78,93.45 L100.87,91.57 L104.72,89.43 L108.37,87.10 L111.82,84.61 L115.11,82.00 L118.25,79.29 L121.29,76.52 L124.24,73.71 L127.13,70.86 L130.00,68.00" fill="none" stroke="var(--accent-signal)" stroke-width="7" stroke-linecap="round" opacity="0.6"></path>
-      <path d="M130.00,68.00 L132.87,65.14 L135.76,62.29 L138.71,59.48 L141.75,56.71 L144.89,54.00 L148.18,51.39 L151.63,48.90 L155.28,46.57 L159.13,44.43 L163.22,42.55 L167.54,41.00 L172.09,39.84 L176.86,39.15 L181.79,39.04 L186.81,39.59 L191.82,40.90 L196.67,43.02 L201.19,46.00 L205.17,49.82 L208.39,54.39 L210.67,59.57 L211.85,65.14 L211.85,70.86 L210.67,76.43 L208.39,81.61 L205.17,86.18 L201.19,90.00 L196.67,92.98 L191.82,95.10 L186.81,96.41 L181.79,96.96 L176.86,96.85 L172.09,96.16 L167.54,95.00 L163.22,93.45 L159.13,91.57 L155.28,89.43 L151.63,87.10 L148.18,84.61 L144.89,82.00 L141.75,79.29 L138.71,76.52 L135.76,73.71 L132.87,70.86 L130.00,68.00" fill="none" stroke="var(--accent-violet)" stroke-width="7" stroke-linecap="round" opacity="0.6"></path>
-      <path d="M130.00,68.00 L127.13,65.14 L124.24,62.29 L121.29,59.48 L118.25,56.71 L115.11,54.00 L111.82,51.39 L108.37,48.90 L104.72,46.57 L100.87,44.43 L96.78,42.55 L92.46,41.00 L87.91,39.84 L83.14,39.15 L78.21,39.04 L73.19,39.59 L68.18,40.90 L63.33,43.02 L58.81,46.00 L54.83,49.82 L51.61,54.39 L49.33,59.57 L48.15,65.14 L48.15,70.86 L49.33,76.43 L51.61,81.61 L54.83,86.18 L58.81,90.00 L63.33,92.98 L68.18,95.10 L73.19,96.41 L78.21,96.96 L83.14,96.85 L87.91,96.16 L92.46,95.00 L96.78,93.45 L100.87,91.57 L104.72,89.43 L108.37,87.10 L111.82,84.61 L115.11,82.00 L118.25,79.29 L121.29,76.52 L124.24,73.71 L127.13,70.86 L130.00,68.00 L132.87,65.14 L135.76,62.29 L138.71,59.48 L141.75,56.71 L144.89,54.00 L148.18,51.39 L151.63,48.90 L155.28,46.57 L159.13,44.43 L163.22,42.55 L167.54,41.00 L172.09,39.84 L176.86,39.15 L181.79,39.04 L186.81,39.59 L191.82,40.90 L196.67,43.02 L201.19,46.00 L205.17,49.82 L208.39,54.39 L210.67,59.57 L211.85,65.14 L211.85,70.86 L210.67,76.43 L208.39,81.61 L205.17,86.18 L201.19,90.00 L196.67,92.98 L191.82,95.10 L186.81,96.41 L181.79,96.96 L176.86,96.85 L172.09,96.16 L167.54,95.00 L163.22,93.45 L159.13,91.57 L155.28,89.43 L151.63,87.10 L148.18,84.61 L144.89,82.00 L141.75,79.29 L138.71,76.52 L135.76,73.71 L132.87,70.86 L130.00,68.00 Z" fill="none" stroke="var(--accent-signal)" stroke-width="7" stroke-linecap="round" class="infinity-flow"></path>
-    </svg>
-    <div class="infinity-caption">
-      <span style="color:var(--accent-signal)">Discover</span>
-      <span style="color:var(--accent-secure)">Transform</span>
-      <span style="color:var(--accent-violet)">Optimize</span>
+      </div>
+
+      <div class="section-tile">
+        <h3 class="section-h">Foundational Documents</h3>
+        <div id="docAccordions">
+    <div class="acc-card" data-id="irplan">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-signal);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M12 8v4"></path><circle cx="12" cy="15" r="0.6" fill="currentColor"></circle></svg></div>
+        <div><h4>Incident Response Plan</h4></div>
+        <div class="acc-chevron">▸</div>
+      </div>
+      <div class="acc-body"><ul><li>Roles and a clear chain of command (who declares an incident, who leads response, who has final say to shut something down)</li><li>Severity classification - not every incident needs the same response tier</li><li>Communication plan: internal escalation, legal/regulatory notification obligations, and what (if anything) goes to customers or the public</li><li>Evidence preservation steps, so forensic investigation isn't compromised by an eager cleanup</li><li>A named post-incident review process - the plan should explicitly require updating itself after every real incident</li></ul></div>
+    </div>
+  
+    <div class="acc-card" data-id="backupdr">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-secure);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="2.5"></ellipse><path d="M5 6v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6"></path><path d="M5 12v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6"></path><path d="M18.5 9.5a3 3 0 1 1-1-2.3" transform="translate(0,-1)"></path></svg></div>
+        <div><h4>Backup &amp; Disaster Recovery Plan</h4></div>
+        <div class="acc-chevron">▸</div>
+      </div>
+      <div class="acc-body"><ul><li>Follow the 3-2-1 rule as a baseline: 3 copies of data, on 2 different media types, with 1 copy offline or immutable</li><li>Define RTO (how fast you must be back up) and RPO (how much data loss is tolerable) per system - not every system needs the same targets</li><li>Isolate backups from the production network so a ransomware event can't encrypt the recovery path along with everything else</li><li>Test restores on a real schedule - a backup that has never been restored is a hypothesis, not a plan</li><li>Document a failover/DR site or cloud region if uptime requirements demand it, and test that failover too</li></ul></div>
+    </div>
+  
+    <div class="acc-card" data-id="policy">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-violet);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.5h7l3.5 3.5V21H7z"></path><path d="M14 2.5V6h3.5"></path><path d="M9.3 12h5.4M9.3 15h5.4M9.3 18h3.4"></path></svg></div>
+        <div><h4>Cybersecurity Policy Document</h4></div>
+        <div class="acc-chevron">▸</div>
+      </div>
+      <div class="acc-body"><ul><li>Scope: which systems, data, and people the policy governs</li><li>Acceptable use, access control, and data classification rules stated plainly enough that non-security staff can follow them</li><li>Named roles and responsibilities (ties directly to Phase 3 of the Maturity Model - governance has to exist before policy means anything)</li><li>A mandatory review cadence - annually at minimum, and after any material change to infrastructure or the threat landscape</li></ul></div>
+    </div>
+  
+    <div class="acc-card" data-id="riskreg">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-amber);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="1"></rect><path d="M3.5 9h17M3.5 14h17M9 4v16"></path></svg></div>
+        <div><h4>Risk Register</h4></div>
+        <div class="acc-chevron">▸</div>
+      </div>
+      <div class="acc-body"><ul><li>One row per identified risk: description, likelihood, impact, and a calculated or assigned risk rating</li><li>A named owner per risk - an unowned risk is a risk nobody is actually managing</li><li>Treatment plan and status: accept, mitigate, transfer (insurance), or avoid - and what's actually being done about it</li><li>A review date per entry, not just a review date for the whole register - old risks silently going stale is the most common failure mode</li></ul></div>
+    </div>
+  
+    <div class="acc-card" data-id="bcp">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-critical);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"></path><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"></path></svg></div>
+        <div><h4>Business Continuity Plan</h4></div>
+        <div class="acc-chevron">▸</div>
+      </div>
+      <div class="acc-body"><ul><li>Distinct from the Backup/DR plan: this covers how the *business* keeps operating, not just how IT recovers systems</li><li>Identify critical business functions and their maximum tolerable downtime - not every process is equally urgent</li><li>Named alternate processes (manual workarounds, alternate suppliers, alternate premises) for when primary systems are unavailable</li><li>A communication tree for staff, customers, and suppliers that doesn't depend on the systems that might be down</li><li>Tested via exercises, not just written - a plan that has only ever been read is unproven</li></ul></div>
+    </div>
+  
+    <div class="acc-card" data-id="iam">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-pop);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8.5" r="4"></circle><path d="M11 11.5l9 9M15.5 16l2.5-2.5M18 18.5l2.5-2.5"></path></svg></div>
+        <div><h4>Access Control / IAM Policy</h4></div>
+        <div class="acc-chevron">▸</div>
+      </div>
+      <div class="acc-body"><ul><li>Least-privilege as the default: access granted for a specific need, not by default "in case it's useful"</li><li>A defined joiner/mover/leaver process - access granted on day one and revoked the moment someone leaves or changes role</li><li>Privileged/admin access kept separate from everyday accounts, with additional approval and logging requirements</li><li>Periodic access reviews - confirming people still need what they were granted, not just granting once and forgetting</li></ul></div>
+    </div>
+  
+    <div class="acc-card" data-id="vendor">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-signal);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="12" r="5"></circle><circle cx="15.5" cy="12" r="5"></circle></svg></div>
+        <div><h4>Third-Party / Vendor Risk Policy</h4></div>
+        <div class="acc-chevron">▸</div>
+      </div>
+      <div class="acc-body"><ul><li>A required security review before any vendor gets access to systems or data - not after the contract is signed</li><li>Minimum security requirements scaled to what the vendor can actually touch (a payroll processor needs more scrutiny than a stock-photo subscription)</li><li>A record of what each vendor can access, so a vendor breach (like the Salesloft/Drift incident referenced in the News tab) can be scoped quickly</li><li>A defined offboarding step for vendors too - revoking access when a contract ends, not just for employees</li></ul></div>
+    </div>
+  
+    <div class="acc-card" data-id="training">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-secure);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"></circle><path d="M3 19c0-3.3 2.5-5.5 5.5-5.5S14 15.7 14 19"></path><circle cx="16.5" cy="9" r="2.4"></circle><path d="M14.8 19c0-2.6 1.8-4.4 3.9-4.4"></path></svg></div>
+        <div><h4>Security Awareness Training Program</h4></div>
+        <div class="acc-chevron">▸</div>
+      </div>
+      <div class="acc-body"><ul><li>Recurring, not one-time - a single onboarding session is well-documented to fade within months</li><li>Scenario-based content (real phishing simulations, not just slideshows) tends to change behavior more than lecture-style training</li><li>Role-specific modules - finance staff need BEC/wire-fraud training that a warehouse employee doesn't, and vice versa</li><li>Tracked completion and a non-punitive reporting culture - see the Phishing runbook for why blame reduces future self-reporting</li></ul></div>
     </div>
   </div>
       </div>
 
       <div class="section-tile">
-        <h3 class="section-h" id="how-it-works">How it works</h3>
-        <p class="body-text">Four steps, start to finish - and then it runs again.</p>
-        <div class="hiw-grid">
-          
-            <div class="hiw-item" style="transition-delay:0.00s">
-              <div class="hiw-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="1.4"></rect><rect x="9" y="2.3" width="6" height="3" rx="1"></rect><path d="M9 12l1.8 1.8L15 10"></path></svg></div>
-              <h4>01 · Data Collection</h4>
-              <p>Answer an adaptive questionnaire shaped by your industry and infrastructure - only relevant questions appear, and all six NIST CSF functions are scored individually.</p>
-              <span class="hiw-outcome">Outcome: Know exactly where you stand</span>
-            </div>
-          
-            <div class="hiw-item" style="transition-delay:0.10s">
-              <div class="hiw-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M9 20V4M14 20v-9M19 20V13"></path><path d="M4 9.5l5-4 5 4.5 5-6.5" opacity="0.55"></path></svg></div>
-              <h4>02 · Analysis</h4>
-              <p>Every answer is cross-referenced against every other answer, so compounding risk gets flagged instead of scored in isolation - with vendor-specific mitigation notes wherever you've named a product.</p>
-              <span class="hiw-outcome">Outcome: See risks a checklist would miss</span>
-            </div>
-          
-            <div class="hiw-item" style="transition-delay:0.20s">
-              <div class="hiw-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h11M4 18h6"></path></svg></div>
-              <h4>03 · Recommendation</h4>
-              <p>A ranked, prioritized action list, not a wall of findings - each item tied to why it matters more than the rest, and mapped back to the specific control it strengthens.</p>
-              <span class="hiw-outcome">Outcome: Know what to fix first</span>
-            </div>
-          
-            <div class="hiw-item" style="transition-delay:0.30s">
-              <div class="hiw-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"></path><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"></path></svg></div>
-              <h4>04 · Transformation</h4>
-              <p>Implement fixes using the matching Runbook or Playbook, then re-assess on a cadence to track real progress and see the score delta since your last run.</p>
-              <span class="hiw-outcome">Outcome: Prove the change actually worked</span>
-            </div>
-          
-        </div>
+        <h3 class="section-h">Incident Runbooks</h3>
+        <p class="body-text">Each of these is meant to be printable and usable mid-incident - short, ordered, and specific enough that whoever's on call at 2am isn't improvising.</p>
+        <div id="runbookAccordions">
+    <div class="acc-card" data-id="ransomware">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-signal);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10.5" width="12" height="9" rx="1.2"></rect><path d="M8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5"></path><path d="M12 14v2.4"></path><path d="M4 4l16 16" opacity="0.55"></path></svg></div>
+        <div><h4>Ransomware</h4><div class="acc-sub">Encryption event / extortion attempt</div></div>
+        <div class="acc-chevron">▸</div>
       </div>
-
-      <div class="section-tile">
-        <div class="page-intro-row">
-          <div class="page-intro-text">
-            <h3 class="section-h">Methodology</h3>
-            <p class="body-text">Every question maps to a real control from a recognized framework - nothing here is invented. These frameworks are the guiding principles behind every score:</p>
-          </div>
-          
-  <div class="stamp-row">
-    
-      <div class="stamp" style="--stamp-color:var(--accent-signal)" title="Defense in Depth">
-        <div class="stamp-ring"></div>
-        <span class="stamp-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M12 8v4"></path><circle cx="12" cy="15" r="0.6" fill="currentColor"></circle></svg></span>
-        <span class="stamp-label">Defense in Depth</span>
+      <div class="acc-body"><ol><li>Isolate affected systems immediately: disable the NIC (Disable-NetAdapter in PowerShell, or "Disable" in Network Connections) or pull the network cable rather than powering off, to preserve memory-resident evidence. If EDR is deployed (CrowdStrike, Defender for Endpoint, SentinelOne), use its console isolation action instead of touching the machine directly - it's logged and reversible</li><li>Take file servers, NAS/SAN volumes, and mapped network drives offline immediately even if not yet visibly affected - ransomware actively hunts for and encrypts every reachable network share, so isolating shared storage buys time before individual endpoints are triaged</li><li>Activate the incident response team and open an incident bridge; determine true scope by querying your EDR console for other endpoints showing the same process tree or mass file-rename/encryption behavior, rather than assuming it's limited to what was visibly reported</li><li>Preserve evidence before any cleanup: capture memory on at least one representative infected host if tooling exists (EDR live-response, or a tool like Magnet RAM Capture), and export EDR/SIEM logs covering the prior 30 days - dwell time before the encryption trigger is commonly days to weeks</li><li>Identify the ransomware family from the ransom note and check it against a known-decryptor list at nomoreransom.org (the Europol-backed No More Ransom project) before assuming payment or full rebuild is the only path - free decryptors exist for dozens of older families</li><li>Notify legal counsel, cyber insurance, and any regulators your jurisdiction/sector requires - breach-notification clocks (e.g. GDPR's 72-hour window) start from discovery, so this runs in parallel with containment, not after it</li><li>Verify backup integrity before relying on it: check backup job logs for gaps around the incident window, and check for shadow-copy deletion (`vssadmin list shadows`) - `vssadmin delete shadows /all` run by the attacker is a documented, common step specifically meant to block easy recovery</li><li>Restore from the most recent clean, verified-isolated backup into a sandboxed/isolated network segment first, scan it, and only then reconnect to production - restoring into a still-compromised network just re-triggers the same event</li><li>Reset credentials for every account with plausible exposure, not just visibly-affected ones - domain admin, service accounts, and local admin passwords (via LAPS if deployed) - before reconnecting restored systems, since credential theft typically precedes the encryption trigger by days</li><li>Run a post-incident review and feed findings back into Phase 10 of the Maturity Model - the same gap that let this in will let the next one in too</li></ol></div>
+    </div>
+  
+    <div class="acc-card" data-id="phishing">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-secure);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="6" width="17.6" height="12.5" rx="1.2"></rect><path d="M3.2 7l8.8 6 8.8-6"></path><path d="M15.5 15.5c2-1.6 2-4 .3-5.3" opacity="0.7"></path></svg></div>
+        <div><h4>Phishing / BEC</h4><div class="acc-sub">Credential compromise or business email compromise</div></div>
+        <div class="acc-chevron">▸</div>
       </div>
-    
-      <div class="stamp" style="--stamp-color:var(--accent-secure)" title="ISO 27001">
-        <div class="stamp-ring"></div>
-        <span class="stamp-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="1"></rect><path d="M3.5 9h17M3.5 14h17M9 4v16"></path></svg></span>
-        <span class="stamp-label">ISO 27001</span>
+      <div class="acc-body"><ol><li>Have a one-click reporting mechanism for users - the built-in "Report Message" add-in in Outlook/Microsoft 365, or Google Workspace's built-in phishing report action - the first report is often the only warning before it spreads</li><li>Quarantine the message organization-wide: in Microsoft 365, search by sender/subject in Threat Explorer (Defender portal) and run "Purge" across all mailboxes; in Google Workspace, use the Investigation Tool to search and bulk-delete. Block the sending domain and any malicious URLs/attachment hashes via the Tenant Allow/Block List (Microsoft) or equivalent gateway rule</li><li>For any account that clicked through or entered credentials: force an immediate password reset AND separately revoke active sessions/refresh tokens - a password reset alone does not invalidate an already-issued session. In Entra ID this is "Revoke sessions" on the user's page (or Revoke-MgUserSignInSession via the Microsoft Graph PowerShell SDK); in Google Workspace, "Sign out of all sessions" in the Admin console</li><li>Check for persistence set up while the attacker had access: review inbox rules for auto-forward or delete-on-arrival rules (Get-InboxRule in Exchange Online PowerShell), check for newly-granted OAuth app consents on the account (Enterprise Applications in Entra ID, or third-party access in Google Workspace), and check tenant-level mail-flow rules for anything unfamiliar</li><li>If this looks like BEC (a request to change payment details, redirect a wire, or an urgent executive ask): before any funds move, verbally confirm the request via a phone number you already had on file - never one supplied in the suspect email - and alert finance/AP immediately so any pending transfer can be held</li><li>Search for other recipients of the same or a similar message using Threat Explorer / Google Vault, rather than relying solely on self-reporting to find everyone who received it</li><li>Follow up with the affected user and team without blame - punitive responses reliably reduce future self-reporting, and the goal is faster reporting next time, not less reporting out of fear</li></ol></div>
+    </div>
+  
+    <div class="acc-card" data-id="ddos">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-violet);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="9" width="7" height="7" rx="1"></rect><path d="M12 9V4M12 20v-5M5 12H2M22 12h-3M6.5 6.5 4.5 4.5M17.5 6.5l2-2M6.5 17.5l-2 2M17.5 17.5l2 2"></path></svg></div>
+        <div><h4>DDoS</h4><div class="acc-sub">Availability / denial-of-service attack</div></div>
+        <div class="acc-chevron">▸</div>
       </div>
-    
-      <div class="stamp" style="--stamp-color:var(--accent-violet)" title="SOC 2">
-        <div class="stamp-ring"></div>
-        <span class="stamp-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="1.4"></rect><rect x="9" y="2.3" width="6" height="3" rx="1"></rect><path d="M9 12l1.8 1.8L15 10"></path></svg></span>
-        <span class="stamp-label">SOC 2</span>
+      <div class="acc-body"><ol><li>Confirm it's actually an attack, not a legitimate spike or misconfiguration: check for genuine traffic-volume anomalies correlated with unusual source-IP diversity/geography or protocol anomalies in your CDN/WAF dashboard (Cloudflare Analytics, AWS Shield/CloudFront metrics) rather than reacting to a single alert threshold breach - a real product launch or press mention can look identical to a volumetric attack at a glance</li><li>Identify the attack layer, since response differs completely: volumetric (L3/4 - UDP/ICMP flood or reflection/amplification) needs upstream scrubbing; application-layer (L7 - an HTTP flood against a specific endpoint) needs WAF/rate-limiting closer to the app. Check your provider's traffic breakdown by protocol, port, and request pattern to tell which you're facing</li><li>Engage your upstream provider, CDN, or dedicated scrubbing service immediately (Cloudflare, AWS Shield Advanced, Akamai, or your ISP's DDoS mitigation service if contracted) - most effective volumetric mitigation happens outside your own network edge, since your own bandwidth is what's being exhausted</li><li>If a CDN/Anycast layer already sits in front of production, verify it's actually switched into an aggressive "under attack" or challenge mode (e.g. Cloudflare's "I'm Under Attack" mode) rather than left on default settings, which are tuned for normal traffic, not an active flood</li><li>Apply traffic filtering and rate-limiting rules specific to the observed pattern - block by source ASN/geography if the attack is concentrated, rate-limit the specific endpoint under an L7 flood - rather than a broad block that also drops legitimate users</li><li>If the attack is DNS-based or a reflection/amplification attack abusing your own exposed services (open DNS resolvers, NTP, memcached), check for and lock down any misconfigured services of your own that could be contributing to amplification, separate from defending against the inbound flood itself</li><li>Keep stakeholders and customers informed during the outage via a status page (StatusPage, Instatus, or equivalent) with a realistic, regularly-updated cadence - silence during an outage erodes trust faster than the outage itself</li><li>After the fact, review whether current bandwidth capacity, scrubbing contracts, and rate-limit thresholds were actually sized for the attack you just saw, and adjust based on what worked or didn't in the real event</li></ol></div>
+    </div>
+  
+    <div class="acc-card" data-id="lateral">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-amber);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.2"></circle><circle cx="19" cy="6" r="2.2"></circle><circle cx="12" cy="18" r="2.2"></circle><path d="M6.8 7.6 10.3 16.2M17.2 7.6 13.7 16.2" stroke-dasharray="3 2.5"></path></svg></div>
+        <div><h4>Lateral Movement</h4><div class="acc-sub">Active intrusion spreading internally</div></div>
+        <div class="acc-chevron">▸</div>
       </div>
-    
-      <div class="stamp" style="--stamp-color:var(--accent-amber)" title="Cyber Essentials">
-        <div class="stamp-ring"></div>
-        <span class="stamp-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8.5" r="4"></circle><path d="M11 11.5l9 9M15.5 16l2.5-2.5M18 18.5l2.5-2.5"></path></svg></span>
-        <span class="stamp-label">Cyber Essentials</span>
+      <div class="acc-body"><ol><li>Use EDR to isolate the specific affected endpoints individually (the network-isolation action in CrowdStrike/Defender for Endpoint/SentinelOne) rather than shutting down broad network segments where avoidable, to contain spread while preserving business continuity elsewhere</li><li>Where individual-endpoint isolation isn't available or the intrusion has already crossed multiple segments, isolate the affected VLAN/subnet at the switch or firewall level as a broader containment step while investigation continues</li><li>Hunt for the specific technique in use before assuming it's stopped: check for anomalous use of legitimate admin tools (PsExec, WMI, PowerShell remoting/WinRM, RDP) between hosts that don't normally talk to each other - this "living off the land" pattern is how most real intrusions actually spread, not custom malware</li><li>Rotate credentials for every account observed or plausibly used by the intruder - assume more were touched than confirmed, and check EDR telemetry for LSASS memory-access indicators (a Mimikatz-style credential-dumping signature), since an attacker who reached lateral-movement stage has likely harvested credentials beyond the first compromised account</li><li>Threat-hunt for persistence across every host the intruder plausibly touched, not just the originally-identified one: new scheduled tasks (Get-ScheduledTask), new local/domain admin accounts, unfamiliar services (Get-Service), and new or modified Group Policy Objects - the initial entry point is rarely the only foothold left behind</li><li>Check Active Directory specifically for privilege-escalation and persistence indicators: new members added to Domain Admins/Enterprise Admins, Kerberoasting-pattern ticket requests, or Golden/Silver Ticket indicators if you have the logging to detect them - lateral movement frequently aims at AD compromise as the actual objective</li><li>Maintain chain of custody on any forensic evidence gathered (exported logs, memory captures, disk images) with documented collection time, method, and handler, in case of later legal, insurance, or regulatory review</li><li>Once contained, rebuild affected hosts from known-clean images rather than just removing identified malware - a host that hosted an active intruder shouldn't be trusted back into production based on cleanup alone</li></ol></div>
+    </div>
+  
+    <div class="acc-card" data-id="cloudcompromise">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-critical);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17a4 4 0 0 1 .3-8 5.5 5.5 0 0 1 10.6 1.8A3.5 3.5 0 0 1 17 17z"></path><path d="M12 20v-3M10 19l2-2 2 2" opacity="0.75"></path></svg></div>
+        <div><h4>Cloud Account Compromise</h4><div class="acc-sub">Compromised AWS/Azure/GCP credentials or console access</div></div>
+        <div class="acc-chevron">▸</div>
       </div>
-    
-      <div class="stamp" style="--stamp-color:var(--accent-critical)" title="PCI DSS">
-        <div class="stamp-ring"></div>
-        <span class="stamp-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="1.6"></rect><path d="M2.5 9.5h19"></path><path d="M6 14.5h4"></path></svg></span>
-        <span class="stamp-label">PCI DSS</span>
+      <div class="acc-body"><ol><li>Revoke or rotate the compromised credentials/API keys immediately - for AWS, deactivate the IAM access key first (`aws iam update-access-key --status Inactive`) rather than deleting it outright, so it remains available for forensic review; use the equivalent key-disable action in Azure/GCP</li><li>Invalidate active sessions and tokens separately from rotating the credential - a rotated password or disabled key doesn't retroactively kill an already-issued session token or STS credential still within its validity window</li><li>Check for new IAM users, roles, access keys, or federated identity providers the attacker may have created to maintain access after the original credential is fixed - this is the most common way cloud intrusions survive an initial "fix," and it's worth checking even before full scope is confirmed</li><li>Review CloudTrail (AWS) / Activity Log (Azure) / Audit Logs (GCP) specifically for CreateUser, CreateAccessKey, AttachUserPolicy, and PutRolePolicy events (or provider equivalents) during the suspected compromise window - these are the specific actions an attacker uses to establish persistent access</li><li>Review billing and resource-creation logs for unauthorized compute spun up for cryptomining or further attack infrastructure - a sudden spike in a region you don't normally use, or an unusually large instance type, is the classic signature of this monetization move</li><li>Check for modified security groups, NACLs, storage bucket policies (S3/Blob/GCS), or public-exposure changes made during the intrusion window - an attacker will often open a bucket or security-group rule to exfiltrate data or maintain reach even after the original credential path is closed</li><li>Preserve cloud provider audit logs before any retention window expires - export CloudTrail/Activity Log/Audit Logs to storage outside the affected account if there's any chance the attacker had permissions broad enough to disable or delete logging</li><li>Once contained, review the IAM policy that was actually exploited - was the compromised credential over-privileged relative to its function? - and tighten it; the fix isn't complete if the same identity goes back into production with the same excess permissions it had before</li></ol></div>
+    </div>
+  
+    <div class="acc-card" data-id="insider">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-pop);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.5h7l3.5 3.5V21H7z"></path><path d="M14 2.5V6h3.5"></path><path d="M9.5 15l4.5-4.5M10 10.5h4.5V15" opacity="0.85"></path></svg></div>
+        <div><h4>Insider Threat / Data Exfiltration</h4><div class="acc-sub">Suspected internal actor or unusual data movement</div></div>
+        <div class="acc-chevron">▸</div>
       </div>
-    
+      <div class="acc-body"><ol><li>Involve HR and legal before taking any action against a specific person, not just IT - this category carries employment-law and privacy exposure others don't, and premature unilateral IT action (disabling an account, searching a device) without sign-off can itself create liability or taint the investigation</li><li>Preserve access logs, file-activity logs, and DLP alerts immediately, before anything ages out of retention - pull authentication logs, file-server/SharePoint access logs, and any DLP alert history covering as far back as is available, not just the triggering event</li><li>Restrict access proportionate to the actual evidence rather than making a visible change to the person's access or alerting them directly - a sudden access change tips off a genuinely malicious insider to destroy evidence or accelerate exfiltration before scope is understood</li><li>Where legally and technically feasible, place a covert monitoring hold on the account (enhanced logging, mail/file-activity alerting) rather than an overt lockout, until HR/legal confirm the investigation approach - coordinate this specifically with legal, since monitoring an employee carries its own compliance requirements depending on jurisdiction</li><li>Review exactly what data was accessed or moved, and to where: unusual volume downloads, access outside the person's normal role/project scope, removable-media activity if endpoint logging captures it, and uploads to personal cloud storage or personal email - to scope actual exposure rather than assuming worst case</li><li>Cross-reference the timeline against known triggers - a resignation, a performance issue, or an upcoming termination are the most common precursors to a real insider incident, and knowing the timeline shapes both urgency and the legal approach</li><li>Once evidence supports action, coordinate access revocation and any device/account preservation with HR and legal as a single planned action, typically timed with any employment action, rather than staggered steps that could tip off the individual</li><li>Close the loop afterward - most insider incidents trace back to an offboarding gap, an access-review gap, or overly broad access the Risk Register should already have flagged; feed the specific gap back into that process, not just this one case</li></ol></div>
+    </div>
+  
+    <div class="acc-card" data-id="supplychain">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-signal);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="12" r="5"></circle><circle cx="15.5" cy="12" r="5"></circle></svg></div>
+        <div><h4>Supply Chain / Third-Party Compromise</h4><div class="acc-sub">A vendor or integration you depend on gets breached</div></div>
+        <div class="acc-chevron">▸</div>
+      </div>
+      <div class="acc-body"><ol><li>Identify exactly what that vendor/integration could access - this is only fast if a current access record exists (the Vendor Risk Policy's inventory on this site's Runbooks tab is built for exactly this); if it doesn't exist yet, pull every API key, OAuth grant, and account associated with the vendor's name directly from your identity provider and integration settings</li><li>Revoke or rotate any credentials, API keys, or OAuth tokens shared with the affected vendor immediately - don't wait for the vendor's own all-clear or root-cause confirmation, since their compromise-timeline assessment is often incomplete or delayed relative to yours</li><li>For OAuth/SaaS-to-SaaS integrations specifically, revoke the app's consent/grant at the identity-provider level (Enterprise Applications in Entra ID, connected apps in the Google Workspace admin console, or the equivalent app-authorization list) - disabling the vendor's own login doesn't necessarily kill a previously-granted OAuth token</li><li>Check your own logs for activity from the vendor's integration during the suspected compromise window - API access logs, webhook activity, or logins attributable to the integration - rather than relying solely on the vendor's stated scope of impact</li><li>If the vendor had write access to your systems (not just read), specifically review what was created, modified, or deleted during the window - a compromised vendor integration with write access is a path for an attacker to plant persistence directly in your environment, not just read your data</li><li>Notify your own downstream customers if their data could plausibly have been exposed through the chain - the obligation doesn't stop at your vendor, and NotPetya-style incidents (see Case Studies) show how far a single compromised update can propagate</li><li>Coordinate with legal on notification timing and content - a third-party-caused incident can still trigger your own regulatory notification duties depending on what data was involved and your jurisdiction</li><li>Reassess whether that vendor's access level was appropriate in the first place, and tighten it regardless of fault - this is the step most organizations skip once the immediate incident is closed, and it's exactly what lets the same exposure recur with the next vendor</li></ol></div>
+    </div>
+  
+    <div class="acc-card" data-id="zeroday">
+      <div class="acc-head">
+        <div class="icon-badge" style="--icon-accent:var(--accent-secure);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
+        <div><h4>Zero-Day / Actively Exploited Vulnerability</h4><div class="acc-sub">A critical flaw in something you run is being exploited in the wild</div></div>
+        <div class="acc-chevron">▸</div>
+      </div>
+      <div class="acc-body"><ol><li>Check CISA's Known Exploited Vulnerabilities (KEV) catalog and the vendor's own security advisory immediately to confirm exploitation status, affected versions, and known indicators of compromise - KEV entries specifically flag confirmed real-world exploitation, not just theoretical severity</li><li>Inventory every instance of the affected product across the environment before patching anything - including instances you don't normally think of as "that product" (embedded components, a vendor appliance running the same library, dev/test/staging copies) - partial patching, as seen in real incidents like the SharePoint on-prem RCE chain, leaves real exposure even after the "main" instance is fixed</li><li>Apply the vendor patch as the primary fix as soon as it's validated in a non-production environment; if no patch exists yet, apply the vendor's documented interim mitigation (disabling a specific feature, restricting network access to the affected service/port) immediately rather than waiting for a patch timeline</li><li>If the vulnerability is remotely exploitable and no patch or mitigation is immediately deployable, apply temporary compensating controls: a WAF virtual-patching rule if a signature exists for the specific CVE, or restricting network reachability to the affected service via firewall rule until a real fix is in place</li><li>Hunt for indicators of prior compromise before assuming patching alone resolves it - actively-exploited flaws are frequently used against a target before a patch exists or before the organization is even aware of the CVE, so check logs covering the period before public disclosure, not just after</li><li>Check the affected systems specifically for webshells, unexpected scheduled tasks, or new admin accounts if the vulnerability class is remote code execution - these are the persistence mechanisms attackers typically plant immediately after successful exploitation, and a clean patch doesn't remove them retroactively</li><li>Validate the patch actually closed the gap - re-scan the specific instance with a vulnerability scanner or the vendor's own detection guidance, since some patches require an additional configuration step beyond just installing the update to be fully effective</li><li>Track time-to-patch as a real metric from disclosure/KEV-listing to remediation - this is exactly what Phase 9 (Auditing &amp; Validation) of the Maturity Model should be measuring over time, and the Equifax case (see Case Studies) is the clearest illustration of why this metric matters more than most</li></ol></div>
+    </div>
   </div>
-        </div>
-        <div class="framework-badges">
-          <div class="framework-badge">NIST CSF 2.0</div>
-          <div class="framework-badge">CIS Controls v8</div>
-          <div class="framework-badge">ISO 27001</div>
-          <div class="framework-badge">NIS2</div>
-          <div class="framework-badge">GDPR</div>
-          <div class="framework-badge">Cyber Essentials</div>
-          <div class="framework-badge">PCI DSS</div>
-          <div class="framework-badge framework-badge-pipeline">+ more in the pipeline</div>
-        </div>
-        <p class="body-text">The baseline (NIST CSF + CIS) applies to every organization. The rest layer in based on your industry and the regions you operate in - a healthcare provider and a SaaS company are asked different follow-up questions, scored against different compliance overlays, because the risks and obligations genuinely differ. Operational Technology and DevSecOps modules do the same, appearing only where they're actually relevant. This framework set keeps growing as the tool matures.</p>
-        <p class="body-text">Frameworks decide which controls matter; a consistent set of principles decides how the findings get prioritized and explained - proactive over reactive, defense in depth, least privilege, zero trust, and treating improvement as a continuous loop rather than a one-time project, among others.</p>
-        <div class="method-link-row">
-          <a href="/methodology" id="linkMethodologyFromHome" class="link-pill secondary"><span class="link-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="1.4"></rect><rect x="9" y="2.3" width="6" height="3" rx="1"></rect><path d="M9 12l1.8 1.8L15 10"></path></svg></span>Explore the full Methodology</a>
-          <a href="/core-principles" id="linkPrinciplesFromHome" class="link-pill secondary"><span class="link-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"></path><path d="M10 21h4"></path><path d="M12 3a6.5 6.5 0 0 0-3.8 11.8c.5.4.8 1 .8 1.7v.5h6v-.5c0-.7.3-1.3.8-1.7A6.5 6.5 0 0 0 12 3z"></path></svg></span>Core Principles</a>
-        </div>
-      </div>
-
-      <div class="section-tile">
-        <div class="phases-runway" id="phasesRunway">
-          <div class="phases-stage">
-            <h3 class="section-h">The three phases of the assessment</h3>
-            <p class="body-text">Every assessment moves through three stages as a continuous workflow - scroll to watch them unfold, or select a stage for a quick summary of what it involves.</p>
-            <div class="phases-row">
-              
-                
-                <div class="phase-card in" data-stage-detail="discovery" data-phase-index="0" style="border-top:2px solid var(--accent-signal)">
-                  <div class="workflow-phase-tag">Phase 1</div>
-                  <div class="stage-illustration">
-      <svg viewBox="0 0 100 100" width="72" height="72">
-        <defs><radialGradient id="gDisc" cx="50%" cy="42%" r="60%">
-          <stop offset="0%" stop-color="var(--accent-signal)" stop-opacity="0.35"></stop>
-          <stop offset="100%" stop-color="var(--accent-signal)" stop-opacity="0"></stop>
-        </radialGradient></defs>
-        <circle cx="50" cy="50" r="46" fill="url(#gDisc)"></circle>
-        <circle cx="30" cy="26" r="3" fill="var(--accent-signal)" opacity="0.6"></circle>
-        <circle cx="72" cy="30" r="2.4" fill="var(--accent-signal)" opacity="0.5"></circle>
-        <circle cx="68" cy="70" r="3" fill="var(--accent-signal)" opacity="0.6"></circle>
-        <circle cx="24" cy="66" r="2" fill="var(--accent-signal)" opacity="0.5"></circle>
-        <circle cx="43" cy="43" r="17" fill="none" stroke="var(--accent-signal)" stroke-width="4.5"></circle>
-        <line x1="55" y1="55" x2="74" y2="74" stroke="var(--accent-signal)" stroke-width="5.5" stroke-linecap="round"></line>
-      </svg></div>
-                  <h4 style="color:var(--accent-signal)">Discovery</h4>
-                  <p>You don't have a security program yet so much as a starting point - the goal is visibility: what exists, where it's exposed, and who owns fixing it.</p>
-                </div>
-              
-                <div class="phase-arrow" data-arrow-index="0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
-                <div class="phase-card" data-stage-detail="transformation" data-phase-index="1" style="border-top:2px solid var(--accent-secure)">
-                  <div class="workflow-phase-tag">Phase 2</div>
-                  <div class="stage-illustration">
-      <svg viewBox="0 0 100 100" width="72" height="72">
-        <defs>
-          <radialGradient id="gTrans" cx="50%" cy="50%" r="60%">
-            <stop offset="0%" stop-color="var(--accent-secure)" stop-opacity="0.35"></stop>
-            <stop offset="100%" stop-color="var(--accent-secure)" stop-opacity="0"></stop>
-          </radialGradient>
-          <linearGradient id="gTransFlow" x1="30" y1="50" x2="62" y2="50" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="var(--accent-amber)"></stop>
-            <stop offset="100%" stop-color="var(--accent-secure)"></stop>
-          </linearGradient>
-        </defs>
-        <circle cx="50" cy="50" r="46" fill="url(#gTrans)"></circle>
-        <!-- scattered, disconnected findings on the left... -->
-        <circle cx="26" cy="38" r="3.5" fill="var(--accent-amber)" opacity="0.85"></circle>
-        <circle cx="23" cy="53" r="3" fill="var(--accent-critical)" opacity="0.75"></circle>
-        <circle cx="29" cy="66" r="3" fill="var(--accent-pop)" opacity="0.8"></circle>
-        <!-- ...flowing through the transformation... -->
-        <path d="M33 52 Q45 44 58 50" fill="none" stroke="url(#gTransFlow)" stroke-width="4.5" stroke-linecap="round"></path>
-        <path d="M52 44l8 6-8 6" fill="none" stroke="var(--accent-secure)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"></path>
-        <!-- ...into one verified, engineered control on the right -->
-        <path d="M68 37l11 6.5v13l-11 6.5-11-6.5v-13z" fill="var(--accent-secure)"></path>
-        <path d="M62 50l4.5 4.5 9-9" fill="none" stroke="var(--text-on-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-      </svg></div>
-                  <h4 style="color:var(--accent-secure)">Transformation</h4>
-                  <p>Findings become controls, and controls become documented, rehearsed processes - this is where most of the actual engineering and writing happens.</p>
-                </div>
-              
-                <div class="phase-arrow" data-arrow-index="1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
-                <div class="phase-card" data-stage-detail="optimization" data-phase-index="2" style="border-top:2px solid var(--accent-violet)">
-                  <div class="workflow-phase-tag">Phase 3</div>
-                  <div class="stage-illustration">
-      <svg viewBox="0 0 100 100" width="72" height="72">
-        <defs><radialGradient id="gOpt" cx="50%" cy="50%" r="60%">
-          <stop offset="0%" stop-color="var(--accent-violet)" stop-opacity="0.35"></stop>
-          <stop offset="100%" stop-color="var(--accent-violet)" stop-opacity="0"></stop>
-        </radialGradient></defs>
-        <circle cx="50" cy="50" r="46" fill="url(#gOpt)"></circle>
-        <rect x="24" y="55" width="10" height="21" fill="var(--accent-violet)" opacity="0.55"></rect>
-        <rect x="45" y="40" width="10" height="36" fill="var(--accent-violet)" opacity="0.78"></rect>
-        <rect x="66" y="24" width="10" height="52" fill="var(--accent-violet)"></rect>
-        <path d="M22 50l16-14 12 8 24-22" fill="none" stroke="var(--accent-violet)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"></path>
-      </svg></div>
-                  <h4 style="color:var(--accent-violet)">Optimization</h4>
-                  <p>The program runs continuously - monitored, tested, and adjusted as the environment and threat landscape change, rather than declared "done."</p>
-                </div>
-              
-            </div>
-            <div class="stage-detail-panel" id="stageDetailPanel" style="display:none;"></div>
-            <div class="method-link-row">
-              <a href="/maturity-model" id="linkMaturityExplore" class="link-pill secondary"><span class="link-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"></path><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"></path></svg></span>Explore the full Maturity Model</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-tile">
-        <div class="page-intro-row">
-          <div class="page-intro-text">
-            <h3 class="section-h">Risk Score Matrix</h3>
-            <p class="body-text">Every assessment runs on a scored matrix (see the <a href="/metrics" id="linkMetricsFromHome" class="inline-link">Metrics</a> page for the full breakdown). Select a number for what that risk level actually means:</p>
-          </div>
-          <div class="metrics-rubric-wrap">
-  <svg viewBox="0 0 260 130" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="metricsArcGrad" x1="0%" y1="50%" x2="100%" y2="50%">
-        <stop offset="0%" stop-color="var(--accent-critical)"></stop>
-        <stop offset="50%" stop-color="var(--accent-amber)"></stop>
-        <stop offset="100%" stop-color="var(--accent-signal)"></stop>
-      </linearGradient>
-    </defs>
-    <path d="M18,18 Q73,47 128,96" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"></path><path d="M44,14 Q86,45 128,96" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"></path><path d="M12,46 Q70,61 128,96" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"></path><path d="M38,52 Q83,64 128,96" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"></path><path d="M16,78 Q72,77 128,96" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"></path><path d="M46,82 Q87,79 128,96" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"></path><path d="M26,100 Q77,88 128,96" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"></path>
-    
-        <circle r="3.2" fill="var(--accent-critical)">
-          <animateMotion dur="5s" repeatCount="indefinite" calcMode="linear" path="M18,18 Q73,47 128,96" keyPoints="0;0;1;1" keyTimes="0;0.00;0.16;1"></animateMotion>
-          <animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.14;0.16;1"></animate>
-        </circle>
-        <circle r="3.2" fill="var(--accent-signal)">
-          <animateMotion dur="5s" repeatCount="indefinite" calcMode="linear" path="M44,14 Q86,45 128,96" keyPoints="0;0;1;1" keyTimes="0;0.07;0.23;1"></animateMotion>
-          <animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.21;0.23;1"></animate>
-        </circle>
-        <circle r="3.2" fill="var(--accent-amber)">
-          <animateMotion dur="5s" repeatCount="indefinite" calcMode="linear" path="M12,46 Q70,61 128,96" keyPoints="0;0;1;1" keyTimes="0;0.14;0.30;1"></animateMotion>
-          <animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.28;0.30;1"></animate>
-        </circle>
-        <circle r="3.2" fill="var(--accent-signal)">
-          <animateMotion dur="5s" repeatCount="indefinite" calcMode="linear" path="M38,52 Q83,64 128,96" keyPoints="0;0;1;1" keyTimes="0;0.21;0.37;1"></animateMotion>
-          <animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.35;0.37;1"></animate>
-        </circle>
-        <circle r="3.2" fill="var(--accent-critical)">
-          <animateMotion dur="5s" repeatCount="indefinite" calcMode="linear" path="M16,78 Q72,77 128,96" keyPoints="0;0;1;1" keyTimes="0;0.29;0.45;1"></animateMotion>
-          <animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.43;0.45;1"></animate>
-        </circle>
-        <circle r="3.2" fill="var(--accent-amber)">
-          <animateMotion dur="5s" repeatCount="indefinite" calcMode="linear" path="M46,82 Q87,79 128,96" keyPoints="0;0;1;1" keyTimes="0;0.36;0.52;1"></animateMotion>
-          <animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.50;0.52;1"></animate>
-        </circle>
-        <circle r="3.2" fill="var(--accent-signal)">
-          <animateMotion dur="5s" repeatCount="indefinite" calcMode="linear" path="M26,100 Q77,88 128,96" keyPoints="0;0;1;1" keyTimes="0;0.43;0.59;1"></animateMotion>
-          <animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.57;0.59;1"></animate>
-        </circle>
-    <path d="M151,92 a34,34 0 0 1 68,0" fill="none" stroke="var(--line)" stroke-width="6" stroke-linecap="round"></path>
-    <path class="metrics-gauge-arc" d="M151,92 a34,34 0 0 1 68,0" fill="none" stroke="url(#metricsArcGrad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="107" stroke-dashoffset="107"></path>
-    <line class="metrics-gauge-needle" x1="185" y1="92" x2="185" y2="62" stroke="var(--text)" stroke-width="3" stroke-linecap="round" style="transform-origin:185px 92px;"></line>
-    <circle cx="185" cy="92" r="4" fill="var(--text)"></circle>
-    <text class="metrics-gauge-readout" x="185" y="118" text-anchor="middle">76%</text>
-  </svg></div>
-        </div>
-        <div class="risk-slider-wrap">
-          <div class="risk-slider-label">Interactive risk scale - the lower the score, the stronger the security posture</div>
-          <div class="risk-slider-track">
-            <div class="risk-slider-fill"></div>
-            <button class="risk-slider-tick" data-risk="1" type="button">1</button><button class="risk-slider-tick" data-risk="2" type="button">2</button><button class="risk-slider-tick" data-risk="3" type="button">3</button><button class="risk-slider-tick" data-risk="4" type="button">4</button><button class="risk-slider-tick" data-risk="5" type="button">5</button><button class="risk-slider-tick" data-risk="6" type="button">6</button><button class="risk-slider-tick" data-risk="7" type="button">7</button><button class="risk-slider-tick" data-risk="8" type="button">8</button><button class="risk-slider-tick" data-risk="9" type="button">9</button><button class="risk-slider-tick" data-risk="10" type="button">10</button>
-          </div>
-          <div class="risk-slider-ends"><span>1 - Minimal risk</span><span>10 - Severe risk</span></div>
-          <div class="risk-slider-desc" id="riskSliderDesc"></div>
-        </div>
-      </div>
-
-      <div class="section-tile">
-        <h3 class="section-h">Things to get you started</h3>
-        <p class="body-text">Real, current sources - not just this site's own content.</p>
-        <div class="start-links">
-          <div class="start-link-dropdown" id="officialSourcesDropdown">
-            <button type="button" class="start-link start-link-dropdown-toggle">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"></path><path d="M14 4h6v6"></path><path d="M20 4 11 13"></path></svg></div>
-              <div><h4>Official Sources - CISA &amp; NVD</h4><p>Direct links to the two authoritative catalogs themselves, not a summary of them</p></div>
-              <span class="ext-mark start-link-dropdown-caret">▾</span>
-            </button>
-            <div class="start-link-dropdown-panel">
-              
-                <a class="official-source-item" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener noreferrer">
-                  <div><b>CISA KEV Catalog</b><span>Actively exploited vulnerabilities, updated continuously</span></div>
-                  <span class="official-source-domain">cisa.gov ↗</span>
-                </a>
-              
-                <a class="official-source-item" href="https://nvd.nist.gov/" target="_blank" rel="noopener noreferrer">
-                  <div><b>NVD - National Vulnerability Database</b><span>The U.S. government's authoritative CVE repository</span></div>
-                  <span class="official-source-domain">nvd.nist.gov ↗</span>
-                </a>
-              
-                <a class="official-source-item" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener noreferrer">
-                  <div><b>Recently Flagged Exploits</b><span>CISA's KEV catalog, sorted with newest entries first</span></div>
-                  <span class="official-source-domain">cisa.gov ↗</span>
-                </a>
-              
-                <a class="official-source-item" href="https://www.cisa.gov/news-events/cybersecurity-advisories" target="_blank" rel="noopener noreferrer">
-                  <div><b>Ongoing Threat Actor Campaigns</b><span>CISA's cybersecurity advisories on active TTPs</span></div>
-                  <span class="official-source-domain">cisa.gov ↗</span>
-                </a>
-              
-            </div>
-          </div>
-          
-            <a class="start-link" href="/starter-guide" data-tab="starterguide">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3"></path><path d="M5 4.5c3-2 5 2 8 0s5 2 8 0v9c-3 2-5-2-8 0s-5-2-8 0"></path></svg></div>
-              <div><h4>Getting Started With Cybersecurity Controls</h4><p>The plain-language on-ramp before you touch the assessment</p></div>
-              
-            </a>
-          
-            <a class="start-link" href="/news" data-tab="news">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19.3v.01"></path><path d="M8.2 15.8a5.2 5.2 0 0 1 7.6 0"></path><path d="M5 12.3a9.2 9.2 0 0 1 14 0"></path></svg></div>
-              <div><h4>Current Trends</h4><p>This site's own curated threat-landscape roundup</p></div>
-              
-            </a>
-          
-            <a class="start-link" href="/exploits" data-tab="exploits">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
-              <div><h4>Exploits</h4><p>Confirmed actively-exploited CVEs, scored by real-world risk</p></div>
-              
-            </a>
-          
-            <a class="start-link" href="/runbooks" data-tab="runbook">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.5h7l3.5 3.5V21H7z"></path><path d="M14 2.5V6h3.5"></path><path d="M9.3 12h5.4M9.3 15h5.4M9.3 18h3.4"></path></svg></div>
-              <div><h4>Runbooks</h4><p>Incident runbooks and foundational documents</p></div>
-              
-            </a>
-          
-            <a class="start-link" href="/threat-modeling" data-tab="threatmodeling">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M12 8v4"></path><circle cx="12" cy="15" r="0.6" fill="currentColor"></circle></svg></div>
-              <div><h4>Threat Modeling &amp; Forensics</h4><p>How to think ahead of an attacker, and how to reconstruct what happened after one</p></div>
-              
-            </a>
-          
-            <a class="start-link" href="/security-tools-repository" data-tab="securitytools">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="1"></rect><path d="M3.5 9h17M3.5 14h17M9 4v16"></path></svg></div>
-              <div><h4>Check Your Own Configuration</h4><p>Free vendor and open-source tools to test your actual product security baseline - not just answer questions about it</p></div>
-              
-            </a>
-          
-        </div>
-      </div>
-
-      <div class="section-tile">
-        <h3 class="section-h">Explore the site</h3>
-        <p class="body-text">Everything this platform offers, in one map.</p>
-        <div class="site-tile-grid">
-          
-            <a class="site-tile" href="/methodology" data-tab="methodology">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="1"></rect><path d="M3.5 9h17M3.5 14h17M9 4v16"></path></svg></div>
-              <h4>Methodology</h4>
-              <p>Exactly how scoring and adaptive questions work.</p>
-            </a>
-          
-            <a class="site-tile" href="/maturity-model" data-tab="maturity">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2"></path><path d="M18.5 4v3.2H15.3M5.5 20v-3.2H8.7"></path></svg></div>
-              <h4>Maturity Model</h4>
-              <p>The 10-phase journey and NIST's own maturity tiers.</p>
-            </a>
-          
-            <a class="site-tile" href="/core-principles" data-tab="coreprinciples">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3"></path><path d="M5 4.5c3-2 5 2 8 0s5 2 8 0v9c-3 2-5-2-8 0s-5-2-8 0"></path></svg></div>
-              <h4>Core Principles</h4>
-              <p>The cybersecurity philosophy this site is built on.</p>
-            </a>
-          
-            <a class="site-tile" href="/runbooks" data-tab="runbook">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.5h7l3.5 3.5V21H7z"></path><path d="M14 2.5V6h3.5"></path><path d="M9.3 12h5.4M9.3 15h5.4M9.3 18h3.4"></path></svg></div>
-              <h4>Runbooks</h4>
-              <p>IR plans, backup/DR, and step-by-step incident runbooks.</p>
-            </a>
-          
-            <a class="site-tile" href="/news" data-tab="news">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19.3v.01"></path><path d="M8.2 15.8a5.2 5.2 0 0 1 7.6 0"></path><path d="M5 12.3a9.2 9.2 0 0 1 14 0"></path></svg></div>
-              <h4>Trends &amp; News</h4>
-              <p>Current threats, AI-in-security developments, and where to keep learning.</p>
-            </a>
-          
-            <a class="site-tile" href="/case-studies" data-tab="casestudy">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
-              <h4>Case Studies</h4>
-              <p>Stuxnet, SolarWinds, Equifax, and other critical incidents.</p>
-            </a>
-          
-            <a class="site-tile" href="/playbooks" data-tab="playbooks">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="1.4"></rect><rect x="9" y="2.3" width="6" height="3" rx="1"></rect><path d="M9 12l1.8 1.8L15 10"></path></svg></div>
-              <h4>Playbooks</h4>
-              <p>OWASP Top 10 and AI-threat playbooks, mapped to MITRE ATT&amp;CK.</p>
-            </a>
-          
-            <a class="site-tile" href="/roadmap" data-tab="roadmap">
-              <div class="icon-badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2.3h6M12 2.3V5"></path></svg></div>
-              <h4>Roadmap</h4>
-              <p>What's shipped, in progress, and planned for this site itself.</p>
-            </a>
-          
-        </div>
         <div class="cta-row">
-          <a class="cta-btn" href="/assessment" id="ctaStart">Start an assessment →</a>
-          <a class="cta-btn secondary" href="/methodology" id="ctaMethod">See how scoring works</a>
+          <a class="cta-btn" href="/assessment" id="ctaDocsAssess">See where you stand first →</a>
         </div>
       </div>
     </div>
@@ -566,6 +345,7 @@
 </div>
 
 <script src="/assets/app.js"></script>
+
 
 
 
