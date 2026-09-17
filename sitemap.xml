@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://simplifiedcs.net/</loc><priority>1.0</priority></url>
+  <url><loc>https://simplifiedcs.net/assessment</loc><priority>0.9</priority></url>
+  <url><loc>https://simplifiedcs.net/what-is-simplifiedcs</loc><priority>0.8</priority></url>
+  <url><loc>https://simplifiedcs.net/methodology</loc><priority>0.7</priority></url>
+  <url><loc>https://simplifiedcs.net/maturity-model</loc><priority>0.7</priority></url>
+  <url><loc>https://simplifiedcs.net/core-principles</loc><priority>0.6</priority></url>
+  <url><loc>https://simplifiedcs.net/metrics</loc><priority>0.6</priority></url>
+  <url><loc>https://simplifiedcs.net/starter-guide</loc><priority>0.6</priority></url>
+  <url><loc>https://simplifiedcs.net/threat-modeling</loc><priority>0.6</priority></url>
+  <url><loc>https://simplifiedcs.net/security-tools-repository</loc><priority>0.6</priority></url>
+  <url><loc>https://simplifiedcs.net/roadmap</loc><priority>0.5</priority></url>
+  <url><loc>https://simplifiedcs.net/runbooks</loc><priority>0.6</priority></url>
+  <url><loc>https://simplifiedcs.net/playbooks</loc><priority>0.6</priority></url>
+  <url><loc>https://simplifiedcs.net/news</loc><priority>0.6</priority></url>
+  <url><loc>https://simplifiedcs.net/exploits</loc><priority>0.6</priority></url>
+  <url><loc>https://simplifiedcs.net/case-studies</loc><priority>0.6</priority></url>
+  <url><loc>https://simplifiedcs.net/glossary</loc><priority>0.5</priority></url>
+  <url><loc>https://simplifiedcs.net/references</loc><priority>0.5</priority></url>
+  <url><loc>https://simplifiedcs.net/about</loc><priority>0.4</priority></url>
+  <url><loc>https://simplifiedcs.net/history</loc><priority>0.3</priority></url>
+</urlset>
