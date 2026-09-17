@@ -1,21 +1,24 @@
-// Scheduled by .github/workflows/fetch-case-studies.yml (same thin-POST
-// pattern as fetch-news/fetch-exploits - GitHub Actions just triggers this,
-// all the real work happens here). Unlike fetch-news/fetch-exploits, there
-// is no free, structured, machine-readable feed of "major global cyber
-// incidents with narrative detail" the way there is for CISA KEV/NVD -
-// writing a genuine "what happened / how / what was exfiltrated / lesson /
-// safeguard" summary is inherently research-and-synthesis work, not field
-// reformatting. This function therefore calls the Claude API (with its
-// server-side web search tool) to research and draft candidate incidents,
-// then applies its own defensive validation before writing anything.
+// Triggered manually via .github/workflows/fetch-case-studies.yml (same
+// thin-POST pattern as fetch-news/fetch-exploits - GitHub Actions just
+// triggers this, all the real work happens here) - deliberately
+// workflow_dispatch only, no `schedule:` cron, run whenever the site owner
+// decides there's a need rather than automatically. Unlike fetch-news/
+// fetch-exploits, there is no free, structured, machine-readable feed of
+// "major global cyber incidents with narrative detail" the way there is for
+// CISA KEV/NVD - writing a genuine "what happened / how / what was
+// exfiltrated / lesson / safeguard" summary is inherently research-and-
+// synthesis work, not field reformatting. This function therefore calls the
+// Claude API (with its server-side web search tool) to research and draft
+// candidate incidents, then applies its own defensive validation before
+// writing anything.
 //
 // This is NOT a $0 job like its siblings - every real run that reaches the
 // Claude call costs a genuine API call, win or lose (found something or
-// not). That tradeoff was an explicit, informed choice by the site owner:
-// there is no free structured alternative that can produce this depth of
-// content, and the conservative reporting bar below (skip anything not
-// clearly verifiable) was also their explicit choice over "publish whatever
-// is found".
+// not) - part of why it's manual-only rather than scheduled. That tradeoff
+// was an explicit, informed choice by the site owner: there is no free
+// structured alternative that can produce this depth of content, and the
+// conservative reporting bar below (skip anything not clearly verifiable)
+// was also their explicit choice over "publish whatever is found".
 //
 // Requires the ANTHROPIC_API_KEY Supabase Edge Function secret (Project
 // Settings > Edge Functions > Secrets in the dashboard - never committed to
@@ -44,7 +47,12 @@ const WEB_SEARCH_MAX_USES = 12;
 // "found nothing" runs would never advance the rate-limit clock, and every
 // subsequent invocation (including a malicious repeat against this
 // public-anon-key-triggered endpoint) would re-run, and re-bill, freely.
-const MIN_RUN_INTERVAL_HOURS = 20;
+// Short, not the ~20h siblings use for their daily cadence - this job has
+// no schedule to protect against overlapping with, only accidental
+// double-clicks or a malicious repeat against the public anon-key-
+// triggered endpoint, and the site owner may legitimately want to trigger
+// it again shortly after an earlier run (e.g. right after fixing something).
+const MIN_RUN_INTERVAL_HOURS = 1;
 // Case studies are a curated, high-bar list (nine hand-picked watershed
 // incidents at the time this was built), not an ever-growing headline feed
 // like news_items - cap retention generously above that so genuine growth
@@ -99,7 +107,7 @@ const REPORT_TOOL = {
             summary_how: { type: "string", description: "2-3 sentences: the technical/procedural root cause." },
             summary_impact: { type: "string", description: "1-3 sentences: what data was exfiltrated, or the attacker's motive/damage if no data was stolen." },
             summary_lesson: { type: "string", description: "1-2 sentences: the core risk pattern this incident illustrates." },
-            summary_safeguard: { type: "string", description: "1-2 sentences: concrete, practical advice for how an organization can defend against this specific attack pattern." },
+            summary_safeguard: { type: "string", description: "1-2 sentences: concrete, practical advice written from the perspective of the organization that was actually attacked/breached - what specifically that victim could have done differently to prevent or contain this exact attack pattern, not generic security advice." },
           },
           required: [
             "external_id", "year", "incident_date", "title", "href", "source_name",
