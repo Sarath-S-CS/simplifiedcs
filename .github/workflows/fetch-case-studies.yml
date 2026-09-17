@@ -1,9 +1,12 @@
 name: Fetch Case Studies
 
 on:
-  schedule:
-    - cron: '30 10 * * *'  # Runs daily at 10:30 UTC (a different slot than fetch-news/fetch-exploits - see fetch-exploits.yml's note on scheduling drift)
-  workflow_dispatch:      # Lets you also trigger it manually from the Actions tab
+  # Manual only, deliberately - no `schedule:` trigger. Unlike fetch-news/
+  # fetch-exploits (free, structured government feeds), each real run of
+  # this one costs a genuine Claude API call, so it runs only when you
+  # decide there's a need: open this repo's Actions tab, select "Fetch
+  # Case Studies", and click "Run workflow".
+  workflow_dispatch:
 
 jobs:
   fetch-case-studies:

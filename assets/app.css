@@ -1681,7 +1681,15 @@
     display:block; margin-bottom:2px; color:var(--text);
     font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em;
   }
-  .case-source{ font-size:11.5px; color:var(--text-muted); margin:-4px 0 12px; }
+  .case-detail{ margin-bottom:12px; }
+  .case-detail summary{
+    font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.06em;
+    color:var(--accent-signal); cursor:pointer; padding:4px 0; list-style:none;
+  }
+  .case-detail summary::-webkit-details-marker{ display:none; }
+  .case-detail summary::before{ content:'▸ '; }
+  .case-detail[open] summary::before{ content:'▾ '; }
+  .case-detail[open] summary{ margin-bottom:8px; }
 
 
   /* --- Maturity Model tab --- */
