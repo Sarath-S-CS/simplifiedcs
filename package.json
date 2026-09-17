@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node scripts/build.js",
     "watch": "node scripts/build.js --watch",
+    "prerender": "node scripts/prerender.js",
     "test": "node --test"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "@types/node": "^26.2.0",
     "esbuild": "^0.24.0",
     "jsdom": "^25.0.0",
+    "puppeteer": "^23.0.0",
     "typescript": "^7.0.2"
   }
 }

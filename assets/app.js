@@ -57568,6 +57568,29 @@ ${suffix}`;
     history: "/history"
   };
   var PATH_TO_TAB = Object.fromEntries(Object.entries(ROUTES).map(([id, path]) => [path, id]));
+  var TAB_TITLES = {
+    home: "SimplifiedCS",
+    methodology: "Methodology - SimplifiedCS",
+    maturity: "Maturity Model - SimplifiedCS",
+    metrics: "Metrics - SimplifiedCS",
+    coreprinciples: "Core Principles - SimplifiedCS",
+    maturitymodel: "What Is SimplifiedCS?",
+    starterguide: "Starter Guide - SimplifiedCS",
+    threatmodeling: "Threat Modeling - SimplifiedCS",
+    securitytools: "Security Tools Repository - SimplifiedCS",
+    roadmap: "Roadmap - SimplifiedCS",
+    runbook: "Runbooks - SimplifiedCS",
+    news: "Cybersecurity News - SimplifiedCS",
+    exploits: "Exploit Tracker - SimplifiedCS",
+    casestudy: "Case Studies - SimplifiedCS",
+    playbooks: "Playbooks - SimplifiedCS",
+    glossary: "Glossary - SimplifiedCS",
+    references: "References - SimplifiedCS",
+    about: "About - SimplifiedCS",
+    feedback: "Feedback - SimplifiedCS",
+    assessment: "Assessment - SimplifiedCS",
+    history: "History - SimplifiedCS"
+  };
   function pathForTab(id, anchor) {
     const base = ROUTES[id] || "/";
     return anchor ? `${base}#${anchor}` : base;
@@ -59044,6 +59067,7 @@ ${suffix}`;
   }
   function renderActiveTab() {
     const container = document.getElementById("tabContent");
+    document.title = TAB_TITLES[activeTab] || "SimplifiedCS";
     if (activeTab === "home") renderHomeTab(container);
     else if (activeTab === "methodology") renderMethodologyTab(container);
     else if (activeTab === "maturity") renderMaturityTab(container);
