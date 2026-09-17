@@ -111,17 +111,39 @@ function externalizeBundle(html) {
 
 async function snapshotRoute(browser, routePath) {
   const page = await browser.newPage();
-  await page.goto(`http://localhost:${PORT}${routePath}`, { waitUntil: "networkidle0", timeout: 30000 });
-  // renderApp() re-renders #tabContent after a 160ms fade when content is
-  // already present, plus the tab's own async data fetch (news/exploits/
-  // case-studies read Supabase) - networkidle0 covers the fetch, this
-  // covers the fade/re-render's own timers settling afterward.
+  // Not networkidle0: head.html's gtag.js keeps a connection alive past the
+  // first page load, so "0 network connections" never actually happens
+  // again after that and navigation just times out. domcontentloaded is
+  // enough - the readiness check below is what actually waits for real
+  // content, including the async Supabase-backed tabs.
+  await page.goto(`http://localhost:${PORT}${routePath}`, { waitUntil: "domcontentloaded", timeout: 30000 });
+  // news/exploits/case-studies render a synchronous "Loading the latest…"
+  // placeholder into #tabContent *before* their Supabase fetch resolves
+  // (see renderNewsTab/renderCaseStudyTab in main.js) - a bare
+  // children.length check resolves on that placeholder, not the real data.
+  // Wait for the placeholder text to be gone too; tabs with no async fetch
+  // satisfy both conditions on their first synchronous render.
   await page.waitForFunction(
-    () => document.getElementById("tabContent")?.children.length > 0,
+    () => {
+      const tc = document.getElementById("tabContent");
+      return !!tc && tc.children.length > 0 && !tc.textContent.includes("Loading the latest");
+    },
     { timeout: 15000 }
   );
   await new Promise((r) => setTimeout(r, 300));
-  let html = await page.evaluate(() => document.documentElement.outerHTML);
+  // Belt-and-suspenders: waitForFunction above has, in practice, resolved
+  // once while the captured HTML moments later still showed the loading
+  // placeholder (a one-off flake, not reproduced on retry - root cause
+  // unconfirmed). Cheap enough to just double-check the actual captured
+  // text before trusting it, since this script's whole job is not
+  // snapshotting a placeholder.
+  let html;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    html = await page.evaluate(() => document.documentElement.outerHTML);
+    if (!html.includes("Loading the latest")) break;
+    if (attempt === 3) console.warn(`  WARNING: ${routePath} still shows a loading placeholder after retries`);
+    await new Promise((r) => setTimeout(r, 750));
+  }
   html = setCanonical(html, routePath);
   html = externalizeBundle(html);
   await page.close();
