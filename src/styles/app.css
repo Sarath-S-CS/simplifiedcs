@@ -1692,6 +1692,10 @@
   .case-detail[open] summary{ margin-bottom:8px; }
 
   /* --- Case Studies tab: Simulated Engagement (AI-READINESS-GOVERNANCE-BRIEF.md §3) --- */
+  .sim-highlight{ border-left:3px solid var(--accent-signal); }
+  .sim-highlight-row{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+  .sim-highlight-row > div{ flex:1 1 320px; }
+  .sim-highlight-link{ flex-shrink:0; }
   .sim-engagement{ margin-top:24px; }
   .sim-banner{ margin-top:4px; }
   .sim-subhead{ font-family:var(--mono); font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent-signal); margin:24px 0 10px; }

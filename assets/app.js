@@ -61688,8 +61688,8 @@ ${suffix}`;
     const counts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
     e2.findings.forEach((f3) => counts[riskSeverity(f3.likelihood, f3.impact)]++);
     return `
-    <div class="section-tile sim-engagement">
-      <div class="sample-banner sim-banner"><b>Simulated</b> A fictional engagement authored by Sarath to demonstrate this platform's assessment methodology - not a real company or a real historical incident.</div>
+    <div class="section-tile sim-engagement" id="sim-engagement">
+      <div class="sample-banner sim-banner"><b>Simulated</b> A fictional engagement - a personal project built to demonstrate this platform's own assessment methodology - not a real company or a real historical incident.</div>
       <h3 class="section-h">Simulated Engagement: AI Security Assessment</h3>
       <p class="body-text">${e2.summary}</p>
       <h4 class="sim-subhead">Architecture</h4>
@@ -61740,7 +61740,17 @@ ${suffix}`;
       <div class="page-intro">
         <div class="page-eyebrow">Learn From What Already Happened</div>
         <h2 class="page-title">Case Studies</h2>
-        <p class="page-lede">${countWord.charAt(0).toUpperCase()}${countWord.slice(1)} critical cybersecurity incidents - each one traces back to a gap this site is specifically built to catch before it becomes a headline.</p>
+        <p class="page-lede">${countWord.charAt(0).toUpperCase()}${countWord.slice(1)} critical cybersecurity incidents - each one traces back to a gap this site is specifically built to catch before it becomes a headline. This page covers two different things: real-world incidents that actually happened, and a simulated engagement - a personal project applying this same platform's methodology to a realistic AI deployment.</p>
+      </div>
+
+      <div class="section-tile sim-highlight">
+        <div class="sim-highlight-row">
+          <div>
+            <h3 class="section-h" style="margin-top:0">Also on this page: a simulated engagement</h3>
+            <p class="body-text">Alongside the real-world incidents below, I built a simulated AI security engagement - a personal project applying this platform's own assessment methodology to a realistic GenAI/RAG deployment, findings and all. It's clearly labeled as fictional throughout, not a real company or incident.</p>
+          </div>
+          <a class="cta-btn secondary sim-highlight-link" href="#sim-engagement">Take me there \u2192</a>
+        </div>
       </div>
 
       <div class="section-tile">
