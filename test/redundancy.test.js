@@ -40,6 +40,7 @@ import {
   OT_ORDER, OT_NODES,
 } from "../src/data/profile-questions.js";
 import { CONTAINERIZATION_ORDER, CONTAINERIZATION_NODES } from "../src/data/containerization.js";
+import { AI_GOVERNANCE_ORDER, AI_GOVERNANCE_NODES } from "../src/data/ai-governance.js";
 import { NIST_QUESTIONS } from "../src/data/nist-questions.js";
 import { FRAMEWORKS } from "../src/data/frameworks.js";
 
@@ -108,6 +109,17 @@ const KNOWN_OVERLAPS = [
   // explicitly build on the baseline answer instead of re-asking cold; the
   // remaining overlap is intentional, not a bug.
   { a: "vulnScanning", b: "pcidssASVScanning", reason: "§2: PCI DSS's quarterly-ASV requirement is a genuine refinement of the baseline scan question, not a duplicate - worded as an explicit follow-up" },
+  // --- AI-READINESS-GOVERNANCE-BRIEF.md §2: aiDeepfakeTraining is
+  // universal (no visibleIf), so it co-occurs with every scenario and
+  // legitimately shares "security awareness training" vocabulary with the
+  // existing training questions - it's a distinct fact (whether that
+  // training specifically covers AI-generated phishing/impersonation, not
+  // just whether training happens at all or how often).
+  { a: "training", b: "aiDeepfakeTraining", reason: "§2: whether training happens at all vs. whether it specifically covers AI-generated phishing/impersonation - different facts, shared 'training' vocabulary" },
+  { a: "trainingCadence", b: "aiDeepfakeTraining", reason: "§2: how often training runs vs. whether it specifically covers AI-generated phishing/impersonation - different facts, shared 'training' vocabulary" },
+  { a: "awarenessLms", b: "aiDeepfakeTraining", reason: "§2: cross-flow - which LMS platform (profile, unscored) vs. whether training content specifically covers AI-generated phishing (NIST, scored) - owning a platform isn't the same as what it covers" },
+  { a: "aiUsage", b: "aiUsageTypes", reason: "§2: parent gate question + its own usage-scoping multi-select follow-up" },
+  { a: "aiCustomAppRAG", b: "dataClass", reason: "§2: coincidental 'data' word overlap - whether a custom AI app retrieves internal documents/data vs. whether data is classified by sensitivity, unrelated facts" },
 ];
 
 function isKnownOverlap(a, b) {
@@ -138,6 +150,7 @@ function profileFlows() {
     infra: buildFlow(INFRA_ORDER, INFRA_NODES),
     container: buildFlow(CONTAINERIZATION_ORDER, CONTAINERIZATION_NODES),
     devsec: buildFlow(DEVSEC_ORDER, DEVSEC_NODES),
+    ai: buildFlow(AI_GOVERNANCE_ORDER, AI_GOVERNANCE_NODES),
     ot: buildFlow(OT_ORDER, OT_NODES),
   };
 }
@@ -165,6 +178,13 @@ function answerSharedProfileBaseline(state, flows) {
   answer(state, flows.container, "usesContainers", "Yes, some workloads");
   answer(state, flows.container, "usesVirtualization", "Yes, on-prem hypervisor (e.g. VMware, Hyper-V)");
   answer(state, flows.devsec, "developsSoftware", "Yes");
+  // Maximal AI coverage (every usage type selected, including custom-ai-app)
+  // so every new AI question - including the RAG-permissions follow-up -
+  // is visible at least once for this test's word-overlap scan, same
+  // "one representative baseline" treatment infra/container/devsec get.
+  answer(state, flows.ai, "aiUsage", "Yes, broadly across the organization");
+  answer(state, flows.ai, "aiUsageTypes", ["enterprise-ai", "free-personal-ai", "embedded-ai", "ai-dev-tools", "ai-cicd", "custom-ai-app"]);
+  answer(state, flows.ai, "aiCustomAppRAG", "Yes");
   answer(state, flows.ot, "hasOT", "Yes");
   answer(state, flows.ot, "otSegregation", "Partially segregated");
 }
@@ -283,7 +303,7 @@ test("content redundancy: representative team-structure branches, each layered o
     const state = createSessionState();
     answerSharedProfileBaseline(state, flows);
     scenario.apply(state, flows.team);
-    const visible = collectVisible(state, [flows.org, flows.team, flows.infra, flows.container, flows.devsec, flows.ot]);
+    const visible = collectVisible(state, [flows.org, flows.team, flows.infra, flows.container, flows.devsec, flows.ai, flows.ot]);
     const pairs = findSimilarPairs(visible.map((n) => ({ id: n.id, text: n.text })), SIMILARITY_THRESHOLD);
     const unexpected = pairs.filter((p) => !isKnownOverlap(p.a, p.b));
     if (unexpected.length) failures.push({ scenario: scenario.name, unexpected });
@@ -336,7 +356,7 @@ test("content redundancy: profile-flow questions against NIST assessment questio
     const state = createSessionState();
     answerSharedProfileBaseline(state, flows);
     scenario.apply(state, flows.team);
-    collectVisible(state, [flows.org, flows.team, flows.infra, flows.container, flows.devsec, flows.ot]).forEach((n) =>
+    collectVisible(state, [flows.org, flows.team, flows.infra, flows.container, flows.devsec, flows.ai, flows.ot]).forEach((n) =>
       allProfileVisible.set(n.id, n.text)
     );
   }
@@ -457,6 +477,7 @@ test("KNOWN_OVERLAPS stays accurate: every allowlisted pair still actually meets
   for (const n of INFRA_NODES) allTexts.set(n.id, n.text);
   for (const n of CONTAINERIZATION_NODES) allTexts.set(n.id, n.text);
   for (const n of DEVSEC_NODES) allTexts.set(n.id, n.text);
+  for (const n of AI_GOVERNANCE_NODES) allTexts.set(n.id, n.text);
   for (const n of OT_NODES) allTexts.set(n.id, n.text);
   for (const n of NIST_QUESTIONS) allTexts.set(n.id, n.text);
 

@@ -59,6 +59,15 @@ export function computeFlags(state) {
   if (answers.webDb === "Yes" && answers.dbEncryption === 0 && answers.dbAccessControl === 0) {
     flags.push({ id: "db-unencrypted-weak-access", text: "A database that isn't encrypted at rest, combined with routine application access through shared or admin credentials rather than least-privilege accounts, means a single leaked credential - or a misplaced backup - exposes the entire dataset in plain, readable form, not just whatever the compromised account was meant to touch." });
   }
+  // AI-READINESS-GOVERNANCE-BRIEF.md §2's own worked compounding-risk
+  // example: a custom AI app that retrieves internal data without
+  // respecting existing permissions, with nobody accountable for
+  // AI-specific risk, is the exact "shadow over-exposure" scenario the RAG
+  // permissions question exists to catch - two gaps that compound because
+  // the second means the first is unlikely to be noticed, let alone fixed.
+  if (answers.aiCustomAppRAG === "Yes" && answers.aiRagPermissions === 0 && answers.aiRiskOwnership === 0) {
+    flags.push({ id: "ai-rag-no-ownership", text: "A custom AI application retrieves your own internal documents without respecting the access permissions those documents already have, and there's no named owner for AI-related risk - meaning this over-exposure is both actively happening and unlikely to be noticed by anyone specifically responsible for catching it." });
+  }
   // Adapted for §5.2's team-structure rebuild: the direct equivalent of the
   // old "0 in-house staff + no formal management" combination is "outsourced
   // with no internal team, and not even a formal outsourced arrangement".
