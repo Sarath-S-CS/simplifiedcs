@@ -55,12 +55,17 @@ export const SAMPLE_ANSWERS = {
 
   hasOT: "No",
 
+  aiUsage: "Yes, limited to specific teams or tools",
+  aiUsageTypes: ["enterprise-ai", "ai-dev-tools", "custom-ai-app"],
+  aiCustomAppRAG: "Yes",
+
   govPolicy: 1,
   govRoles: 2,
   govReporting: 1,
   govRiskDecisions: 1,
   hipaaBAA: 1,
   aiToolGovernance: 1,
+  aiRiskOwnership: 2,
   assetInv: 1,
   dataClass: 2,
   vendorCount: 1,
@@ -74,6 +79,10 @@ export const SAMPLE_ANSWERS = {
   training: 2,
   phishingSim: 1,
   trainingCadence: 2,
+  aiRagPermissions: 1,
+  aiCodeReviewParity: 1,
+  aiDeepfakeTraining: 1,
+  aiVerificationStep: 1,
   endpoint: 2,
   rdpExposed: 2,
   emailAuth: 1,

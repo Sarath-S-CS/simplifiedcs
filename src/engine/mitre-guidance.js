@@ -152,6 +152,19 @@ export const FLAG_GUIDANCE = {
       "Enable at-rest encryption (a native feature on every major database engine and managed cloud database service - typically a configuration change, not a migration) and create a dedicated, least-privilege application account scoped to only what the app needs, retiring the shared/admin credential from routine use.",
     reference: ref("OWASP Top 10", "https://owasp.org/www-project-top-ten/"),
   },
+  "ai-rag-no-ownership": {
+    technique: t("T1213", "Data from Information Repositories"),
+    traceability: (a) => `You indicated your custom AI application retrieves internal documents/data ("${a.aiCustomAppRAG}"), that retrieval is permission-aware: "${chosenLabel("aiRagPermissions", a)}", and named AI-risk ownership: "${chosenLabel("aiRiskOwnership", a)}".`,
+    explain:
+      "This is exactly what this technique targets - pulling sensitive content out of an information repository like SharePoint or a document store. A RAG system that doesn't enforce the same permissions as its source documents effectively hands that access to anyone who can query it, not just people who'd normally be allowed to see that content - and with no named AI-risk owner, nobody is specifically positioned to notice.",
+    compensatingControl: (a) =>
+      a.aiCodeReviewParity !== 0
+        ? "AI-generated output does get at least some review, which is a related but separate control - as an immediate step, audit exactly which documents the retrieval system can currently reach and restrict its service account to a narrower, explicitly-approved set while permission-aware retrieval gets built."
+        : "As an immediate step, audit exactly which documents the retrieval system's service account can currently reach and restrict it to a narrower, explicitly-approved set - that bounds the exposure today, even before permission-aware retrieval is fully built.",
+    remediation: () =>
+      "Rebuild retrieval so it queries with the requesting user's own identity/permissions (not a broad service account), so results are filtered to what that specific user could already see in the source system - most enterprise RAG platforms (Microsoft 365 Copilot, Glean, and similar) support this natively. Separately, name an accountable owner for AI-related risk, even informally, so gaps like this one have someone specifically watching for them.",
+    reference: ref("MITRE ATT&CK: Data from Information Repositories (T1213)", "https://attack.mitre.org/techniques/T1213/"),
+  },
   "no-accountability": {
     technique: null,
     traceability: (a) => `You indicated your team structure is "${a.teamDedicated}" with outsourcing arrangement "${a.outsourcedStructure}".`,
@@ -318,6 +331,12 @@ export const QUESTION_GUIDANCE = {
     explain: "Ungoverned AI tool usage commonly means sensitive data gets pasted into third-party AI services with unclear data-retention/training terms, or unreviewed AI-generated code ships without the same scrutiny other code gets.",
     compensatingControl: () => "Publish a one-page \"don't paste this into AI tools\" list (customer data, credentials, source code) immediately, before a formal policy exists.",
     remediation: () => "Establish a formal AI usage policy naming approved tools, prohibited data categories, and track usage the same way other software is inventoried.",
+  },
+  aiRiskOwnership: {
+    technique: null,
+    explain: "Not a specific attacker technique - a structural gap, the same shape as the other governance/ownership questions in this report. Every AI-specific finding elsewhere assumes someone is positioned to act on it; without a named owner or an incident response plan that even considers an AI-specific scenario, that assumption doesn't hold.",
+    compensatingControl: () => "Name one person as the informal point of contact for AI-related risk today, even without a documented mandate yet, and add one sentence to your incident response plan (or a scratch doc, if no formal plan exists) naming at least one AI-specific scenario to consider.",
+    remediation: () => "Formally name an accountable owner for AI-related risk (this can be an existing security/governance role, not necessarily a new hire) and extend your incident response plan to explicitly cover at least one AI-specific scenario, such as sensitive data pasted into a public AI tool or an AI-generated social-engineering attempt.",
   },
 
   // ---------------- Identify ----------------
@@ -538,6 +557,33 @@ export const QUESTION_GUIDANCE = {
     explain: "Retaining full track data, CVV/CVC, or PIN data after authorization is explicitly prohibited by PCI DSS specifically because that data is what makes stolen card data usable for fraud - its presence turns any breach into a much more damaging one.",
     compensatingControl: () => "As an immediate step, identify exactly where this data is currently being retained and stop writing new records to that field/table today, even before historical data is purged.",
     remediation: () => "Purge any retained sensitive authentication data and reconfigure payment processing so it is never stored post-authorization - most payment processors provide tokenization specifically to avoid ever touching this data directly.",
+  },
+  aiRagPermissions: {
+    technique: t("T1213", "Data from Information Repositories"),
+    explain: "A RAG system that isn't permission-aware effectively becomes a way to read anything in the source repository it's connected to, regardless of who's asking - the same technique an attacker would use to pull sensitive content from SharePoint or a document store directly, just offered through a chat interface instead.",
+    compensatingControl: () => "As an immediate step, audit exactly which documents the retrieval system's service account can currently reach and restrict it to a narrower, explicitly-approved set while permission-aware retrieval gets built.",
+    remediation: () => "Rebuild retrieval so it queries with the requesting user's own identity/permissions rather than a broad service account, so results are filtered to what that specific user could already see in the source system - most enterprise RAG platforms support this natively.",
+    reference: ref("MITRE ATT&CK: Data from Information Repositories (T1213)", "https://attack.mitre.org/techniques/T1213/"),
+  },
+  aiCodeReviewParity: {
+    technique: t("T1195", "Supply Chain Compromise"),
+    explain: "AI-generated code merged without the same review as human-written code is untrusted input entering your codebase unvetted - the same underlying risk as an unreviewed third-party dependency, just from a different source.",
+    compensatingControl: () => "As an interim step, require a second human reviewer specifically for any pull request that includes substantial AI-generated code, even before a formal policy distinguishes AI-assisted from human-written contributions.",
+    remediation: () => "Apply your existing code review and CI security-gate requirements to AI-generated output with no exception - the source of a change shouldn't determine whether it gets reviewed.",
+  },
+  aiDeepfakeTraining: {
+    technique: t("T1566.004", "Phishing: Spearphishing Voice"),
+    explain: "Generative AI has made convincing voice and video impersonation cheap and fast to produce - training that only covers traditional email phishing leaves employees unprepared for a call or video message that sounds and looks like a real, trusted person.",
+    compensatingControl: () => "As an interim step, send one short briefing to employees now describing what an AI-generated voice/video impersonation attempt looks like, even before it's folded into a formal training update.",
+    remediation: () => "Update security awareness training to explicitly cover AI-generated phishing and voice/video impersonation, including at least one realistic example, alongside the existing traditional-phishing content.",
+    reference: ref("MITRE ATT&CK: Phishing: Spearphishing Voice (T1566.004)", "https://attack.mitre.org/techniques/T1566/004/"),
+  },
+  aiVerificationStep: {
+    technique: t("T1566.004", "Phishing: Spearphishing Voice"),
+    explain: "If a convincing voice or video impersonation is all it takes to authorize a payment change or a sensitive request, training alone won't reliably stop it - an out-of-band verification step is the control that holds even when every other channel is successfully spoofed.",
+    compensatingControl: () => "As an interim step, require any payment-change request to be confirmed by a callback to a phone number already on file (never a number provided in the request itself), even before a formal out-of-band process is documented.",
+    remediation: () => "Define and enforce an authenticated, out-of-band verification step (a callback to a known number, or in-person confirmation) for payment changes and other sensitive requests, documented as a required step regardless of how convincing the original request appeared.",
+    reference: ref("MITRE ATT&CK: Phishing: Spearphishing Voice (T1566.004)", "https://attack.mitre.org/techniques/T1566/004/"),
   },
 
   // ---------------- Detect ----------------

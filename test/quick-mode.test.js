@@ -19,6 +19,7 @@ import { createSessionState, recordAnswer } from "../src/engine/state.js";
 import { ORG_PROFILE_ORDER, ORG_PROFILE_NODES, INFRA_ORDER, INFRA_NODES, DEVSEC_ORDER, DEVSEC_NODES, OT_ORDER, OT_NODES } from "../src/data/profile-questions.js";
 import { TEAM_STRUCTURE_ORDER, TEAM_STRUCTURE_NODES } from "../src/data/team-structure.js";
 import { CONTAINERIZATION_ORDER, CONTAINERIZATION_NODES } from "../src/data/containerization.js";
+import { AI_GOVERNANCE_ORDER, AI_GOVERNANCE_NODES } from "../src/data/ai-governance.js";
 import { NIST_QUESTIONS } from "../src/data/nist-questions.js";
 import { computeFuncScores, computeOverall, computeFlags, computeGapItems, computePriorities } from "../src/engine/scoring.js";
 import { matchedVendorNotes } from "../src/data/vendor-notes.js";
@@ -37,6 +38,7 @@ function flows() {
     infra: buildFlow(INFRA_ORDER, INFRA_NODES),
     container: buildFlow(CONTAINERIZATION_ORDER, CONTAINERIZATION_NODES),
     devsec: buildFlow(DEVSEC_ORDER, DEVSEC_NODES),
+    ai: buildFlow(AI_GOVERNANCE_ORDER, AI_GOVERNANCE_NODES),
     ot: buildFlow(OT_ORDER, OT_NODES),
     nist: assessmentFlow(),
   };
@@ -88,6 +90,10 @@ const WEAK_ANSWERS = {
   devsecopsMaturity: "No formal practice - security reviewed late, if at all",
   secretsManagement: "Hardcoded or stored in plain config files",
 
+  aiUsage: "Yes, broadly across the organization",
+  aiUsageTypes: ["custom-ai-app", "ai-dev-tools"],
+  aiCustomAppRAG: "Yes",
+
   hasOT: "Yes",
   otSegregation: "No - flat/shared network",
   otRemoteAccess: "Yes, but not via a dedicated secure gateway",
@@ -100,6 +106,7 @@ const WEAK_ANSWERS = {
   govReporting: 0,
   govRiskDecisions: 0,
   aiToolGovernance: 0,
+  aiRiskOwnership: 0,
   isoIsms: 0,
   assetInv: 0,
   dataClass: 0,
@@ -113,6 +120,10 @@ const WEAK_ANSWERS = {
   dbPatching: 1,
   training: 0,
   phishingSim: 0,
+  aiRagPermissions: 0,
+  aiCodeReviewParity: 0,
+  aiDeepfakeTraining: 0,
+  aiVerificationStep: 0,
   endpoint: 1,
   rdpExposed: 0,
   emailAuth: 0,
@@ -163,6 +174,7 @@ function runScenario(quickMode) {
   driveFlow(state, f.infra);
   driveFlow(state, f.container);
   driveFlow(state, f.devsec);
+  driveFlow(state, f.ai);
   driveFlow(state, f.ot);
   driveFlow(state, f.nist);
   return state;

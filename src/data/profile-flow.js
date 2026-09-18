@@ -8,6 +8,7 @@ import { buildFlow } from "../engine/graph.js";
 import { ORG_PROFILE_ORDER, ORG_PROFILE_NODES, INFRA_ORDER, INFRA_NODES, DEVSEC_ORDER, DEVSEC_NODES, OT_ORDER, OT_NODES, otSectionSkipped } from "./profile-questions.js";
 import { TEAM_STRUCTURE_ORDER, TEAM_STRUCTURE_NODES } from "./team-structure.js";
 import { CONTAINERIZATION_ORDER, CONTAINERIZATION_NODES } from "./containerization.js";
+import { AI_GOVERNANCE_ORDER, AI_GOVERNANCE_NODES } from "./ai-governance.js";
 
 export const PROFILE_SCREENS = [
   {
@@ -39,6 +40,12 @@ export const PROFILE_SCREENS = [
     title: "Software Delivery & DevSecOps",
     sub: "Only applicable if you build software - the first question determines whether the rest of this screen applies.",
     flow: buildFlow(DEVSEC_ORDER, DEVSEC_NODES),
+  },
+  {
+    id: "ai",
+    title: "AI Readiness & Governance",
+    sub: "Following EC-Council's Adopt/Defend/Govern framework - how AI shows up in your environment shapes which of the following questions actually apply.",
+    flow: buildFlow(AI_GOVERNANCE_ORDER, AI_GOVERNANCE_NODES),
   },
   {
     id: "ot",

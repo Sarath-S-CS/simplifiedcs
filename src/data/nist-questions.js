@@ -6,6 +6,7 @@
 // keep their original visibility gating: shown only when that framework is
 // selected in scope.
 import { FUNC_DISPLAY, FUNC_REF } from "./categories.js";
+import { usesAiDevOrCicd } from "./ai-governance.js";
 
 export const SECTION_META = {
   Govern: { sub: "The mandate and oversight that make everything else more than good intentions." },
@@ -60,6 +61,15 @@ export const NIST_QUESTIONS = [
     { v: 0, t: "Used with no tracking or policy" },
     { v: 1, t: "Used informally - some awareness, no formal policy" },
     { v: 2, t: "A formal AI usage policy exists and usage is tracked" },
+  ]),
+  // AI-READINESS-GOVERNANCE-BRIEF.md §2, Govern-tier - shown to everyone,
+  // regardless of the AI-usage gate answer (an org with no AI adoption
+  // today still benefits from a named owner and an IR plan that at least
+  // considers an AI-specific scenario before one actually happens).
+  scored("Govern", "aiRiskOwnership", "Is there a named, accountable owner for AI-related risk in your organization (even informally), and does your incident response plan address at least one AI-specific scenario (e.g. sensitive data pasted into a public AI tool, an AI-generated attack)?", [
+    { v: 0, t: "No named owner and no AI-specific IR scenario" },
+    { v: 1, t: "One but not both - a named owner, or an IR scenario, not both" },
+    { v: 2, t: "Yes - both a named owner and at least one AI-specific IR scenario" },
   ]),
 
   // Identify
@@ -201,6 +211,34 @@ export const NIST_QUESTIONS = [
   scored("Protect", "pcidssSensitiveAuthData", "Do you store sensitive authentication data (full track data, CVV/CVC, PIN) after authorization?", [
     { v: 0, t: "Yes, some is retained" }, { v: 1, t: "Not sure" }, { v: 2, t: "No, none is stored post-authorization" },
   ], { framework: "pcidss" }),
+  // AI-READINESS-GOVERNANCE-BRIEF.md §2 - the single most important
+  // RAG-security question from the brief's reference material:
+  // over-permissioned retrieval, where a custom AI app can surface more
+  // than a given user would normally be able to see. Only meaningful once
+  // a custom AI app is in use AND that app retrieves internal documents.
+  scored("Protect", "aiRagPermissions", "Does that retrieval respect the same access permissions the underlying documents already have, or could someone using it potentially see more than they'd normally have access to?", [
+    { v: 0, t: "No / not sure - retrieval isn't permission-aware" },
+    { v: 1, t: "Partially - some permission boundaries respected, not comprehensively enforced" },
+    { v: 2, t: "Yes, retrieval enforces the same permissions as the source documents" },
+  ], { visibleIf: (answers) => answers.aiCustomAppRAG === "Yes" }),
+  scored("Protect", "aiCodeReviewParity", "Is AI-generated code or AI tool output reviewed the same way human-written code is, before being merged or deployed?", [
+    { v: 0, t: "No - AI-generated output is trusted and merged/deployed without the same review" },
+    { v: 1, t: "Partially - reviewed sometimes, not consistently" },
+    { v: 2, t: "Yes, the same review standard applies regardless of source" },
+  ], { visibleIf: (answers) => usesAiDevOrCicd(answers) }),
+  // Universal - shown to everyone regardless of the AI-usage gate, since
+  // this defends against AI-powered adversaries even for an org that has
+  // adopted no AI tools itself.
+  scored("Protect", "aiDeepfakeTraining", "Has security awareness training been updated to address AI-generated phishing and voice/video impersonation specifically, not just traditional phishing?", [
+    { v: 0, t: "No - training doesn't address AI-generated phishing or impersonation specifically" },
+    { v: 1, t: "Mentioned, but not a dedicated focus" },
+    { v: 2, t: "Yes, specifically covers AI-generated phishing and deepfake impersonation" },
+  ]),
+  scored("Protect", "aiVerificationStep", "For payment changes or other sensitive requests, is there an authenticated, out-of-band verification step that would still hold up even if email, voice, and video were all convincingly impersonated?", [
+    { v: 0, t: "No - relies on the requester's identity as presented" },
+    { v: 1, t: "Some verification exists, but not out-of-band or not consistently applied" },
+    { v: 2, t: "Yes, a defined out-of-band verification step is required" },
+  ]),
 
   // Detect
   scored("Detect", "siem", "Do you have centralized logging (SIEM or equivalent)?", [

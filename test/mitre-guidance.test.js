@@ -37,6 +37,9 @@ function stateWithMostFlags() {
     secretsManagement: "Hardcoded or stored in plain config files",
     usesContainers: "Yes, most/all workloads",
     containerImageScanning: "No",
+    aiCustomAppRAG: "Yes",
+    aiRagPermissions: 0,
+    aiRiskOwnership: 0,
   });
   return state;
 }
@@ -52,8 +55,8 @@ test("every flag id computeFlags() can produce has a FLAG_GUIDANCE entry", () =>
   const idsB = computeFlags(stateWithPhishingSimFlag()).map((f) => f.id);
   const fired = new Set([...idsA, ...idsB]);
 
-  // Sanity: this test's two states are expected to exercise all 17 flags.
-  assert.equal(fired.size, 17, `expected 17 distinct flags to fire, got ${fired.size}: ${[...fired].join(", ")}`);
+  // Sanity: this test's two states are expected to exercise all 18 flags.
+  assert.equal(fired.size, 18, `expected 18 distinct flags to fire, got ${fired.size}: ${[...fired].join(", ")}`);
 
   for (const id of fired) {
     assert.ok(Object.prototype.hasOwnProperty.call(FLAG_GUIDANCE, id), `no FLAG_GUIDANCE entry for fired flag "${id}"`);
