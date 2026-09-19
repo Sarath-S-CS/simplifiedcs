@@ -1579,10 +1579,18 @@
     .phase-card{ width:100%; max-width:320px; }
     .phase-arrow{ transform:scale(0.6) rotate(90deg); }
     .phase-arrow.in{ transform:scale(1) rotate(90deg); }
+    /* Below this breakpoint the panel becomes a flex child of .phases-row
+       itself (re-parented next to whichever card opened it, so it reads as
+       "under the selected card" instead of always trailing Optimize once
+       cards stack in a column) - needs the same explicit width .phase-card
+       gets, since .phases-row's align-items:center no longer stretches it. */
+    .stage-detail-panel{ width:100%; max-width:320px; }
   }
-  /* The panel is a normal in-flow sibling right after .phases-row, inside
+  /* Desktop: a normal in-flow sibling right after .phases-row, inside
      .phases-stage (always the same spot, regardless of which card was
-     clicked) - see the click handler in renderHomeTab() for why. */
+     clicked - reads fine there since the row is horizontal). Mobile
+     re-parents it next to the clicked card instead - see the click handler
+     in renderHomeTab() for why both are correct on their own breakpoint. */
   .stage-detail-panel{
     text-align:left;
     margin-top:16px; padding:20px 22px; background:var(--overlay-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line);
