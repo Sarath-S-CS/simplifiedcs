@@ -1800,10 +1800,24 @@ function renderHomeTab(container){
       openStageDetail = sid;
       container.querySelectorAll('[data-stage-detail]').forEach(c=>c.classList.remove('stage-active'));
       el.classList.add('stage-active');
-      // The panel has one fixed home - a normal in-flow sibling right after
-      // .phases-row, inside .phases-stage - rather than being re-parented
-      // into whichever card was clicked; the panel's own heading/color
-      // identify which phase it's showing.
+      // Desktop keeps the panel's one fixed home - a normal in-flow sibling
+      // right after .phases-row, inside the sticky .phases-stage, so it
+      // never drifts under the cursor during the scroll-linked reveal (see
+      // wirePhasesAssembly above) - regardless of which card in the row was
+      // clicked, "below the row" reads fine since the row is horizontal.
+      // Below the 761px breakpoint, wirePhasesAssembly's own isDesktop check
+      // already disables that scroll-linked reveal entirely and cards stack
+      // in a column instead, where "below the row" actually means "below
+      // Optimize" no matter which card you clicked - so on mobile the panel
+      // is re-parented to sit directly after the clicked card instead,
+      // reusing the exact same breakpoint wirePhasesAssembly already checks.
+      const isDesktop = window.matchMedia('(min-width:761px)').matches;
+      const phasesRow = container.querySelector('.phases-row');
+      if(isDesktop && phasesRow){
+        phasesRow.insertAdjacentElement('afterend', panel);
+      } else {
+        el.insertAdjacentElement('afterend', panel);
+      }
       const openTile = el.closest('.section-tile');
       if(openTile) openTile.classList.add('has-open-overlay');
       panel.innerHTML = `
@@ -1829,9 +1843,12 @@ function renderHomeTab(container){
       closeRiskDesc();
     }
   });
-  // The panel is a normal in-flow sibling of .phases-row (inside the
-  // sticky .phases-stage), so it doesn't drift under the cursor during
-  // scroll. It only needs to close on an outside click, same as riskDesc.
+  // On desktop the panel is a normal in-flow sibling of .phases-row (inside
+  // the sticky .phases-stage), so it doesn't drift under the cursor during
+  // scroll; on mobile it's re-parented next to whichever card opened it
+  // (see the click handler above). Either way it only needs to close on an
+  // outside click, same as riskDesc - .closest('.phases-row') still finds
+  // it correctly once mobile nests it inside that same row.
 
   container.querySelectorAll('.risk-slider-tick').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
