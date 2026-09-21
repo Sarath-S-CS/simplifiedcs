@@ -60038,7 +60038,7 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMethodFromMetrics1"), "methodology");
     wireNavLink(document.getElementById("linkMaturityFromMetrics"), "maturity");
   }
-  var SITE_LAST_UPDATED = "September 19, 2026";
+  var SITE_LAST_UPDATED = "September 22, 2026";
   var ROADMAP_SHIPPED = [
     { module: "Adaptive Assessment Engine", desc: "Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice." },
     { module: "AI Readiness & Governance Track", desc: "A dedicated question track following EC-Council's Adopt/Defend/Govern framework - scoping how AI actually shows up in your environment (licensed platforms, embedded vendor features, custom RAG apps), over-permissioned-retrieval and AI-generated-code review questions where they apply, and defenses against AI-powered social engineering (deepfake/voice-impersonation-aware training, out-of-band verification) for every organization, regardless of whether it has adopted AI itself. Partially fulfills the Cyber Threat Intelligence item below - AI-specific threat coverage is now real, not just planned." },
