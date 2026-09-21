@@ -1,13 +1,27 @@
-// Captures a real, fully-rendered HTML snapshot of every route into
-// <route>/index.html at the repo root - e.g. methodology/index.html,
-// case-studies/index.html. Netlify serves a literal file over the
-// _redirects catch-all (/* /index.html 200) automatically, so these
-// snapshots become what crawlers and link-preview bots (LinkedIn, Slack,
-// WhatsApp, iMessage, Facebook, X - none of which execute JavaScript) see
-// instead of the empty <div id="tabContent"></div> the raw SPA shell
-// serves today. Real users are unaffected: the snapshot still carries the
-// same inline JS bundle, which runs immediately and re-renders the tab
-// exactly as the live SPA always has.
+// Captures a real, fully-rendered HTML snapshot of every route into a flat
+// <route>.html file at the repo root - e.g. methodology.html,
+// case-studies.html, assessment/sample.html. Netlify serves a literal file
+// over the _redirects catch-all (/* /index.html 200) automatically, so
+// these snapshots become what crawlers and link-preview bots (LinkedIn,
+// Slack, WhatsApp, iMessage, Facebook, X - none of which execute
+// JavaScript) see instead of the empty <div id="tabContent"></div> the raw
+// SPA shell serves today. Real users are unaffected: the snapshot still
+// carries the same inline JS bundle, which runs immediately and re-renders
+// the tab exactly as the live SPA always has.
+//
+// Deliberately flat files, NOT <route>/index.html - an earlier version
+// used that directory form, and live Netlify hosting (confirmed directly,
+// not assumed - local testing never caught this since scripts/serve.js has
+// no redirect logic at all) 301-redirects a bare request for an existing
+// directory to its own trailing-slash form before anything else gets a
+// say, e.g. /methodology -> /methodology/. Every prerendered page's own
+// canonical tag pointed at the bare (pre-redirect) URL, so Google saw a
+// page that redirects away from the exact URL it claims is canonical -
+// Search Console's real "Duplicate without user-selected canonical" cause.
+// Netlify's clean-URL resolution tries <path>.html before <path>/index.html
+// for a request with no extension, so a flat file gets served directly at
+// the bare URL with no redirect at all - the same reason the homepage
+// (plain index.html, never a directory) never had this problem.
 //
 // Manual, run alongside `npm run build` - not wired into CI. Re-run it
 // after content changes worth re-snapshotting (copy edits, new case
@@ -160,10 +174,16 @@ async function writeRoute(routePath, html) {
     await writeFile(path.join(root, "index.html"), html);
     return "index.html";
   }
-  const dir = path.join(root, routePath.slice(1));
+  // e.g. "/methodology" -> "methodology.html" (flat, at the repo root);
+  // "/assessment/sample" -> "assessment/sample.html" (flat file inside the
+  // assessment/ directory - that directory has no index.html of its own,
+  // so bare /assessment still correctly falls through to the SPA shell,
+  // unaffected by this route's own snapshot existing one level down).
+  const relPath = `${routePath.slice(1)}.html`;
+  const dir = path.dirname(path.join(root, relPath));
   await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, "index.html"), html);
-  return `${routePath.slice(1)}/index.html`;
+  await writeFile(path.join(root, relPath), html);
+  return relPath;
 }
 
 async function main() {
