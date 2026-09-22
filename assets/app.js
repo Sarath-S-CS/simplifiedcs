@@ -61628,7 +61628,7 @@ ${suffix}`;
   }
   function renderSimulatedArchitecture() {
     return `
-    <svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" class="sim-arch-svg" role="img" aria-label="Architecture: User, through the GenAI Assistant and Azure OpenAI, to SharePoint Online and back">
+    <svg viewBox="0 0 930 210" xmlns="http://www.w3.org/2000/svg" class="sim-arch-svg" role="img" aria-label="Architecture: User, through the GenAI Assistant and Azure OpenAI, to SharePoint Online and back">
       <defs>
         <marker id="simArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="var(--accent-signal)"/>
@@ -61637,40 +61637,40 @@ ${suffix}`;
           <path d="M0,0 L10,5 L0,10 z" fill="var(--text-muted)"/>
         </marker>
       </defs>
-      <line x1="112" y1="70" x2="172" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
-      <line x1="322" y1="70" x2="392" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
-      <line x1="542" y1="60" x2="602" y2="60" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
-      <line x1="602" y1="82" x2="542" y2="82" stroke="var(--accent-critical)" stroke-width="2" marker-end="url(#simArrowMuted)"/>
-      <path d="M665,122 C665,188 92,188 92,122" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#simArrowMuted)"/>
-      <text x="378" y="152" text-anchor="middle" font-family="var(--mono)" font-size="10.5" fill="var(--text-muted)" letter-spacing="0.02em">\u2464 LLM output \u2192 user</text>
-      <text x="142" y="58" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">\u2460 user \u2192 app</text>
-      <text x="357" y="58" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">\u2461 app \u2192 Azure</text>
-      <text x="572" y="48" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">\u2462 retrieval</text>
-      <text x="572" y="97" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--accent-critical)" letter-spacing="0.02em">\u2463 retrieved data</text>
+      <line x1="112" y1="70" x2="217" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
+      <line x1="367" y1="70" x2="472" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
+      <line x1="622" y1="60" x2="757" y2="60" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
+      <line x1="757" y1="82" x2="622" y2="82" stroke="var(--accent-critical)" stroke-width="2" marker-end="url(#simArrowMuted)"/>
+      <path d="M816,122 C816,188 92,188 92,122" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#simArrowMuted)"/>
+      <text x="454" y="152" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">\u2464</tspan><tspan font-size="10.5"> LLM output \u2192 user</tspan></text>
+      <text x="164" y="58" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">\u2460</tspan><tspan font-size="10"> user \u2192 app</tspan></text>
+      <text x="419" y="58" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">\u2461</tspan><tspan font-size="10"> app \u2192 Azure</tspan></text>
+      <text x="689" y="48" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">\u2462</tspan><tspan font-size="10"> retrieval</tspan></text>
+      <text x="689" y="97" text-anchor="middle" font-family="var(--mono)" fill="var(--accent-critical)" letter-spacing="0.02em"><tspan font-size="13">\u2463</tspan><tspan font-size="10"> retrieved data</tspan></text>
       <g>
         <rect x="20" y="40" width="92" height="72" rx="8" fill="var(--tile-bg)" stroke="var(--line)"/>
         <text x="66" y="72" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">User</text>
         <text x="66" y="88" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Contoso staff</text>
       </g>
       <g>
-        <rect x="172" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"/>
-        <text x="247" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">GenAI Assistant</text>
-        <text x="247" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Microsoft 365</text>
-        <text x="247" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Entra ID auth</text>
+        <rect x="217" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"/>
+        <text x="292" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">GenAI Assistant</text>
+        <text x="292" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Microsoft 365</text>
+        <text x="292" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Entra ID auth</text>
       </g>
       <g>
-        <rect x="392" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"/>
-        <text x="467" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">Azure OpenAI</text>
-        <text x="467" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">RAG orchestration</text>
+        <rect x="472" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"/>
+        <text x="547" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">Azure OpenAI</text>
+        <text x="547" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">RAG orchestration</text>
       </g>
       <g>
-        <rect x="602" y="30" width="138" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-critical)"/>
-        <text x="671" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">SharePoint</text>
-        <text x="671" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Online</text>
-        <text x="671" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">document retrieval</text>
+        <rect x="757" y="30" width="138" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-critical)"/>
+        <text x="826" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">SharePoint</text>
+        <text x="826" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Online</text>
+        <text x="826" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">document retrieval</text>
       </g>
     </svg>
-    <p class="sim-arch-legend">Five trust boundaries: <b>\u2460 user \u2192 app</b> \xB7 <b>\u2461 app \u2192 Azure services</b> \xB7 <b>\u2462 retrieval \u2192 SharePoint</b> \xB7 <b>\u2463 retrieved data \u2192 LLM</b> (the boundary Finding 2 below crosses) \xB7 <b>\u2464 LLM output \u2192 user</b>.</p>
+    <p class="sim-arch-legend">Five trust boundaries: <b>\u2460 user \u2192 app</b> \xB7 <b>\u2461 app \u2192 Azure services</b> \xB7 <b>\u2462 retrieval \u2192 SharePoint</b><br>\xB7 <b>\u2463 retrieved data \u2192 LLM</b> (the boundary Finding 2 below crosses) \xB7 <b>\u2464 LLM output \u2192 user</b>.</p>
   `;
   }
   function renderSimulatedFinding(f3, i3) {

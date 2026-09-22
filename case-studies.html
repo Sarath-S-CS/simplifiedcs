@@ -372,7 +372,7 @@
       <h4 class="sim-subhead">Architecture</h4>
       <p class="body-text">A user asks the assistant a question inside Microsoft 365; the app authenticates them via Entra ID, then calls Azure OpenAI, which retrieves relevant SharePoint content to ground its answer before responding. Five trust boundaries matter here - user to app, app to Azure services, retrieval to SharePoint, retrieved data to the LLM (the boundary an attacker who can write to SharePoint gets to cross for free), and the LLM's output back to the user.</p>
       <div class="sim-arch-wrap">
-    <svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" class="sim-arch-svg" role="img" aria-label="Architecture: User, through the GenAI Assistant and Azure OpenAI, to SharePoint Online and back">
+    <svg viewBox="0 0 930 210" xmlns="http://www.w3.org/2000/svg" class="sim-arch-svg" role="img" aria-label="Architecture: User, through the GenAI Assistant and Azure OpenAI, to SharePoint Online and back">
       <defs>
         <marker id="simArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="var(--accent-signal)"></path>
@@ -381,40 +381,40 @@
           <path d="M0,0 L10,5 L0,10 z" fill="var(--text-muted)"></path>
         </marker>
       </defs>
-      <line x1="112" y1="70" x2="172" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"></line>
-      <line x1="322" y1="70" x2="392" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"></line>
-      <line x1="542" y1="60" x2="602" y2="60" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"></line>
-      <line x1="602" y1="82" x2="542" y2="82" stroke="var(--accent-critical)" stroke-width="2" marker-end="url(#simArrowMuted)"></line>
-      <path d="M665,122 C665,188 92,188 92,122" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#simArrowMuted)"></path>
-      <text x="378" y="152" text-anchor="middle" font-family="var(--mono)" font-size="10.5" fill="var(--text-muted)" letter-spacing="0.02em">⑤ LLM output → user</text>
-      <text x="142" y="58" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">① user → app</text>
-      <text x="357" y="58" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">② app → Azure</text>
-      <text x="572" y="48" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">③ retrieval</text>
-      <text x="572" y="97" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--accent-critical)" letter-spacing="0.02em">④ retrieved data</text>
+      <line x1="112" y1="70" x2="217" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"></line>
+      <line x1="367" y1="70" x2="472" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"></line>
+      <line x1="622" y1="60" x2="757" y2="60" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"></line>
+      <line x1="757" y1="82" x2="622" y2="82" stroke="var(--accent-critical)" stroke-width="2" marker-end="url(#simArrowMuted)"></line>
+      <path d="M816,122 C816,188 92,188 92,122" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#simArrowMuted)"></path>
+      <text x="454" y="152" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">⑤</tspan><tspan font-size="10.5"> LLM output → user</tspan></text>
+      <text x="164" y="58" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">①</tspan><tspan font-size="10"> user → app</tspan></text>
+      <text x="419" y="58" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">②</tspan><tspan font-size="10"> app → Azure</tspan></text>
+      <text x="689" y="48" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">③</tspan><tspan font-size="10"> retrieval</tspan></text>
+      <text x="689" y="97" text-anchor="middle" font-family="var(--mono)" fill="var(--accent-critical)" letter-spacing="0.02em"><tspan font-size="13">④</tspan><tspan font-size="10"> retrieved data</tspan></text>
       <g>
         <rect x="20" y="40" width="92" height="72" rx="8" fill="var(--tile-bg)" stroke="var(--line)"></rect>
         <text x="66" y="72" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">User</text>
         <text x="66" y="88" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Contoso staff</text>
       </g>
       <g>
-        <rect x="172" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"></rect>
-        <text x="247" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">GenAI Assistant</text>
-        <text x="247" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Microsoft 365</text>
-        <text x="247" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Entra ID auth</text>
+        <rect x="217" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"></rect>
+        <text x="292" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">GenAI Assistant</text>
+        <text x="292" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Microsoft 365</text>
+        <text x="292" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Entra ID auth</text>
       </g>
       <g>
-        <rect x="392" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"></rect>
-        <text x="467" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">Azure OpenAI</text>
-        <text x="467" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">RAG orchestration</text>
+        <rect x="472" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"></rect>
+        <text x="547" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">Azure OpenAI</text>
+        <text x="547" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">RAG orchestration</text>
       </g>
       <g>
-        <rect x="602" y="30" width="138" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-critical)"></rect>
-        <text x="671" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">SharePoint</text>
-        <text x="671" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Online</text>
-        <text x="671" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">document retrieval</text>
+        <rect x="757" y="30" width="138" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-critical)"></rect>
+        <text x="826" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">SharePoint</text>
+        <text x="826" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Online</text>
+        <text x="826" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">document retrieval</text>
       </g>
     </svg>
-    <p class="sim-arch-legend">Five trust boundaries: <b>① user → app</b> · <b>② app → Azure services</b> · <b>③ retrieval → SharePoint</b> · <b>④ retrieved data → LLM</b> (the boundary Finding 2 below crosses) · <b>⑤ LLM output → user</b>.</p>
+    <p class="sim-arch-legend">Five trust boundaries: <b>① user → app</b> · <b>② app → Azure services</b> · <b>③ retrieval → SharePoint</b><br>· <b>④ retrieved data → LLM</b> (the boundary Finding 2 below crosses) · <b>⑤ LLM output → user</b>.</p>
   </div>
       <h4 class="sim-subhead">Findings</h4>
       <p class="sim-severity-summary">1 Critical · 3 High · 2 Medium · 1 Low</p>
