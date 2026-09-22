@@ -4090,8 +4090,19 @@ async function loadCaseStudiesData(){
 // asks for called out as a numbered legend underneath rather than five
 // separate crossing arrows, which would turn "simple" into a tangle.
 function renderSimulatedArchitecture(){
+  // Gap widths were previously fixed (60-70px) regardless of label length -
+  // "③ retrieval" (~68px) and especially "④ retrieved data" (~99px) never
+  // fit inside a 60px gap at any font size this diagram uses, so both
+  // spilled horizontally into the Azure OpenAI/SharePoint tiles on either
+  // side of them, not just past a single number that looked small. Every
+  // gap below is sized from the actual rendered width of the label it
+  // holds (measured via SVGTextElement.getComputedTextLength(), not
+  // estimated) plus real margin, not just widened until it looked right at
+  // one zoom level. The circled number in each label also gets its own
+  // larger tspan - legibility was the other half of the complaint, not
+  // just the overlap.
   return `
-    <svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" class="sim-arch-svg" role="img" aria-label="Architecture: User, through the GenAI Assistant and Azure OpenAI, to SharePoint Online and back">
+    <svg viewBox="0 0 930 210" xmlns="http://www.w3.org/2000/svg" class="sim-arch-svg" role="img" aria-label="Architecture: User, through the GenAI Assistant and Azure OpenAI, to SharePoint Online and back">
       <defs>
         <marker id="simArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="var(--accent-signal)"/>
@@ -4100,40 +4111,40 @@ function renderSimulatedArchitecture(){
           <path d="M0,0 L10,5 L0,10 z" fill="var(--text-muted)"/>
         </marker>
       </defs>
-      <line x1="112" y1="70" x2="172" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
-      <line x1="322" y1="70" x2="392" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
-      <line x1="542" y1="60" x2="602" y2="60" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
-      <line x1="602" y1="82" x2="542" y2="82" stroke="var(--accent-critical)" stroke-width="2" marker-end="url(#simArrowMuted)"/>
-      <path d="M665,122 C665,188 92,188 92,122" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#simArrowMuted)"/>
-      <text x="378" y="152" text-anchor="middle" font-family="var(--mono)" font-size="10.5" fill="var(--text-muted)" letter-spacing="0.02em">⑤ LLM output → user</text>
-      <text x="142" y="58" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">① user → app</text>
-      <text x="357" y="58" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">② app → Azure</text>
-      <text x="572" y="48" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">③ retrieval</text>
-      <text x="572" y="97" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--accent-critical)" letter-spacing="0.02em">④ retrieved data</text>
+      <line x1="112" y1="70" x2="217" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
+      <line x1="367" y1="70" x2="472" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
+      <line x1="622" y1="60" x2="757" y2="60" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
+      <line x1="757" y1="82" x2="622" y2="82" stroke="var(--accent-critical)" stroke-width="2" marker-end="url(#simArrowMuted)"/>
+      <path d="M816,122 C816,188 92,188 92,122" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#simArrowMuted)"/>
+      <text x="454" y="152" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">⑤</tspan><tspan font-size="10.5"> LLM output → user</tspan></text>
+      <text x="164" y="58" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">①</tspan><tspan font-size="10"> user → app</tspan></text>
+      <text x="419" y="58" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">②</tspan><tspan font-size="10"> app → Azure</tspan></text>
+      <text x="689" y="48" text-anchor="middle" font-family="var(--mono)" fill="var(--text-muted)" letter-spacing="0.02em"><tspan font-size="13">③</tspan><tspan font-size="10"> retrieval</tspan></text>
+      <text x="689" y="97" text-anchor="middle" font-family="var(--mono)" fill="var(--accent-critical)" letter-spacing="0.02em"><tspan font-size="13">④</tspan><tspan font-size="10"> retrieved data</tspan></text>
       <g>
         <rect x="20" y="40" width="92" height="72" rx="8" fill="var(--tile-bg)" stroke="var(--line)"/>
         <text x="66" y="72" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">User</text>
         <text x="66" y="88" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Contoso staff</text>
       </g>
       <g>
-        <rect x="172" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"/>
-        <text x="247" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">GenAI Assistant</text>
-        <text x="247" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Microsoft 365</text>
-        <text x="247" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Entra ID auth</text>
+        <rect x="217" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"/>
+        <text x="292" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">GenAI Assistant</text>
+        <text x="292" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Microsoft 365</text>
+        <text x="292" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Entra ID auth</text>
       </g>
       <g>
-        <rect x="392" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"/>
-        <text x="467" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">Azure OpenAI</text>
-        <text x="467" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">RAG orchestration</text>
+        <rect x="472" y="30" width="150" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-signal)"/>
+        <text x="547" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">Azure OpenAI</text>
+        <text x="547" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">RAG orchestration</text>
       </g>
       <g>
-        <rect x="602" y="30" width="138" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-critical)"/>
-        <text x="671" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">SharePoint</text>
-        <text x="671" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Online</text>
-        <text x="671" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">document retrieval</text>
+        <rect x="757" y="30" width="138" height="92" rx="8" fill="var(--tile-bg)" stroke="var(--accent-critical)"/>
+        <text x="826" y="62" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">SharePoint</text>
+        <text x="826" y="78" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">Online</text>
+        <text x="826" y="92" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">document retrieval</text>
       </g>
     </svg>
-    <p class="sim-arch-legend">Five trust boundaries: <b>① user → app</b> · <b>② app → Azure services</b> · <b>③ retrieval → SharePoint</b> · <b>④ retrieved data → LLM</b> (the boundary Finding 2 below crosses) · <b>⑤ LLM output → user</b>.</p>
+    <p class="sim-arch-legend">Five trust boundaries: <b>① user → app</b> · <b>② app → Azure services</b> · <b>③ retrieval → SharePoint</b><br>· <b>④ retrieved data → LLM</b> (the boundary Finding 2 below crosses) · <b>⑤ LLM output → user</b>.</p>
   `;
 }
 
