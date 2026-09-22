@@ -4091,7 +4091,7 @@ async function loadCaseStudiesData(){
 // separate crossing arrows, which would turn "simple" into a tangle.
 function renderSimulatedArchitecture(){
   return `
-    <svg viewBox="0 0 760 190" xmlns="http://www.w3.org/2000/svg" class="sim-arch-svg" role="img" aria-label="Architecture: User, through the GenAI Assistant and Azure OpenAI, to SharePoint Online and back">
+    <svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" class="sim-arch-svg" role="img" aria-label="Architecture: User, through the GenAI Assistant and Azure OpenAI, to SharePoint Online and back">
       <defs>
         <marker id="simArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="var(--accent-signal)"/>
@@ -4104,8 +4104,8 @@ function renderSimulatedArchitecture(){
       <line x1="322" y1="70" x2="392" y2="70" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
       <line x1="542" y1="60" x2="602" y2="60" stroke="var(--accent-signal)" stroke-width="2" marker-end="url(#simArrow)"/>
       <line x1="602" y1="82" x2="542" y2="82" stroke="var(--accent-critical)" stroke-width="2" marker-end="url(#simArrowMuted)"/>
-      <path d="M665,110 C665,165 92,165 92,112" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#simArrowMuted)"/>
-      <text x="378" y="155" text-anchor="middle" font-family="var(--mono)" font-size="10.5" fill="var(--text-muted)" letter-spacing="0.02em">⑤ LLM output → user</text>
+      <path d="M665,122 C665,188 92,188 92,122" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#simArrowMuted)"/>
+      <text x="378" y="152" text-anchor="middle" font-family="var(--mono)" font-size="10.5" fill="var(--text-muted)" letter-spacing="0.02em">⑤ LLM output → user</text>
       <text x="142" y="58" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">① user → app</text>
       <text x="357" y="58" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">② app → Azure</text>
       <text x="572" y="48" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text-muted)" letter-spacing="0.02em">③ retrieval</text>
