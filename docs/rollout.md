@@ -1,7 +1,8 @@
 # Rollout and rollback: `remediation/review-2026-09`
 
-Nothing on this branch has been pushed, merged, deployed or applied to production. These are
-the steps to do so, in order, when you decide to. Each step says what breaks if it's skipped.
+**Status: rolled out on 24 Sep 2026** (PR #115, merge `264ccb2`) - steps 1-5 below are done;
+results are in `docs/review-remediation-status.md` under "Production verification". The steps are
+kept as the reference for how it was done and for rollback.
 
 ## What changes where
 
