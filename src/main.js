@@ -14,7 +14,7 @@ import { renderPrivacyPage, renderFeedbackPage, showCookieBanner, wireCookieSett
 // real function names, unlike the assessment UI's §5.9 relabeling) still
 // reads them directly, so they need to stay available at this scope too.
 import { FUNCTIONS, FUNC_COLORS } from "./data/categories.js";
-import { supabase } from "./data/supabase-client.js";
+import { getSupabase } from "./data/supabase-client.js";
 import { FRAMEWORKS } from "./data/frameworks.js";
 
 const assessmentController = createAssessmentController({
@@ -245,7 +245,7 @@ let newsCache = null; // { items, live } - loaded once per session, filter click
 async function loadNewsData(){
   if(newsCache) return newsCache;
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (await getSupabase())
       .from('news_items')
       .select('external_id, headline, body, source, source_url, category, published_at')
       .order('priority_score', { ascending:false })
@@ -2291,11 +2291,12 @@ function renderMetricsTab(container){
   wireNavLink(document.getElementById('linkMaturityFromMetrics'), 'maturity');
 }
 
-// SITE_LAST_UPDATED comes from esbuild's define (see scripts/build.js) -
-// a real build timestamp instead of a hand-typed date someone has to
-// remember to update. Don't reintroduce a literal date string here; that's
+// SITE_LAST_UPDATED is the real build date, written by scripts/build.js
+// into a <meta name="site-updated"> tag in the page (not into the
+// JavaScript, so the hashed bundle stays byte-identical between builds of
+// the same source). Don't reintroduce a literal date string here; that's
 // exactly the failure mode ROADMAP-FIX-BRIEF.md flagged.
-const SITE_LAST_UPDATED = __BUILD_TIME__;
+const SITE_LAST_UPDATED = document.querySelector('meta[name="site-updated"]')?.content || "recently";
 
 // This page has three required sections - Shipped, In Progress, Planned -
 // each with its own array below and its own render block in
@@ -2992,7 +2993,7 @@ async function loadExploitsData(){
     // query plan happened to produce - unstable, not actually sorted.
     // date_added as the tie-break matches the pattern loadNewsData()
     // already uses (priority_score desc, then published_at desc).
-    const { data, error } = await supabase
+    const { data, error } = await (await getSupabase())
       .from('exploit_items')
       .select('cve_id, vendor, product, headline, description, explainer, safe_guidance, sectors_impacted, is_ransomware, epss_score, epss_percentile, source, source_url, date_added, due_date, priority_score')
       .order('priority_score', { ascending:false })
@@ -3931,7 +3932,7 @@ async function loadCaseStudiesData(){
     // to write them in. nullsFirst:false so an entry with no known exact
     // date (year only) still sorts sensibly (after its dated same-year
     // siblings) instead of jumping to the front.
-    const { data, error } = await supabase
+    const { data, error } = await (await getSupabase())
       .from('case_studies')
       .select('external_id, year, title, href, source_name, summary_what, summary_how, summary_impact, summary_lesson, summary_safeguard')
       .order('year', { ascending:false })

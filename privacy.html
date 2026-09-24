@@ -6,9 +6,9 @@
 <script src="/assets/gtag-init.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Core Principles - SimplifiedCS</title>
+<title>Privacy - SimplifiedCS</title>
 <meta name="description" content="SimplifiedCS is a free, adaptive cybersecurity self-assessment platform for small and medium businesses - answer a few questions, get a scored, prioritized, evidence-based report mapped to NIST CSF 2.0, CIS Controls, and other real frameworks.">
-<link rel="canonical" href="https://simplifiedcs.net/core-principles">
+<link rel="canonical" href="https://simplifiedcs.net/privacy">
 <!-- Open Graph / link-preview bots (LinkedIn, Slack, WhatsApp, iMessage,
      Facebook, ...) never execute JavaScript, so these static tags are the
      only thing they ever see - without them a shared link previews with no
@@ -61,9 +61,9 @@
         </div>
       
         <div class="tab-item has-dropdown">
-          <button type="button" class="tab-btn active" data-toggle="1">Framework <span class="tab-caret">▾</span></button>
+          <button type="button" class="tab-btn " data-toggle="1">Framework <span class="tab-caret">▾</span></button>
           <div class="tab-dropdown">
-            <a class="dropdown-link " href="/maturity-model" data-tab="maturity">Maturity Model</a><a class="dropdown-link active" href="/core-principles" data-tab="coreprinciples">Core Principles</a><a class="dropdown-link " href="/metrics" data-tab="metrics">Metrics</a>
+            <a class="dropdown-link " href="/maturity-model" data-tab="maturity">Maturity Model</a><a class="dropdown-link " href="/core-principles" data-tab="coreprinciples">Core Principles</a><a class="dropdown-link " href="/metrics" data-tab="metrics">Metrics</a>
           </div>
         </div>
       
@@ -114,86 +114,41 @@
   <div id="tabContent" class="">
     <div class="page">
       <div class="page-intro revealed">
-        <div class="page-eyebrow">Philosophy</div>
-        <h2 class="page-title">Core Principles</h2>
-        <p class="page-lede">The cybersecurity principles this site is designed around - not a marketing list, the actual reasoning behind how the assessment, scoring, and recommendations are built.</p>
+        <div class="page-eyebrow">Privacy</div>
+        <h2 class="page-title" tabindex="-1">Privacy and your data</h2>
+        <p class="page-lede">Short version: the assessment runs in your browser. Your answers stay in this browser unless you choose to send them for AI insights. Analytics only run if you allow them.</p>
       </div>
-      <div class="section-tile revealed">
-        <div class="principles-grid">
-          
-            <div class="principle-card">
-              <div class="principle-num">01</div>
-              <h4>Proactive, not reactive</h4>
-              <p>Waiting for an incident to find your gaps is the most expensive way to learn about them. Assessing, monitoring, and fixing ahead of time is consistently cheaper than recovering afterward - the entire reason this site exists is to move that discovery earlier.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">02</div>
-              <h4>People, process, and technology - not technology alone</h4>
-              <p>A well-configured firewall behind an untrained employee and no documented process is still a weak posture. Real security improvement requires progress across all three, together, not a single expensive tool standing in for the other two.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">03</div>
-              <h4>A culture, not a department</h4>
-              <p>Security isn't something the IT team owns on everyone else's behalf. Every person who clicks a link, sets a password, or handles data is part of the control surface - the goal is a culture people grow into, not a policy document nobody reads.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">04</div>
-              <h4>Defense in depth</h4>
-              <p>No single control is perfect, so no single control should be load-bearing. Layer defenses so that one failure - a missed patch, a clicked phishing link - doesn't cascade into a full compromise on its own.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">05</div>
-              <h4>Assume adversaries have AI-augmented capabilities</h4>
-              <p>Convincing phishing and voice/video impersonation are now cheap and fast to produce - an attacker doesn't need to have adopted AI themselves to benefit from tools that already do. This site treats AI-powered social engineering as a baseline assumption for every organization, not a special case reserved for those running AI systems - the same reasoning behind why its AI Readiness &amp; Governance questions apply to everyone, not just organizations using AI.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">06</div>
-              <h4>Zero trust</h4>
-              <p>Trust is not something a network location should grant automatically. Every request gets verified explicitly, regardless of whether it originates inside or outside the perimeter - the perimeter itself is no longer the control.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">07</div>
-              <h4>Least privilege</h4>
-              <p>Access should match what a role genuinely needs to do its job, nothing more. Excess privilege sits quietly until the one day an account is compromised, at which point it becomes the attacker's privilege too.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">08</div>
-              <h4>The CIA triad</h4>
-              <p>Confidentiality, Integrity, and Availability - the three properties "secure" actually breaks down into. A control that protects one can quietly undermine another; good security design keeps all three in view at once, not just the one that feels most urgent.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">09</div>
-              <h4>Segment the problem, not just the network</h4>
-              <p>Looking at an entire security program at once is paralyzing. Breaking it into smaller, contained pieces - by function, by system, by risk - the same way network segmentation contains a breach, makes the work tractable and the containment real.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">10</div>
-              <h4>Decide from data, not instinct</h4>
-              <p>Gut feeling about where the risk is usually points at the most visible problem, not the most likely one. Structured assessment, scoring, and trend tracking exist precisely to replace that instinct with evidence.</p>
-            </div>
-          
-            <div class="principle-card">
-              <div class="principle-num">11</div>
-              <h4>Improvement is a loop, not a destination</h4>
-              <p>There's no final state where an organization is simply "done" being secure. Threats, infrastructure, and staff all change continuously, so the assessment is built to be re-run on a cadence, not completed once and filed away - the same loop this site's own animation is built around.</p>
-            </div>
-          
-        </div>
+
+      <div class="section-tile privacy-page revealed">
+        <h3 class="section-h">Your assessment answers</h3>
+        <p class="body-text">Questions are scored in your browser. Answers are not sent to SimplifiedCS or anyone else, with one exception you control: if you ask for <b>AI-enhanced insights</b> on a report (or AI interpretation of your "Other" answers), the details listed next to that button are sent - after you tick the agreement - to SimplifiedCS's server function, which looks up the products you named in two public sources (CISA's Known Exploited Vulnerabilities catalog and NIST's National Vulnerability Database) and sends the request and those public records to Anthropic's Claude API to generate the text. Company name and "report requested by" are never included. You can see exactly what will be sent before sending it.</p>
+        <p class="body-text">SimplifiedCS doesn't store the content of AI requests. Server logs record technical details only (timing, sizes, error types). To prevent abuse, a salted one-way hash of your IP address is counted in a per-day rate-limit counter; counters older than a day are deleted automatically as the service is used. Anthropic processes the request under <a href="https://www.anthropic.com/legal/commercial-terms" target="_blank" rel="noopener noreferrer">its commercial terms</a> and <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer">privacy policy</a>.</p>
+        <p class="body-text">Your AI choice is currently: <b>not given</b>. You'll be asked on the report page before anything is sent.</p>
+
+        <h3 class="section-h">What's stored in this browser</h3>
+        <p class="body-text">These are kept in your browser's local storage for this site only. They are never sent to a server by SimplifiedCS. On a shared computer, clear them when you're done.</p>
+        <ul class="privacy-list"><li><b>Your in-progress assessment answers, so you can resume</b></li><li><b>Completed assessments: answers, a summary of each report, and any AI insights you requested</b></li><li><b>Completed assessments saved before September 2026</b></li><li><b>Action-plan tracking you entered (owners, dates, status, notes)</b></li><li><b>Whether you've seen the 'saved in this browser' notice</b></li><li><b>Your analytics cookie choice</b></li><li><b>Whether you agreed to send assessment details for AI processing, and which notice version</b></li><li><b>Light or dark theme</b></li></ul>
+        <div class="cta-row"><button type="button" class="cta-btn secondary" id="privacyClearAll">Clear all data stored by this site</button></div>
+        <p class="scope-hint" id="privacyClearResult" role="status"></p>
+
+        <h3 class="section-h">Analytics</h3>
+        <p class="body-text">If you allow it, Google Analytics 4 records page views and a few coarse events (an assessment was started or completed, in which mode; a report was exported, in which format) using cookies. It never receives answers, scores or report content. Google signals and ad personalization are turned off. If you don't allow it, Google's script isn't loaded at all.</p>
+        <p class="body-text">Your analytics choice is currently: <b>not made yet (off)</b>.</p>
         <div class="cta-row">
-          <a class="cta-btn" href="/assessment" id="ctaPrinciplesAssess">See these principles in practice →</a>
+          <button type="button" class="cta-btn secondary" id="privacyAnalyticsAllow">Allow analytics</button>
+          <button type="button" class="cta-btn secondary" id="privacyAnalyticsDeny">Turn analytics off</button>
         </div>
+
+        <h3 class="section-h">Live feeds</h3>
+        <p class="body-text">The News, Exploit Tracker and Case Studies pages read public data from SimplifiedCS's Supabase database. Those requests contain nothing about you beyond what any web request contains.</p>
+
+        <h3 class="section-h">Hosting</h3>
+        <p class="body-text">The site is hosted on Netlify, which - like any web host - processes standard request information such as IP addresses to deliver pages and protect the service.</p>
+
+        <h3 class="section-h">Questions</h3>
+        <p class="body-text">See the <a href="/about" class="inline-link">About page</a> for how to reach the creator. This page describes how the site works; it isn't legal advice.</p>
       </div>
-    </div>
-  </div>
+    </div></div>
 
   <footer class="site-footer">
     <div class="footer-top">

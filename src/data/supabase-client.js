@@ -1,11 +1,22 @@
-// Client-side Supabase connection for live, public read-only data (currently
-// just news_items - see §1 of the Phase 2 brief). Uses the publishable key,
-// which is meant to be embedded in browser code (same key already committed
-// in .github/workflows/keep-supabase-alive.yml) - RLS on news_items only
-// grants SELECT to anon/authenticated, so this key can never write.
-import { createClient } from "@supabase/supabase-js";
+// Client-side Supabase connection for live, public, read-only data (the
+// News, Exploit Tracker and Case Studies feeds). Uses the publishable key,
+// which is meant to be embedded in browser code - table grants and RLS allow
+// only SELECT for anon/authenticated (see supabase/migrations/ and
+// test/supabase-policies.test.js), so this key can't write.
+//
+// Loaded on demand: the client library is ~200 KB and only the feed pages
+// need it, so it's fetched the first time one of them is opened.
+const SUPABASE_URL = "https://xufqgrcxufptlptpwlfi.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_rMgv5Ca-_rmygrgsh9Npeg_4vhl11p_";
 
-export const supabase = createClient(
-  "https://xufqgrcxufptlptpwlfi.supabase.co",
-  "sb_publishable_rMgv5Ca-_rmygrgsh9Npeg_4vhl11p_"
-);
+let clientPromise = null;
+
+export function getSupabase() {
+  if (!clientPromise) {
+    clientPromise = import("@supabase/supabase-js").then(({ createClient }) => createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY));
+    clientPromise.catch(() => {
+      clientPromise = null; // allow a retry after a failed chunk load
+    });
+  }
+  return clientPromise;
+}

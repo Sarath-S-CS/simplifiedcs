@@ -1,0 +1,50 @@
+# Checks every push and pull request. Uses no repository secrets and makes
+# no paid API calls: the AI endpoint tests use in-memory fakes, and the
+# Supabase policy tests run against an in-process PGlite database.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # Puppeteer's browser download is only needed for scripts/prerender.js,
+      # which CI doesn't run.
+      - name: Install dependencies
+        run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
+
+      - name: Tests
+        run: npm test
+
+      # The built files are committed (Netlify serves them as-is), so check
+      # they match what the sources produce. Hashed names mean any source
+      # change without a rebuild shows up as a missing or extra file.
+      - name: Build is reproducible
+        run: |
+          npm run build
+          git status --porcelain -- assets/build
+          test -z "$(git status --porcelain -- assets/build)" || { echo "::error::assets/build doesn't match the sources - run npm run build and commit the result"; exit 1; }
+
+      - name: Dependency audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=high

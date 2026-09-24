@@ -21,7 +21,6 @@ import { SAMPLE_SCENARIOS, DEFAULT_SAMPLE } from "../data/sample-scenario.js";
 import { buildReport } from "../engine/report-model.js";
 import { effectiveState, isAnswered } from "../engine/answers.js";
 import { migrateAnswers } from "../engine/migrate.js";
-import { buildAssessmentPdf } from "../engine/pdf-report.js";
 import { actionsToCsv, actionsToJson } from "../engine/actions.js";
 import { loadTracking, updateTracking } from "../engine/action-tracking.js";
 import { saveProgress, loadProgress, clearProgress, hasSeenSaveNotice, markSaveNoticeSeen, watchExternalChanges } from "../engine/local-save.js";
@@ -63,6 +62,17 @@ function currentPathIsSample() {
 // "Not sure" / "Not applicable" are strings.
 function parseScoredValue(raw) {
   return /^-?\d+$/.test(raw) ? Number(raw) : raw;
+}
+
+// The PDF library (~700 KB with its dependencies) is only fetched when a
+// PDF is actually requested.
+async function downloadPdf(report, opts) {
+  try {
+    const { buildAssessmentPdf } = await import("../engine/pdf-report.js");
+    buildAssessmentPdf(report, opts);
+  } catch {
+    showToast("The PDF generator couldn't be loaded - check your connection and try again.");
+  }
 }
 
 function download(filename, text, type) {
@@ -1067,7 +1077,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     if (hist) wireNavLink(hist, "history");
     document.getElementById("exportPdfBtn").addEventListener("click", () => {
       trackEvent("report_export", { format: "pdf" });
-      buildAssessmentPdf(report, { aiInsights: current.ai || null });
+      downloadPdf(report, { aiInsights: current.ai || null });
     });
     document.getElementById("exportCsvBtn").addEventListener("click", () => trackEvent("report_export", { format: "csv" }) || download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.csv`, actionsToCsv(report.actions, loadTracking()), "text/csv;charset=utf-8"));
     document.getElementById("exportJsonBtn").addEventListener("click", () => trackEvent("report_export", { format: "json" }) || download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.json`, actionsToJson(report, loadTracking()), "application/json"));
@@ -1210,7 +1220,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       renderLanding();
       focusHeading();
     });
-    document.getElementById("samplePdfBtn").addEventListener("click", () => buildAssessmentPdf(report, { aiInsights: sample.ai }));
+    document.getElementById("samplePdfBtn").addEventListener("click", () => downloadPdf(report, { aiInsights: sample.ai }));
   }
 
   function dispatchPhase() {

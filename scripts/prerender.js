@@ -115,18 +115,12 @@ function setCanonical(html, routePath) {
   return html.replace(/<title>.*?<\/title>/, (m) => `${m}\n${canonicalTag}`);
 }
 
-// build.js inlines the whole ~2.8MB app bundle directly into index.html's
-// <script> tag (see assembleHtml()) - captured verbatim, that would
-// duplicate the bundle into every one of the 19 snapshot files, ~50MB of
-// pure repeated bytes. /assets/app.js is already a real standalone file
-// (esbuild's own output), so swapping the huge inline script for a src
-// reference gives an identical result at runtime for a fraction of the
-// weight. Threshold picks out the bundle specifically, not head.html's
-// small inline gtag snippet.
+// The app is a module script referenced by URL (scripts/build.js), so a
+// snapshot never contains the bundle itself. Scripts the app injected at
+// runtime (on-demand chunks, modulepreload hints) are dropped so each
+// snapshot loads exactly what index.html loads.
 function externalizeBundle(html) {
-  return html.replace(/<script>([\s\S]*?)<\/script>/g, (match, body) =>
-    body.length > 50000 ? '<script src="/assets/app.js"></script>' : match
-  );
+  return html.replace(/<link rel="modulepreload"[^>]*>/g, "");
 }
 
 async function snapshotRoute(browser, routePath) {
