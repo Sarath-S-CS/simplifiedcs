@@ -61,6 +61,7 @@ const ROUTES = {
   "/glossary": "glossary",
   "/references": "references",
   "/about": "about",
+  "/privacy": "privacy",
   "/history": "history",
   // /assessment/sample is the one sub-state of the assessment tab with a
   // real URL (src/ui/assessment.js's currentPathIsSample()) - fixed,
@@ -158,7 +159,12 @@ async function snapshotRoute(browser, routePath) {
   // snapshotting a placeholder.
   let html;
   for (let attempt = 0; attempt < 4; attempt++) {
-    html = await page.evaluate(() => document.documentElement.outerHTML);
+    // Per-visitor UI (the analytics choice banner, screen-reader status
+    // region) must never be baked into a static snapshot.
+    html = await page.evaluate(() => {
+      document.querySelectorAll("#cookieBanner, #sr-status").forEach((el) => el.remove());
+      return document.documentElement.outerHTML;
+    });
     if (!html.includes("Loading the latest")) break;
     if (attempt === 3) console.warn(`  WARNING: ${routePath} still shows a loading placeholder after retries`);
     await new Promise((r) => setTimeout(r, 750));

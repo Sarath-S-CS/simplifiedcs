@@ -34,6 +34,7 @@ import { escapeHtml } from "./html-safety.js";
 import { reportBodyHtml } from "./report-view.js";
 import { consentHtml, aiResultHtml, aiErrorText } from "./ai-panel.js";
 import { wireAccordions, preserveFocus, announce } from "./a11y.js";
+import { trackEvent } from "./privacy.js";
 
 const e = escapeHtml;
 
@@ -232,6 +233,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     resetSession();
     clearProgress();
     session.quickMode = quickMode;
+    trackEvent("assessment_start", { mode: quickMode ? "quick" : "full" });
     ui.phase = "scope";
     renderRail();
     renderScope();
@@ -827,6 +829,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     report.snapshotId = id;
     run.summary = summarizeReport(report);
     const saved = saveRun(run);
+    trackEvent("assessment_complete", { mode: report.mode });
     return { run: saved.ok ? run : null, saved };
   }
 
@@ -885,6 +888,33 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       notes.push(`<div class="stale-banner" role="alert"><b>Not saved.</b> ${saved.reason === "quota" ? "This browser's storage for the site is full." : "This browser isn't allowing the site to store data (private browsing, or site data blocked)."} Download the PDF or JSON below to keep a copy.</div>`);
     else if (saved?.evicted) notes.push(`<p class="scope-hint">Saved in this browser. To make room, the ${saved.evicted} oldest saved report${saved.evicted === 1 ? " was" : "s were"} removed from History.</p>`);
     return notes.join("");
+  }
+
+  // Change since the previous report - only against one produced by the same
+  // methodology and mode, since anything else would compare different
+  // scales. Findings are matched by stable control id.
+  function deltaHtml() {
+    const { run, report } = current;
+    if (!run) return "";
+    const prev = listRuns()
+      .filter((r) => !r.legacy && r.id !== run.id && r.ts < run.ts && r.summary && r.summary.methodologyVersion === report.methodologyVersion && r.summary.mode === report.mode)
+      .pop();
+    if (!prev) return "";
+    const before = new Map(prev.summary.findings.map((f) => [f.id, f]));
+    const now = new Map(report.findings.map((f) => [f.id, f]));
+    const resolved = [...before.keys()].filter((id) => !now.has(id));
+    const added = [...now.keys()].filter((id) => !before.has(id));
+    const cov = report.overall.coverage !== null && prev.summary.coverage !== null ? report.overall.coverage - prev.summary.coverage : null;
+    const titleOf = (id) => e((now.get(id) || before.get(id)).title);
+    return `
+      <section class="delta-box" aria-labelledby="deltaTitle">
+        <h3 id="deltaTitle">Change since your last ${report.mode === "quick" ? "screening" : "assessment"} (${e(new Date(prev.ts).toLocaleDateString())})</h3>
+        ${cov !== null && report.mode === "full" ? `<div class="delta-score ${cov >= 0 ? "up" : "down"}">${cov >= 0 ? "+" : ""}${cov} points coverage</div>` : ""}
+        <div>Reading then: <b>${e(prev.summary.verdict.label)}</b> · now: <b>${e(report.verdict.label)}</b></div>
+        ${resolved.length ? `<div class="delta-resolved"><b>Resolved (${resolved.length}):</b> ${resolved.slice(0, 8).map(titleOf).join("; ")}${resolved.length > 8 ? " …" : ""}</div>` : ""}
+        ${added.length ? `<div class="delta-new"><b>New (${added.length}):</b> ${added.slice(0, 8).map(titleOf).join("; ")}${added.length > 8 ? " …" : ""}</div>` : ""}
+        ${!resolved.length && !added.length ? "<div>The same findings as last time.</div>" : ""}
+      </section>`;
   }
 
   function quickFooterHtml(report) {
@@ -980,6 +1010,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           <input type="text" id="reportRequestedBy" placeholder="Name and role" value="${e(session.answers.reportRequestedBy || "")}">
         </div>
       </div>
+      ${deltaHtml()}
       <div id="reportBody">${reportBodyHtml(report, { tracking, interactive: true, links: linksForReport() })}</div>
       ${otherTextHtml(others, current.interpretations)}
       ${quickFooterHtml(report)}
@@ -1034,9 +1065,12 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     });
     const hist = document.getElementById("viewHistoryBtn");
     if (hist) wireNavLink(hist, "history");
-    document.getElementById("exportPdfBtn").addEventListener("click", () => buildAssessmentPdf(report, { aiInsights: current.ai || null }));
-    document.getElementById("exportCsvBtn").addEventListener("click", () => download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.csv`, actionsToCsv(report.actions, loadTracking()), "text/csv;charset=utf-8"));
-    document.getElementById("exportJsonBtn").addEventListener("click", () => download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.json`, actionsToJson(report, loadTracking()), "application/json"));
+    document.getElementById("exportPdfBtn").addEventListener("click", () => {
+      trackEvent("report_export", { format: "pdf" });
+      buildAssessmentPdf(report, { aiInsights: current.ai || null });
+    });
+    document.getElementById("exportCsvBtn").addEventListener("click", () => trackEvent("report_export", { format: "csv" }) || download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.csv`, actionsToCsv(report.actions, loadTracking()), "text/csv;charset=utf-8"));
+    document.getElementById("exportJsonBtn").addEventListener("click", () => trackEvent("report_export", { format: "json" }) || download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.json`, actionsToJson(report, loadTracking()), "application/json"));
     const cont = document.getElementById("continueFullBtn");
     if (cont)
       cont.addEventListener("click", () => {

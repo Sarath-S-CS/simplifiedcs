@@ -7,6 +7,7 @@ import { createAssessmentController } from "./ui/assessment.js";
 import { newsCardHtml, exploitCardHtml, caseStudyCardHtml } from "./ui/feed-cards.js";
 import { renderHistoryPage } from "./ui/history-view.js";
 import { wireAccordions } from "./ui/a11y.js";
+import { renderPrivacyPage, renderFeedbackPage, showCookieBanner, wireCookieSettingsButton } from "./ui/privacy.js";
 // FUNCTIONS/FUNC_COLORS used to be plain globals at the top of the original
 // script; the Methodology tab's function-legend (an educational reference
 // explaining what NIST CSF's six functions ARE - correctly left showing the
@@ -50,6 +51,7 @@ const ROUTES = {
   references: '/references',
   about: '/about',
   feedback: '/feedback',
+  privacy: '/privacy',
   assessment: '/assessment',
   history: '/history',
 };
@@ -79,6 +81,7 @@ const TAB_TITLES = {
   references: 'References - SimplifiedCS',
   about: 'About - SimplifiedCS',
   feedback: 'Feedback - SimplifiedCS',
+  privacy: 'Privacy - SimplifiedCS',
   assessment: 'Assessment - SimplifiedCS',
   history: 'History - SimplifiedCS',
 };
@@ -413,32 +416,38 @@ const PHASES = [
     doneWhen:'Next quarter\'s priorities visibly reflect what was actually learned.' },
 ];
 
-// --- Score rubric: what a given band actually means, on the 0-10 scale (overall % ÷ 10) ---
+// --- What each reading means (methodology 2.0, src/engine/scoring.js
+// computeVerdict). Readings are decided in this order, so a percentage can
+// never outvote a critical gap or an unverified critical control. ---
 const SCORE_RUBRIC = [
-  { range:'0 – 1.5', verdict:'Critical', good:'Rare - if anything scores here, it\'s usually one isolated function (often Recover) while everything else is failing too.',
-    bad:'Core controls are absent, not just weak - no MFA, no logging, no incident response plan, often no named security owner at all. This reflects total absence, not partial effort.',
-    why:'Every question in the affected function was likely answered at its lowest option - this isn\'t measurement noise, it\'s an accurate reflection of nothing being in place yet.',
-    priority:'Start at Maturity Model Phase 1 - asset discovery. Nothing later matters until you know what you\'re protecting.' },
-  { range:'1.5 – 3.5', verdict:'Elevated (severe)', good:'Usually one or two functions (often Identify or Recover) have partial coverage - an asset list exists, or backups happen even if untested.',
-    bad:'Protect and Detect are typically the weakest here - MFA partial at best, no centralized logging, meaning an intrusion would likely go unnoticed for a long time.',
-    why:'A handful of "Partial" answers pull the average up slightly off zero, but the functions that stop real attacks are still mostly unanswered at their lowest tier.',
-    priority:'Close the highest-severity items in the Priority list first - this band is where compounding-risk flags (like exposed RDP plus weak backups) are most common and most dangerous.' },
-  { range:'3.5 – 5', verdict:'Elevated', good:'Baseline hygiene exists - patching happens, some endpoint protection is deployed - but inconsistently applied across the organization.',
-    bad:'Governance is usually the gap here - controls exist without policy backing them, so they aren\'t sustained once the person who set them up moves on.',
-    why:'Individual controls score "Partial" across the board rather than a mix of strong and absent - the org is doing things, just not consistently or on paper.',
-    priority:'Move into Maturity Model Phase 3 (Governance) and Phase 6 (Policy & Documentation) - enough is in place that formalizing it will lock in real gains.' },
-  { range:'5 – 7', verdict:'Moderate', good:'This is usually where MFA is enforced, backups are tested at least occasionally, and a written security policy exists - real, working fundamentals, not just intentions.',
-    bad:'Response readiness is the most common weak point in this band - plans exist on paper (Respond/Recover score fine) but haven\'t been rehearsed, and detection tends to be reactive rather than proactive.',
-    why:'Most functions individually look "fine" (Partial-to-Yes answers throughout), but nothing has been tested end-to-end - the score reflects presence of controls, not proof they\'d hold up under a real incident.',
-    priority:'Maturity Model Phase 7 - Response Readiness & Testing - is where this band gets stuck without deliberate rehearsal (tabletop exercises, restore drills).' },
-  { range:'7 – 8.5', verdict:'Strong (developing)', good:'Controls are implemented and tested - this is typically an org that\'s been through at least one real incident or a serious tabletop exercise.',
-    bad:'Monitoring/tuning is the usual gap - alerting exists but hasn\'t been tuned enough to avoid noise, or audits happen but findings aren\'t tracked to closure.',
-    why:'Almost every question scores at or near its top option, with only Detect/Optimization-related items pulling the average down slightly.',
-    priority:'Maturity Model Phase 8–9 - Continuous Monitoring and Auditing - is where this band should focus, since the foundational work is already done.' },
-  { range:'8.5 – 10', verdict:'Strong', good:'Full coverage across all six functions, tested and audited, with a demonstrated feedback loop from past incidents and audits into current priorities.',
-    bad:'Even here, the compounding-risk flags still matter - a single overlooked combination (like a new vendor integration nobody reviewed) can create real exposure that a per-function score alone wouldn\'t catch.',
-    why:'Consistently top-tier answers across every function - this band is earned, not assumed, and should be re-verified every assessment cycle rather than taken for granted.',
-    priority:'Maturity Model Phase 10 - Adaptive Iteration. The job here is sustaining the loop, not finding new gaps.' },
+  { range:'Any coverage', verdict:'Critical gaps found', good:'Often plenty - many organizations here have most controls in place. The reading is about what is missing, not how much is present.',
+    bad:'At least one critical control is not in place: MFA (or MFA for admins only while internet-reachable), internet-exposed remote admin, no endpoint protection, ad hoc patching with internet exposure, shared privileged accounts, backups that are not isolated or never restore-tested, or a flat or unsecured OT network.',
+    why:'Each of these can decide on its own whether an attack succeeds or whether you can recover - the CISA Performance Goals and #StopRansomware guidance put them first for that reason.',
+    priority:'Close the critical gaps first; they are all in the 30-day group of the action plan.' },
+  { range:'Any coverage', verdict:'Verification needed', good:'No critical control is known to be missing.',
+    bad:'At least one critical control was answered "Not sure".',
+    why:'An unverified critical control is a real risk, just a smaller one than a confirmed gap - so it is ranked as something to confirm, not scored as a failure.',
+    priority:'Find out - the action plan lists each one as "Find out: ...", with a 30-day target.' },
+  { range:'Completeness under 60%', verdict:'Incomplete picture', good:'Whatever was answered is scored normally.',
+    bad:'Fewer than 60% of applicable questions have a definite answer.',
+    why:'"Not sure" and unanswered questions are excluded from coverage rather than counted as "No", so a high percentage built on a few answers would be misleading.',
+    priority:'Fill in the unknowns, then read the percentage.' },
+  { range:'Coverage below 40%', verdict:'High exposure', good:'No single critical gap was found.',
+    bad:'Most controls are missing or partial.',
+    why:'Coverage weights critical controls 3x and high-impact controls 2x, so a low figure means important controls, not just paperwork, are absent.',
+    priority:'Work down the action plan in order; it is ranked by risk, not by questionnaire order.' },
+  { range:'Coverage 40-64%', verdict:'Elevated exposure', good:'Baseline controls exist without a critical gap.',
+    bad:'Many controls are missing or partial - often detection, response testing and governance.',
+    why:'Partial answers count half; missing ones count zero, weighted by importance.',
+    priority:'The 60-day group of the action plan is usually where the biggest gains are.' },
+  { range:'Coverage 65-84%', verdict:'Moderate exposure', good:'Most controls are in place and no critical control is missing.',
+    bad:'Several important controls are still missing or partial.',
+    why:'The remaining gaps are real but no longer the kind that most often decide an incident on their own.',
+    priority:'Finish the high-impact items and start testing what is in place (restore drills, tabletop exercises).' },
+  { range:'Coverage 85% or more', verdict:'Strong foundations', good:'Core controls are in place, no critical gap, and at least 60% of questions have definite answers.',
+    bad:'Combined findings and the remaining standard items still matter, and self-reported answers can be optimistic.',
+    why:'Earned by definite answers - not by leaving hard questions unanswered.',
+    priority:'Verify that controls work as described, and re-assess after significant changes.' },
 ];
 
 // --- Foundational documents (referenced from the Runbooks tab) ---
@@ -1380,7 +1389,8 @@ function renderActiveTab(){
   else if(activeTab === 'glossary') renderGlossaryTab(container);
   else if(activeTab === 'references') renderReferencesTab(container);
   else if(activeTab === 'about') renderAboutTab(container);
-  else if(activeTab === 'feedback') renderFeedbackTab(container);
+  else if(activeTab === 'feedback') renderFeedbackPage(container);
+  else if(activeTab === 'privacy') renderPrivacyPage(container);
   else if(activeTab === 'assessment') renderAssessmentTab(container);
   else if(activeTab === 'history'){
     container.innerHTML = `<div class="page" id="panel"></div>`;
@@ -1913,7 +1923,7 @@ function renderMethodologyTab(container){
 
       <div class="section-tile">
         <h3 class="section-h">Scoring, in brief</h3>
-        <p class="body-text">Each question scores 0, 1, or 2 depending on the answer chosen, rolled up into a function score and an overall percentage. The full breakdown of exactly how that's calculated, what each score band means, and how to read your result lives on the <a href="${pathForTab('metrics')}" id="linkMetricsFromMethod" class="inline-link">Metrics</a> page.</p>
+        <p class="body-text">Each answer is graded in place / partly / not in place, or recorded as "Not sure" or not applicable (both excluded from the percentage). Coverage is weighted by how critical each control is, and any critical gap sets the reading before any percentage does. The full breakdown of exactly how that's calculated, what each score band means, and how to read your result lives on the <a href="${pathForTab('metrics')}" id="linkMetricsFromMethod" class="inline-link">Metrics</a> page.</p>
       </div>
 
       <div class="section-tile">
@@ -2234,25 +2244,26 @@ function renderMetricsTab(container){
       </div>
 
       <div class="section-tile">
-        <h3 class="section-h">How the score is calculated</h3>
-        <p class="body-text">Each question scores 0, 1, or 2 depending on the answer chosen. A function's score is the sum of its answers divided by the maximum possible, expressed as a percentage. The overall score is the average across all six NIST CSF functions - visible as the radial gauge on your results page. This is a straightforward roll-up, but it isn't the whole picture: see "the part that isn't just averaging" on the <a href="${pathForTab('methodology')}" id="linkMethodFromMetrics1" class="inline-link">Methodology</a> page for how compounding-risk flags factor in separately.</p>
-        <p class="body-text">The AI Readiness &amp; Governance track's scored questions count exactly the same way - they add to <b>Protect</b>'s and <b>Govern</b>'s own 0/1/2 totals, not a separate AI-specific score off to the side, so your function percentages reflect AI-specific posture wherever it applies to you, the same as every other question.</p>
+        <h3 class="section-h">How the score is calculated (methodology 2.0)</h3>
+        <p class="body-text">Every answer resolves to one status: <b>in place</b>, <b>partly in place</b>, <b>not in place</b>, <b>not sure</b>, <b>not applicable</b>, or <b>not asked</b> (Quick screening). Only the first three are graded: in place earns 2 points, partly 1, not in place 0.</p>
+        <p class="body-text"><b>Coverage</b> is the points earned divided by the points possible over the controls you answered definitely, with each control weighted by importance - 3 for critical controls, 2 for high-impact, 1 for standard. It is computed across all controls at once, not averaged across the six areas. <b>Completeness</b> is how many applicable questions have a definite answer. "Not sure" never counts as "No": it is excluded from coverage and listed as something to confirm.</p>
+        <p class="body-text">Setup answers that describe a control - network segmentation, DevSecOps gates, secrets handling, container and hypervisor hardening, OT segregation and monitoring - are scored like any other control. Combined findings (risky combinations of answers) and the risk ranking are explained on the <a href="${pathForTab('methodology')}" id="linkMethodFromMetrics1" class="inline-link">Methodology</a> page. The methodology version is recorded on every report, and History only compares reports made with the same version and mode.</p>
       </div>
 
       <div class="section-tile">
         <h3 class="section-h">Reading your score</h3>
-        <p class="body-text">The overall percentage is a snapshot, not a grade. It exists to be compared against your <i>own</i> next assessment - the trend matters more than any single number.</p>
+        <p class="body-text">The reading is decided by rules in a fixed order, and the percentage only matters once the earlier rules pass: any critical gap gives <b>Critical gaps found</b>; otherwise an unverified critical control gives <b>Verification needed</b>; otherwise fewer than 60% definite answers gives <b>Incomplete picture</b>; only then do the coverage bands apply. Quick screening never gives a band - it reports critical gaps or "No critical gaps in this screening".</p>
         <div class="verdict-scale">
-          <div class="verdict-cell"><div class="vrange">0–29%</div><div class="vlabel" style="color:var(--accent-critical)">Critical exposure</div></div>
-          <div class="verdict-cell"><div class="vrange">30–54%</div><div class="vlabel" style="color:var(--accent-signal)">Elevated exposure</div></div>
-          <div class="verdict-cell"><div class="vrange">55–79%</div><div class="vlabel">Moderate exposure</div></div>
-          <div class="verdict-cell"><div class="vrange">80–100%</div><div class="vlabel" style="color:var(--accent-secure)">Strong health</div></div>
+          <div class="verdict-cell"><div class="vrange">below 40%</div><div class="vlabel" style="color:var(--accent-critical)">High exposure</div></div>
+          <div class="verdict-cell"><div class="vrange">40–64%</div><div class="vlabel" style="color:var(--accent-amber)">Elevated exposure</div></div>
+          <div class="verdict-cell"><div class="vrange">65–84%</div><div class="vlabel">Moderate exposure</div></div>
+          <div class="verdict-cell"><div class="vrange">85% or more</div><div class="vlabel" style="color:var(--accent-secure)">Strong foundations</div></div>
         </div>
       </div>
 
       <div class="section-tile">
-        <h3 class="section-h">Why your score is what it is</h3>
-        <p class="body-text">Bands below are shown on a 0–10 scale (your overall percentage ÷ 10) - a 5–7, for example, means something specific about your organization, not just "middling." For how each phase of the <a href="${pathForTab('maturity')}" id="linkMaturityFromMetrics" class="inline-link">Maturity Model</a> connects to these bands, see that page directly.</p>
+        <h3 class="section-h">What each reading means</h3>
+        <p class="body-text">In the order they are checked. For how each phase of the <a href="${pathForTab('maturity')}" id="linkMaturityFromMetrics" class="inline-link">Maturity Model</a> connects to this, see that page directly.</p>
         ${SCORE_RUBRIC.map(r=>`
           <div class="rubric-card">
             <div class="rubric-head"><div class="rubric-range">${r.range}</div><div class="rubric-verdict">${r.verdict}</div></div>
@@ -2266,7 +2277,7 @@ function renderMetricsTab(container){
 
       <div class="section-tile">
         <h3 class="section-h">How this site tracks it over time</h3>
-        <p class="body-text">Every completed assessment is saved. Your next run shows the score delta, which specific findings were resolved, and which are newly flagged - the closest thing this tool has to watching an organization actually improve, run over run, rather than guessing at where it stands.</p>
+        <p class="body-text">Completed assessments are saved in your browser (if it allows storage). Your next report shows what changed since the previous one made with the same methodology and mode: the coverage change, and which findings were resolved or are new. Reports from an earlier methodology are kept, labelled, and not compared directly.</p>
         <div class="cta-row">
           <a class="cta-btn" href="${pathForTab('history')}" id="ctaMetricsHistory">View assessment history →</a>
           <a class="cta-btn secondary" href="${pathForTab('assessment')}" id="ctaMetricsAssess">Start an assessment →</a>
@@ -2542,10 +2553,10 @@ function renderMaturityModelTab(container){
         <p class="body-text">This is the part that separates SimplifiedCS from a generic checklist, and it's worth being specific about:</p>
         <ul>
           <li><b>Compounding-risk detection</b> - answers get cross-referenced against each other, not scored in isolation. Two individually-minor gaps that combine into something genuinely dangerous get flagged as exactly that.</li>
-          <li><b>Real MITRE ATT&amp;CK mapping</b> - every significant finding names the actual attack technique it enables, not a generic warning.</li>
+          <li><b>Real MITRE ATT&amp;CK mapping</b> - findings name the attack technique they enable wherever one genuinely applies; governance gaps don't get an invented one.</li>
           <li><b>An AI Readiness &amp; Governance track</b> - scored questions following EC-Council's Adopt/Defend/Govern framework, scoped to how AI actually shows up in your environment, with real MITRE ATT&amp;CK/ATLAS mapping for AI-specific techniques like prompt injection.</li>
-          <li><b>A hybrid AI architecture, done deliberately</b> - the core scoring and findings are produced by a tested, deterministic rules engine, so they're guaranteed consistent every time. On top of that, an optional <b>retrieval-augmented (RAG)</b> enrichment layer checks your specifically named vendors and products against live CISA and NVD threat intelligence - catching what a fixed rule set can't know by nature, clearly labeled wherever it appears, never replacing the deterministic core underneath it.</li>
-          <li><b>Vendor-aware, not generic</b> - mitigation guidance is tailored to the actual products you named, not one-size-fits-all advice.</li>
+          <li><b>A hybrid AI architecture, done deliberately</b> - the core scoring and findings are produced by a tested, deterministic rules engine, so the same answers always produce the same report. On top of that, an optional <b>retrieval-augmented (RAG)</b> enrichment layer checks your specifically named vendors and products against live CISA and NVD threat intelligence - catching what a fixed rule set can't know by nature, clearly labeled wherever it appears, never replacing the deterministic core underneath it.</li>
+          <li><b>Vendor-aware where it can be</b> - for products it recognises, notes are tailored to what you named rather than one-size-fits-all advice.</li>
         </ul>
 
         <h3 class="section-h" id="ws-frameworks">Every framework and standard it's built on</h3>
@@ -3170,84 +3181,7 @@ function renderReferencesTab(container){
   `;
 }
 
-function renderFeedbackTab(container){
-  container.innerHTML = `
-    <div class="page">
-      <div class="page-intro">
-        <div class="page-eyebrow">Feedback</div>
-        <h2 class="page-title">Send feedback</h2>
-        <p class="page-lede">Found something broken, confusing, or missing? Think a feature should exist? This goes straight to the creator - no account or email of yours required.</p>
-      </div>
-      <div class="section-tile">
-        <div id="feedbackFormWrap">
-          <form id="feedbackForm">
-            <div class="field">
-              <label>Your name <span class="opt-tag">optional</span></label>
-              <input type="text" id="fbName" placeholder="How should we address you?">
-            </div>
-            <div class="field">
-              <label>Your email <span class="opt-tag">optional</span></label>
-              <input type="email" id="fbEmail" placeholder="Only if you'd like a reply">
-            </div>
-            <div class="field">
-              <label>Feedback</label>
-              <textarea id="fbMessage" rows="6" placeholder="Bug report, confusing wording, a feature you think is missing - anything." required></textarea>
-            </div>
-            <div style="position:absolute; left:-9999px;"><label>Don't fill this out: <input type="text" id="fbBotField"></label></div>
-            <div id="fbError" class="fb-error" style="display:none;"></div>
-            <div class="cta-row">
-              <button type="submit" class="cta-btn" id="fbSubmit">Send feedback →</button>
-            </div>
-          </form>
-        </div>
-        <div id="feedbackSuccess" style="display:none;">
-          <p class="body-text">Thank you - your feedback has been sent. It's genuinely read and taken into account for what gets worked on next.</p>
-          <div class="cta-row">
-            <a class="cta-btn secondary" href="${pathForTab('home')}" id="fbBackHome">Back to Home</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  const fbBackHome = document.getElementById('fbBackHome');
-  if(fbBackHome) wireNavLink(fbBackHome, 'home');
-  document.getElementById('feedbackForm').addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const errEl = document.getElementById('fbError');
-    errEl.style.display = 'none';
-    const message = document.getElementById('fbMessage').value.trim();
-    if(!message){
-      errEl.textContent = 'Please enter your feedback before sending.';
-      errEl.style.display = 'block';
-      return;
-    }
-    const submitBtn = document.getElementById('fbSubmit');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Sending...';
-    const payload = new URLSearchParams({
-      'form-name': 'feedback',
-      'name': document.getElementById('fbName').value.trim(),
-      'email': document.getElementById('fbEmail').value.trim(),
-      'message': message,
-      'bot-field': document.getElementById('fbBotField').value,
-    });
-    try {
-      const res = await fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: payload.toString(),
-      });
-      if(!res.ok) throw new Error('Submission failed');
-      document.getElementById('feedbackFormWrap').style.display = 'none';
-      document.getElementById('feedbackSuccess').style.display = 'block';
-    } catch(err){
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Send feedback →';
-      errEl.textContent = "Couldn't send that just now - please try again in a moment.";
-      errEl.style.display = 'block';
-    }
-  });
-}
+// Feedback and Privacy pages: ./ui/privacy.js.
 
 function renderAboutTab(container){
   container.innerHTML = `
@@ -3265,9 +3199,9 @@ function renderAboutTab(container){
         <h3 class="section-h">A few technical highlights</h3>
         <div class="about-narrative">
           <ul class="tech-highlights-list">
-            <li>An <b>adaptive decision-graph engine</b>, not a static form - questions branch on industry, region, infrastructure, and prior answers, with a session-wide <b>de-duplication system</b> so nothing is ever asked twice</li>
+            <li>An <b>adaptive decision-graph engine</b>, not a static form - questions branch on industry, region, infrastructure, and prior answers, with a session-wide <b>de-duplication system</b> so the same fact isn't asked for twice</li>
             <li><b>Compounding-risk detection</b> that flags dangerous <i>combinations</i> of gaps, not just individual weak answers - each one mapped to a real <b>MITRE ATT&amp;CK technique</b>, not a generic warning</li>
-            <li>A deliberate <b>hybrid AI architecture</b>: a tested, deterministic scoring engine as the guaranteed-correct core, with an optional live layer checking named vendors against current threat data on top of it</li>
+            <li>A deliberate <b>hybrid AI architecture</b>: a tested, deterministic scoring engine at the core (same answers, same report), with an optional live layer checking named vendors against current threat data on top of it</li>
             <li><b>Live threat intelligence</b> pulled from CISA's KEV catalog, VulnCheck, ENISA, and NVD, scored by real-world exploitation likelihood via FIRST.org's <b>EPSS</b> model</li>
             <li>An <b>AI Readiness &amp; Governance</b> question track following EC-Council's Adopt/Defend/Govern framework - scoped to how AI actually shows up in your environment, scored by the same engine, with real MITRE ATT&amp;CK/ATLAS mapping for AI-specific techniques like prompt injection</li>
             <li>A programmatically-built, <b>selectable-text PDF export</b>, and a real <b>client-side router</b> with working back/forward navigation and shareable URLs - not the "everything is one page pretending to be many" shortcut it's easy to settle for</li>
@@ -4328,6 +4262,9 @@ function initAnimatedBackground(){
   renderSearchWidget();
   renderHamburgerMenu();
   renderApp();
+  // Analytics are off until the visitor chooses (assets/gtag-init.js).
+  showCookieBanner();
+  wireCookieSettingsButton();
   // Back/forward: the URL has already changed by the time this fires, so
   // just read it and re-render - no pushState here, goToTab() already
   // handles the forward-navigation case.
