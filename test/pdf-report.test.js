@@ -13,7 +13,7 @@ import { ASSESSMENT_FLOW } from "../src/data/assessment-flow.js";
 import { TEAM_STRUCTURE_ORDER, TEAM_STRUCTURE_NODES } from "../src/data/team-structure.js";
 import { ORG_PROFILE_ORDER, ORG_PROFILE_NODES, INFRA_ORDER, INFRA_NODES, DEVSEC_ORDER, DEVSEC_NODES, OT_ORDER, OT_NODES } from "../src/data/profile-questions.js";
 import { CONTAINERIZATION_ORDER, CONTAINERIZATION_NODES } from "../src/data/containerization.js";
-import { computeFuncScores, computeOverall, computeFlags, computePriorities } from "../src/engine/scoring.js";
+import { computeFuncScores, computeOverall, computeFlags, computePriorities, computeRankedGaps } from "../src/engine/scoring.js";
 import { matchedVendorNotes } from "../src/data/vendor-notes.js";
 import { computeFrameworkRecommendations } from "../src/engine/framework-guidance.js";
 import { buildAssessmentPdfDoc } from "../src/engine/pdf-report.js";
@@ -56,7 +56,7 @@ function computeResultsCtx(session) {
   const priorities = computePriorities(session);
   const vendorNotes = matchedVendorNotes(session.answers);
   const frameworkRecs = computeFrameworkRecommendations(session);
-  return { session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs };
+  return { session, funcScores, overall, flags, priorities, rankedGaps: computeRankedGaps(session), vendorNotes, frameworkRecs };
 }
 
 function assertRealPdf(doc, { minPages = 1 } = {}) {
@@ -183,4 +183,16 @@ test("PDF export: includes AI-Enhanced Insights only when a response exists, wit
   assert.ok(text.includes("Flat network -> wide ransomware blast radius"), "arrow mapped to ASCII");
   assert.ok(text.includes('A "synthesized" paragraph.'), "curly quotes mapped to ASCII");
   assert.ok(text.includes("Proofpoint - A current advisory applies - patch now."), "em dash mapped to ASCII");
+});
+
+test("PDF export: lists every gap, not only the top five", () => {
+  const state = createSessionState();
+  answerAllWorst(state);
+  const ctx = computeResultsCtx(state);
+  assert.ok(ctx.rankedGaps.length > 5, "worst-case run should have more than five gaps");
+  const text = buildAssessmentPdfDoc(ctx).doc.output();
+  // jsPDF escapes parentheses inside PDF string literals.
+  assert.ok(text.includes(`EVERY GAP IN THIS ASSESSMENT \\(${ctx.rankedGaps.length}\\)`), "section heading with the gap count");
+  const last = ctx.rankedGaps[ctx.rankedGaps.length - 1];
+  assert.ok(text.includes(`${String(last.rank).padStart(2, "0")}. [`), "the lowest-ranked gap is listed too");
 });

@@ -14,7 +14,8 @@ import { FRAMEWORKS } from "../data/frameworks.js";
 import { PROFILE_SCREENS } from "../data/profile-flow.js";
 import { ASSESSMENT_FLOW } from "../data/assessment-flow.js";
 import { FUNCTIONS, FUNC_COLORS, FUNC_DISPLAY, FUNC_REF } from "../data/categories.js";
-import { scoreFunction, computeFuncScores, computeOverall, computeFlags, computeGapItems, computePriorities, verdictLabel } from "../engine/scoring.js";
+import { scoreFunction, computeFuncScores, computeOverall, computeFlags, computeGapItems, computeRankedGaps, verdictLabel } from "../engine/scoring.js";
+import { WEIGHT_LABELS } from "../data/control-weights.js";
 import { matchedVendorNotes } from "../data/vendor-notes.js";
 import { snapshotRows } from "./snapshot.js";
 import { OTHER as OTHER_VALUE } from "../data/vendors.js";
@@ -929,7 +930,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   // real scoring/rules logic evolves" rather than a second, hand-maintained
   // copy - so this is the one place that markup exists, shared by
   // renderResults() and renderSampleReport() alike.
-  function reportBodyHtml({ session: s, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, otherTexts = [] }) {
+  function reportBodyHtml({ session: s, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, rankedGaps, otherTexts = [] }) {
     return `
       <div class="snapshot">
         <h3>Infrastructure snapshot (self-reported)</h3>
@@ -1026,19 +1027,68 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
 
       <div class="priorities">
         <h3>Where to act first, ranked</h3>
+        <p class="scope-hint">Ranked by risk, not by question order: how directly the gap enables a common attack (the controls CISA's Cross-Sector Performance Goals and #StopRansomware guidance put first rank highest), how far your answer is from the strongest option, and whether it feeds a combined finding above.</p>
         ${priorities
           .map(
             (p2, i) => `
           <div class="priority-item">
             <div class="priority-rank">${String(i + 1).padStart(2, "0")}</div>
-            <div><b>${FUNC_DISPLAY[p2.fn]}:</b> ${p2.gap}</div>
+            <div><b>${FUNC_DISPLAY[p2.fn]}:</b> ${p2.gap} ${gapTierChip(p2)}</div>
           </div>
           ${mitrePanel(guidanceForGapItem(p2, s.answers, !s.quickMode), `gap-${p2.id}`)}
         `
           )
           .join("")}
       </div>
+
+      ${gapRegisterHtml(s, rankedGaps)}
     `;
+  }
+
+  function gapTierChip(g) {
+    return `<span class="gap-tier gap-tier-${g.weight}">${WEIGHT_LABELS[g.weight]}</span>`;
+  }
+
+  // The full remediation backlog - every gap on this run, not only the top
+  // five. Grouped by area (what a CISO reports on), ordered by the same risk
+  // ranking within each group (what an IT admin works through), each with
+  // the same "how to fix it" text the detailed panels above use.
+  function gapRegisterHtml(s, rankedGaps) {
+    if (!rankedGaps.length) return "";
+    const groups = FUNCTIONS.map((fn) => ({ fn, gaps: rankedGaps.filter((g) => g.fn === fn) })).filter((grp) => grp.gaps.length);
+    return `
+      <div class="flags gap-register">
+        <h3>Every gap in this assessment (${rankedGaps.length})</h3>
+        <p class="scope-hint">The full list behind the five above, grouped by area and ordered by the same risk ranking within each. The number is each gap's overall rank.</p>
+        ${groups
+          .map(
+            (grp) => `
+          <div class="acc-card">
+            <div class="acc-head">
+              <div><h4>${FUNC_DISPLAY[grp.fn]}</h4><div class="acc-sub">${grp.gaps.length} gap${grp.gaps.length === 1 ? "" : "s"}${grp.gaps.some((g) => g.weight === 3) ? ` - ${grp.gaps.filter((g) => g.weight === 3).length} on critical controls` : ""}</div></div>
+              <div class="acc-chevron">▸</div>
+            </div>
+            <div class="acc-body">
+              ${grp.gaps
+                .map((g) => {
+                  const fix = guidanceForGapItem(g, s.answers, false)?.remediation;
+                  return `
+                <div class="gap-row">
+                  <div class="priority-rank">${String(g.rank).padStart(2, "0")}</div>
+                  <div class="gap-row-body">
+                    <div>${escapeHtml(g.gap)} ${gapTierChip(g)}</div>
+                    <div class="gap-row-answer">Your answer: "${escapeHtml(g.chosen)}"</div>
+                    ${fix ? `<div class="gap-row-fix"><b>How to fix it:</b> ${escapeHtml(fix)}</div>` : ""}
+                  </div>
+                </div>`;
+                })
+                .join("")}
+            </div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>`;
   }
 
   // ---------- results ----------
@@ -1053,7 +1103,8 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     const overall = computeOverall(funcScores);
     const flags = computeFlags(session);
     const gapItems = computeGapItems(session);
-    const priorities = computePriorities(session);
+    const rankedGaps = computeRankedGaps(session);
+    const priorities = rankedGaps.slice(0, 5);
     const vendorNotes = matchedVendorNotes(session.answers);
     const frameworkRecs = computeFrameworkRecommendations(session);
     const currentGapTexts = gapItems.map((i) => i.gap);
@@ -1128,7 +1179,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           : ""
       }
 
-      ${reportBodyHtml({ session, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, otherTexts })}
+      ${reportBodyHtml({ session, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, rankedGaps, otherTexts })}
 
       <div class="note-box">
         <b>About this report -</b> the flags and priority list above are produced by a deterministic rules
@@ -1181,7 +1232,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     });
     wireNavLink(document.getElementById("viewHistoryBtn"), "history");
     document.getElementById("exportPdfBtn").addEventListener("click", () => {
-      buildAssessmentPdf({ session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs, aiInsights: lastAiInsights });
+      buildAssessmentPdf({ session, funcScores, overall, flags, priorities, rankedGaps, vendorNotes, frameworkRecs, aiInsights: lastAiInsights });
     });
     document.getElementById("aiInsightsBtn").addEventListener("click", () =>
       requestAiInsights({ session, overall, verdict: verdictLabel(overall), flags, priorities, vendorNotes, frameworkRecs })
@@ -1207,7 +1258,8 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     const funcScores = computeFuncScores(sampleSession);
     const overall = computeOverall(funcScores);
     const flags = computeFlags(sampleSession);
-    const priorities = computePriorities(sampleSession);
+    const rankedGaps = computeRankedGaps(sampleSession);
+    const priorities = rankedGaps.slice(0, 5);
     const vendorNotes = matchedVendorNotes(sampleSession.answers);
     const frameworkRecs = computeFrameworkRecommendations(sampleSession);
 
@@ -1217,7 +1269,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       <h2 class="step-title">Health Reading</h2>
       <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f) => sampleSession.answers[f.id]).map((f) => " + " + f.name).join("")}${sampleSession.answers.industry ? " · " + INDUSTRIES.find((i) => i.id === sampleSession.answers.industry).label : ""}</p>
 
-      ${reportBodyHtml({ session: sampleSession, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities })}
+      ${reportBodyHtml({ session: sampleSession, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, rankedGaps })}
 
       <div class="note-box">
         <b>About this report -</b> everything above is produced by running a fixed sample answer set through
@@ -1250,7 +1302,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       renderLanding();
     });
     document.getElementById("samplePdfBtn").addEventListener("click", () => {
-      buildAssessmentPdf({ session: sampleSession, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs, aiInsights: SAMPLE_AI_INSIGHTS });
+      buildAssessmentPdf({ session: sampleSession, funcScores, overall, flags, priorities, rankedGaps, vendorNotes, frameworkRecs, aiInsights: SAMPLE_AI_INSIGHTS });
     });
   }
 
