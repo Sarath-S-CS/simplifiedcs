@@ -28,7 +28,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const PAGES = [
   "/", "/methodology", "/maturity-model", "/metrics", "/core-principles", "/what-is-simplifiedcs",
   "/starter-guide", "/threat-modeling", "/security-tools-repository", "/roadmap", "/runbooks",
-  "/exploits", "/case-studies", "/glossary", "/references", "/about", "/privacy", "/history",
+  "/exploits", "/case-studies", "/glossary", "/references", "/about", "/engineering", "/privacy", "/history",
 ];
 const openFirstAccordion = () => document.querySelector(".acc-head")?.click();
 

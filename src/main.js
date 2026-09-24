@@ -27,6 +27,7 @@ import { renderExploitsTab } from "./pages/exploits.js";
 import { renderGlossaryTab } from "./pages/glossary.js";
 import { renderReferencesTab } from "./pages/references.js";
 import { renderAboutTab } from "./pages/about.js";
+import { renderEngineeringTab } from "./pages/engineering.js";
 import { renderCorePrinciplesTab } from "./pages/core-principles.js";
 import { renderPlaybooksTab } from "./pages/playbooks.js";
 import { renderSecurityToolsTab } from "./pages/security-tools.js";
@@ -63,6 +64,7 @@ const TAB_TITLES = {
   glossary: 'Glossary - SimplifiedCS',
   references: 'References - SimplifiedCS',
   about: 'About - SimplifiedCS',
+  engineering: 'Engineering Case Study - SimplifiedCS',
   feedback: 'Feedback - SimplifiedCS',
   privacy: 'Privacy - SimplifiedCS',
   assessment: 'Assessment - SimplifiedCS',
@@ -494,6 +496,7 @@ function renderActiveTab(){
   else if(activeTab === 'glossary') renderGlossaryTab(container);
   else if(activeTab === 'references') renderReferencesTab(container);
   else if(activeTab === 'about') renderAboutTab(container);
+  else if(activeTab === 'engineering') renderEngineeringTab(container);
   else if(activeTab === 'feedback') renderFeedbackPage(container);
   else if(activeTab === 'privacy') renderPrivacyPage(container);
   else if(activeTab === 'assessment') renderAssessmentTab(container);

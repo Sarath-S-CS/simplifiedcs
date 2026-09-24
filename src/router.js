@@ -30,6 +30,7 @@ const ROUTES = {
   glossary: '/glossary',
   references: '/references',
   about: '/about',
+  engineering: '/engineering',
   feedback: '/feedback',
   privacy: '/privacy',
   assessment: '/assessment',
