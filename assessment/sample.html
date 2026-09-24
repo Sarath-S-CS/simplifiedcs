@@ -39,20 +39,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <meta name="site-updated" content="September 24, 2026">
-<link rel="stylesheet" href="/assets/build/app-3HUSOICV.css">
-<script type="module" src="/assets/build/main-5MLJYLAI.js"></script>
+<link rel="stylesheet" href="/assets/build/app-F2EEY6SZ.css">
+<script type="module" src="/assets/build/main-W7HTBTGE.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#tabContent">Skip to main content</a>
 <div id="bgLayer" aria-hidden="true"><canvas id="bgCanvas" width="800" height="600" style="width: 800px; height: 600px;"></canvas></div>
 <div class="app">
 
-  <div class="masthead">
+  <div class="masthead" role="banner">
    <div class="masthead-inner">
     <a href="/" class="masthead-brand" id="brandHomeLink">
       <img src="/assets/img/logo.png" alt="SimplifiedCS logo" class="brand-logo">
       <h1><span class="brand-s">S</span><span class="brand-mid">implified</span><span class="brand-cs">CS</span></h1>
     </a>
-    <div class="tabnav" id="tabnav">
+    <div class="tabnav" id="tabnav" role="navigation" aria-label="Main">
         <div class="tab-item has-dropdown">
           <a class="tab-btn " href="/" data-tab="home">Home <span class="tab-caret" data-toggle="1">▾</span></a>
           <div class="tab-dropdown">
@@ -101,7 +102,7 @@
     <input type="text" class="search-input" id="searchInput" placeholder="Search the site…" autocomplete="off">
     <div class="search-results" id="searchResults"></div>
   </div>
-      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Switch to light mode">
+      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Light mode">
     <span class="theme-switch-track">
       <span class="theme-switch-thumb"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z"></path></svg></span>
     </span>
@@ -111,7 +112,7 @@
    </div>
   </div>
 
-  <div id="tabContent" class="">
+  <main id="tabContent" class="">
     <div class="assessment-serial" id="serial">SIMPLIFIEDCS · NIST CSF 2.0 · CIS Controls v8.1</div>
     <div class="layout">
       <div class="rail rail-empty" id="rail"></div>
@@ -187,10 +188,10 @@
           <h4 class="plan-heading">Within 30 days <span class="plan-count">4 actions</span></h4>
           
     <div class="acc-card action-card action-critical" id="A-mfa">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-1" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 1">01</div>
         <div class="action-head-text">
-          <h4>Enforce MFA for remote, cloud and admin access</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-1" aria-expanded="false">Enforce MFA for remote, cloud and admin access</button></h4>
           <div class="acc-sub">Access &amp; Identity · Is multi-factor authentication enforced for remote and admin access? - your answer: "Admin accounts only"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-3">Critical gap</span>
@@ -212,10 +213,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-patching">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-2" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 4">04</div>
         <div class="action-head-text">
-          <h4>Patch on a defined schedule, fastest for known-exploited flaws</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-2" aria-expanded="false">Patch on a defined schedule, fastest for known-exploited flaws</button></h4>
           <div class="acc-sub">Access &amp; Identity · How are software patches and updates managed? - your answer: "Scheduled but inconsistent"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-3">Critical control</span>
@@ -237,10 +238,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-privAccountMgmt">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-3" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 6">06</div>
         <div class="action-head-text">
-          <h4>Individually assign, review and rotate privileged accounts</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-3" aria-expanded="false">Individually assign, review and rotate privileged accounts</button></h4>
           <div class="acc-sub">Access &amp; Identity · How are privileged accounts (domain admins, database admins, local/server administrators) managed? - your answer: "Individually assigned, but not regularly reviewed"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-3">Critical control</span>
@@ -262,10 +263,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-backupTest">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-4" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 7">07</div>
         <div class="action-head-text">
-          <h4>Test restores from backup on a schedule</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-4" aria-expanded="false">Test restores from backup on a schedule</button></h4>
           <div class="acc-sub">Recovery &amp; Continuity · How often are backups tested by actually restoring data? - your answer: "Rarely"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-3">Critical control</span>
@@ -291,10 +292,10 @@
           <h4 class="plan-heading">Within 60 days <span class="plan-count">16 actions</span></h4>
           
     <div class="acc-card action-card" id="A-exfil">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-5" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 2">02</div>
         <div class="action-head-text">
-          <h4>Monitor for unusual outbound data transfers</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-5" aria-expanded="false">Monitor for unusual outbound data transfers</button></h4>
           <div class="acc-sub">Detection &amp; Monitoring · Do you monitor for data exfiltration or unusual outbound traffic? - your answer: "No"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -316,10 +317,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-bcdr">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-6" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 3">03</div>
         <div class="action-head-text">
-          <h4>Document a business continuity and recovery plan</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-6" aria-expanded="false">Document a business continuity and recovery plan</button></h4>
           <div class="acc-sub">Recovery &amp; Continuity · Do you have a documented business continuity / disaster recovery plan? - your answer: "No"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -341,10 +342,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-vendorAccessReview">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-7" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 8">08</div>
         <div class="action-head-text">
-          <h4>Review third parties that can access your systems or data</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-7" aria-expanded="false">Review third parties that can access your systems or data</button></h4>
           <div class="acc-sub">Your Team &amp; Vendors · Are third parties with access to your systems or data (IT providers, SaaS vendors, contractors) reviewed for security before they get access, and periodically after? - your answer: "Informally, or only when they're first onboarded"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -366,10 +367,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-assetInv">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-8" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 11">11</div>
         <div class="action-head-text">
-          <h4>Build an asset inventory and keep it current</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-8" aria-expanded="false">Build an asset inventory and keep it current</button></h4>
           <div class="acc-sub">Data &amp; Systems · How would you describe your asset inventory? - your answer: "Partial, manually maintained spreadsheet"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -391,10 +392,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-dbAccessControl">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-9" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 14">14</div>
         <div class="action-head-text">
-          <h4>Give applications least-privilege database accounts</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-9" aria-expanded="false">Give applications least-privilege database accounts</button></h4>
           <div class="acc-sub">Access &amp; Identity · Does routine application access to that database use least-privilege, application-specific credentials - not a shared or admin/root account? - your answer: "Partially - some services still use shared/admin credentials"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -416,10 +417,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-dbPatching">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-10" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 15">15</div>
         <div class="action-head-text">
-          <h4>Keep database software patched</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-10" aria-expanded="false">Keep database software patched</button></h4>
           <div class="acc-sub">Access &amp; Identity · Is the database software itself (not just the application) kept current and patched? - your answer: "Patched, but inconsistently or behind schedule"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -441,10 +442,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-training">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-11" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 16">16</div>
         <div class="action-head-text">
-          <h4>Run recurring security awareness training</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-11" aria-expanded="false">Run recurring security awareness training</button></h4>
           <div class="acc-sub">Access &amp; Identity · Do employees receive security awareness training? - your answer: "Once, at onboarding"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -466,10 +467,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-emailAuth">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-12" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 18">18</div>
         <div class="action-head-text">
-          <h4>Enforce SPF, DKIM and DMARC for your domain</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-12" aria-expanded="false">Enforce SPF, DKIM and DMARC for your domain</button></h4>
           <div class="acc-sub">Access &amp; Identity · Is email authentication (SPF, DKIM, and DMARC set to quarantine/reject) enforced for your domain? - your answer: "Partially - e.g. DMARC set to "none""</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -491,10 +492,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-privSeparation">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-13" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 19">19</div>
         <div class="action-head-text">
-          <h4>Separate admin accounts from everyday accounts</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-13" aria-expanded="false">Separate admin accounts from everyday accounts</button></h4>
           <div class="acc-sub">Access &amp; Identity · Are administrative accounts kept separate from everyday user accounts? - your answer: "Partially"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -516,10 +517,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-offboarding">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-14" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 21">21</div>
         <div class="action-head-text">
-          <h4>Revoke all access immediately when people leave or move</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-14" aria-expanded="false">Revoke all access immediately when people leave or move</button></h4>
           <div class="acc-sub">Access &amp; Identity · Is there a formal process to revoke all access immediately when someone leaves or changes roles? - your answer: "Informal / inconsistent"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -541,10 +542,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-aiVerificationStep">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-15" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 23">23</div>
         <div class="action-head-text">
-          <h4>Require out-of-band verification for payment changes</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-15" aria-expanded="false">Require out-of-band verification for payment changes</button></h4>
           <div class="acc-sub">Access &amp; Identity · For payment changes or other sensitive requests, is there an authenticated, out-of-band verification step that would still hold up even if email, voice, and video were all convincingly impersonated? - your answer: "Some verification exists, but not out-of-band or not consistently applied"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -566,10 +567,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-vulnScanning">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-16" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 24">24</div>
         <div class="action-head-text">
-          <h4>Scan internal and external systems on a schedule</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-16" aria-expanded="false">Scan internal and external systems on a schedule</button></h4>
           <div class="acc-sub">Detection &amp; Monitoring · Do you run regular external and internal vulnerability scans? - your answer: "Occasionally / ad hoc"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -591,10 +592,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-irPlan">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-17" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 26">26</div>
         <div class="action-head-text">
-          <h4>Write and test an incident response plan</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-17" aria-expanded="false">Write and test an incident response plan</button></h4>
           <div class="acc-sub">Incident Readiness · Do you have a documented incident response plan? - your answer: "Yes, but never tested"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -616,10 +617,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-secretsManagement">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-18" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 28">28</div>
         <div class="action-head-text">
-          <h4>Move secrets into a secrets manager and rotate them</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-18" aria-expanded="false">Move secrets into a secrets manager and rotate them</button></h4>
           <div class="acc-sub">Access &amp; Identity · How are secrets (API keys, credentials) managed in your applications/pipelines? - your answer: "Environment variables, informally managed"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -641,10 +642,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-hypervisorPatching">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-19" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 29">29</div>
         <div class="action-head-text">
-          <h4>Patch hypervisor hosts on a defined schedule</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-19" aria-expanded="false">Patch hypervisor hosts on a defined schedule</button></h4>
           <div class="acc-sub">Access &amp; Identity · How are hypervisor hosts patched and maintained? - your answer: "Scheduled maintenance windows"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -666,10 +667,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-vmSegmentation">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-20" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 30">30</div>
         <div class="action-head-text">
-          <h4>Segment workloads by trust level</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-20" aria-expanded="false">Segment workloads by trust level</button></h4>
           <div class="acc-sub">Access &amp; Identity · Are VMs/containers for different trust levels (e.g. production vs. test, internet-facing vs. internal) network-segmented from each other? - your answer: "Partially segmented"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-2">High impact</span>
@@ -695,10 +696,10 @@
           <h4 class="plan-heading">Within 90 days <span class="plan-count">19 actions</span></h4>
           
     <div class="acc-card action-card" id="A-phishingSim">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-21" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 5">05</div>
         <div class="action-head-text">
-          <h4>Run regular phishing simulations</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-21" aria-expanded="false">Run regular phishing simulations</button></h4>
           <div class="acc-sub">Access &amp; Identity · Do you run simulated phishing tests for employees? - your answer: "No"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -720,10 +721,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-aiToolGovernance">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-22" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 9">09</div>
         <div class="action-head-text">
-          <h4>Publish an AI usage policy and track approved tools</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-22" aria-expanded="false">Publish an AI usage policy and track approved tools</button></h4>
           <div class="acc-sub">Your Team &amp; Vendors · Is the organization's use of AI tools tracked and governed? - your answer: "Used with no tracking or policy"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -745,10 +746,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-aiRiskOwnership">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-23" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 10">10</div>
         <div class="action-head-text">
-          <h4>Name an AI-risk owner and add an AI scenario to the IR plan</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-23" aria-expanded="false">Name an AI-risk owner and add an AI scenario to the IR plan</button></h4>
           <div class="acc-sub">Your Team &amp; Vendors · Is there a named, accountable owner for AI-related risk in your organization (even informally), and does your incident response plan address at least one AI-specific scenario (e.g. sensitive data pasted into a public AI tool, an AI-generated attack)? - your answer: "No named owner and no AI-specific IR scenario"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -770,10 +771,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-dataClass">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-24" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 12">12</div>
         <div class="action-head-text">
-          <h4>Classify data by sensitivity</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-24" aria-expanded="false">Classify data by sensitivity</button></h4>
           <div class="acc-sub">Data &amp; Systems · Do you classify data by sensitivity (public / internal / confidential / restricted)? - your answer: "No"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -795,10 +796,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-passkeys">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-25" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 13">13</div>
         <div class="action-head-text">
-          <h4>Offer passkeys for key systems and accounts</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-25" aria-expanded="false">Offer passkeys for key systems and accounts</button></h4>
           <div class="acc-sub">Access &amp; Identity · Does your organization support passkeys or other passwordless authentication methods (e.g. WebAuthn/FIDO2, platform biometrics), in addition to or instead of passwords? - your answer: "No - passwords (with or without a separate MFA step) are the only option"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -820,10 +821,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-trainingCadence">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-26" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 17">17</div>
         <div class="action-head-text">
-          <h4>Move training to a recurring cadence</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-26" aria-expanded="false">Move training to a recurring cadence</button></h4>
           <div class="acc-sub">Access &amp; Identity · What is the actual cadence of that security awareness training? - your answer: "Ad hoc / no fixed schedule"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -845,10 +846,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-privilegedAccessModel">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-27" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 20">20</div>
         <div class="action-head-text">
-          <h4>Grant elevated access just in time</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-27" aria-expanded="false">Grant elevated access just in time</button></h4>
           <div class="acc-sub">Access &amp; Identity · For those separate admin accounts, is elevated access always-on (standing privileges) or granted just-in-time for specific tasks? - your answer: "Standing / always-on elevated access"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -870,10 +871,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-aiDeepfakeTraining">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-28" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 22">22</div>
         <div class="action-head-text">
-          <h4>Cover AI phishing and impersonation in training</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-28" aria-expanded="false">Cover AI phishing and impersonation in training</button></h4>
           <div class="acc-sub">Access &amp; Identity · Has security awareness training been updated to address AI-generated phishing and voice/video impersonation specifically, not just traditional phishing? - your answer: "No - training doesn't address AI-generated phishing or impersonation specifically"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -895,10 +896,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-pentest">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-29" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 25">25</div>
         <div class="action-head-text">
-          <h4>Commission an external penetration test</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-29" aria-expanded="false">Commission an external penetration test</button></h4>
           <div class="acc-sub">Detection &amp; Monitoring · Have you had an external penetration test or red-team engagement in the last 12 months? - your answer: "No"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -920,10 +921,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-commsPlan">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-30" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 27">27</div>
         <div class="action-head-text">
-          <h4>Prepare a breach communication plan</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-30" aria-expanded="false">Prepare a breach communication plan</button></h4>
           <div class="acc-sub">Incident Readiness · Do you have a breach communication plan (legal, customers, regulators)? - your answer: "No"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -945,10 +946,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-govPolicy">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-31" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 31">31</div>
         <div class="action-head-text">
-          <h4>Approve a short, current security policy</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-31" aria-expanded="false">Approve a short, current security policy</button></h4>
           <div class="acc-sub">Your Team &amp; Vendors · Is there a documented cybersecurity policy, approved by leadership? - your answer: "Yes, but outdated or unreviewed"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -970,10 +971,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-govRoles">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-32" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 32">32</div>
         <div class="action-head-text">
-          <h4>Assign named owners for security responsibilities</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-32" aria-expanded="false">Assign named owners for security responsibilities</button></h4>
           <div class="acc-sub">Your Team &amp; Vendors · Are cybersecurity roles and responsibilities formally assigned? - your answer: "Somewhat, but not documented"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -995,10 +996,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-govReporting">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-33" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 33">33</div>
         <div class="action-head-text">
-          <h4>Report security risk to leadership on a schedule</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-33" aria-expanded="false">Report security risk to leadership on a schedule</button></h4>
           <div class="acc-sub">Your Team &amp; Vendors · Does leadership receive regular reporting on cybersecurity risk? - your answer: "Ad hoc, when something goes wrong"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -1020,10 +1021,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-govRiskDecisions">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-34" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 34">34</div>
         <div class="action-head-text">
-          <h4>Add a security check to vendor and product approvals</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-34" aria-expanded="false">Add a security check to vendor and product approvals</button></h4>
           <div class="acc-sub">Your Team &amp; Vendors · Is cybersecurity risk factored into business decisions (new vendors, new products) before they're approved? - your answer: "Sometimes, informally"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -1045,10 +1046,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-passwordPolicy">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-35" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 35">35</div>
         <div class="action-head-text">
-          <h4>Enforce a strong password policy</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-35" aria-expanded="false">Enforce a strong password policy</button></h4>
           <div class="acc-sub">Access &amp; Identity · What is the organization's password policy for length, complexity, and rotation? - your answer: "Basic complexity requirements enforced"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -1070,10 +1071,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-soc2Change">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-36" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 36">36</div>
         <div class="action-head-text">
-          <h4>Document and enforce change management for production</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-36" aria-expanded="false">Document and enforce change management for production</button></h4>
           <div class="acc-sub">Access &amp; Identity · Do you have documented change management controls for production systems? - your answer: "Informal"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -1095,10 +1096,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-aiCodeReviewParity">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-37" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 37">37</div>
         <div class="action-head-text">
-          <h4>Review AI-generated code like any other code</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-37" aria-expanded="false">Review AI-generated code like any other code</button></h4>
           <div class="acc-sub">Access &amp; Identity · Is AI-generated code or AI tool output reviewed the same way human-written code is, before being merged or deployed? - your answer: "Partially - reviewed sometimes, not consistently"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -1120,10 +1121,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-soc2Evidence">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-38" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 38">38</div>
         <div class="action-head-text">
-          <h4>Retain control evidence across the audit period</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-38" aria-expanded="false">Retain control evidence across the audit period</button></h4>
           <div class="acc-sub">Detection &amp; Monitoring · Could you produce evidence/logs for an independent auditor showing controls operated effectively over a review period? - your answer: "Partially"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -1145,10 +1146,10 @@
       </div>
     </div>
     <div class="acc-card action-card" id="A-devsecopsMaturity">
-      <div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-39" aria-expanded="false">
+      <div class="acc-head" data-acc-wired="1">
         <div class="priority-rank" aria-label="Rank 39">39</div>
         <div class="action-head-text">
-          <h4>Enforce security checks in CI/CD</h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-39" aria-expanded="false">Enforce security checks in CI/CD</button></h4>
           <div class="acc-sub">Access &amp; Identity · How would you describe your DevSecOps practice? - your answer: "Security scanning exists but isn't enforced in the pipeline"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
@@ -1175,10 +1176,10 @@
       <h3 id="flagsTitle">Combined findings - risks that compound</h3>
       
           <div class="flag-item"><b>Combined finding -</b> A public-facing web app that connects to a backend database, without outbound-traffic monitoring, is the setup where a SQL injection or similar attack can go unnoticed long enough to exfiltrate the database. <span class="scope-hint">Actions: <a href="#A-exfil" class="inline-link">A-exfil</a></span></div>
-          <div class="acc-card mitre-panel"><div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-40" aria-expanded="false"><div><h4>Why this matters, and what to do now</h4></div><div class="acc-chevron" aria-hidden="true">▸</div></div>
+          <div class="acc-card mitre-panel"><div class="acc-head" data-acc-wired="1"><div><h4><button type="button" class="acc-toggle" aria-controls="acc-body-40" aria-expanded="false">Why this matters, and what to do now</button></h4></div><div class="acc-chevron" aria-hidden="true">▸</div></div>
                  <div class="acc-body" id="acc-body-40"><ul><li><b>Why this was flagged:</b> You indicated you operate an externally-reachable customer-facing service ("Yes") connected to a backend database ("Yes"), with logging "Yes" and outbound-traffic monitoring "No".</li><li><b>Attack technique:</b> MITRE ATT&amp;CK T1190 - Exploit Public-Facing Application</li><li><b>What could go wrong:</b> A public web app connected to a database is a direct target for this technique - things like SQL injection against the app itself. Centralized logging and outbound-traffic monitoring are what typically catch the follow-on data exfiltration; without them, a successful exploit can run for a long time before anyone notices.</li><li><b>Interim step:</b> Regular vulnerability scanning helps catch some exploitable issues before they're used, but it doesn't replace monitoring for exfiltration after the fact. As an immediate step, turn on your hosting or cloud provider's built-in access/traffic logging - most include this at no extra cost, and it beats having no visibility at all.</li><li><b>How to fix it:</b> Put a web application firewall in front of the app (most cloud providers and CDNs offer one), run an authenticated vulnerability/injection scan against it, and enable outbound-traffic alerting for unusually large data transfers - together these address the entry point, the flaw, and the exfiltration step.</li><li><b>Reference:</b> <a href="https://owasp.org/www-project-top-ten/" target="_blank" rel="noopener noreferrer">OWASP Top 10</a></li><li><b>OWASP Top 10:</b> <a href="/playbooks#A09:2021" class="inline-link">A09:2021 - Security Logging and Monitoring Failures</a></li></ul></div></div>
           <div class="flag-item"><b>Combined finding -</b> Training is happening, but without simulated phishing tests there's no actual evidence it's working - the two are meant to reinforce each other, and skipping simulation means the training's real effectiveness is unmeasured. <span class="scope-hint">Actions: <a href="#A-phishingSim" class="inline-link">A-phishingSim</a></span></div>
-          <div class="acc-card mitre-panel"><div class="acc-head" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-41" aria-expanded="false"><div><h4>Why this matters, and what to do now</h4></div><div class="acc-chevron" aria-hidden="true">▸</div></div>
+          <div class="acc-card mitre-panel"><div class="acc-head" data-acc-wired="1"><div><h4><button type="button" class="acc-toggle" aria-controls="acc-body-41" aria-expanded="false">Why this matters, and what to do now</button></h4></div><div class="acc-chevron" aria-hidden="true">▸</div></div>
                  <div class="acc-body" id="acc-body-41"><ul><li><b>Why this was flagged:</b> You indicated security awareness training is "Once, at onboarding" and simulated phishing tests are "No".</li><li><b>Attack technique:</b> MITRE ATT&amp;CK T1566 - Phishing</li><li><b>What could go wrong:</b> Training is meant to be the human-side defense against this technique, but without testing it, its actual effectiveness is unmeasured - you know training happened, not whether it worked.</li><li><b>Interim step:</b> Run one low-stakes test manually before investing in a platform - a single internal email from IT with a fake "reset your password" link, tracking who clicks. It's a real interim data point on whether the training is landing, at effectively no cost.</li><li><b>How to fix it:</b> Add recurring simulated phishing tests (monthly or quarterly, many awareness-training platforms include this) and track click/report rates over time as the actual measure of whether training is working, not just completion rates.</li></ul></div></div>
     </section>
       <section class="flags" aria-labelledby="infoTitle">
@@ -1248,7 +1249,7 @@
         <button type="button" id="samplePdfBtn">Download this example as PDF</button>
       </div></div></div>
     </div>
-  </div>
+  </main>
 
   <footer class="site-footer">
     <div class="footer-top">

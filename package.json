@@ -8,6 +8,7 @@
     "build": "node scripts/build.js",
     "watch": "node scripts/build.js --watch",
     "prerender": "node scripts/prerender.js",
+    "a11y": "node scripts/a11y-audit.js",
     "test": "node --test"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
     "@electric-sql/pglite": "^0.5.8",
     "@netlify/functions": "^6.0.0",
     "@types/node": "^26.2.0",
+    "axe-core": "^4.13.0",
     "esbuild": "^0.25.12",
     "jsdom": "^25.0.0",
     "puppeteer": "^25.12.0",

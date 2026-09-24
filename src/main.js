@@ -11,7 +11,7 @@ import { CASE_STUDIES } from "./content/case-studies.js";
 import { PHASES, STAGE_DETAIL, SCORE_RUBRIC, CORE_PRINCIPLES, RISK_SCORE_DESCRIPTIONS } from "./content/maturity.js";
 import { GLOSSARY, LEARNING_RESOURCES, REFERENCES, SIMULATED_ENGAGEMENT } from "./content/learning.js";
 import { NEWS_ITEMS } from "./content/news.js";
-import { wireAccordions } from "./ui/a11y.js";
+import { wireAccordions, keepFocusAcrossRedraw } from "./ui/a11y.js";
 import { applyPageMeta } from "./ui/page-meta.js";
 import { renderPrivacyPage, renderFeedbackPage, showCookieBanner, wireCookieSettingsButton } from "./ui/privacy.js";
 // FUNCTIONS/FUNC_COLORS used to be plain globals at the top of the original
@@ -285,11 +285,11 @@ function icon(name){
 }
 
 const STAGE_META = {
-  discovery: { label:'Discovery', range:'Phases 1–4', color:'var(--accent-signal)',
+  discovery: { label:'Discovery', range:'Phases 1–4', color:'var(--accent-signal)', ink:'var(--accent-signal-ink)',
     blurb:'You don\'t have a security program yet so much as a starting point - the goal is visibility: what exists, where it\'s exposed, and who owns fixing it.' },
-  transformation: { label:'Transformation', range:'Phases 5–7', color:'var(--accent-secure)',
+  transformation: { label:'Transformation', range:'Phases 5–7', color:'var(--accent-secure)', ink:'var(--accent-secure-ink)',
     blurb:'Findings become controls, and controls become documented, rehearsed processes - this is where most of the actual engineering and writing happens.' },
-  optimization: { label:'Optimization', range:'Phases 8–10', color:'var(--accent-violet)',
+  optimization: { label:'Optimization', range:'Phases 8–10', color:'var(--accent-violet)', ink:'var(--accent-violet-ink)',
     blurb:'The program runs continuously - monitored, tested, and adjusted as the environment and threat landscape change, rather than declared "done."' },
 };
 
@@ -496,7 +496,13 @@ function scrollToPendingAnchor(){
   }
 }
 
+// False until the first render: the first page load keeps the browser's
+// normal starting focus; only later in-site navigations move it.
+let hasRenderedOnce = false;
+
 function renderApp(){
+  const isNavigation = hasRenderedOnce;
+  hasRenderedOnce = true;
   // Every navigation funnels through here (goToTab's forward-nav and the
   // popstate back/forward handler both call this), so it's the one place
   // that can reliably reset scroll position - without it, a page you
@@ -517,6 +523,7 @@ function renderApp(){
       requestAnimationFrame(()=>{
         tc.classList.remove('tab-fade');
         observeReveals();
+        if(isNavigation && !pendingAnchor) focusPageHeading({ scroll:false });
         scrollToPendingAnchor();
       });
     }, 160);
@@ -527,6 +534,19 @@ function renderApp(){
     observeReveals();
     scrollToPendingAnchor();
   }
+}
+
+// After an in-site navigation, move keyboard and screen-reader focus to the
+// new page's heading - the equivalent of a full page load putting the
+// reader at the top of the new page. Without it, focus stays on the link
+// that was clicked and nothing tells a screen-reader user the page changed.
+// Also used by the "Skip to main content" link.
+function focusPageHeading({ scroll }){
+  const main = document.getElementById('tabContent');
+  const target = (main && main.querySelector('h2')) || main;
+  if(!target) return;
+  if(!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+  target.focus({ preventScroll: !scroll });
 }
 
 function observeReveals(){
@@ -614,7 +634,9 @@ function renderThemeToggle(){
   const isLight = theme === 'light';
   btn.setAttribute('role', 'switch');
   btn.setAttribute('aria-checked', String(isLight));
-  btn.setAttribute('aria-label', `Switch to ${isLight ? 'dark' : 'light'} mode`);
+  // A switch is named for what it turns on; its checked state says whether it is
+  // on. ("Switch to light mode, on" would contradict itself.)
+  btn.setAttribute('aria-label', 'Light mode');
   btn.innerHTML = `
     <span class="theme-switch-track">
       <span class="theme-switch-thumb">${icon(isLight ? 'sun' : 'moon')}</span>
@@ -747,6 +769,8 @@ function renderHamburgerMenu(){
     const panel = document.createElement('div');
     panel.className = 'mobile-nav-panel';
     panel.id = 'mobileNavPanel';
+    panel.setAttribute('role', 'navigation');
+    panel.setAttribute('aria-label', 'Main');
     panel.innerHTML = TOP_TABS.map(t=>{
       const dd = NAV_DROPDOWN_MAP[t.id];
       if(!dd || !dd.length){
@@ -965,9 +989,9 @@ function buildHeroInfinity(){
       <path d="${d}" fill="none" stroke="var(--accent-signal)" stroke-width="7" stroke-linecap="round" class="infinity-flow"/>
     </svg>
     <div class="infinity-caption">
-      <span style="color:var(--accent-signal)">Discover</span>
-      <span style="color:var(--accent-secure)">Transform</span>
-      <span style="color:var(--accent-violet)">Optimize</span>
+      <span style="color:var(--accent-signal-ink)">Discover</span>
+      <span style="color:var(--accent-secure-ink)">Transform</span>
+      <span style="color:var(--accent-violet-ink)">Optimize</span>
     </div>
   </div>`;
 }
@@ -986,7 +1010,7 @@ function buildFrameworkStamps(){
   return `
   <div class="stamp-row">
     ${FRAMEWORK_STAMPS.map(s=>`
-      <div class="stamp" style="--stamp-color:var(${s.color})" title="${s.label}">
+      <div class="stamp" style="--stamp-color:var(${s.color});--stamp-ink:var(${s.color}-ink)" title="${s.label}">
         <div class="stamp-ring"></div>
         <span class="stamp-icon">${icon(s.icon)}</span>
         <span class="stamp-label">${s.label}</span>
@@ -1166,7 +1190,7 @@ function renderHomeTab(container){
                 <div class="phase-card${i === 0 ? ' in' : ''}" data-stage-detail="${sid}" data-phase-index="${i}" style="border-top:2px solid ${STAGE_META[sid].color}">
                   <div class="workflow-phase-tag">Phase ${i+1}</div>
                   <div class="stage-illustration">${stageIllustration(sid)}</div>
-                  <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
+                  <h4 style="color:${STAGE_META[sid].ink}">${STAGE_META[sid].label}</h4>
                   <p>${STAGE_META[sid].blurb}</p>
                 </div>
               `).join('')}
@@ -1298,7 +1322,7 @@ function renderHomeTab(container){
       const openTile = el.closest('.section-tile');
       if(openTile) openTile.classList.add('has-open-overlay');
       panel.innerHTML = `
-        <h4 style="color:${STAGE_META[sid].color}">${STAGE_META[sid].label}</h4>
+        <h4 style="color:${STAGE_META[sid].ink}">${STAGE_META[sid].label}</h4>
         <p class="body-text">${d.summary}</p>
         <p class="body-text"><b>Scoring metrics used:</b> ${d.metrics}</p>
         <a href="${pathForTab('maturity', `maturity-${sid}`)}" id="stageDetailMaturityLink" class="inline-link">See ${STAGE_META[sid].label} in full on the Maturity Model page →</a>
@@ -1484,7 +1508,7 @@ function renderMaturityTab(container){
                 <tr>
                   <td class="dt-level">${String(p.num).padStart(2,'0')}</td>
                   <td class="dt-title">${p.title}</td>
-                  <td><span class="stage-chip" style="--stage-color:${STAGE_META[p.stage].color}">${STAGE_META[p.stage].label}</span></td>
+                  <td><span class="stage-chip" style="--stage-color:${STAGE_META[p.stage].color};--stage-ink:${STAGE_META[p.stage].ink}">${STAGE_META[p.stage].label}</span></td>
                   <td>${p.inputs}</td>
                   <td>${p.output}</td>
                   <td>${p.doneWhen}</td>
@@ -1499,7 +1523,7 @@ function renderMaturityTab(container){
     const meta = STAGE_META[stageId];
     html += `<div class="section-tile" id="maturity-${stageId}">`;
     html += `
-      <div class="stage-band" style="--stage-color:${meta.color}">
+      <div class="stage-band" style="--stage-color:${meta.color};--stage-ink:${meta.ink}">
         <div class="stage-illustration stage-illustration-sm">${stageIllustration(stageId)}</div>
         <div><h3 class="stage-label">${meta.label}</h3><div class="stage-range">${meta.range}</div></div>
         <p>${meta.blurb}</p>
@@ -1507,7 +1531,7 @@ function renderMaturityTab(container){
     `;
     PHASES.filter(p=>p.stage===stageId).forEach(p=>{
       html += `
-        <div class="phase-row" style="--phase-color:${meta.color}">
+        <div class="phase-row" style="--phase-color:${meta.color};--phase-ink:${meta.ink}">
           <div class="phase-num">${String(p.num).padStart(2,'0')}</div>
           <div><h4>${p.title}</h4><p>${p.desc}</p></div>
         </div>
@@ -1732,9 +1756,9 @@ function renderMetricsTab(container){
         <p class="body-text">The reading is decided by rules in a fixed order, and the percentage only matters once the earlier rules pass: any critical gap gives <b>Critical gaps found</b>; otherwise an unverified critical control gives <b>Verification needed</b>; otherwise fewer than 60% definite answers gives <b>Incomplete picture</b>; only then do the coverage bands apply. Quick screening never gives a band - it reports critical gaps or "No critical gaps in this screening".</p>
         <div class="verdict-scale">
           <div class="verdict-cell"><div class="vrange">below 40%</div><div class="vlabel" style="color:var(--accent-critical)">High exposure</div></div>
-          <div class="verdict-cell"><div class="vrange">40–64%</div><div class="vlabel" style="color:var(--accent-amber)">Elevated exposure</div></div>
+          <div class="verdict-cell"><div class="vrange">40–64%</div><div class="vlabel" style="color:var(--accent-amber-ink)">Elevated exposure</div></div>
           <div class="verdict-cell"><div class="vrange">65–84%</div><div class="vlabel">Moderate exposure</div></div>
-          <div class="verdict-cell"><div class="vrange">85% or more</div><div class="vlabel" style="color:var(--accent-secure)">Strong foundations</div></div>
+          <div class="verdict-cell"><div class="vrange">85% or more</div><div class="vlabel" style="color:var(--accent-secure-ink)">Strong foundations</div></div>
         </div>
       </div>
 
@@ -2383,6 +2407,7 @@ function renderNewsList(container, newsData){
   const freshness = newsData.live
     ? `Refreshed daily from CISA's KEV catalog, NVD, and security RSS feeds, ranked by exploitation status/severity/recency - not just "newest first."`
     : `Showing a curated snapshot - the live feed didn't return anything this time, so nothing's lost, just not current. Refresh in a bit.`;
+  const restoreFocus = keepFocusAcrossRedraw(container);
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
@@ -2394,7 +2419,7 @@ function renderNewsList(container, newsData){
       <div class="section-tile">
         <p class="news-freshness">${freshness}</p>
         <div class="news-filters">
-          ${NEWS_CATS.map(c=>`<button class="filter-pill ${newsFilter===c.id?'active':''}" data-cat="${c.id}">${c.label}</button>`).join('')}
+          ${NEWS_CATS.map(c=>`<button class="filter-pill ${newsFilter===c.id?'active':''}" data-cat="${c.id}" data-fkey="news-filter-${c.id}">${c.label}</button>`).join('')}
         </div>
         <div class="news-grid">
           ${items.map(n => newsCardHtml(n, {
@@ -2447,6 +2472,7 @@ function renderNewsList(container, newsData){
       observeReveals();
     });
   });
+  restoreFocus();
 }
 
 // §2 Exploits: exploit_items is fetched daily by a scheduled Edge Function
@@ -2561,6 +2587,7 @@ async function renderExploitsTab(container){
 
 function renderExploitsList(container, exploitsData){
   const items = exploitsData.items.filter(n => matchesExploitFilter(n, exploitsFilter));
+  const restoreFocus = keepFocusAcrossRedraw(container);
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
@@ -2582,7 +2609,7 @@ function renderExploitsList(container, exploitsData){
         <div class="section-tile">
           <p class="news-freshness">Refreshed daily from CISA's Known Exploited Vulnerabilities catalog, VulnCheck's KEV, and ENISA's EU Vulnerability Database, scored with EPSS (Exploit Prediction Scoring System) from FIRST.org - a model estimating the probability a vulnerability will actually be exploited, not just how severe it could theoretically be. Ranked by priority and capped at the ${EXPLOITS_RETENTION_CAP} highest-priority entries, not just newest-first, so the list stays current without growing unbounded.</p>
           <div class="news-filters">
-            ${EXPLOIT_FILTERS.map(f=>`<button class="filter-pill ${exploitsFilter===f.id?'active':''}" data-filter="${f.id}">${f.label}</button>`).join('')}
+            ${EXPLOIT_FILTERS.map(f=>`<button class="filter-pill ${exploitsFilter===f.id?'active':''}" data-filter="${f.id}" data-fkey="exploit-filter-${f.id}">${f.label}</button>`).join('')}
           </div>
           <div class="exploits-grid">
             ${items.map(exploitCardHtml).join('')}
@@ -2598,6 +2625,7 @@ function renderExploitsList(container, exploitsData){
       observeReveals();
     });
   });
+  restoreFocus();
 }
 
 function renderGlossaryTab(container){
@@ -2836,11 +2864,11 @@ function renderPlaybooksTab(container){
 // tag rather than introducing new badge CSS.
 function stLicenceChip(tag, note){
   const color = { FOSS:'--accent-signal', Free:'--accent-secure', Commercial:'--accent-amber' }[tag] || '--accent-secure';
-  return `<span class="stage-chip" style="--stage-color:var(${color})">${tag}</span>${note ? ` ${note}` : ''}`;
+  return `<span class="stage-chip" style="--stage-color:var(${color});--stage-ink:var(${color}-ink)">${tag}</span>${note ? ` ${note}` : ''}`;
 }
 function stPhaseChip(tags){
   const color = { Assess:'--accent-violet', Harden:'--accent-signal', Monitor:'--accent-secure', Test:'--accent-critical' };
-  return tags.split(' / ').map(t=>`<span class="stage-chip" style="--stage-color:var(${color[t.trim()] || '--accent-secure'})">${t.trim()}</span>`).join(' ');
+  return tags.split(' / ').map(t=>{ const c = color[t.trim()] || '--accent-secure'; return `<span class="stage-chip" style="--stage-color:var(${c});--stage-ink:var(${c}-ink)">${t.trim()}</span>`; }).join(' ');
 }
 function stTable(rows){
   return `
@@ -3443,7 +3471,7 @@ function renderSimulatedFinding(f, i){
         <div class="icon-badge" style="--icon-accent:var(${SEVERITY_ACCENT[sev]});">${i+1}</div>
         <div>
           <h4>${f.title}</h4>
-          <div class="acc-sub">Likelihood ${f.likelihood} × Impact ${f.impact} <span class="sim-sev-badge" style="color:var(${SEVERITY_ACCENT[sev]});border-color:var(${SEVERITY_ACCENT[sev]});">${sev}</span></div>
+          <div class="acc-sub">Likelihood ${f.likelihood} × Impact ${f.impact} <span class="sim-sev-badge" style="color:var(${SEVERITY_ACCENT[sev]}-ink);border-color:var(${SEVERITY_ACCENT[sev]});">${sev}</span></div>
         </div>
       </div>
       <div class="acc-body">
@@ -3497,6 +3525,7 @@ async function renderCaseStudyTab(container){
   const count = items.length;
   const countWord = SMALL_NUMBER_WORDS[count] || String(count);
 
+  const restoreFocus = keepFocusAcrossRedraw(container);
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
@@ -3533,6 +3562,7 @@ async function renderCaseStudyTab(container){
   wireNavLink(document.getElementById('ctaCaseRunbook'), 'runbook');
   wireAccordions(container.querySelector('.sim-engagement'));
   observeReveals();
+  restoreFocus();
 }
 
 
@@ -3677,6 +3707,12 @@ function initAnimatedBackground(){
   renderSearchWidget();
   renderHamburgerMenu();
   renderApp();
+  // The link's own #tabContent jump would go through the router (popstate)
+  // and re-render the page, so move focus directly instead.
+  document.querySelector('.skip-link')?.addEventListener('click', (e)=>{
+    e.preventDefault();
+    focusPageHeading({ scroll:true });
+  });
   // Analytics are off until the visitor chooses (assets/gtag-init.js).
   showCookieBanner();
   wireCookieSettingsButton();

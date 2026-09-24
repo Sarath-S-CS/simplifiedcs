@@ -39,20 +39,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <meta name="site-updated" content="September 24, 2026">
-<link rel="stylesheet" href="/assets/build/app-3HUSOICV.css">
-<script type="module" src="/assets/build/main-5MLJYLAI.js"></script>
+<link rel="stylesheet" href="/assets/build/app-F2EEY6SZ.css">
+<script type="module" src="/assets/build/main-W7HTBTGE.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#tabContent">Skip to main content</a>
 <div id="bgLayer" aria-hidden="true"><canvas id="bgCanvas" width="800" height="600" style="width: 800px; height: 600px;"></canvas></div>
 <div class="app">
 
-  <div class="masthead">
+  <div class="masthead" role="banner">
    <div class="masthead-inner">
     <a href="/" class="masthead-brand" id="brandHomeLink">
       <img src="/assets/img/logo.png" alt="SimplifiedCS logo" class="brand-logo">
       <h1><span class="brand-s">S</span><span class="brand-mid">implified</span><span class="brand-cs">CS</span></h1>
     </a>
-    <div class="tabnav" id="tabnav">
+    <div class="tabnav" id="tabnav" role="navigation" aria-label="Main">
         <div class="tab-item has-dropdown">
           <a class="tab-btn active" href="/" data-tab="home">Home <span class="tab-caret" data-toggle="1">▾</span></a>
           <div class="tab-dropdown">
@@ -101,7 +102,7 @@
     <input type="text" class="search-input" id="searchInput" placeholder="Search the site…" autocomplete="off">
     <div class="search-results" id="searchResults"></div>
   </div>
-      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Switch to light mode">
+      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Light mode">
     <span class="theme-switch-track">
       <span class="theme-switch-thumb"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z"></path></svg></span>
     </span>
@@ -111,7 +112,7 @@
    </div>
   </div>
 
-  <div id="tabContent">
+  <main id="tabContent">
     <div class="page">
       <div class="hero-banner">
         <div class="hero-banner-inner">
@@ -132,9 +133,9 @@
       <path d="M130.00,68.00 L127.13,65.14 L124.24,62.29 L121.29,59.48 L118.25,56.71 L115.11,54.00 L111.82,51.39 L108.37,48.90 L104.72,46.57 L100.87,44.43 L96.78,42.55 L92.46,41.00 L87.91,39.84 L83.14,39.15 L78.21,39.04 L73.19,39.59 L68.18,40.90 L63.33,43.02 L58.81,46.00 L54.83,49.82 L51.61,54.39 L49.33,59.57 L48.15,65.14 L48.15,70.86 L49.33,76.43 L51.61,81.61 L54.83,86.18 L58.81,90.00 L63.33,92.98 L68.18,95.10 L73.19,96.41 L78.21,96.96 L83.14,96.85 L87.91,96.16 L92.46,95.00 L96.78,93.45 L100.87,91.57 L104.72,89.43 L108.37,87.10 L111.82,84.61 L115.11,82.00 L118.25,79.29 L121.29,76.52 L124.24,73.71 L127.13,70.86 L130.00,68.00 L132.87,65.14 L135.76,62.29 L138.71,59.48 L141.75,56.71 L144.89,54.00 L148.18,51.39 L151.63,48.90 L155.28,46.57 L159.13,44.43 L163.22,42.55 L167.54,41.00 L172.09,39.84 L176.86,39.15 L181.79,39.04 L186.81,39.59 L191.82,40.90 L196.67,43.02 L201.19,46.00 L205.17,49.82 L208.39,54.39 L210.67,59.57 L211.85,65.14 L211.85,70.86 L210.67,76.43 L208.39,81.61 L205.17,86.18 L201.19,90.00 L196.67,92.98 L191.82,95.10 L186.81,96.41 L181.79,96.96 L176.86,96.85 L172.09,96.16 L167.54,95.00 L163.22,93.45 L159.13,91.57 L155.28,89.43 L151.63,87.10 L148.18,84.61 L144.89,82.00 L141.75,79.29 L138.71,76.52 L135.76,73.71 L132.87,70.86 L130.00,68.00 Z" fill="none" stroke="var(--accent-signal)" stroke-width="7" stroke-linecap="round" class="infinity-flow"></path>
     </svg>
     <div class="infinity-caption">
-      <span style="color:var(--accent-signal)">Discover</span>
-      <span style="color:var(--accent-secure)">Transform</span>
-      <span style="color:var(--accent-violet)">Optimize</span>
+      <span style="color:var(--accent-signal-ink)">Discover</span>
+      <span style="color:var(--accent-secure-ink)">Transform</span>
+      <span style="color:var(--accent-violet-ink)">Optimize</span>
     </div>
   </div>
       </div>
@@ -184,31 +185,31 @@
           
   <div class="stamp-row">
     
-      <div class="stamp" style="--stamp-color:var(--accent-signal)" title="Defense in Depth">
+      <div class="stamp" style="--stamp-color:var(--accent-signal);--stamp-ink:var(--accent-signal-ink)" title="Defense in Depth">
         <div class="stamp-ring"></div>
         <span class="stamp-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M12 8v4"></path><circle cx="12" cy="15" r="0.6" fill="currentColor"></circle></svg></span>
         <span class="stamp-label">Defense in Depth</span>
       </div>
     
-      <div class="stamp" style="--stamp-color:var(--accent-secure)" title="ISO 27001">
+      <div class="stamp" style="--stamp-color:var(--accent-secure);--stamp-ink:var(--accent-secure-ink)" title="ISO 27001">
         <div class="stamp-ring"></div>
         <span class="stamp-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="1"></rect><path d="M3.5 9h17M3.5 14h17M9 4v16"></path></svg></span>
         <span class="stamp-label">ISO 27001</span>
       </div>
     
-      <div class="stamp" style="--stamp-color:var(--accent-violet)" title="SOC 2">
+      <div class="stamp" style="--stamp-color:var(--accent-violet);--stamp-ink:var(--accent-violet-ink)" title="SOC 2">
         <div class="stamp-ring"></div>
         <span class="stamp-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="1.4"></rect><rect x="9" y="2.3" width="6" height="3" rx="1"></rect><path d="M9 12l1.8 1.8L15 10"></path></svg></span>
         <span class="stamp-label">SOC 2</span>
       </div>
     
-      <div class="stamp" style="--stamp-color:var(--accent-amber)" title="Cyber Essentials">
+      <div class="stamp" style="--stamp-color:var(--accent-amber);--stamp-ink:var(--accent-amber-ink)" title="Cyber Essentials">
         <div class="stamp-ring"></div>
         <span class="stamp-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8.5" r="4"></circle><path d="M11 11.5l9 9M15.5 16l2.5-2.5M18 18.5l2.5-2.5"></path></svg></span>
         <span class="stamp-label">Cyber Essentials</span>
       </div>
     
-      <div class="stamp" style="--stamp-color:var(--accent-critical)" title="PCI DSS">
+      <div class="stamp" style="--stamp-color:var(--accent-critical);--stamp-ink:var(--accent-critical-ink)" title="PCI DSS">
         <div class="stamp-ring"></div>
         <span class="stamp-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="1.6"></rect><path d="M2.5 9.5h19"></path><path d="M6 14.5h4"></path></svg></span>
         <span class="stamp-label">PCI DSS</span>
@@ -258,7 +259,7 @@
         <circle cx="43" cy="43" r="17" fill="none" stroke="var(--accent-signal)" stroke-width="4.5"></circle>
         <line x1="55" y1="55" x2="74" y2="74" stroke="var(--accent-signal)" stroke-width="5.5" stroke-linecap="round"></line>
       </svg></div>
-                  <h4 style="color:var(--accent-signal)">Discovery</h4>
+                  <h4 style="color:var(--accent-signal-ink)">Discovery</h4>
                   <p>You don't have a security program yet so much as a starting point - the goal is visibility: what exists, where it's exposed, and who owns fixing it.</p>
                 </div>
               
@@ -289,7 +290,7 @@
         <path d="M68 37l11 6.5v13l-11 6.5-11-6.5v-13z" fill="var(--accent-secure)"></path>
         <path d="M62 50l4.5 4.5 9-9" fill="none" stroke="var(--text-on-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg></div>
-                  <h4 style="color:var(--accent-secure)">Transformation</h4>
+                  <h4 style="color:var(--accent-secure-ink)">Transformation</h4>
                   <p>Findings become controls, and controls become documented, rehearsed processes - this is where most of the actual engineering and writing happens.</p>
                 </div>
               
@@ -308,7 +309,7 @@
         <rect x="66" y="24" width="10" height="52" fill="var(--accent-violet)"></rect>
         <path d="M22 50l16-14 12 8 24-22" fill="none" stroke="var(--accent-violet)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg></div>
-                  <h4 style="color:var(--accent-violet)">Optimization</h4>
+                  <h4 style="color:var(--accent-violet-ink)">Optimization</h4>
                   <p>The program runs continuously - monitored, tested, and adjusted as the environment and threat landscape change, rather than declared "done."</p>
                 </div>
               
@@ -518,7 +519,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <footer class="site-footer">
     <div class="footer-top">
