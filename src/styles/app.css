@@ -2051,3 +2051,5 @@
   .privacy-list{ padding-left:18px; font-size:13.5px; line-height:1.7; }
   .privacy-page .section-h{ margin-top:28px; }
   .privacy-page .section-h:first-child{ margin-top:0; }
+
+  .hero-trust{ font-size:13px; color:var(--text-muted); margin:14px 0 0; max-width:62ch; line-height:1.6; }
