@@ -1,6 +1,6 @@
 // Runs a scheduled job's body only while holding an atomic lease
 // (public.try_acquire_job_lease / release_job_lease - see
-// supabase/migrations/20260924130100_job_leases.sql). Overlapping or
+// supabase/migrations/20260924172314_job_leases.sql). Overlapping or
 // repeated invocations get a cheap "skipped" instead of doing the work twice.
 
 export type LeaseOptions = {

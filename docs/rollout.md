@@ -24,14 +24,22 @@ the steps to do so, in order, when you decide to. Each step says what breaks if 
 4. **Netlify (recommended):** Site configuration → Environment variables → add `RATE_LIMIT_SALT`
    (another random 32+ character value), scope **Functions**, all deploy contexts. Without it the
    code falls back to a fixed salt, which makes the stored IP hashes guessable.
-5. Confirm `ANTHROPIC_API_KEY` is scoped to **Functions** and not exposed to builds or the browser.
-   (Not verifiable with the read-only connector used during this work.)
+5. ~~Scope `ANTHROPIC_API_KEY` to Functions only.~~ Not available on the site's current Netlify
+   plan (it requires an upgrade), so this is an accepted limitation. The site has no Netlify build
+   command, so the key isn't used during builds, and it is never sent to the browser.
 
 If step 2 or 3 is skipped: the redeployed feed functions return 503 (secret not configured) or 401
 (secret missing from the request), and the News / Exploit Tracker feeds stop updating. The site
 keeps showing the last stored items.
 
 ## Step 2 - Apply the database migrations
+
+**Done 2026-09-24** through the Supabase connector: both migrations applied and verified (anon /
+authenticated hold SELECT only on the three feed tables and `keepalive`; the lease functions are
+executable by `service_role` only; public reads return 200 and a write with the public key is
+refused). The connector recorded them as versions `20260924172302` and `20260924172314`, and the
+files were renamed to match, so `supabase migration list` shows local and remote in sync. The
+commands below are kept for reference.
 
 ```bash
 supabase link --project-ref xufqgrcxufptlptpwlfi
@@ -47,10 +55,10 @@ supabase db push
 
 This applies only:
 
-- `20260924130000_least_privilege_table_grants.sql` - removes INSERT/UPDATE/DELETE/TRUNCATE (and
+- `20260924172302_least_privilege_table_grants.sql` - removes INSERT/UPDATE/DELETE/TRUNCATE (and
   other default privileges) from the `anon` and `authenticated` roles; keeps SELECT on the three
   public feed tables. The feed functions use the service role, so they're unaffected.
-- `20260924130100_job_leases.sql` - `job_leases` table and `try_acquire_job_lease` /
+- `20260924172314_job_leases.sql` - `job_leases` table and `try_acquire_job_lease` /
   `release_job_lease` functions, executable by `service_role` only.
 
 Check: `select * from job_leases;` works as service role; the site's News/Exploits/Case Studies
@@ -114,5 +122,5 @@ functions before the merge would make scheduled runs fail with 401 until the mer
 ## Settings deliberately not changed
 
 - DNS, domains, accounts, plans, Netlify Forms (still off; the feedback page no longer depends on it).
-- Netlify environment-variable scopes and deploy-preview settings (not visible to the read-only
-  connector; check them in the dashboard as in Step 1.5).
+- Netlify environment-variable scopes (need a plan upgrade; accepted - see Step 1.5) and
+  deploy-preview settings.
