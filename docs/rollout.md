@@ -1,7 +1,8 @@
 # Rollout and rollback: `remediation/review-2026-09`
 
-Nothing on this branch has been pushed, merged, deployed or applied to production. These are
-the steps to do so, in order, when you decide to. Each step says what breaks if it's skipped.
+**Status: rolled out on 24 Sep 2026** (PR #115, merge `264ccb2`) - steps 1-5 below are done;
+results are in `docs/review-remediation-status.md` under "Production verification". The steps are
+kept as the reference for how it was done and for rollback.
 
 ## What changes where
 
@@ -80,10 +81,10 @@ supabase functions deploy fetch-exploits
 The CLI bundles `supabase/functions/_shared/`. Keep "Verify JWT" on (the workflows still send the
 publishable key as the bearer token; the scheduler secret is checked in addition).
 
-`fetch-case-studies` was never deployed and calls the Anthropic API on each run. Deploy it only if
-you want AI-generated case studies (it also needs `ANTHROPIC_API_KEY` as a Supabase secret);
-otherwise consider disabling `.github/workflows/fetch-case-studies.yml`, which currently fails
-because the function doesn't exist.
+`fetch-case-studies` is deliberately not deployed (decision, 24 Sep 2026): it calls the Anthropic API
+on each run. Its workflow has no schedule - it only runs if someone clicks "Run workflow" - and it
+has never been run, so nothing fails in the meantime. To turn it on later: add `ANTHROPIC_API_KEY`
+as a Supabase Edge Function secret, deploy the function, then run the workflow manually.
 
 Between the merge and this step, a scheduled run of the old functions still works (the old
 functions ignore the new header), so the order merge → deploy has no gap. Deploying the

@@ -6,6 +6,11 @@ on:
   # this one costs a genuine Claude API call, so it runs only when you
   # decide there's a need: open this repo's Actions tab, select "Fetch
   # Case Studies", and click "Run workflow".
+  #
+  # Not in use (24 Sep 2026): the fetch-case-studies Edge Function is
+  # deliberately not deployed, so running this now would fail with 404.
+  # To enable: add ANTHROPIC_API_KEY as a Supabase Edge Function secret,
+  # deploy the function, then run this manually. See docs/rollout.md.
   workflow_dispatch:
 
 jobs:
