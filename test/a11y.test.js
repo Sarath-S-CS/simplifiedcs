@@ -1,6 +1,7 @@
-// Accordions (src/ui/a11y.js): the heading stays a heading, a real button
+// src/ui/a11y.js. Accordions: the heading stays a heading, a real button
 // inside it carries the expanded state, and the state stays correct however
-// the card is opened.
+// the card is opened. Redraws: keyboard focus survives a page re-rendering
+// itself.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
@@ -9,7 +10,9 @@ const dom = new JSDOM("<!doctype html><html><body></body></html>");
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.MutationObserver = dom.window.MutationObserver;
-const { wireAccordions } = await import("../src/ui/a11y.js");
+// jsdom has no CSS.escape; the keys used below need no escaping.
+globalThis.CSS ??= { escape: (v) => String(v) };
+const { wireAccordions, keepFocusAcrossRedraw } = await import("../src/ui/a11y.js");
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
@@ -93,4 +96,35 @@ test("wiring twice does nothing the second time", () => {
   const root = mount(CARD);
   wireAccordions(root);
   assert.equal(root.querySelectorAll(".acc-toggle").length, 1);
+});
+
+test("a redraw keeps focus on the page heading when the heading had it", () => {
+  const root = mount(`<div class="page"><h2 class="page-title" tabindex="-1">News</h2><p>Loading…</p></div>`);
+  root.querySelector("h2").focus();
+  const restore = keepFocusAcrossRedraw(root);
+  root.innerHTML = `<div class="page"><h2 class="page-title">News</h2><button>Filter</button></div>`;
+  restore();
+  assert.equal(document.activeElement, root.querySelector("h2"));
+  assert.equal(root.querySelector("h2").getAttribute("tabindex"), "-1");
+});
+
+test("a redraw keeps focus on the same filter button (data-fkey)", () => {
+  const html = (active) => `<h2>Exploits</h2><button data-fkey="exploit-filter-all">All</button><button data-fkey="exploit-filter-ot" class="${active}">OT</button>`;
+  const root = mount(html(""));
+  root.querySelector('[data-fkey="exploit-filter-ot"]').focus();
+  const restore = keepFocusAcrossRedraw(root);
+  root.innerHTML = html("active");
+  restore();
+  assert.equal(document.activeElement, root.querySelector('[data-fkey="exploit-filter-ot"]'));
+});
+
+test("a redraw leaves focus alone when it was somewhere else on the page", () => {
+  const outside = document.createElement("button");
+  document.body.append(outside);
+  outside.focus();
+  const root = mount("<h2>Case Studies</h2>");
+  const restore = keepFocusAcrossRedraw(root);
+  root.innerHTML = "<h2>Case Studies</h2>";
+  restore();
+  assert.equal(document.activeElement, outside);
 });

@@ -56,6 +56,25 @@ export function wireAccordions(container) {
   container.querySelectorAll(".acc-head").forEach(wireAccordion);
 }
 
+// Pages that redraw themselves - a live feed arriving after the page has
+// opened, or a filter button re-rendering the list - replace the element
+// that had keyboard focus, which drops focus to the top of the document.
+// Call before redrawing; the returned function puts focus back on the
+// element with the same data-fkey, or on the new page heading if the old
+// heading had focus (as it does right after navigating to the page).
+export function keepFocusAcrossRedraw(root) {
+  const active = typeof document !== "undefined" ? document.activeElement : null;
+  if (!root || !active || active === root || !root.contains(active)) return () => {};
+  const key = active.getAttribute("data-fkey");
+  const heading = !key && /^H[1-6]$/.test(active.tagName) ? active.tagName.toLowerCase() : null;
+  return () => {
+    const target = key ? root.querySelector(`[data-fkey="${CSS.escape(key)}"]`) : heading ? root.querySelector(heading) : null;
+    if (!target) return;
+    if (heading && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+  };
+}
+
 // Screens re-render their whole panel after each answer. Without this,
 // keyboard and screen-reader users lose their place on every choice. Call
 // before re-rendering; the returned function puts focus back on the

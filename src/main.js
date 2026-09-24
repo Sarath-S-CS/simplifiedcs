@@ -11,7 +11,7 @@ import { CASE_STUDIES } from "./content/case-studies.js";
 import { PHASES, STAGE_DETAIL, SCORE_RUBRIC, CORE_PRINCIPLES, RISK_SCORE_DESCRIPTIONS } from "./content/maturity.js";
 import { GLOSSARY, LEARNING_RESOURCES, REFERENCES, SIMULATED_ENGAGEMENT } from "./content/learning.js";
 import { NEWS_ITEMS } from "./content/news.js";
-import { wireAccordions } from "./ui/a11y.js";
+import { wireAccordions, keepFocusAcrossRedraw } from "./ui/a11y.js";
 import { applyPageMeta } from "./ui/page-meta.js";
 import { renderPrivacyPage, renderFeedbackPage, showCookieBanner, wireCookieSettingsButton } from "./ui/privacy.js";
 // FUNCTIONS/FUNC_COLORS used to be plain globals at the top of the original
@@ -2407,6 +2407,7 @@ function renderNewsList(container, newsData){
   const freshness = newsData.live
     ? `Refreshed daily from CISA's KEV catalog, NVD, and security RSS feeds, ranked by exploitation status/severity/recency - not just "newest first."`
     : `Showing a curated snapshot - the live feed didn't return anything this time, so nothing's lost, just not current. Refresh in a bit.`;
+  const restoreFocus = keepFocusAcrossRedraw(container);
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
@@ -2418,7 +2419,7 @@ function renderNewsList(container, newsData){
       <div class="section-tile">
         <p class="news-freshness">${freshness}</p>
         <div class="news-filters">
-          ${NEWS_CATS.map(c=>`<button class="filter-pill ${newsFilter===c.id?'active':''}" data-cat="${c.id}">${c.label}</button>`).join('')}
+          ${NEWS_CATS.map(c=>`<button class="filter-pill ${newsFilter===c.id?'active':''}" data-cat="${c.id}" data-fkey="news-filter-${c.id}">${c.label}</button>`).join('')}
         </div>
         <div class="news-grid">
           ${items.map(n => newsCardHtml(n, {
@@ -2471,6 +2472,7 @@ function renderNewsList(container, newsData){
       observeReveals();
     });
   });
+  restoreFocus();
 }
 
 // §2 Exploits: exploit_items is fetched daily by a scheduled Edge Function
@@ -2585,6 +2587,7 @@ async function renderExploitsTab(container){
 
 function renderExploitsList(container, exploitsData){
   const items = exploitsData.items.filter(n => matchesExploitFilter(n, exploitsFilter));
+  const restoreFocus = keepFocusAcrossRedraw(container);
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
@@ -2606,7 +2609,7 @@ function renderExploitsList(container, exploitsData){
         <div class="section-tile">
           <p class="news-freshness">Refreshed daily from CISA's Known Exploited Vulnerabilities catalog, VulnCheck's KEV, and ENISA's EU Vulnerability Database, scored with EPSS (Exploit Prediction Scoring System) from FIRST.org - a model estimating the probability a vulnerability will actually be exploited, not just how severe it could theoretically be. Ranked by priority and capped at the ${EXPLOITS_RETENTION_CAP} highest-priority entries, not just newest-first, so the list stays current without growing unbounded.</p>
           <div class="news-filters">
-            ${EXPLOIT_FILTERS.map(f=>`<button class="filter-pill ${exploitsFilter===f.id?'active':''}" data-filter="${f.id}">${f.label}</button>`).join('')}
+            ${EXPLOIT_FILTERS.map(f=>`<button class="filter-pill ${exploitsFilter===f.id?'active':''}" data-filter="${f.id}" data-fkey="exploit-filter-${f.id}">${f.label}</button>`).join('')}
           </div>
           <div class="exploits-grid">
             ${items.map(exploitCardHtml).join('')}
@@ -2622,6 +2625,7 @@ function renderExploitsList(container, exploitsData){
       observeReveals();
     });
   });
+  restoreFocus();
 }
 
 function renderGlossaryTab(container){
@@ -3521,6 +3525,7 @@ async function renderCaseStudyTab(container){
   const count = items.length;
   const countWord = SMALL_NUMBER_WORDS[count] || String(count);
 
+  const restoreFocus = keepFocusAcrossRedraw(container);
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
@@ -3557,6 +3562,7 @@ async function renderCaseStudyTab(container){
   wireNavLink(document.getElementById('ctaCaseRunbook'), 'runbook');
   wireAccordions(container.querySelector('.sim-engagement'));
   observeReveals();
+  restoreFocus();
 }
 
 
