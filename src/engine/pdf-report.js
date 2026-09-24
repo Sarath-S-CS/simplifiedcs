@@ -56,12 +56,15 @@ class Writer {
     this.doc.setFontSize(fontSize);
     this.doc.setTextColor(...color);
   }
-  lines(text, width, fontSize = 10) {
+  // Measured in the font style it will be drawn in: bold is wider, and
+  // measuring bold text as regular let long headings run past the margin.
+  lines(text, width, fontSize = 10, style = "normal") {
+    this.doc.setFont("helvetica", style);
     this.doc.setFontSize(fontSize);
     return this.doc.splitTextToSize(pdfSafe(text), width);
   }
-  height(text, width, fontSize = 10, lineHeight = LINE_H) {
-    return this.lines(text, width, fontSize).length * lineHeight;
+  height(text, width, fontSize = 10, lineHeight = LINE_H, style = "normal") {
+    return this.lines(text, width, fontSize, style).length * lineHeight;
   }
   newPage() {
     this.doc.addPage();
@@ -97,7 +100,7 @@ class Writer {
     this.y += 18;
   }
   text(text, { x = MARGIN, width = CONTENT_W, fontSize = 10, lineHeight = LINE_H, style = "normal", color = COLOR_TEXT, after = 0 } = {}) {
-    const lines = this.lines(text, width, fontSize);
+    const lines = this.lines(text, width, fontSize, style);
     if (this.pending) this.flush(Math.min(lines.length, 3) * lineHeight);
     this.style({ fontSize, color, style });
     for (const line of lines) {
@@ -117,7 +120,7 @@ class Writer {
   // Starts a section; the heading is placed with the section's first block.
   section(title) {
     if (this.pending) this.flush(0);
-    this.y += 6;
+    this.y += 12;
     this.pending = title;
   }
   bar(label, pct, colorHex, note) {
@@ -147,7 +150,7 @@ function pct(n) {
 }
 
 function areaNote(a, quick) {
-  if (quick) return `${a.counts.gap} gap / ${a.counts.partial} partial / ${a.counts.unknown} not sure`;
+  if (quick) return a.counts.met + a.counts.gap + a.counts.partial + a.counts.unknown ? `${a.counts.gap} not in place, ${a.counts.partial} partly, ${a.counts.unknown} not sure, ${a.counts.met} in place` : "not asked in this screening";
   if (a.coverage === null) return a.applicable ? "not enough answers" : "not applicable";
   return `${a.coverage}%  (${a.known}/${a.applicable} answered)`;
 }
@@ -168,7 +171,7 @@ function drawAction(w, a, { detailed }) {
   const x = MARGIN + 14;
   const width = CONTENT_W - 14;
   const bodyH = body.reduce((h, [k, v]) => h + w.height(`${k}: ${v}`, width, 9) + 2, 0);
-  const headH = w.height(head, CONTENT_W, 10.5) + w.height(meta, width, 8.5);
+  const headH = w.height(head, CONTENT_W, 10.5, LINE_H, "bold") + w.height(meta, width, 8.5);
   // Heading + meta + at least the first two body lines together; the whole
   // item together when it fits.
   w.keep(headH + Math.min(bodyH, BOTTOM - MARGIN - headH - 1) + 8);
@@ -214,7 +217,7 @@ export function buildAssessmentPdfDoc(report, { aiInsights = null, aiError = nul
     w.text(`Coverage: ${pct(o.coverage)} of the protection you told us about is in place (weighted by control importance).`, { fontSize: 10 });
     w.text(`Completeness: ${o.known} of ${o.applicable} applicable questions have a definite answer${o.completeness !== null ? ` (${Math.round(o.completeness * 100)}%)` : ""}.`, { fontSize: 10, after: 4 });
   }
-  w.text("Coverage measures how much of what was asked is in place - it is not a compliance score, and 100% does not mean risk-free.", { fontSize: 8.5, style: "italic", color: COLOR_MUTED, after: 6 });
+  if (!quick) w.text("Coverage measures how much of what was asked is in place - it is not a compliance score, and 100% does not mean risk-free.", { fontSize: 8.5, style: "italic", color: COLOR_MUTED, after: 6 });
 
   if (report.criticalGaps.length) {
     w.section(`Critical gaps (${report.criticalGaps.length})`);
@@ -233,7 +236,8 @@ export function buildAssessmentPdfDoc(report, { aiInsights = null, aiError = nul
   w.section(quick ? "Results by area (screening counts)" : "Coverage by area");
   for (const fn of FUNCTIONS) {
     const a = report.areas.find((x) => x.fn === fn);
-    w.bar(FUNC_DISPLAY[fn], quick ? null : a.coverage, FUNC_COLORS_RESOLVED[fn], areaNote(a, quick));
+    if (quick) w.text(`${FUNC_DISPLAY[fn]}: ${areaNote(a, true)}`, { fontSize: 9.5, after: 3 });
+    else w.bar(FUNC_DISPLAY[fn], a.coverage, FUNC_COLORS_RESOLVED[fn], areaNote(a, false));
   }
 
   // --- Action plan ---

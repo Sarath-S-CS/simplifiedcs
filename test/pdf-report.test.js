@@ -8,6 +8,16 @@ import { buildAssessmentPdfDoc } from "../src/engine/pdf-report.js";
 import { buildReport } from "../src/engine/report-model.js";
 import { SAMPLE_SCENARIOS } from "../src/data/sample-scenario.js";
 import { runScenario, WEAK_ANSWERS, bestAnswer } from "./helpers/scenarios.js";
+import { jsPDF } from "jspdf";
+
+// jsPDF registers the standard Helvetica faces in this order.
+const FONT_STYLE = { F1: "normal", F2: "bold", F3: "italic", F4: "bolditalic" };
+const measurer = new jsPDF({ unit: "pt", format: "letter" });
+function textWidth(text, font, size) {
+  measurer.setFont("helvetica", FONT_STYLE[font] || "normal");
+  measurer.setFontSize(size);
+  return measurer.getTextWidth(text);
+}
 
 const PAGE_H = 792;
 const BOTTOM = 744;
@@ -25,9 +35,9 @@ function pages(doc) {
   let m;
   while ((m = pageRe.exec(out))) {
     const items = [];
-    const textRe = /\/F\d+ ([\d.]+) Tf[\s\S]*?([\d.-]+) ([\d.-]+) Td\n\(((?:\\.|[^\\)])*)\) Tj/g;
+    const textRe = /\/(F\d+) ([\d.]+) Tf[\s\S]*?([\d.-]+) ([\d.-]+) Td\n\(((?:\\.|[^\\)])*)\) Tj/g;
     let t;
-    while ((t = textRe.exec(m[1]))) items.push({ size: Number(t[1]), y: PAGE_H - Number(t[3]), text: unescape(t[4]) });
+    while ((t = textRe.exec(m[1]))) items.push({ font: t[1], size: Number(t[2]), x: Number(t[3]), y: PAGE_H - Number(t[4]), text: unescape(t[5]) });
     result.push({ page: result.length + 1, items });
   }
   return result;
@@ -41,6 +51,10 @@ function checkLayout(doc) {
     const footer = p.items.filter((i) => Math.abs(i.y - FOOTER_Y) <= 1);
     assert.ok(footer.some((i) => i.text === `Page ${p.page} of ${ps.length}`), `page ${p.page} footer`);
     for (const i of body) assert.ok(i.y <= BOTTOM + 0.5 && i.y >= 40, `page ${p.page}: "${i.text.slice(0, 40)}" drawn at y=${i.y}, outside the margins`);
+    for (const i of p.items) {
+      const right = i.x + textWidth(i.text, i.font, i.size);
+      assert.ok(i.x >= 47.5 && right <= 612 - 48 + 1, `page ${p.page}: "${i.text.slice(0, 50)}" runs from x=${i.x.toFixed(1)} to ${right.toFixed(1)}, outside the side margins`);
+    }
     // A section heading (13pt) must be followed by content on the same page.
     body.forEach((i, idx) => {
       if (i.size === 13) assert.ok(body.length - idx - 1 >= 2, `page ${p.page}: heading "${i.text}" is stranded at the bottom of the page`);
