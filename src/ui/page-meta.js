@@ -45,4 +45,17 @@ export function applyPageMeta(tab, title, path) {
   setMeta('meta[property="og:url"]', "content", url);
   setMeta('meta[name="twitter:title"]', "content", title);
   setMeta('meta[name="twitter:description"]', "content", description);
+  // History only ever shows data from the visitor's own browser - nothing
+  // there is worth indexing.
+  let robots = document.head.querySelector('meta[name="robots"]');
+  if (tab === "history") {
+    if (!robots) {
+      robots = document.createElement("meta");
+      robots.setAttribute("name", "robots");
+      document.head.appendChild(robots);
+    }
+    robots.setAttribute("content", "noindex");
+  } else if (robots) {
+    robots.remove();
+  }
 }

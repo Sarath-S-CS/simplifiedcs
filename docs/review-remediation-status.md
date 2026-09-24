@@ -8,7 +8,11 @@ Finding-by-finding evidence matrix for the implementation prompt
   not pushed).
 - **Status values:** Already fixed · Partially fixed · Still present · Not applicable / original
   finding not supported · Cannot verify with current access. Rows changed by this branch are
-  marked **Changed now** in the "Current status" column once implemented.
+  marked **Changed now** in "Current status" below; the baseline matrix at the end is kept as
+  found.
+- **Related documents:** `docs/methodology.md` (methodology 2.0 + change note),
+  `docs/rollout.md` (setup, staged rollout, rollback), `docs/engineering-case-study.md`,
+  `docs/future-multi-tenant.md`.
 - **Evidence kinds** are kept separate: *source* (code inspection), *local* (tests/reproductions on
   this machine), *deployed* (checked against https://simplifiedcs.net or the live Supabase/Netlify
   project with read-only access).
@@ -28,7 +32,117 @@ Finding-by-finding evidence matrix for the implementation prompt
 | Supabase (read-only) | RLS enabled on all 5 public tables; only SELECT policies (anon/authenticated) on 4 tables, none on `case_study_fetch_log`. **But** `anon`/`authenticated` still hold Supabase's default table grants including INSERT/UPDATE/DELETE/**TRUNCATE** (TRUNCATE is not governed by RLS; not reachable through PostgREST, still excess privilege). No public RPC functions, no storage buckets. 5 applied migrations exist in the project but **none were in the repository**. Edge functions deployed: `fetch-news` v6, `fetch-exploits` v12 (`verify_jwt: true`); **`fetch-case-studies` is not deployed**. |
 | Netlify (read-only connector) | Project `simplifiedcs`; **Forms: not enabled** (the feedback form therefore cannot be collecting submissions). Environment-variable scopes and deploy-preview settings are not exposed by the available connector. |
 
-## Matrix
+## Plain-language summary
+
+**What changed.** The assessment now tells the truth about what it knows. "Not sure" is its own
+answer instead of counting as "No"; a missing critical control (for example MFA) produces
+"Critical gaps found" no matter how good the percentage looks; weak answers about software
+delivery, secrets, containers and OT are scored instead of ignored; and the report lists every
+gap as a ranked action with an owner role, effort, a 30/60/90-day target and the evidence that
+shows it's done - exportable to CSV/JSON and trackable in the browser. Quick mode is now a real
+14-answer screening. Answers are native form controls that work with a keyboard.
+
+On the security side: feed content is sanitized at ingestion and render; the AI features only run
+after an explicit agreement that shows exactly what will be sent, are protected by atomic rate
+limits and a daily budget that fail closed, and can only cite public vulnerability records the
+server itself retrieved; scheduled jobs need a private secret and can't overlap; the database's
+browser roles lose write privileges; Google Analytics loads only if the visitor allows it; and
+there's a privacy page with a "clear all my data" control. The site loads faster (initial script
+543 KB minified instead of 3 MB unminified, with the PDF and feed libraries loaded on demand) and
+has CI.
+
+**How it was tested.** 199 automated tests (106 before), including a regression test for every
+failure the review reproduced, tests that fail if a framework ID or ATT&CK technique isn't
+current, a test that walks every Quick path, database permission tests on a local Postgres, and
+PDF layout tests that read back where every line landed on every page. Browser checks ran against
+a local server applying the production security headers: Quick and Full assessments, Continue to
+Full, History and legacy reports, examples, privacy/consent, feeds, keyboard use, and phone width.
+Generated PDFs were rendered to images and inspected.
+
+**Not done / needs you.** Nothing is deployed or merged; production migrations, secrets and
+function deploys are listed in `docs/rollout.md`. See "Unresolved and not verified" below.
+
+## Current status (after this branch)
+
+Evidence: *S* = source, *L* = local tests / local browser, *D* = deployed (none - not deployed).
+Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (scoring engine),
+`c0d5594` (UI), `fd4ee97` (privacy/consent/copy), `2004cb6` (build/CI), `ba1713b` (home/SEO),
+`7f63cc0` (main.js split), `2ac595b` (PDF margins), plus the final docs/artifacts commit.
+
+| ID | Status now | Evidence | Remaining |
+|---|---|---|---|
+| SEC-1 | **Changed now** | S: `supabase/functions/_shared/feed-text.ts`, `src/ui/feed-cards.js`, DOMPurify in `src/ui/html-safety.js`. L: `test/feed-ingestion.test.js` (7), `test/html-safety.test.js` (6). | Redeploy feed functions (rollout step 4). |
+| SEC-2a | **Changed now** | S: `netlify/lib/admission.ts`, `handlers.ts`. L: `test/ai-admission.test.js` (13; 4 fail against the old approach), `test/ai-endpoints.test.js` (18). | Deploy; set `RATE_LIMIT_SALT`. |
+| SEC-2b | **Changed now** | S: `_shared/scheduler-auth.ts`, `_shared/job-lease.ts`, migration `20260924130100`, workflows. L: `test/scheduled-jobs.test.js` (8). | Secrets + migration + deploy (steps 1, 2, 4). |
+| SEC-2c | **Changed now** | S: only public KEV/NVD data is cached (`netlify/lib/public-cache.ts`); duplicate-request keys derived server-side. L: endpoint tests. | - |
+| SEC-3a | **Changed now** | S: no automatic AI calls; `src/engine/ai-consent.js`, `src/ui/ai-panel.js` (what's sent, preview, processors); server rejects requests without the versioned consent. L: browser check (button disabled until agreed); `test/ai-endpoints.test.js`, `test/ai-payload.test.js`. | - |
+| SEC-3b | **Changed now** | S: `/privacy` (`src/ui/privacy.js`), `assets/gtag-init.js` (Consent Mode v2 defaults denied; gtag.js not loaded before "Allow"), clear-all control (`src/engine/local-data.js`), footer "Cookie settings". L: `test/privacy.test.js` (5); browser: no Google request before consent. | - |
+| SEC-4a | **Changed now** | S: `netlify/lib/http.ts` (streamed byte cap), `schema.ts`. L: endpoint tests for null/wrong types/unknown fields/malformed/oversized/lying Content-Length. | - |
+| SEC-4b | **Changed now** | S: `netlify/lib/insights.ts` / `interpret.ts` output validation; `claude.ts` honest failure codes. L: endpoint tests. | - |
+| SEC-5a | **Already fixed; re-validated** | L: local server applies `_headers`; zero CSP errors across pages, lazy chunks, feeds, consent banner. Added immutable caching for `/assets/build/*`. | Re-check live after deploy (step 5). |
+| SEC-5b | **Changed now** | L: `npm audit` 0 (all); CI audits production deps. | - |
+| SEC-6 | **Changed now** (repo side) | S: 7 migrations in `supabase/migrations/`. L: `test/supabase-policies.test.js` (9, PGlite). | Apply 2 new migrations. Netlify env scopes/deploy previews: **cannot verify** with current access. |
+| SCORE-1a | **Changed now** | S: `src/engine/scoring.js` (critical rules, rule-ordered verdict), `docs/methodology.md`. L: `test/scoring.test.js` "review:" cases (99%-Strong case now "Critical gaps found"). | - |
+| SCORE-1b | **Changed now** | S: "Not sure" on every scored question, justified N/A where real, statuses in `answers.js`. L: scoring tests for unknown/N/A/all-unknown. | - |
+| SCORE-1c | **Changed now** | S: `METHODOLOGY_VERSION`, run summaries, legacy runs labelled and never re-scored in place (`run-history.js`), comparisons only within version+mode. L: `test/run-history.test.js`; browser check of a legacy report. | - |
+| SCORE-2 | **Changed now** | S: `PROFILE_CONTROLS`, `FINDING_ITEMS`, `PROFILE_DESIGNATIONS` in `src/data/controls.js`. L: catalog test fails if a setup question lacks a designation; register-completeness test. | - |
+| SCORE-3a | **Changed now** | S: `computeFindings` reasons (weight, status, critical reason, exposure, combined findings, uncertainty). L: `test/priority-ranking.test.js` (6), scoring tests. | Exposure uses collected context only (no asset-level data exists). |
+| SCORE-3b | **Changed now** | S: `src/engine/actions.js` (stable IDs, all fields, 30/60/90, CSV with formula-injection guard, JSON), `action-tracking.js`. L: tests; browser check of tracking. | - |
+| QUICK-1 | **Changed now** | L: `test/quick-mode.test.js` walks all Quick paths (≤15; actual 14). Browser: 14 answers end to end. | - |
+| QUICK-2 | **Changed now** | Quick asks no follow-ups; everything else is reported as "not asked" in the screening result and limitations. | - |
+| QUICK-3 | **Changed now** | Screening verdict and counts, no percentage (web + PDF). | - |
+| QUICK-4 | **Changed now** | Same question IDs/options; Continue to Full keeps answers (test + browser). | - |
+| QUICK-5 | **Changed now** | Time claims and "full strength" claim removed; question counts and "Section X of Y" progress. | - |
+| TRUTH-1 | **Changed now** | `aiToolGovernance` hidden (N/A) when AI use is "No, not currently". Test. | Optional readiness prompt not added (not needed: AI-risk ownership is still asked of everyone). |
+| TRUTH-2 | **Changed now** | `vendorCount` (context) + `vendorAccessReview` (scored, N/A with none); v1 answers migrated. Tests. | - |
+| TRUTH-3 | **Changed now** | See SCORE-1b. | - |
+| TRUTH-4 | **Changed now** | Effective answers to a fixed point; 5 contradiction checks listed in the report. Tests (stale DB answers no longer fire findings). | More contradiction rules could be added over time. |
+| TRUTH-5 | **Changed now** | Native radios/checkboxes in fieldsets/legends, buttons for mode cards, keyboard accordions with `aria-expanded`, focus restoration, live-region announcements. L: real keyboard input in the browser (Tab, arrows, Enter). | **Screen-reader testing not performed.** Content-page accordions use the ARIA button pattern (heading inside), not native buttons. |
+| TRUTH-6 | **Changed now** | Per-control CSF 2.0 / CIS v8.1 IDs validated against official lists (`src/data/references/`); FUNC_REF uses current categories; ATT&CK checked against v19.2 (deprecated T1656 replaced). | Mapping is editorial, clearly labelled as such. |
+| TRUTH-7 | **Changed now** | Metrics/Methodology/home/report/PDF copy aligned to 2.0; overclaims removed; two unverifiable vendor-note claims reworded. | - |
+| AI-0 | **Already fixed; extended** | Request IDs + metadata-only logs (`netlify/lib/claude.ts`); test that logs carry no answers. | - |
+| AI-1 | **Changed now** | Consent + exact preview; payload validated by the server's own schema in tests. | - |
+| AI-2 | **Changed now** | `netlify/lib/product-catalog.ts` canonical products; optional OS question (`endpointOs`); applicability labels + verification steps. | Product versions aren't collected (only OS); results say "confirm your version". |
+| AI-3 | **Changed now** | Evidence IDs; uncited / cross-product citations dropped server-side. Tests. | - |
+| AI-4 | **Changed now** | Per-product KEV/NVD status in response, page and PDF. | - |
+| AI-5 | **Changed now** | Prioritised, de-duplicated NVD queries within a budget; unchecked products disclosed; public data cached. Tests. | - |
+| AI-6 | **Changed now** | Report model keeps deterministic findings, retrieved evidence and AI text separate; AI never changes scores. | - |
+| AI-7 | **Changed now** | AI result stored with the report (snapshot ID); shown as out of date after edits; no re-request offered for a report that has one. | - |
+| AI-8 | **Changed now** | Fixtures in `test/ai-endpoints.test.js`: prompt-like text, outages, stale cache, starvation, empty valid result, cross-product, truncated/malformed/refused/overloaded. Mocked model, fictional CVEs. | Live smoke test with fictional data is authorized but needs a deploy. |
+| PERSIST-1 | **Changed now** | Save read back before "saved"; quota eviction reported; storage-off message; other-tab edits pause autosave with a choice. Tests + browser. | - |
+| PERSIST-2 | **Changed now** | History v2 (answers + compact summary + AI), migration of v1 runs and in-progress saves with visible notes. | Full report is rebuilt on open (same methodology) rather than stored whole - 110 KB per report would not fit 25 reports in browser storage. |
+| PERSIST-3 | **Changed now** | Clear-all on Privacy and History; per-report delete. | - |
+| REPORT-1 | **Changed now** | `src/engine/report-model.js` feeds web, examples, PDF, History summary and AI payload. | - |
+| PDF-1 | **Changed now** | Layout tests parse every page (margins, stranded headings); pages rendered to images and inspected (long/short/Quick/example, AI success/failure, unknown/N/A); bold-text overflow found and fixed. | - |
+| PERF-1 | **Changed now** | Minified ESM with code splitting and hashed names; images out of CSS/HTML; 1-year immutable caching. Initial script 543 KB minified (before compression). | Further splitting of page content could shrink the initial script more. |
+| MAINT-1 | **Partially fixed** | Assessment UI split into `report-view`, `ai-panel`, `history-view`, `privacy`, `a11y`, `page-meta`; content data moved to `src/content/`. `src/main.js` 4,395 → 3,691 lines. | Page renderers still live in `main.js`. |
+| BUILD-1 | **Changed now** | Build output byte-identical across build dates (date moved to a meta tag); documented in `scripts/build.js`. | - |
+| CI-1 | **Changed now** | `.github/workflows/ci.yml`: tests, build-matches-sources check, production audit; no secrets. | Runs once pushed. Prerender isn't run in CI (needs Chrome and live feeds). |
+| PRODUCT-1 | **Changed now** | Home and assessment landing explain it's a self-assessment, with example/methodology/privacy links next to the call to action. | - |
+| PRODUCT-2 | **Changed now** | Fictional IT-services and SaaS examples through the real engine; tests keep them complete and free of vulnerability claims. | - |
+| SEO-1 | **Changed now** | Per-page descriptions and social metadata; example page title; History `noindex` and removed from sitemap; `/privacy` added. | - |
+| CASE-1 | **Changed now** | `docs/engineering-case-study.md` (facts and tests only; no outcome claims). | Publishing it on the site is your call. |
+| FEEDBACK-1 | **Changed now** | Feedback page points to a public GitHub issue or LinkedIn (Netlify Forms isn't enabled); consent-gated minimal events (mode/format only). | Enabling Netlify Forms is a production setting - not changed. |
+| FUTURE-1 | **Changed now** | `docs/future-multi-tenant.md`. | - |
+
+## Unresolved and not verified
+
+1. **Nothing is deployed.** Every "Changed now" is verified in source and locally only. Deployed
+   verification is listed in `docs/rollout.md` step 5.
+2. **Screen-reader testing was not performed.** Keyboard operation was tested with real key input.
+3. **Netlify environment-variable scopes and deploy-preview settings** couldn't be read with the
+   available access; check `ANTHROPIC_API_KEY` is Functions-only (rollout step 1.5).
+4. **Live AI smoke test** (authorized, fictional data) needs the new functions deployed.
+5. **`fetch-case-studies`** is still not deployed; its workflow fails until it is deployed or
+   disabled (decision needed: it makes paid AI calls on a schedule).
+6. **IP-hash counter cleanup** runs opportunistically (4% of AI requests), so deletion after a day
+   isn't time-guaranteed if the service is idle; the privacy text says so.
+7. **Product versions** aren't collected, so vulnerability matches are always "potential" and ask
+   the reader to confirm their version.
+8. **`src/main.js`** is smaller but still holds all content-page renderers (MAINT-1 partial).
+9. **CI** has not run yet (it runs on push/PR).
+
+## Baseline matrix (as found, before changes)
 
 ### 3. Security and data handling
 
