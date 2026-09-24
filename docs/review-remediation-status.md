@@ -151,8 +151,10 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
    tests with the same response shape.
 4. **`fetch-case-studies`** is intentionally not deployed (it makes paid AI calls). Its workflow is
    manual-only and has never run, so nothing is failing; how to enable it is in `docs/rollout.md`.
-5. **IP-hash counter cleanup** runs opportunistically (4% of AI requests), so deletion after a day
-   isn't time-guaranteed if the service is idle; the privacy text says so.
+5. **IP-hash counter cleanup** now also runs daily as a Netlify Scheduled Function
+   (`netlify/functions/ai-limits-cleanup.mts`, #117), so counters older than a day are deleted even
+   when the site is quiet; the privacy text says so. Not yet observed in production: after the first
+   daily run, Netlify → Logs → Functions → `ai-limits-cleanup` should show a `done` line.
 6. **Product versions** aren't collected, so vulnerability matches are always "potential" and ask
    the reader to confirm their version.
 7. **`src/main.js`** is smaller but still holds all content-page renderers (MAINT-1 partial).
