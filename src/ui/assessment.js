@@ -23,6 +23,7 @@ import { computeFrameworkRecommendations } from "../engine/framework-guidance.js
 import { guidanceForFlag, guidanceForGapItem } from "../engine/mitre-guidance.js";
 import { buildAssessmentPdf } from "../engine/pdf-report.js";
 import { saveProgress, loadProgress, clearProgress, hasSeenSaveNotice, markSaveNoticeSeen } from "../engine/local-save.js";
+import { listRuns, getRun, saveRun, sameAnswers } from "../engine/run-history.js";
 import { showToast } from "./toast.js";
 import { matchOtherText } from "../engine/other-text-match.js";
 import { SAMPLE_ANSWERS, SAMPLE_AI_INSIGHTS } from "../data/sample-scenario.js";
@@ -59,13 +60,25 @@ function currentPathIsSample() {
   return location.pathname.replace(/\/+$/, "") === ASSESSMENT_SAMPLE_PATH;
 }
 
-export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink, storage }) {
+export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink }) {
   const session = createSessionState();
-  const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null };
+  // resultRunTs: which saved history run (../engine/run-history.js) the
+  // results screen is showing. Set the first time a report renders, so
+  // re-rendering it (switching tabs away and back, reopening from History)
+  // shows that same run instead of saving a duplicate.
+  const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null, resultRunTs: null };
   // The live AI-Insights response for the report currently on screen, kept
   // so "Download as PDF" can include it - it's a paid API call, so it
   // shouldn't only exist on screen. Reset in renderResults().
   let lastAiInsights = null;
+
+  function resetSession() {
+    Object.keys(session.answers).forEach((k) => delete session.answers[k]);
+    session.asked = [];
+    session.dedupe = {};
+    session.quickMode = false;
+    ui.resultRunTs = null;
+  }
 
   function panel() {
     return getPanel();
@@ -206,6 +219,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
 
   // ---------- ASSESSMENT-EXPERIENCE-BRIEF.md §5: mode-selection landing screen ----------
   function startFresh(quickMode) {
+    resetSession();
     session.quickMode = quickMode;
     ui.phase = "scope";
     renderRail();
@@ -213,6 +227,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   }
 
   function resumeFromSave(saved) {
+    resetSession();
     Object.assign(session.answers, saved.answers || {});
     session.asked = Array.isArray(saved.asked) ? saved.asked : [];
     session.dedupe = saved.dedupe && typeof saved.dedupe === "object" ? saved.dedupe : {};
@@ -236,10 +251,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     if (midAssessment && !confirm("Starting a new assessment will discard your current progress. Continue?")) {
       return false;
     }
-    Object.keys(session.answers).forEach((k) => delete session.answers[k]);
-    session.asked = [];
-    session.dedupe = {};
-    session.quickMode = false;
+    resetSession();
     clearProgress();
     if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
     ui.phase = "landing";
@@ -251,9 +263,28 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     return true;
   }
 
+  // Re-open a completed report from browser history (History's "View
+  // report", or the landing screen's "View your last report"). Returns
+  // false for runs saved before answers were kept alongside them.
+  function openRun(ts) {
+    const run = getRun(ts);
+    if (!run || !run.answers) return false;
+    resetSession();
+    Object.assign(session.answers, JSON.parse(JSON.stringify(run.answers)));
+    session.quickMode = Boolean(run.quickMode);
+    ui.phase = "results";
+    ui.resultRunTs = run.ts;
+    if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
+    return true;
+  }
+
   function renderLanding() {
     const p = panel();
     const saved = loadProgress();
+    // An in-progress assessment takes the banner slot; otherwise offer the
+    // most recent completed report, which is what lets a finished report
+    // survive a reload or a closed tab.
+    const lastRun = saved ? null : listRuns().filter((r) => r.answers).pop() || null;
     p.innerHTML = `
       <div class="step-eyebrow">Assessment</div>
       <h2 class="step-title">Choose how to start</h2>
@@ -267,7 +298,14 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
                  <button class="primary" id="resumeBtn">Resume →</button>
                </div>
              </div>`
-          : ""
+          : lastRun
+            ? `<div class="resume-banner">
+               <div class="resume-banner-text">Your <b>last report</b> (${new Date(lastRun.ts).toLocaleDateString()}, ${lastRun.overall}%) is saved in this browser.</div>
+               <div class="resume-banner-actions">
+                 <button class="primary" id="viewLastReportBtn">View report →</button>
+               </div>
+             </div>`
+            : ""
       }
       <div class="mode-grid">
         <div class="mode-card" id="modeQuick">
@@ -299,6 +337,13 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     });
     const resumeBtn = document.getElementById("resumeBtn");
     if (resumeBtn) resumeBtn.addEventListener("click", () => resumeFromSave(saved));
+    const viewLastBtn = document.getElementById("viewLastReportBtn");
+    if (viewLastBtn)
+      viewLastBtn.addEventListener("click", () => {
+        if (!openRun(lastRun.ts)) return;
+        renderRail();
+        dispatchPhase();
+      });
     const discardBtn = document.getElementById("discardResumeBtn");
     if (discardBtn)
       discardBtn.addEventListener("click", () => {
@@ -320,13 +365,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     persistProgress();
     const p = panel();
     p.innerHTML = `<div class="step-eyebrow">Scope</div><h2 class="step-title">Before we start</h2>`;
-    let historyCount = 0;
-    try {
-      const lr = await storage.list("runs:", false);
-      historyCount = lr && lr.keys ? lr.keys.length : 0;
-    } catch (e) {
-      /* storage unavailable - proceed without history */
-    }
+    const historyCount = listRuns().length;
 
     const ind = session.answers.industry ? INDUSTRIES.find((i) => i.id === session.answers.industry) : null;
     const selectedRegions = session.answers.regions || [];
@@ -353,7 +392,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       <div class="step-eyebrow">Scope · ${session.quickMode ? "Quick Assessment" : "Full Assessment"}</div>
       <h2 class="step-title">Before we start</h2>
       <p class="step-sub">Every assessment includes the NIST CSF 2.0 + CIS Controls baseline. Add any compliance standards that apply to your organization - none are selected automatically, even if we flag one as relevant for your industry or region.</p>
-      ${historyCount ? `<a class="history-link" id="historyLink" href="${pathForTab("history")}">You have ${historyCount} previous assessment${historyCount === 1 ? "" : "s"} saved on this account - <u>view history</u></a>` : ""}
+      ${historyCount ? `<a class="history-link" id="historyLink" href="${pathForTab("history")}">You have ${historyCount} previous assessment${historyCount === 1 ? "" : "s"} saved in this browser - <u>view history</u></a>` : ""}
 
       <div class="fw-section-label">Industry</div>
       <div class="industry-grid">
@@ -1118,35 +1157,37 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     // render needs, not a progressive enhancement bolted on after.
     const otherTexts = await interpretUnresolvedOtherTexts(collectUnresolvedOtherTexts(session.answers));
 
-    let prevRun = null,
-      historyCount = 0;
-    try {
-      const lr = await storage.list("runs:", false);
-      if (lr && lr.keys && lr.keys.length) {
-        historyCount = lr.keys.length;
-        const gets = await Promise.all(lr.keys.map((k) => storage.get(k, false).catch(() => null)));
-        const runs = gets
-          .filter(Boolean)
-          .map((g) => JSON.parse(g.value))
-          .sort((a, b) => a.ts - b.ts);
-        if (runs.length) prevRun = runs[runs.length - 1];
+    // Browser-local history (../engine/run-history.js). A report that's
+    // already been saved - re-rendered after a tab switch, reopened from
+    // History or "View your last report", or regenerated from unchanged
+    // answers - reuses its run rather than recording a duplicate.
+    const runsBefore = listRuns();
+    let thisRun = ui.resultRunTs ? runsBefore.find((r) => r.ts === ui.resultRunTs) : null;
+    if (!thisRun) {
+      const latest = runsBefore[runsBefore.length - 1];
+      if (latest && latest.answers && sameAnswers(latest.answers, session.answers)) {
+        thisRun = latest;
+      } else {
+        thisRun = {
+          ts: Date.now(),
+          overall,
+          gapTexts: currentGapTexts,
+          industry: session.answers.industry,
+          quickMode: session.quickMode,
+          answers: JSON.parse(JSON.stringify(session.answers)),
+        };
+        saveRun(thisRun);
       }
-    } catch (e) {
-      /* storage unavailable - proceed without history */
     }
+    ui.resultRunTs = thisRun.ts;
+    const historyCount = listRuns().length;
+    const prevRun = runsBefore.filter((r) => r.ts < thisRun.ts).pop() || null;
 
     let resolvedSincePrev = [],
       newSincePrev = [];
     if (prevRun && prevRun.gapTexts) {
       resolvedSincePrev = prevRun.gapTexts.filter((g) => !currentGapTexts.includes(g));
       newSincePrev = currentGapTexts.filter((g) => !prevRun.gapTexts.includes(g));
-    }
-
-    const runRecord = { ts: Date.now(), overall, gapTexts: currentGapTexts, industry: session.answers.industry };
-    try {
-      await storage.set(`runs:${runRecord.ts}`, JSON.stringify(runRecord), false);
-    } catch (e) {
-      /* ignore save failure */
     }
 
     const delta = prevRun ? overall - prevRun.overall : null;
@@ -1193,9 +1234,14 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
         genuinely outside a fixed rule set. It calls the Claude API, so it's triggered explicitly rather than
         automatically - the report above is already complete without it.
         <br><br>
-        This run was just saved using Claude's artifact storage (private to your account) - that's what powers
-        the history/delta view above. That storage is specific to this Claude environment; the production
-        deployment needs a real database (e.g., Supabase) doing the same job.
+        ${
+          historyCount
+            ? `This report is saved in this browser only - no account, and nothing is sent to a server. That's what
+        powers History and the change-since-last-time view. Clearing your browser data removes it, so use
+        "Download as PDF" to keep a copy.`
+            : `This browser isn't allowing local storage (private browsing, or site data blocked), so this report
+        won't appear in History - use "Download as PDF" to keep a copy.`
+        }
       </div>
 
       <div class="ai-insights-section">
@@ -1212,7 +1258,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       <div class="nav">
         <button id="backBtn2">← Review answers</button>
         <button id="exportPdfBtn">Download as PDF ↓</button>
-        <a id="viewHistoryBtn" href="${pathForTab("history")}">View history (${historyCount + 1}) →</a>
+        ${historyCount ? `<a id="viewHistoryBtn" href="${pathForTab("history")}">View history (${historyCount}) →</a>` : ""}
       </div>
     `;
     p.querySelectorAll(".acc-head").forEach((el) => {
@@ -1225,12 +1271,17 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       session.answers.reportRequestedBy = e.target.value;
     });
     document.getElementById("backBtn2").addEventListener("click", () => {
+      // Editing answers makes whatever gets generated next a new run (or,
+      // if nothing actually changes, renderResults() matches it back to
+      // this one via sameAnswers()).
+      ui.resultRunTs = null;
       ui.phase = "wizard";
       ui.categoryIndex = FUNCTIONS.length - 1;
       renderRail();
       renderAssessmentCategory();
     });
-    wireNavLink(document.getElementById("viewHistoryBtn"), "history");
+    const viewHistoryBtn = document.getElementById("viewHistoryBtn");
+    if (viewHistoryBtn) wireNavLink(viewHistoryBtn, "history");
     document.getElementById("exportPdfBtn").addEventListener("click", () => {
       buildAssessmentPdf({ session, funcScores, overall, flags, priorities, rankedGaps, vendorNotes, frameworkRecs, aiInsights: lastAiInsights });
     });
@@ -1522,6 +1573,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     renderAssessmentCategory,
     renderResults,
     requestLanding,
+    openRun,
     // entry point used by renderActiveTab() when switching into the assessment tab
     renderCurrentPhase() {
       // Sync just the landing<->sample boundary from the URL on every

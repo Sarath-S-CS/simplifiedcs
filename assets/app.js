@@ -36254,6 +36254,54 @@
     }
   }
 
+  // src/engine/run-history.js
+  var RUNS_KEY = "simplifiedcs:runs:v1";
+  var MAX_RUNS = 25;
+  function readRuns() {
+    try {
+      const raw = localStorage.getItem(RUNS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter((r2) => r2 && typeof r2.ts === "number" && typeof r2.overall === "number") : [];
+    } catch {
+      return [];
+    }
+  }
+  function writeRuns(runs) {
+    try {
+      localStorage.setItem(RUNS_KEY, JSON.stringify(runs));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function listRuns() {
+    return readRuns().sort((a4, b2) => a4.ts - b2.ts);
+  }
+  function getRun(ts) {
+    return listRuns().find((r2) => r2.ts === ts) || null;
+  }
+  function saveRun(run) {
+    const runs = listRuns().filter((r2) => r2.ts !== run.ts);
+    runs.push(run);
+    runs.sort((a4, b2) => a4.ts - b2.ts);
+    return writeRuns(runs.slice(-MAX_RUNS));
+  }
+  function clearRuns() {
+    try {
+      localStorage.removeItem(RUNS_KEY);
+    } catch {
+    }
+  }
+  var NON_ASSESSMENT_KEYS = /* @__PURE__ */ new Set(["companyName", "reportRequestedBy"]);
+  function assessmentAnswers(answers) {
+    return Object.fromEntries(
+      Object.entries(answers || {}).filter(([k2]) => !NON_ASSESSMENT_KEYS.has(k2)).sort(([a4], [b2]) => a4.localeCompare(b2))
+    );
+  }
+  function sameAnswers(a4, b2) {
+    return JSON.stringify(assessmentAnswers(a4)) === JSON.stringify(assessmentAnswers(b2));
+  }
+
   // src/ui/toast.js
   function showToast(message) {
     if (typeof document === "undefined") return;
@@ -36493,10 +36541,17 @@
   function currentPathIsSample() {
     return location.pathname.replace(/\/+$/, "") === ASSESSMENT_SAMPLE_PATH;
   }
-  function createAssessmentController({ getPanel, getRail, icon: icon2, pathForTab: pathForTab2, wireNavLink: wireNavLink2, storage }) {
+  function createAssessmentController({ getPanel, getRail, icon: icon2, pathForTab: pathForTab2, wireNavLink: wireNavLink2 }) {
     const session = createSessionState();
-    const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null };
+    const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null, resultRunTs: null };
     let lastAiInsights = null;
+    function resetSession() {
+      Object.keys(session.answers).forEach((k2) => delete session.answers[k2]);
+      session.asked = [];
+      session.dedupe = {};
+      session.quickMode = false;
+      ui.resultRunTs = null;
+    }
     function panel() {
       return getPanel();
     }
@@ -36586,12 +36641,14 @@
       }).join("") + `</div><div class="rail-active-label">${items[activeIdx]}</div>`;
     }
     function startFresh(quickMode) {
+      resetSession();
       session.quickMode = quickMode;
       ui.phase = "scope";
       renderRail();
       renderScope();
     }
     function resumeFromSave(saved) {
+      resetSession();
       Object.assign(session.answers, saved.answers || {});
       session.asked = Array.isArray(saved.asked) ? saved.asked : [];
       session.dedupe = saved.dedupe && typeof saved.dedupe === "object" ? saved.dedupe : {};
@@ -36605,10 +36662,7 @@
       if (midAssessment && !confirm("Starting a new assessment will discard your current progress. Continue?")) {
         return false;
       }
-      Object.keys(session.answers).forEach((k2) => delete session.answers[k2]);
-      session.asked = [];
-      session.dedupe = {};
-      session.quickMode = false;
+      resetSession();
       clearProgress();
       if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
       ui.phase = "landing";
@@ -36619,9 +36673,21 @@
       renderLanding();
       return true;
     }
+    function openRun(ts) {
+      const run = getRun(ts);
+      if (!run || !run.answers) return false;
+      resetSession();
+      Object.assign(session.answers, JSON.parse(JSON.stringify(run.answers)));
+      session.quickMode = Boolean(run.quickMode);
+      ui.phase = "results";
+      ui.resultRunTs = run.ts;
+      if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
+      return true;
+    }
     function renderLanding() {
       const p3 = panel();
       const saved = loadProgress();
+      const lastRun = saved ? null : listRuns().filter((r2) => r2.answers).pop() || null;
       p3.innerHTML = `
       <div class="step-eyebrow">Assessment</div>
       <h2 class="step-title">Choose how to start</h2>
@@ -36631,6 +36697,11 @@
                <div class="resume-banner-actions">
                  <button id="discardResumeBtn">Start fresh</button>
                  <button class="primary" id="resumeBtn">Resume \u2192</button>
+               </div>
+             </div>` : lastRun ? `<div class="resume-banner">
+               <div class="resume-banner-text">Your <b>last report</b> (${new Date(lastRun.ts).toLocaleDateString()}, ${lastRun.overall}%) is saved in this browser.</div>
+               <div class="resume-banner-actions">
+                 <button class="primary" id="viewLastReportBtn">View report \u2192</button>
                </div>
              </div>` : ""}
       <div class="mode-grid">
@@ -36663,6 +36734,13 @@
       });
       const resumeBtn = document.getElementById("resumeBtn");
       if (resumeBtn) resumeBtn.addEventListener("click", () => resumeFromSave(saved));
+      const viewLastBtn = document.getElementById("viewLastReportBtn");
+      if (viewLastBtn)
+        viewLastBtn.addEventListener("click", () => {
+          if (!openRun(lastRun.ts)) return;
+          renderRail();
+          dispatchPhase();
+        });
       const discardBtn = document.getElementById("discardResumeBtn");
       if (discardBtn)
         discardBtn.addEventListener("click", () => {
@@ -36681,12 +36759,7 @@
       persistProgress();
       const p3 = panel();
       p3.innerHTML = `<div class="step-eyebrow">Scope</div><h2 class="step-title">Before we start</h2>`;
-      let historyCount = 0;
-      try {
-        const lr = await storage.list("runs:", false);
-        historyCount = lr && lr.keys ? lr.keys.length : 0;
-      } catch (e2) {
-      }
+      const historyCount = listRuns().length;
       const ind = session.answers.industry ? INDUSTRIES.find((i3) => i3.id === session.answers.industry) : null;
       const selectedRegions = session.answers.regions || [];
       const selectedCountries = session.answers.countries || [];
@@ -36710,7 +36783,7 @@
       <div class="step-eyebrow">Scope \xB7 ${session.quickMode ? "Quick Assessment" : "Full Assessment"}</div>
       <h2 class="step-title">Before we start</h2>
       <p class="step-sub">Every assessment includes the NIST CSF 2.0 + CIS Controls baseline. Add any compliance standards that apply to your organization - none are selected automatically, even if we flag one as relevant for your industry or region.</p>
-      ${historyCount ? `<a class="history-link" id="historyLink" href="${pathForTab2("history")}">You have ${historyCount} previous assessment${historyCount === 1 ? "" : "s"} saved on this account - <u>view history</u></a>` : ""}
+      ${historyCount ? `<a class="history-link" id="historyLink" href="${pathForTab2("history")}">You have ${historyCount} previous assessment${historyCount === 1 ? "" : "s"} saved in this browser - <u>view history</u></a>` : ""}
 
       <div class="fw-section-label">Industry</div>
       <div class="industry-grid">
@@ -37334,26 +37407,31 @@
       const currentGapTexts = gapItems.map((i3) => i3.gap);
       clearProgress();
       const otherTexts = await interpretUnresolvedOtherTexts(collectUnresolvedOtherTexts(session.answers));
-      let prevRun = null, historyCount = 0;
-      try {
-        const lr = await storage.list("runs:", false);
-        if (lr && lr.keys && lr.keys.length) {
-          historyCount = lr.keys.length;
-          const gets = await Promise.all(lr.keys.map((k2) => storage.get(k2, false).catch(() => null)));
-          const runs = gets.filter(Boolean).map((g2) => JSON.parse(g2.value)).sort((a4, b2) => a4.ts - b2.ts);
-          if (runs.length) prevRun = runs[runs.length - 1];
+      const runsBefore = listRuns();
+      let thisRun = ui.resultRunTs ? runsBefore.find((r2) => r2.ts === ui.resultRunTs) : null;
+      if (!thisRun) {
+        const latest = runsBefore[runsBefore.length - 1];
+        if (latest && latest.answers && sameAnswers(latest.answers, session.answers)) {
+          thisRun = latest;
+        } else {
+          thisRun = {
+            ts: Date.now(),
+            overall,
+            gapTexts: currentGapTexts,
+            industry: session.answers.industry,
+            quickMode: session.quickMode,
+            answers: JSON.parse(JSON.stringify(session.answers))
+          };
+          saveRun(thisRun);
         }
-      } catch (e2) {
       }
+      ui.resultRunTs = thisRun.ts;
+      const historyCount = listRuns().length;
+      const prevRun = runsBefore.filter((r2) => r2.ts < thisRun.ts).pop() || null;
       let resolvedSincePrev = [], newSincePrev = [];
       if (prevRun && prevRun.gapTexts) {
         resolvedSincePrev = prevRun.gapTexts.filter((g2) => !currentGapTexts.includes(g2));
         newSincePrev = currentGapTexts.filter((g2) => !prevRun.gapTexts.includes(g2));
-      }
-      const runRecord = { ts: Date.now(), overall, gapTexts: currentGapTexts, industry: session.answers.industry };
-      try {
-        await storage.set(`runs:${runRecord.ts}`, JSON.stringify(runRecord), false);
-      } catch (e2) {
       }
       const delta = prevRun ? overall - prevRun.overall : null;
       p3.innerHTML = `
@@ -37394,9 +37472,10 @@
         genuinely outside a fixed rule set. It calls the Claude API, so it's triggered explicitly rather than
         automatically - the report above is already complete without it.
         <br><br>
-        This run was just saved using Claude's artifact storage (private to your account) - that's what powers
-        the history/delta view above. That storage is specific to this Claude environment; the production
-        deployment needs a real database (e.g., Supabase) doing the same job.
+        ${historyCount ? `This report is saved in this browser only - no account, and nothing is sent to a server. That's what
+        powers History and the change-since-last-time view. Clearing your browser data removes it, so use
+        "Download as PDF" to keep a copy.` : `This browser isn't allowing local storage (private browsing, or site data blocked), so this report
+        won't appear in History - use "Download as PDF" to keep a copy.`}
       </div>
 
       <div class="ai-insights-section">
@@ -37413,7 +37492,7 @@
       <div class="nav">
         <button id="backBtn2">\u2190 Review answers</button>
         <button id="exportPdfBtn">Download as PDF \u2193</button>
-        <a id="viewHistoryBtn" href="${pathForTab2("history")}">View history (${historyCount + 1}) \u2192</a>
+        ${historyCount ? `<a id="viewHistoryBtn" href="${pathForTab2("history")}">View history (${historyCount}) \u2192</a>` : ""}
       </div>
     `;
       p3.querySelectorAll(".acc-head").forEach((el) => {
@@ -37426,12 +37505,14 @@
         session.answers.reportRequestedBy = e2.target.value;
       });
       document.getElementById("backBtn2").addEventListener("click", () => {
+        ui.resultRunTs = null;
         ui.phase = "wizard";
         ui.categoryIndex = FUNCTIONS.length - 1;
         renderRail();
         renderAssessmentCategory();
       });
-      wireNavLink2(document.getElementById("viewHistoryBtn"), "history");
+      const viewHistoryBtn = document.getElementById("viewHistoryBtn");
+      if (viewHistoryBtn) wireNavLink2(viewHistoryBtn, "history");
       document.getElementById("exportPdfBtn").addEventListener("click", () => {
         buildAssessmentPdf({ session, funcScores, overall, flags, priorities, rankedGaps, vendorNotes, frameworkRecs, aiInsights: lastAiInsights });
       });
@@ -37657,6 +37738,7 @@
       renderAssessmentCategory,
       renderResults,
       requestLanding,
+      openRun,
       // entry point used by renderActiveTab() when switching into the assessment tab
       renderCurrentPhase() {
         if (currentPathIsSample() && ui.phase !== "sample") ui.phase = "sample";
@@ -57934,19 +58016,7 @@ ${suffix}`;
     getRail: () => document.getElementById("rail"),
     icon: (name) => icon(name),
     pathForTab: (id, anchor) => pathForTab(id, anchor),
-    wireNavLink: (el, id, anchor) => wireNavLink(el, id, anchor),
-    // Forward at call time (not a captured reference) - matches the original
-    // code's pattern of always reading window.storage fresh, since it's a
-    // host-provided API that may not exist yet at module-init time (see the
-    // try/catch around every call site: it's absent entirely on a real
-    // Netlify deploy today, and only present inside a Claude.ai artifact
-    // preview - see §7 of CLAUDE.md for the real-database replacement plan).
-    storage: {
-      get: (...args) => window.storage.get(...args),
-      set: (...args) => window.storage.set(...args),
-      list: (...args) => window.storage.list(...args),
-      delete: (...args) => window.storage.delete(...args)
-    }
+    wireNavLink: (el, id, anchor) => wireNavLink(el, id, anchor)
   });
   var ROUTES = {
     home: "/",
@@ -62040,31 +62110,25 @@ ${suffix}`;
     ${dots}
   </svg>`;
   }
-  async function renderHistory() {
+  function renderHistory() {
     const panel = document.getElementById("panel");
-    panel.innerHTML = `<div class="page-intro"><div class="page-eyebrow">History</div><h2 class="page-title">Loading past assessments\u2026</h2></div>`;
-    let runs = [];
-    try {
-      const lr = await window.storage.list("runs:", false);
-      if (lr && lr.keys && lr.keys.length) {
-        const gets = await Promise.all(lr.keys.map((k2) => window.storage.get(k2, false).catch(() => null)));
-        runs = gets.filter(Boolean).map((g2) => JSON.parse(g2.value)).sort((a4, b2) => a4.ts - b2.ts);
-      }
-    } catch (e2) {
-    }
+    const runs = listRuns();
     panel.innerHTML = `
     <div class="page-intro">
       <div class="page-eyebrow">History</div>
       <h2 class="page-title">Assessment History</h2>
-      <p class="page-lede">${runs.length} assessment${runs.length === 1 ? "" : "s"} saved on this account.</p>
+      <p class="page-lede">${runs.length} assessment${runs.length === 1 ? "" : "s"} saved in this browser. Nothing here is sent to a server - clearing your browser data removes it.</p>
     </div>
     <div class="section-tile">
       ${runs.length >= 2 ? buildTrendSvg(runs) : ""}
       <div class="history-list">
         ${runs.length ? runs.slice().reverse().map((r2) => `
           <div class="history-row">
-            <div>${new Date(r2.ts).toLocaleDateString()} ${new Date(r2.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}${r2.industry ? " \xB7 " + (INDUSTRIES.find((i3) => i3.id === r2.industry)?.label || r2.industry) : ""}</div>
-            <div class="history-score">${r2.overall}%</div>
+            <div>${new Date(r2.ts).toLocaleDateString()} ${new Date(r2.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}${r2.industry ? " \xB7 " + (INDUSTRIES.find((i3) => i3.id === r2.industry)?.label || r2.industry) : ""}${r2.quickMode ? " \xB7 Quick" : ""}</div>
+            <div class="history-row-actions">
+              <div class="history-score">${r2.overall}%</div>
+              ${r2.answers ? `<button class="history-view-btn" data-run-ts="${r2.ts}">View report \u2192</button>` : ""}
+            </div>
           </div>
         `).join("") : '<p class="body-text">No assessments saved yet - complete one to start tracking.</p>'}
       </div>
@@ -62075,14 +62139,16 @@ ${suffix}`;
     </div>
   `;
     wireNavLink(document.getElementById("backToScope"), "assessment");
+    panel.querySelectorAll(".history-view-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (assessmentController.openRun(Number(btn.dataset.runTs))) goToTab("assessment");
+      });
+    });
     const clearBtn = document.getElementById("clearHistory");
     if (clearBtn) {
-      clearBtn.addEventListener("click", async () => {
-        try {
-          const lr = await window.storage.list("runs:", false);
-          if (lr && lr.keys) await Promise.all(lr.keys.map((k2) => window.storage.delete(k2, false).catch(() => null)));
-        } catch (e2) {
-        }
+      clearBtn.addEventListener("click", () => {
+        if (!confirm(`Delete all ${runs.length} saved assessment${runs.length === 1 ? "" : "s"} from this browser? This can't be undone.`)) return;
+        clearRuns();
         renderHistory();
       });
     }
