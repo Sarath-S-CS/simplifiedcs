@@ -1,5 +1,5 @@
 // Maturity model, core principles and scoring-rubric content.
-// Moved out of src/main.js unchanged (content only; rendering stays there).
+// Moved out of src/main.js unchanged (content only; the pages in src/pages/ render it).
 
 export const PHASES = [
   { num:1, stage:'discovery', title:'Asset & Data Discovery', desc:'Inventory hardware, software, cloud resources, and data stores - including shadow IT. You can\'t protect what you don\'t know exists, and this is where most real gaps first surface.',

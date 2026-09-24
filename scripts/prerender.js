@@ -40,7 +40,7 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SITE_ORIGIN = "https://simplifiedcs.net";
 const PORT = 5299;
 
-// Mirrors src/main.js's ROUTES map - kept in sync by hand since this script
+// Mirrors the ROUTES map in src/router.js - kept in sync by hand since this script
 // runs outside the esbuild bundle and can't import app code directly.
 const ROUTES = {
   "/": "home",
@@ -133,7 +133,7 @@ async function snapshotRoute(browser, routePath) {
   await page.goto(`http://localhost:${PORT}${routePath}`, { waitUntil: "domcontentloaded", timeout: 30000 });
   // news/exploits/case-studies render a synchronous "Loading the latest…"
   // placeholder into #tabContent *before* their Supabase fetch resolves
-  // (see renderNewsTab/renderCaseStudyTab in main.js) - a bare
+  // (see src/pages/news.js and src/pages/case-studies.js) - a bare
   // children.length check resolves on that placeholder, not the real data.
   // Wait for the placeholder text to be gone too; tabs with no async fetch
   // satisfy both conditions on their first synchronous render.

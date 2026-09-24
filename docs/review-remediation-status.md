@@ -117,7 +117,7 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
 | REPORT-1 | **Changed now** | `src/engine/report-model.js` feeds web, examples, PDF, History summary and AI payload. | - |
 | PDF-1 | **Changed now** | Layout tests parse every page (margins, stranded headings); pages rendered to images and inspected (long/short/Quick/example, AI success/failure, unknown/N/A); bold-text overflow found and fixed. | - |
 | PERF-1 | **Changed now** | Minified ESM with code splitting and hashed names; images out of CSS/HTML; 1-year immutable caching. Initial script 543 KB minified (before compression). | Further splitting of page content could shrink the initial script more. |
-| MAINT-1 | **Partially fixed** | Assessment UI split into `report-view`, `ai-panel`, `history-view`, `privacy`, `a11y`, `page-meta`; content data moved to `src/content/`. `src/main.js` 4,395 → 3,691 lines. | Page renderers still live in `main.js`. |
+| MAINT-1 | **Changed now** | Assessment UI split into `report-view`, `ai-panel`, `history-view`, `privacy`, `a11y`, `page-meta`; content data moved to `src/content/`; then every content page moved to its own module in `src/pages/` (shared helpers in `src/pages/shared.js`, routes and link wiring in `src/router.js`). `src/main.js` 4,395 → 676 lines (shell, navigation, search, assessment and history tabs). Verified as a pure move: all 21 prerendered pages identical apart from hashed file names; same interactive behaviour in a scripted browser run. | - |
 | BUILD-1 | **Changed now** | Build output byte-identical across build dates (date moved to a meta tag); documented in `scripts/build.js`. | - |
 | CI-1 | **Changed now** | `.github/workflows/ci.yml`: tests, build-matches-sources check, production audit; no secrets. | Runs once pushed. Prerender isn't run in CI (needs Chrome and live feeds). |
 | PRODUCT-1 | **Changed now** | Home and assessment landing explain it's a self-assessment, with example/methodology/privacy links next to the call to action. | - |
@@ -157,7 +157,8 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
    daily run, Netlify → Logs → Functions → `ai-limits-cleanup` should show a `done` line.
 6. **Product versions** aren't collected, so vulnerability matches are always "potential" and ask
    the reader to confirm their version.
-7. **`src/main.js`** is smaller but still holds all content-page renderers (MAINT-1 partial).
+7. ~~**`src/main.js`** still holds all content-page renderers.~~ Resolved: one module per page in
+   `src/pages/` (MAINT-1, #119).
 
 ## Baseline matrix (as found, before changes)
 

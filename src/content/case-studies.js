@@ -1,5 +1,5 @@
 // Case Studies page: built-in incident write-ups (the live feed adds more from Supabase).
-// Moved out of src/main.js unchanged (content only; rendering stays there).
+// Moved out of src/main.js unchanged (content only; the pages in src/pages/ render it).
 
 // Curated seed/fallback only - the live page reads from Supabase's
 // case_studies table (kept in sync with this content; see
