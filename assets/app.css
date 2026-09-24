@@ -986,9 +986,11 @@
 
   .history-link{ font-size:12.5px; color:var(--accent-secure); margin:-16px 0 24px; cursor:pointer; }
   .history-list{ margin:20px 0 8px; }
-  .history-row{ display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+  .history-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px 14px; padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
   .history-row:last-child{ border-bottom:none; }
+  .history-row-actions{ display:flex; align-items:center; gap:14px; }
   .history-score{ font-family:var(--mono); color:var(--accent-secure); font-weight:600; }
+  .history-view-btn{ padding:6px 12px; font-size:12.5px; }
   .trend-chart{ width:100%; height:auto; margin-bottom:24px; display:block; }
   .delta-box{ border:1px solid var(--line); background:var(--surface-raised); padding:16px 18px; margin-bottom:28px; }
   .delta-box h3{ font-family:var(--mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 10px; font-weight:500; }

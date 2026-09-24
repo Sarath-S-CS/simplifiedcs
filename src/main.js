@@ -5,6 +5,7 @@
 // functions) was replaced, by the imports and controller below.
 import { createAssessmentController } from "./ui/assessment.js";
 import { escapeHtml, safeHttpUrl, sanitizeLinksOnlyHtml } from "./ui/html-safety.js";
+import { listRuns, clearRuns } from "./engine/run-history.js";
 import { INDUSTRIES } from "./data/industries.js";
 // FUNCTIONS/FUNC_COLORS used to be plain globals at the top of the original
 // script; the Methodology tab's function-legend (an educational reference
@@ -21,18 +22,6 @@ const assessmentController = createAssessmentController({
   icon: (name) => icon(name),
   pathForTab: (id, anchor) => pathForTab(id, anchor),
   wireNavLink: (el, id, anchor) => wireNavLink(el, id, anchor),
-  // Forward at call time (not a captured reference) - matches the original
-  // code's pattern of always reading window.storage fresh, since it's a
-  // host-provided API that may not exist yet at module-init time (see the
-  // try/catch around every call site: it's absent entirely on a real
-  // Netlify deploy today, and only present inside a Claude.ai artifact
-  // preview - see §7 of CLAUDE.md for the real-database replacement plan).
-  storage: {
-    get: (...args) => window.storage.get(...args),
-    set: (...args) => window.storage.set(...args),
-    list: (...args) => window.storage.list(...args),
-    delete: (...args) => window.storage.delete(...args),
-  },
 });
 
 // --- Client-side routing (ROUTING-FIX-BRIEF.md): real URL paths for every
@@ -4301,31 +4290,28 @@ function buildTrendSvg(runs){
   </svg>`;
 }
 
-async function renderHistory(){
+// Completed assessments saved in this browser (src/engine/run-history.js -
+// localStorage, no account). Each row can reopen its full report.
+function renderHistory(){
   const panel = document.getElementById('panel');
-  panel.innerHTML = `<div class="page-intro"><div class="page-eyebrow">History</div><h2 class="page-title">Loading past assessments…</h2></div>`;
-  let runs = [];
-  try {
-    const lr = await window.storage.list('runs:', false);
-    if(lr && lr.keys && lr.keys.length){
-      const gets = await Promise.all(lr.keys.map(k => window.storage.get(k, false).catch(()=>null)));
-      runs = gets.filter(Boolean).map(g => JSON.parse(g.value)).sort((a,b)=> a.ts - b.ts);
-    }
-  } catch(e){ /* storage unavailable */ }
+  const runs = listRuns();
 
   panel.innerHTML = `
     <div class="page-intro">
       <div class="page-eyebrow">History</div>
       <h2 class="page-title">Assessment History</h2>
-      <p class="page-lede">${runs.length} assessment${runs.length===1?'':'s'} saved on this account.</p>
+      <p class="page-lede">${runs.length} assessment${runs.length===1?'':'s'} saved in this browser. Nothing here is sent to a server - clearing your browser data removes it.</p>
     </div>
     <div class="section-tile">
       ${runs.length>=2 ? buildTrendSvg(runs) : ''}
       <div class="history-list">
         ${runs.length ? runs.slice().reverse().map(r=>`
           <div class="history-row">
-            <div>${new Date(r.ts).toLocaleDateString()} ${new Date(r.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}${r.industry ? ' · ' + (INDUSTRIES.find(i=>i.id===r.industry)?.label || r.industry) : ''}</div>
-            <div class="history-score">${r.overall}%</div>
+            <div>${new Date(r.ts).toLocaleDateString()} ${new Date(r.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}${r.industry ? ' · ' + (INDUSTRIES.find(i=>i.id===r.industry)?.label || r.industry) : ''}${r.quickMode ? ' · Quick' : ''}</div>
+            <div class="history-row-actions">
+              <div class="history-score">${r.overall}%</div>
+              ${r.answers ? `<button class="history-view-btn" data-run-ts="${r.ts}">View report →</button>` : ''}
+            </div>
           </div>
         `).join('') : '<p class="body-text">No assessments saved yet - complete one to start tracking.</p>'}
       </div>
@@ -4336,13 +4322,16 @@ async function renderHistory(){
     </div>
   `;
   wireNavLink(document.getElementById('backToScope'), 'assessment');
+  panel.querySelectorAll('.history-view-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(assessmentController.openRun(Number(btn.dataset.runTs))) goToTab('assessment');
+    });
+  });
   const clearBtn = document.getElementById('clearHistory');
   if(clearBtn){
-    clearBtn.addEventListener('click', async ()=>{
-      try {
-        const lr = await window.storage.list('runs:', false);
-        if(lr && lr.keys) await Promise.all(lr.keys.map(k=>window.storage.delete(k, false).catch(()=>null)));
-      } catch(e){ /* ignore */ }
+    clearBtn.addEventListener('click', ()=>{
+      if(!confirm(`Delete all ${runs.length} saved assessment${runs.length===1?'':'s'} from this browser? This can't be undone.`)) return;
+      clearRuns();
       renderHistory();
     });
   }
