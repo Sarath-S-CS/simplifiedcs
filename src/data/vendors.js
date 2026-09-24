@@ -72,6 +72,20 @@ export const EDGE_DEVICE_VENDORS = [
   "Ubiquiti",
 ];
 
+// How each edge vendor writes a software version, for the optional version
+// question's placeholder. Only the version is typed; the product name in
+// brackets says which version is meant (a FortiGate runs FortiOS, etc.).
+export const EDGE_VERSION_EXAMPLES = {
+  "Fortinet FortiGate": "e.g. 7.4.3 (FortiOS)",
+  "Palo Alto Networks": "e.g. 11.1.2-h3 (PAN-OS)",
+  "Cisco ASA / Firepower": "e.g. 9.18.3 (ASA software)",
+  SonicWall: "e.g. 7.0.1-5145 (SonicOS)",
+  "Check Point": "e.g. R81.20",
+  "Juniper Networks SRX": "e.g. 22.4R3-S2 (Junos)",
+  WatchGuard: "e.g. 12.10.3 (Fireware)",
+  Ubiquiti: "e.g. 4.0.6 (UniFi OS)",
+};
+
 export const HOSTING_PROVIDERS = [
   "Amazon Web Services (AWS)",
   "Microsoft Azure",

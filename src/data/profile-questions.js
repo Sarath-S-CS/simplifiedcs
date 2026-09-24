@@ -21,6 +21,7 @@ import {
   DLP_VENDORS,
   SDWAN_VENDORS,
   EDGE_DEVICE_VENDORS,
+  EDGE_VERSION_EXAMPLES,
   HOSTING_PROVIDERS,
   CLOUD_PROVIDERS,
   AWARENESS_LMS_VENDORS,
@@ -58,6 +59,7 @@ export const INFRA_ORDER = [
   "networkArch",
   "externalDevices",
   "edgeDeviceVendor",
+  "edgeDeviceVersion",
   "externalWebsite",
   "webDb",
   "hostingProvider",
@@ -117,6 +119,16 @@ export const INFRA_NODES = [
   select("externalDevices", "infra", "Do you have external-facing devices (VPN gateways, remote-access appliances, firewalls with public IPs)?", ["Yes", "No"], { required: true }),
   vendor("edgeDeviceVendor", "infra", "What firewall / VPN gateway appliance handles that external access?", EDGE_DEVICE_VENDORS, {
     visibleIf: (answers) => answers.externalDevices === "Yes",
+    // A version typed for one vendor means nothing for another.
+    resets: ["edgeDeviceVersion"],
+  }),
+  // edgeDeviceVersion: never scored. Only sent with the optional AI check,
+  // where the server looks it up exactly in NVD for supported products
+  // (netlify/lib/product-catalog.ts) - see AI-2 in the status doc.
+  text("edgeDeviceVersion", "infra", "Which software version is it running?", (answers) => EDGE_VERSION_EXAMPLES[answers.edgeDeviceVendor] || "e.g. 7.4.3", {
+    visibleIf: (answers) => answers.externalDevices === "Yes" && Boolean(answers.edgeDeviceVendor || answers.edgeDeviceVendor__isOther),
+    hint: "Shown on the device's admin dashboard or 'System information' page. Only used if you ask for the optional AI vulnerability check. Leave blank if you're not sure.",
+    maxLength: 40,
   }),
   select(
     "externalWebsite",
@@ -133,7 +145,7 @@ export const INFRA_NODES = [
   // webServerStack: free-text specificity that only ever feeds vendor-note
   // matching (see vendors.js/VENDOR_NOTES) and the AI product check, never
   // scoring.
-  text("webServerStack", "infra", "What web server software / OS runs it, if known?", "e.g. Nginx on Ubuntu 22.04, IIS on Windows Server"),
+  text("webServerStack", "infra", "What web server software runs it, and which version, if known?", "e.g. nginx 1.24.0 on Ubuntu 22.04, or IIS 10.0 on Windows Server 2019"),
 ];
 
 export const DEVSEC_ORDER = ["developsSoftware", "devsecopsMaturity", "secretsManagement"];

@@ -4,7 +4,8 @@
 // the version below must match the server's CONSENT_VERSION
 // (netlify/lib/insights.ts) - a server that has moved on to a new notice
 // rejects requests carrying an old version, so the visitor is asked again.
-export const AI_CONSENT_VERSION = "ai-processing-2026-09";
+// 2026-09b: product versions added to what's sent.
+export const AI_CONSENT_VERSION = "ai-processing-2026-09b";
 const KEY = "simplifiedcs:consent:ai";
 
 function storage() {

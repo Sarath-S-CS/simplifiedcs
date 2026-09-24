@@ -9,6 +9,8 @@ import { buildReport } from "../src/engine/report-model.js";
 import { validateInsightsRequest, CONSENT_VERSION } from "../netlify/lib/insights.ts";
 import { validateInterpretRequest } from "../netlify/lib/interpret.ts";
 import { runScenario, WEAK_ANSWERS } from "./helpers/scenarios.js";
+import { INFRA_NODES, INFRA_ORDER } from "../src/data/profile-questions.js";
+import { consentHtml, applicabilityText, aiResultHtml } from "../src/ui/ai-panel.js";
 
 function weakState(extra = {}) {
   const state = runScenario(WEAK_ANSWERS, { scope: { industry: "manufacturing", regions: ["eu"], iso27001: true } });
@@ -63,4 +65,43 @@ test("a payload without consent is rejected by the server validator", () => {
 
 test("the Other-text interpretation request shape is accepted by the server", () => {
   assert.equal(validateInterpretRequest({ consent: { version: AI_CONSENT_VERSION, accepted: true }, items: [{ fieldLabel: "How is cybersecurity managed day to day?", freeText: "a part-time vCISO" }] }), null);
+});
+
+// ---------------- product versions (AI-2) ----------------
+
+test("the firewall's stated version travels with it, only when given, and passes server validation", () => {
+  assert.deepEqual(namedProducts({ edgeDeviceVendor: "Fortinet FortiGate", edgeDeviceVersion: " 7.4.3 " }), [{ category: "edge device / firewall", name: "Fortinet FortiGate", version: "7.4.3" }]);
+  assert.deepEqual(namedProducts({ edgeDeviceVendor: "Fortinet FortiGate", edgeDeviceVersion: "" }), [{ category: "edge device / firewall", name: "Fortinet FortiGate" }]);
+  assert.deepEqual(namedProducts({ edgeDeviceVersion: "7.4.3" }), [], "a version without a product isn't sent");
+  assert.equal(namedProducts({ edgeDeviceVendor: "SonicWall", edgeDeviceVersion: "7".repeat(80) })[0].version.length, 40);
+  const state = weakState({ externalDevices: "Yes", edgeDeviceVendor: "Palo Alto Networks", edgeDeviceVersion: "11.1.2-h3" });
+  const payload = buildInsightsPayload(state, buildReport(state), { consentVersion: AI_CONSENT_VERSION });
+  assert.equal(validateInsightsRequest(payload), null);
+  assert.equal(payload.products.find((p) => p.name === "Palo Alto Networks").version, "11.1.2-h3");
+});
+
+test("the version question appears only once a firewall is named, with that vendor's example", () => {
+  const q = INFRA_NODES.find((n) => n.id === "edgeDeviceVersion");
+  assert.ok(q, "question exists");
+  assert.equal(q.required, false);
+  assert.equal(q.visibleIf({ externalDevices: "No", edgeDeviceVendor: "Fortinet FortiGate" }), false);
+  assert.equal(q.visibleIf({ externalDevices: "Yes" }), false);
+  assert.equal(q.visibleIf({ externalDevices: "Yes", edgeDeviceVendor: "Fortinet FortiGate" }), true);
+  assert.equal(q.visibleIf({ externalDevices: "Yes", edgeDeviceVendor: "", edgeDeviceVendor__isOther: true }), true, "shown while an Other name is being typed");
+  assert.equal(q.placeholder({ edgeDeviceVendor: "Palo Alto Networks" }), "e.g. 11.1.2-h3 (PAN-OS)");
+  assert.equal(q.placeholder({ edgeDeviceVendor: "Acme Firewall" }), "e.g. 7.4.3");
+  assert.deepEqual(INFRA_NODES.find((n) => n.id === "edgeDeviceVendor").resets, ["edgeDeviceVersion"], "changing the vendor clears the version");
+  assert.ok(INFRA_ORDER.indexOf("edgeDeviceVersion") === INFRA_ORDER.indexOf("edgeDeviceVendor") + 1);
+});
+
+test("the consent notice lists versions, and each match label quotes the stated version", () => {
+  const html = consentHtml({ products: [{ category: "edge device / firewall", name: "Fortinet FortiGate", version: "7.4.3" }, { category: "EDR", name: "CrowdStrike Falcon" }] });
+  assert.match(html, /with a version where you gave one/);
+  assert.match(html, /Fortinet FortiGate, version 7\.4\.3 \(edge device \/ firewall\)/);
+  assert.match(html, /CrowdStrike Falcon \(EDR\)/);
+  assert.equal(applicabilityText({ applicability: "affects-stated-version", version: "7.4.33" }), "Listed by NVD as affecting your version (7.4.33)");
+  assert.equal(applicabilityText({ applicability: "version-not-listed", version: "7.4.3" }), "NVD doesn't list your version (7.4.3) as affected - confirm with the vendor");
+  assert.equal(applicabilityText({ applicability: "potential-match", version: null }), "Potential match - confirm your version");
+  const shown = aiResultHtml({ generatedAt: "2026-09-24T12:00:00Z", sourceStatus: [], advisories: [{ productName: "Fortinet FortiGate", applicability: "affects-stated-version", version: "7.4.3", summary: "S.", verification: "V.", evidence: [] }], patterns: [], limitations: [] });
+  assert.match(shown, /gap-tier-3">Listed by NVD as affecting your version \(7\.4\.3\)/);
 });

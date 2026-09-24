@@ -64,6 +64,7 @@ export const WEAK_ANSWERS = {
   networkArch: "Flat / mostly unsegmented",
   externalDevices: "Yes",
   edgeDeviceVendor: "Fortinet",
+  edgeDeviceVersion: "",
   externalWebsite: "Yes",
   webDb: "Yes",
   hostingProvider: "Self-hosted / on-premises",

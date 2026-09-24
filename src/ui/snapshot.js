@@ -63,7 +63,7 @@ export function snapshotRows(answers) {
   rows.push(["SD-WAN", sdwan]);
 
   rows.push(["External-facing devices", answers.externalDevices || "-"]);
-  if (answers.edgeDeviceVendor) rows.push(["Firewall / VPN appliance", answers.edgeDeviceVendor]);
+  if (answers.edgeDeviceVendor) rows.push(["Firewall / VPN appliance", answers.edgeDeviceVersion ? `${answers.edgeDeviceVendor}, version ${answers.edgeDeviceVersion}` : answers.edgeDeviceVendor]);
 
   let webExp = answers.externalWebsite || "-";
   if (answers.webDb) webExp += `, DB-connected: ${answers.webDb}`;

@@ -41,6 +41,7 @@ const IT_SERVICES = {
   networkArch: "Segmented (VLANs / zones)",
   externalDevices: "Yes",
   edgeDeviceVendor: "Fortinet FortiGate",
+  edgeDeviceVersion: "",
   externalWebsite: "Yes",
   webDb: "Yes",
   hostingProvider: "Microsoft Azure",

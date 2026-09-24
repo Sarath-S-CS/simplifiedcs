@@ -3,7 +3,8 @@
 // shown to them before sending ("What will be sent").
 //
 // Included: industry, regions and frameworks; the products named in the
-// assessment (to check against public vulnerability data); operating
+// assessment, with a version where one was given (to check against public
+// vulnerability data); operating
 // systems, if given; the deterministic findings; and each answer as
 // question + chosen option + status. Never included: company name, the
 // "report requested by" field, or anything typed into the report page.
@@ -23,6 +24,8 @@ const clip = (s, max) => {
 };
 
 // Products named anywhere in the assessment, one entry per distinct name.
+// The firewall's stated version travels with it (web server versions are
+// part of that free-text answer already).
 export function namedProducts(answers) {
   const msp = [answers.outsourcedMspName, answers.fullMspProviderName, answers.mixedMspProviderName, answers.mdrMspProviderName].find(Boolean);
   const pairs = [
@@ -31,7 +34,7 @@ export function namedProducts(answers) {
     ["email security", answers.emailSecurityVendor],
     ["DLP", answers.dlpVendor],
     ["SD-WAN", answers.sdwanVendor],
-    ["edge device / firewall", answers.edgeDeviceVendor],
+    ["edge device / firewall", answers.edgeDeviceVendor, answers.edgeDeviceVersion],
     ["hosting provider", answers.hostingProvider],
     ["cloud provider", answers.cloudProvider],
     ["security awareness / LMS", answers.awarenessLms],
@@ -43,11 +46,12 @@ export function namedProducts(answers) {
   ];
   const seen = new Set();
   const out = [];
-  for (const [category, raw] of pairs) {
+  for (const [category, raw, rawVersion] of pairs) {
     const name = clip(raw, 150);
     if (!name || name === OTHER || seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
-    out.push({ category, name });
+    const version = clip(rawVersion, 40);
+    out.push(version ? { category, name, version } : { category, name });
   }
   return out.slice(0, 20);
 }

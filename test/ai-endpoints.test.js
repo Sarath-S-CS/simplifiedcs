@@ -5,11 +5,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { handleInsights, handleInterpret, INSIGHTS_POLICY } from "../netlify/lib/handlers.ts";
+import { CONSENT_VERSION } from "../netlify/lib/insights.ts";
 import { utcDay } from "../netlify/lib/admission.ts";
 import { casStore, kvStore } from "./helpers/stores.js";
 
 const NOW = Date.UTC(2026, 8, 24, 12, 0, 0);
-const CONSENT = { version: "ai-processing-2026-09", accepted: true };
+const CONSENT = { version: CONSENT_VERSION, accepted: true };
 const KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
 
 const KEV_FIXTURE = {
@@ -17,6 +18,7 @@ const KEV_FIXTURE = {
     { cveID: "CVE-2099-1001", vendorProject: "Palo Alto Networks", product: "PAN-OS", vulnerabilityName: "Palo Alto Networks PAN-OS Authentication Bypass", dateAdded: "2026-09-10", shortDescription: "PAN-OS contains an authentication bypass in the management web interface.", knownRansomwareCampaignUse: "Known" },
     { cveID: "CVE-2099-1002", vendorProject: "Palo Alto Networks", product: "Expedition", vulnerabilityName: "Palo Alto Networks Expedition Missing Authentication", dateAdded: "2026-08-01", shortDescription: "Expedition is missing authentication for a critical function." },
     { cveID: "CVE-2099-1003", vendorProject: "Fortinet", product: "FortiOS", vulnerabilityName: "Fortinet FortiOS Heap Overflow", dateAdded: "2026-07-01", shortDescription: "FortiOS SSL-VPN heap-based buffer overflow." },
+    { cveID: "CVE-2099-1004", vendorProject: "F5", product: "BIG-IP", vulnerabilityName: "F5 BIG-IP Remote Code Execution", dateAdded: "2026-06-01", shortDescription: "BIG-IP configuration utility remote code execution." },
   ],
 };
 const NVD_DEFENDER = {
@@ -33,7 +35,28 @@ const NVD_DEFENDER = {
   ],
 };
 
-function fakeFetch({ model, kev = "ok", nvd = {}, calls }) {
+// NVD's answer to "which CVEs affect PAN-OS 11.1.2-h3?" (cpeName + isVulnerable).
+const nvdCve = (id, published, severity, description, criteria) => ({
+  cve: {
+    id,
+    published,
+    descriptions: [{ lang: "en", value: description }],
+    metrics: { cvssMetricV31: [{ cvssData: { baseSeverity: severity } }] },
+    configurations: [{ nodes: [{ cpeMatch: [{ vulnerable: true, criteria, versionEndExcluding: "11.1.4" }] }] }],
+  },
+});
+const PAN_CPE = "cpe:2.3:o:paloaltonetworks:pan-os:11.1.2:h3:*:*:*:*:*:*";
+const PAN_ANY = "cpe:2.3:o:paloaltonetworks:pan-os:*:*:*:*:*:*:*:*";
+const NVD_PAN_VERSION = {
+  totalResults: 3,
+  vulnerabilities: [
+    nvdCve("CVE-2099-1001", "2026-09-01T10:00:00.000", "CRITICAL", "An authentication bypass in the PAN-OS management web interface.", PAN_ANY),
+    nvdCve("CVE-2099-3001", "2026-06-01T10:00:00.000", "HIGH", "A denial-of-service flaw in PAN-OS GlobalProtect.", PAN_ANY),
+    nvdCve("CVE-2099-3002", "2026-08-01T10:00:00.000", "MEDIUM", "A PAN-OS web interface cross-site scripting flaw.", PAN_ANY),
+  ],
+};
+
+function fakeFetch({ model, kev = "ok", nvd = {}, nvdVersion = {}, calls }) {
   return async (url, init = {}) => {
     const u = String(url);
     calls.push(u);
@@ -42,7 +65,13 @@ function fakeFetch({ model, kev = "ok", nvd = {}, calls }) {
       return Response.json(KEV_FIXTURE);
     }
     if (u.startsWith("https://services.nvd.nist.gov/")) {
-      const term = decodeURIComponent(new URL(u).searchParams.get("keywordSearch"));
+      const params = new URL(u).searchParams;
+      if (params.has("cpeName")) {
+        const fixture = nvdVersion[params.get("cpeName")];
+        if (fixture === "down") return new Response("unavailable", { status: 503 });
+        return Response.json(fixture ?? { totalResults: 0, vulnerabilities: [] });
+      }
+      const term = decodeURIComponent(params.get("keywordSearch"));
       const fixture = nvd[term.toLowerCase()];
       if (fixture === "down") return new Response("rate limited", { status: 403 });
       return Response.json(fixture ?? { vulnerabilities: [] });
@@ -121,7 +150,10 @@ test("malformed, oversized, null, wrong-type and unknown-field bodies are bounde
     [post({ ...validBody(), scoredAnswers: [{ area: "a", q: "q", a: "a", status: "definitely" }] }), 400, "invalid_request"],
     [post({ ...validBody(), companyName: "Real Company Ltd" }), 400, "invalid_request"],
     [post({ ...validBody(), consent: undefined }), 400, "consent_required"],
-    [post({ ...validBody(), consent: { version: "ai-processing-2026-09", accepted: false } }), 400, "consent_required"],
+    [post({ ...validBody(), consent: { version: CONSENT_VERSION, accepted: false } }), 400, "consent_required"],
+    // The notice before product versions were sent: agreeing to it doesn't cover versions.
+    [post({ ...validBody(), consent: { version: "ai-processing-2026-09", accepted: true } }), 400, "consent_required"],
+    [post({ ...validBody(), products: [{ category: "edge device / firewall", name: "Fortinet FortiGate", version: "7".repeat(41) }] }), 400, "invalid_request"],
     [post({ ...validBody(), consent: { version: "old", accepted: true } }), 400, "consent_required"],
   ];
   for (const [request, status, code] of cases) {
@@ -303,6 +335,101 @@ test("NVD query budget can't be starved by input order and unchecked products ar
   assert.notEqual(statusOf("CrowdStrike Falcon"), "not-checked-budget");
   assert.equal(out.sourceStatus.filter((s) => s.nvd === "not-checked-budget").length, 2);
   assert.ok(out.limitations.some((l) => /not checked this time/.test(l)));
+});
+
+// ---------------- stated versions (AI-2) ----------------
+
+const citeAll = (reqBody) => {
+  const prompt = reqBody.messages[0].content;
+  const ids = [...prompt.matchAll(/\[(E\d+)\] product=(\S+)/g)];
+  return toolReply({ advisories: ids.map(([, id, key]) => ({ productKey: key, evidenceIds: [id], summary: "What the advisory says.", verification: "Compare with the device's version." })), patterns: [], narrative: "N." });
+};
+const panWithVersion = (version = "11.1.2-h3") => validBody({ products: [{ category: "edge device / firewall", name: "Palo Alto Networks", version }] });
+
+test("a stated version uses NVD's exact-version lookup, not a keyword search, and labels what it returns", async () => {
+  const { d, calls } = deps({ model: citeAll, nvdVersion: { [PAN_CPE]: NVD_PAN_VERSION } });
+  const out = await (await handleInsights(post(panWithVersion()), d)).json();
+  const nvdCalls = calls.filter((u) => u.startsWith("https://services.nvd.nist.gov/"));
+  assert.equal(nvdCalls.length, 1, "one lookup for the versioned product, no keyword search");
+  const q = new URL(nvdCalls[0]).searchParams;
+  assert.equal(q.get("cpeName"), PAN_CPE);
+  assert.ok(q.has("isVulnerable"));
+
+  const byCve = Object.fromEntries(out.advisories.map((a) => [a.evidence[0].cveId, a]));
+  assert.equal(byCve["CVE-2099-1001"].applicability, "affects-stated-version", "known exploited and listed for this version");
+  assert.equal(byCve["CVE-2099-1001"].evidence[0].source, "CISA KEV");
+  assert.equal(byCve["CVE-2099-3001"].applicability, "affects-stated-version");
+  assert.equal(byCve["CVE-2099-1001"].version, "11.1.2-h3");
+  assert.match(byCve["CVE-2099-3001"].evidence[0].versionInfo, /11\.1\.2-h3/);
+  // Highest severity first among NVD-only records; the order is newest-first otherwise.
+  const nvdOnly = out.advisories.filter((a) => a.evidence[0].source === "NVD").map((a) => a.evidence[0].cveId);
+  assert.deepEqual(nvdOnly, ["CVE-2099-3001", "CVE-2099-3002"]);
+
+  const status = out.sourceStatus[0];
+  assert.equal(status.nvd, "potential-match");
+  assert.ok(status.notes.some((n) => /version 11\.1\.2-h3/.test(n) && /3 /.test(n)), status.notes.join(" | "));
+  assert.ok(!out.limitations.some((l) => /versions aren't collected/i.test(l)));
+  assert.ok(out.limitations.some((l) => /compared/i.test(l)));
+
+  const prompt = calls.modelBodies[0].messages[0].content;
+  assert.match(prompt, /stated version: 11\.1\.2-h3/);
+  assert.match(prompt, /version check=listed by NVD as affecting the stated version/);
+});
+
+test("a known-exploited item NVD doesn't list for the stated version stays visible, labelled as not listed", async () => {
+  const withoutKevCve = { totalResults: 1, vulnerabilities: [NVD_PAN_VERSION.vulnerabilities[1]] };
+  const { d, calls } = deps({ model: citeAll, nvdVersion: { [PAN_CPE]: withoutKevCve } });
+  const out = await (await handleInsights(post(panWithVersion()), d)).json();
+  const kev = out.advisories.find((a) => a.evidence[0].cveId === "CVE-2099-1001");
+  assert.ok(kev, "still shown");
+  assert.equal(kev.applicability, "version-not-listed");
+  const expedition = out.advisories.find((a) => a.evidence[0].cveId === "CVE-2099-1002");
+  assert.equal(expedition.applicability, "vendor-only", "a different product from the same vendor stays unconfirmed");
+  // The item NVD lists for the stated version is put in front of the model first,
+  // ahead of known-exploited items that are less certain for this organisation.
+  const prompt = calls.modelBodies[0].messages[0].content;
+  const at = (cve) => prompt.indexOf(`| ${cve} |`);
+  assert.ok(at("CVE-2099-3001") < at("CVE-2099-1001") && at("CVE-2099-1001") < at("CVE-2099-1002"), "confirmed, then not-listed, then vendor-only");
+  assert.deepEqual(out.advisories.map((a) => a.applicability), ["affects-stated-version", "version-not-listed", "vendor-only"]);
+});
+
+test("a version NVD lists nothing for is reported as checked for that version, with a note about spelling", async () => {
+  const body = validBody({ products: [{ category: "edge device / firewall", name: "Fortinet FortiGate", version: "7.4.3" }] });
+  const { d } = deps({ model: citeAll });
+  const out = await (await handleInsights(post(body), d)).json();
+  const status = out.sourceStatus[0];
+  assert.equal(status.nvd, "checked-no-match");
+  assert.ok(status.notes.some((n) => /version 7\.4\.3/.test(n) && /written/.test(n)), status.notes.join(" | "));
+  const fortios = out.advisories.find((a) => a.evidence[0].cveId === "CVE-2099-1003");
+  assert.equal(fortios.applicability, "version-not-listed");
+});
+
+test("a version lookup outage leaves known-exploited items as potential matches", async () => {
+  const body = validBody({ products: [{ category: "edge device / firewall", name: "Fortinet FortiGate", version: "7.4.3" }] });
+  const { d } = deps({ model: citeAll, nvdVersion: { "cpe:2.3:o:fortinet:fortios:7.4.3:*:*:*:*:*:*:*": "down" } });
+  const out = await (await handleInsights(post(body), d)).json();
+  assert.equal(out.sourceStatus[0].nvd, "source-unavailable");
+  assert.equal(out.advisories.find((a) => a.evidence[0].cveId === "CVE-2099-1003").applicability, "potential-match");
+});
+
+test("an unsupported product keeps the keyword search and says its version wasn't compared", async () => {
+  const body = validBody({ products: [{ category: "edge device / firewall", name: "Cisco ASA / Firepower", version: "9.18.3" }] });
+  const { d, calls } = deps({ model: toolReply({ advisories: [], patterns: [], narrative: "N." }) });
+  const out = await (await handleInsights(post(body), d)).json();
+  const nvdCalls = calls.filter((u) => u.startsWith("https://services.nvd.nist.gov/"));
+  assert.equal(nvdCalls.length, 1);
+  assert.ok(new URL(nvdCalls[0]).searchParams.has("keywordSearch"));
+  assert.ok(out.sourceStatus[0].notes.some((n) => /9\.18\.3/.test(n) && /not compared/.test(n)), out.sourceStatus[0].notes.join(" | "));
+  assert.match(calls.modelBodies[0].messages[0].content, /stated version: 9\.18\.3/);
+});
+
+test("a web server version is read from the answer text and looked up exactly", async () => {
+  const body = validBody({ products: [{ category: "web server stack", name: "nginx 1.24.0 on Ubuntu 22.04" }] });
+  const { d, calls } = deps({ model: toolReply({ advisories: [], patterns: [], narrative: "N." }) });
+  const out = await (await handleInsights(post(body), d)).json();
+  assert.equal(out.sourceStatus[0].kev, "checked-no-match", "F5's unrelated products (BIG-IP) aren't same-vendor matches for nginx");
+  const nvdCalls = calls.filter((u) => u.startsWith("https://services.nvd.nist.gov/"));
+  assert.deepEqual(nvdCalls.map((u) => new URL(u).searchParams.get("cpeName")), ["cpe:2.3:a:f5:nginx:1.24.0:*:*:*:*:*:*:*"]);
 });
 
 test("a valid empty result is a success that still shows what was checked", async () => {

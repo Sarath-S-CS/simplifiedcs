@@ -104,7 +104,7 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
 | TRUTH-7 | **Changed now** | Metrics/Methodology/home/report/PDF copy aligned to 2.0; overclaims removed; two unverifiable vendor-note claims reworded. | - |
 | AI-0 | **Already fixed; extended** | Request IDs + metadata-only logs (`netlify/lib/claude.ts`); test that logs carry no answers. | - |
 | AI-1 | **Changed now** | Consent + exact preview; payload validated by the server's own schema in tests. | - |
-| AI-2 | **Changed now** | `netlify/lib/product-catalog.ts` canonical products; optional OS question (`endpointOs`); applicability labels + verification steps. | Product versions aren't collected (only OS); results say "confirm your version". |
+| AI-2 | **Changed now** | `netlify/lib/product-catalog.ts` canonical products; optional OS question (`endpointOs`); applicability labels + verification steps. Product versions: optional firewall version question (`edgeDeviceVersion`), web server version read from its answer; for FortiOS, PAN-OS, SonicOS, Junos, WatchGuard Fireware, nginx, Apache HTTP Server and Tomcat the server uses NVD's exact-version lookup (`cpeName` + `isVulnerable`) and labels items "listed by NVD as affecting your version" or, for known-exploited items NVD doesn't list, "confirm with the vendor" (kept visible). Consent notice bumped to `ai-processing-2026-09b`. L: `test/product-versions.test.js`, version cases in `test/ai-endpoints.test.js` and `test/ai-payload.test.js` (fictional CVEs). | Cisco ASA, Check Point, Ubiquiti and IIS versions are sent but not compared (NVD returned nothing for real versions of Cisco ASA and IIS). Not yet exercised through the deployed function. |
 | AI-3 | **Changed now** | Evidence IDs; uncited / cross-product citations dropped server-side. Tests. | - |
 | AI-4 | **Changed now** | Per-product KEV/NVD status in response, page and PDF. | - |
 | AI-5 | **Changed now** | Prioritised, de-duplicated NVD queries within a budget; unchecked products disclosed; public data cached. Tests. | - |
@@ -155,8 +155,9 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
    (`netlify/functions/ai-limits-cleanup.mts`, #117), so counters older than a day are deleted even
    when the site is quiet; the privacy text says so. Not yet observed in production: after the first
    daily run, Netlify → Logs → Functions → `ai-limits-cleanup` should show a `done` line.
-6. **Product versions** aren't collected, so vulnerability matches are always "potential" and ask
-   the reader to confirm their version.
+6. **Product versions** are compared only for FortiOS, PAN-OS, SonicOS, Junos, WatchGuard Fireware, nginx, Apache HTTP Server and Tomcat; other products'
+   matches stay "potential". The exact-version lookup hasn't yet been exercised through the deployed
+   function (a stated version changes NVD's answer, so a typo is shown in every label).
 7. ~~**`src/main.js`** still holds all content-page renderers.~~ Resolved: one module per page in
    `src/pages/` (MAINT-1, #119).
 
