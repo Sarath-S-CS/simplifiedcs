@@ -157,7 +157,8 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
    daily run, Netlify → Logs → Functions → `ai-limits-cleanup` should show a `done` line.
 6. **Product versions** aren't collected, so vulnerability matches are always "potential" and ask
    the reader to confirm their version.
-7. **`src/main.js`** is smaller but still holds all content-page renderers (MAINT-1 partial).
+7. ~~**`src/main.js`** still holds all content-page renderers.~~ Resolved: one module per page in
+   `src/pages/` (MAINT-1, #119).
 
 ## Baseline matrix (as found, before changes)
 
