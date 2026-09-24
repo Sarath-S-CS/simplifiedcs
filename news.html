@@ -2,13 +2,9 @@
 <html lang="en" data-theme="dark"><head>
 <!-- Google tag (gtag.js) -->
 <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-M10MSC9BG2"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-M10MSC9BG2');
-</script>
+<!-- The inline config snippet lives in assets/gtag-init.js so the CSP in
+     _headers can stay script-src 'self' with no inline-script hash. -->
+<script src="/assets/gtag-init.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cybersecurity News - SimplifiedCS</title>
@@ -127,13 +123,13 @@
 
   <div id="tabContent" class="">
     <div class="page">
-      <div class="page-intro">
+      <div class="page-intro revealed">
         <div class="page-eyebrow">Stay Current</div>
         <h2 class="page-title">Trends &amp; News</h2>
         <p class="page-lede">A curated read of what's actually happening in the threat landscape and in AI-for-security - the same context a good consultant would bring into a conversation with you.</p>
       </div>
 
-      <div class="section-tile">
+      <div class="section-tile revealed">
         <p class="news-freshness">Refreshed daily from CISA's KEV catalog, NVD, and security RSS feeds, ranked by exploitation status/severity/recency - not just "newest first."</p>
         <div class="news-filters">
           <button class="filter-pill active" data-cat="all">All</button><button class="filter-pill " data-cat="ai">AI &amp; Security</button><button class="filter-pill " data-cat="vuln">Vulnerabilities</button><button class="filter-pill " data-cat="ot">OT / Industrial</button><button class="filter-pill " data-cat="landscape">Threat Landscape</button>
@@ -156,16 +152,16 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Jul 14, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>SonicWall SMA1000 Appliances Server-Side Request Forgery Vulnerability</h4>
-              <p>SonicWall SMA1000 Appliances contain a server-side request forgery vulnerability that could allow a remote unauthenticated attacker to potentially cause the appliance to make requests to unintended location. Known to be used in ransomware campaigns.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-15409" data-goto-exploit="CVE-2026-15409">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>SonicWall SMA1000 Appliances Code Injection Vulnerability</h4>
+              <p>SonicWall SMA1000 Appliances contain a code injection vulnerability which in specific conditions could potentially enable a remote authenticated attacker as administrator to execute arbitrary OS commands. Known to be used in ransomware campaigns.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-15410" data-goto-exploit="CVE-2026-15410">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
               <div class="news-meta"><span>Jul 14, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>SonicWall SMA1000 Appliances Code Injection Vulnerability</h4>
-              <p>SonicWall SMA1000 Appliances contain a code injection vulnerability which in specific conditions could potentially enable a remote authenticated attacker as administrator to execute arbitrary OS commands. Known to be used in ransomware campaigns.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-15410" data-goto-exploit="CVE-2026-15410">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>SonicWall SMA1000 Appliances Server-Side Request Forgery Vulnerability</h4>
+              <p>SonicWall SMA1000 Appliances contain a server-side request forgery vulnerability that could allow a remote unauthenticated attacker to potentially cause the appliance to make requests to unintended location. Known to be used in ransomware campaigns.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-15409" data-goto-exploit="CVE-2026-15409">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -225,31 +221,38 @@
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Sep 18, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Linux Kernel Improper Check for Unusual or Exceptional Conditions Vulnerability</h4>
-              <p>Linux Kernel contains an improper check for unusual or exceptional conditions vulnerability in the TLS receive path which allows a zero-length record retrieved from the rx_list to bypass the intended recvmsg() record-type handling, potentially causing subsequent TLS records to be processed using incorrect zero-copy and queuing assumptions. The impacted product(s) could be end-of-life (EoL) and/or end-of-service (EoS). Users are advised to discontinue use and/or transition to a supported version.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2025-39682" data-goto-exploit="CVE-2025-39682">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <div class="news-meta"><span>Sep 22, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Check Point Multiple Products Path Traversal Vulnerability</h4>
+              <p>Check Point Security Management Server, Multi-Domain Security Management Server, Log Server, Multi-Domain Log Server, and SmartEvent contain a path traversal vulnerability that allows an unauthenticated attacker to upload and execute arbitrary scripts.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-93616" data-goto-exploit="CVE-2026-93616">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Sep 18, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Linux Kernel Out-of-Bounds Write Vulnerability</h4>
-              <p>Linux Kernel contains an out-of-bounds write vulnerability in the ebtables SNAT target which allows an ARP sender hardware address rewrite to write directly into a nonlinear socket-buffer fragment backed by a splice-imported file page. The impacted product(s) could be end-of-life (EoL) and/or end-of-service (EoS). Users are advised to discontinue use and/or transition to a supported version.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-53266" data-goto-exploit="CVE-2026-53266">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <div class="news-meta"><span>Sep 22, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Arista VeloCloud Orchestrator Improper Input Validation Vulnerability</h4>
+              <p>Arista VeloCloud Orchestrator (VCO) on-prem contains an improper input validation vulnerability that may allow a remote attacker to access privileged internal functionality and impact the VCO host. Successful exploitation may compromise the confidentiality, integrity, and availability of the orchestrator and data managed by the orchestrator.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-93952" data-goto-exploit="CVE-2026-93952">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Sep 18, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Linux Kernel Race Condition Vulnerability</h4>
-              <p>Linux Kernel contains a race condition vulnerability which allows concurrent writes to the same AF_ALG socket causing data to be unpredictably interleaved and creating inconsistencies in the socket's internal state.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2025-39964" data-goto-exploit="CVE-2025-39964">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <div class="news-meta"><span>Sep 22, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Check Point Multiple Products Improper Certificate Validation Vulnerability</h4>
+              <p>Check Point Security Gateway and Check Point Spark Firewall using Site to Site VPN or Remote Access VPN contain an improper certificate validation vulnerability which could allow an unauthenticated remote attacker to execute arbitrary code on the Gateway.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-85102" data-goto-exploit="CVE-2026-85102">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Sep 9, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Fortinet Multiple Products Heap-based Buffer Overflow Vulnerability</h4>
-              <p>Fortinet FortiOS, FortiSwitchManager, and FortiSASE contain a heap-based buffer overflow vulnerability that allows an attacker to execute unauthorized code or commands via specially crafted packets.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2025-25249" data-goto-exploit="CVE-2025-25249">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <div class="news-meta"><span>Sep 22, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>F5 BIG-IP APM Heap-based Buffer Overflow Vulnerability</h4>
+              <p>F5 BIG-IP APM contains a heap-based buffer overflow vulnerability when access policy and an OAuth profile are configured on a virtual server. This vulnerability could allow an unauthenticated attacker to perform remote code execution.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-94127" data-goto-exploit="CVE-2026-94127">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 21, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Zyxel GS1900 Series Switches Stack-Based Buffer Overflow Vulnerability</h4>
+              <p>Zyxel GS1900 series switches contain a stack-based buffer overflow vulnerability in the CGI program which could allow a LAN-based, unauthenticated attacker to exploit the flaw and potentially execute OS commands via a crafted HTTP request.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-7273" data-goto-exploit="CVE-2026-7273">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -268,16 +271,16 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 9, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Citrix NetScaler Authentication Bypass Using an Alternate Path or Channel Vulnerability</h4>
-              <p>Citrix NetScaler ADC and NetScaler Gateway contain an authentication-bypass vulnerability involving an alternate path or channel. When the NetScaler appliance is configured as an AAA virtual server or as a Gateway (SSL VPN, ICA Proxy, CVPN, or RDP Proxy), an unauthenticated remote threat actor may be able to bypass authentication.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-19490" data-goto-exploit="CVE-2026-19490">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>Fortinet Multiple Products Heap-based Buffer Overflow Vulnerability</h4>
+              <p>Fortinet FortiOS, FortiSwitchManager, and FortiSASE contain a heap-based buffer overflow vulnerability that allows an attacker to execute unauthorized code or commands via specially crafted packets.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2025-25249" data-goto-exploit="CVE-2025-25249">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Sep 8, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Microsoft Windows Link Following Vulnerability</h4>
-              <p>Microsoft Windows Update Stack contains a link following vulnerability that allows a local attacker to escalate privileges locally up to SYSTEM.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-81963" data-goto-exploit="CVE-2026-81963">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <div class="news-meta"><span>Sep 9, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Citrix NetScaler Authentication Bypass Using an Alternate Path or Channel Vulnerability</h4>
+              <p>Citrix NetScaler ADC and NetScaler Gateway contain an authentication-bypass vulnerability involving an alternate path or channel. When the NetScaler appliance is configured as an AAA virtual server or as a Gateway (SSL VPN, ICA Proxy, CVPN, or RDP Proxy), an unauthenticated remote threat actor may be able to bypass authentication.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-19490" data-goto-exploit="CVE-2026-19490">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -292,6 +295,13 @@
               <h4>N-able N-central Static Code Injection Vulnerability</h4>
               <p>N-able N-central contains a static code injection vulnerability that could allow for pre-authentication remote code execution.</p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-86218" data-goto-exploit="CVE-2026-86218">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 8, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Microsoft Windows Link Following Vulnerability</h4>
+              <p>Microsoft Windows Update Stack contains a link following vulnerability that allows a local attacker to escalate privileges locally up to SYSTEM.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-81963" data-goto-exploit="CVE-2026-81963">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -358,10 +368,38 @@
             </div>
           
             <div class="news-card">
+              <div class="news-meta"><span>Sep 18, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Linux Kernel Improper Check for Unusual or Exceptional Conditions Vulnerability</h4>
+              <p>Linux Kernel contains an improper check for unusual or exceptional conditions vulnerability in the TLS receive path which allows a zero-length record retrieved from the rx_list to bypass the intended recvmsg() record-type handling, potentially causing subsequent TLS records to be processed using incorrect zero-copy and queuing assumptions. The impacted product(s) could be end-of-life (EoL) and/or end-of-service (EoS). Users are advised to discontinue use and/or transition to a supported version.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2025-39682" data-goto-exploit="CVE-2025-39682">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 18, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Linux Kernel Out-of-Bounds Write Vulnerability</h4>
+              <p>Linux Kernel contains an out-of-bounds write vulnerability in the ebtables SNAT target which allows an ARP sender hardware address rewrite to write directly into a nonlinear socket-buffer fragment backed by a splice-imported file page. The impacted product(s) could be end-of-life (EoL) and/or end-of-service (EoS). Users are advised to discontinue use and/or transition to a supported version.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-53266" data-goto-exploit="CVE-2026-53266">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 18, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Linux Kernel Race Condition Vulnerability</h4>
+              <p>Linux Kernel contains a race condition vulnerability which allows concurrent writes to the same AF_ALG socket causing data to be unpredictably interleaved and creating inconsistencies in the socket's internal state.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2025-39964" data-goto-exploit="CVE-2025-39964">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
               <div class="news-meta"><span>Sep 16, 2026</span><span class="news-cat">Vulnerabilities</span></div>
               <h4>Cisco Identity Services Engine Incorrect Use of Privileged APIs Vulnerability</h4>
               <p>Cisco Identity Services Engine (ISE) and Cisco ISE Passive Identity Connector (ISE-PIC) contain an incorrect use of privileged APIs vulnerability that could allow an unauthenticated, remote attacker to gain unauthorized access to the affected device by bypassing the web-based management interface.</p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-76460" data-goto-exploit="CVE-2026-76460">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 16, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Google Pixel Improper Authorization Vulnerability</h4>
+              <p>Google Pixel devices contain an improper authorization vulnerability in the cellular modem. A logic error may allow an attacker to bypass permission checks and escalate privileges.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-58704" data-goto-exploit="CVE-2026-58704">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -372,10 +410,10 @@
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Sep 16, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Google Pixel Improper Authorization Vulnerability</h4>
-              <p>Google Pixel devices contain an improper authorization vulnerability in the cellular modem. A logic error may allow an attacker to bypass permission checks and escalate privileges.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-58704" data-goto-exploit="CVE-2026-58704">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <div class="news-meta"><span>Sep 11, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>ConnectWise ScreenConnect Improper Privilege Management and Missing Authorization Vulnerability</h4>
+              <p>ConnectWise ScreenConnect contains both an improper privilege management and missing authorization vulnerability that may allow an attacker to transfer and execute files through an active remote session without authorization or host confirmation.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-84869" data-goto-exploit="CVE-2026-84869">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -390,13 +428,6 @@
               <h4>JFrog Artifactory Improper Authentication Vulnerability</h4>
               <p>JFrog Artifactory contains an improper authentication vulnerability that could return an internal anonymous-user token to an unauthenticated caller when anonymous access is disabled, potentially exposing sensitive resources.</p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-42018" data-goto-exploit="CVE-2026-42018">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 11, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>ConnectWise ScreenConnect Improper Privilege Management and Missing Authorization Vulnerability</h4>
-              <p>ConnectWise ScreenConnect contains both an improper privilege management and missing authorization vulnerability that may allow an attacker to transfer and execute files through an active remote session without authorization or host confirmation.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-84869" data-goto-exploit="CVE-2026-84869">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -429,13 +460,6 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 2, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Kestra OSS OS Command Injection Vulnerability</h4>
-              <p>Kestra OSS contains an OS command injection vulnerability that could allow an unauthenticated remote attacker to create and execute arbitrary workflows without credentials.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-49869" data-goto-exploit="CVE-2026-49869">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 2, 2026</span><span class="news-cat">Vulnerabilities</span></div>
               <h4>Sangoma Switchvox SQL Injection Vulnerability</h4>
               <p>Sangoma Switchvox contains a SQL injection vulnerability which allows an unauthenticated remote attacker to execute arbitrary SQL statements against the backend PostgreSQL database using a single crafted request, including database operations and remote code execution.</p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-9586" data-goto-exploit="CVE-2026-9586">CISA KEV Catalog - full detail on Exploits →</a></div>
@@ -449,10 +473,10 @@
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Aug 27, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Linux Kernel Unspecified Vulnerability</h4>
-              <p>Linux Kernel contains an unspecified vulnerability that can allow for privilege escalation via IPv6 networking subsystem. This vulnerability can impact multiple products, including but not limited to Suse, Red Hat, and other products using Linux. </p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-53362" data-goto-exploit="CVE-2026-53362">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <div class="news-meta"><span>Sep 2, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Kestra OSS OS Command Injection Vulnerability</h4>
+              <p>Kestra OSS contains an OS command injection vulnerability that could allow an unauthenticated remote attacker to create and execute arbitrary workflows without credentials.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-49869" data-goto-exploit="CVE-2026-49869">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -460,6 +484,13 @@
               <h4>ownCloud Improper Authentication Vulnerability</h4>
               <p>ownCloud contains an improper authentication vulnerability that allows an attacker to access, modify, or delete any file without authentication if the username of a victim is known, and the victim has no signing-key configured.</p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2023-49105" data-goto-exploit="CVE-2023-49105">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Aug 27, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Linux Kernel Unspecified Vulnerability</h4>
+              <p>Linux Kernel contains an unspecified vulnerability that can allow for privilege escalation via IPv6 networking subsystem. This vulnerability can impact multiple products, including but not limited to Suse, Red Hat, and other products using Linux. </p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-53362" data-goto-exploit="CVE-2026-53362">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -481,41 +512,6 @@
               <h4>TrueConf Server Code Injection Vulnerability</h4>
               <p>TrueConf Server contains a code injection vulnerability that could allow an unauthorized remote attacker with network access via port 4307/TCP to use a specially crafted script to break out of the isolated environment and execute arbitrary code on the host system.</p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-72530" data-goto-exploit="CVE-2026-72530">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 14, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Cisco Secure Email Gateway SQL Injection Vulnerability</h4>
-              <p>Cisco AsyncOS software for Cisco Secure Email Gateway (SEG) contains a SQL injection vulnerability that could allow an unauthenticated, remote attacker to execute arbitrary commands with root privileges on the underlying operating system.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-76461" data-goto-exploit="CVE-2026-76461">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 2, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>BerriAI LiteLLM Improper Authentication Vulnerability</h4>
-              <p>BerriAI LiteLLM contains an improper authentication vulnerability in the MCP Streamable HTTP endpoint that could allow an unauthenticated attacker to establish an authenticated MCP session using an arbitrary Bearer token.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-59822" data-goto-exploit="CVE-2026-59822">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 2, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Kludex Starlette HTTP Request/Response Smuggling Vulnerability</h4>
-              <p>Kludex Starlette contains a HTTP request/response smuggling vulnerability that could allow attackers to inject paths into the host part, prepending the actual path leading to issues such as authentication bypass when the authentication depends on the reconstructed URL’s path. This vulnerability could be chaned with CVE-2026-42271.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-48710" data-goto-exploit="CVE-2026-48710">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Nov 19, 2024</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>CVE-2024-42450: CVSS 10.0 vulnerability disclosed</h4>
-              <p>The Versa Director uses PostgreSQL (Postgres) to store operational and configuration data. It is also needed for High Availability function of the Versa Director. The default configuration has a common password across all instances of Versa Director. By default, Versa Director configures Postgres to listen on all network interfaces. This combination allows an unauthenticated attacker to access and administer the database or read local filesystem contents to escalate privileges on the system.…</p>
-              <div class="news-source"><a href="https://nvd.nist.gov/vuln/detail/CVE-2024-42450" target="_blank" rel="noopener noreferrer">NVD</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Jul 9, 2021</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>CVE-2021-30116: CVSS 10.0 vulnerability disclosed</h4>
-              <p>Kaseya VSA before 9.5.7 allows credential disclosure, as exploited in the wild in July 2021. By default Kaseya VSA on premise offers a download page where the clients for the installation can be downloaded. The default URL for this page is https://x.x.x.x/dl.asp When an attacker download a client for Windows and installs it, the file KaseyaD.ini is generated (C:\Program Files (x86)\Kaseya\XXXXXXXXXX\KaseyaD.ini) which contains an Agent_Guid and AgentPassword This Agent_Guid and AgentPassword ca…</p>
-              <div class="news-source"><a href="https://nvd.nist.gov/vuln/detail/CVE-2021-30116" target="_blank" rel="noopener noreferrer">NVD</a></div>
             </div>
           
             <div class="news-card">
@@ -554,6 +550,13 @@
             </div>
           
             <div class="news-card">
+              <div class="news-meta"><span>Sep 22, 2026</span><span class="news-cat">AI &amp; Security</span></div>
+              <h4>New ClosedQuorum Windows malware uses AI for attack decisions</h4>
+              <p>A new Windows malware named ClosedQuorum uses Google Gemini, DeepSeek, Qwen, and Mistral AI models to autonomously determine the actions to take during post-compromise stages of an attack. [...]</p>
+              <div class="news-source"><a href="https://www.bleepingcomputer.com/news/security/new-closedquorum-windows-malware-uses-ai-for-attack-decisions/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
+            </div>
+          
+            <div class="news-card">
               <div class="news-meta"><span>Sep 19, 2026</span><span class="news-cat">AI &amp; Security</span></div>
               <h4>BragJack attacks hijack AI browser agents through malicious extensions</h4>
               <p>BragJack, a proof-of-concept attack from Forever Security's Gal Weizman, hijacks the AI assistants in Chrome, Edge, Opera Neon, Perplexity Comet, and Claude in Chrome using one malicious extension. The Prompt Forcing technique earned over $20,000 in bounties and two CVEs. [...]</p>
@@ -582,17 +585,24 @@
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Sep 16, 2026</span><span class="news-cat">AI &amp; Security</span></div>
-              <h4>Spain's data agency gets first report of AI-powered data breach</h4>
-              <p>The Spanish Data Protection Agency (AEPD) was notified of an attack allegedly carried out with an AI agent powered by a known large language model (LLM). [...]</p>
-              <div class="news-source"><a href="https://www.bleepingcomputer.com/news/security/spains-data-agency-gets-first-report-of-ai-powered-data-breach/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
-            </div>
-          
-            <div class="news-card">
               <div class="news-meta"><span>Apr 25, 2025</span><span class="news-cat">OT / Industrial</span></div>
               <h4>CVE-2025-3511: CVSS 7.5 vulnerability disclosed</h4>
               <p>Improper Validation of Specified Quantity in Input vulnerability in Mitsubishi Electric Corporation CC-Link IE TSN Remote I/O module, CC-Link IE TSN Analog-Digital Converter module, CC-Link IE TSN Digital-Analog Converter module, CC-Link IE TSN FPGA module, CC-Link IE TSN Remote Station Communication LSI CP620 with GbE-PHY, MELSEC iQ-R Series CC-Link IE TSN Master/Local Module, MELSEC iQ-R Series Ethernet Interface Module, CC-Link IE TSN Master/Local Station Communication LSI CP610, MELSEC iQ-F…</p>
               <div class="news-source"><a href="https://nvd.nist.gov/vuln/detail/CVE-2025-3511" target="_blank" rel="noopener noreferrer">NVD</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 23, 2026</span><span class="news-cat">Threat Landscape</span></div>
+              <h4>Microsoft: September Windows updates break Always On VPN connections</h4>
+              <p>Microsoft warned that the September 2026 security updates may also break Always On VPN connections on some Windows 11 systems. [...]</p>
+              <div class="news-source"><a href="https://www.bleepingcomputer.com/news/microsoft/microsoft-september-2026-windows-updates-break-always-on-vpn-connections/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 23, 2026</span><span class="news-cat">Threat Landscape</span></div>
+              <h4>Ryuk ransomware member sentenced to 24 months in prison</h4>
+              <p>An Armenian man was sentenced to 24 months in prison and 3 years of supervised release for hacking U.S. companies and encrypting their systems in Ryuk ransomware attacks. [...]</p>
+              <div class="news-source"><a href="https://www.bleepingcomputer.com/news/security/ryuk-ransomware-member-sentenced-to-24-months-in-prison/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
             </div>
           
             <div class="news-card">
@@ -649,20 +659,6 @@
               <h4>Suspected Black Axe gang leaders face cybercrime charges in the US</h4>
               <p>Five alleged leaders of the Black Axe cybercrime syndicate, known for its involvement in global-scale cyber-enabled financial fraud, have been extradited to the United States to face wire fraud and money laundering charges. [...]</p>
               <div class="news-source"><a href="https://www.bleepingcomputer.com/news/security/black-axe-gang-members-extradited-to-us-face-cybercrime-charges/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 15, 2026</span><span class="news-cat">Threat Landscape</span></div>
-              <h4>Microsoft confirms KB5002914 Excel update breaks copy and paste</h4>
-              <p>Microsoft has confirmed that copy and paste may silently fail for some Excel users after installing the September 2026 KB5002914 security update. [...]</p>
-              <div class="news-source"><a href="https://www.bleepingcomputer.com/news/microsoft/microsoft-september-kb5002914-security-update-breaks-excel-copy-and-paste/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 14, 2026</span><span class="news-cat">Threat Landscape</span></div>
-              <h4>Webinar: How malicious OAuth apps can lead to Google Workspace breaches</h4>
-              <p>Attackers can combine social engineering with malicious OAuth applications to gain access to Google Workspace data without relying solely on stolen passwords. This webinar examines two attacks to show how these breaches unfold and which security controls can help stop them. [...]</p>
-              <div class="news-source"><a href="https://www.bleepingcomputer.com/news/security/webinar-how-malicious-oauth-apps-can-lead-to-google-workspace-breaches/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
             </div>
           
         </div>

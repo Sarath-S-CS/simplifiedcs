@@ -2,13 +2,9 @@
 <html lang="en" data-theme="dark"><head>
 <!-- Google tag (gtag.js) -->
 <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-M10MSC9BG2"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-M10MSC9BG2');
-</script>
+<!-- The inline config snippet lives in assets/gtag-init.js so the CSP in
+     _headers can stay script-src 'self' with no inline-script hash. -->
+<script src="/assets/gtag-init.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>References - SimplifiedCS</title>

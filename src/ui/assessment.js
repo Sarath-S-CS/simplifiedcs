@@ -25,6 +25,7 @@ import { saveProgress, loadProgress, clearProgress, hasSeenSaveNotice, markSaveN
 import { showToast } from "./toast.js";
 import { matchOtherText } from "../engine/other-text-match.js";
 import { SAMPLE_ANSWERS, SAMPLE_AI_INSIGHTS } from "../data/sample-scenario.js";
+import { escapeHtml, safeHttpUrl } from "./html-safety.js";
 
 // ASSESSMENT-EXPERIENCE-BRIEF.md §4: brief, warm section-transition lines -
 // no points/badges/streaks, just tone consistent with About/Core Principles.
@@ -66,15 +67,14 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
 
   // Every dynamic string interpolated into innerHTML below - free-text
   // answers (vendor "Other" fields, company name, webServerStack) and
-  // AI-Insights response fields - needs this. localStorage save/resume
-  // (§2) doesn't change what needs escaping (that's an XSS-safety property
-  // of rendering, not of persistence), but it's the reason this got a fresh
-  // audit: a saved answer set now round-trips through this renderer many
-  // more times per session (loaded fresh on every "Resume") than an
-  // answer typed once and rendered once, so a missed spot fails more often.
-  function escapeHtml(s) {
-    return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  }
+  // AI-Insights response fields - goes through escapeHtml() (imported from
+  // ./html-safety.js, shared with main.js's live-feed renderers).
+  // localStorage save/resume (§2) doesn't change what needs escaping (that's
+  // an XSS-safety property of rendering, not of persistence), but it's the
+  // reason this got a fresh audit: a saved answer set now round-trips
+  // through this renderer many more times per session (loaded fresh on
+  // every "Resume") than an answer typed once and rendered once, so a
+  // missed spot fails more often.
 
   // ---------- ASSESSMENT-EXPERIENCE-BRIEF.md §2: localStorage save/resume ----------
   // Fires after every answer - this IS the save mechanism (see the brief:
@@ -1358,17 +1358,9 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   // answers (vendor "Other" fields, company name) submitted directly to a
   // public endpoint (netlify/functions/ai-insights.mts) that has no way to
   // know those values came from this site's own UI rather than a raw POST,
-  // so this isn't purely a self-XSS case. escapeHtml() (defined above) is
-  // used the same way any other server-sourced content would need.
-  function safeHttpUrl(url) {
-    try {
-      const u = new URL(url, location.href);
-      return u.protocol === "http:" || u.protocol === "https:" ? u.href : null;
-    } catch {
-      return null;
-    }
-  }
-
+  // so this isn't purely a self-XSS case. escapeHtml() and safeHttpUrl()
+  // (./html-safety.js) are used the same way any other server-sourced
+  // content would need.
   function aiInsightCardsHtml(result) {
     const hasAnything = (result.recency && result.recency.length) || (result.longTail && result.longTail.length) || (result.narrative && result.narrative.trim());
     if (!hasAnything) {

@@ -36274,6 +36274,42 @@
     narrative: "This is a reasonably well-run environment for its size - recurring security training, enforced logging, and a segmented network are all real, working fundamentals. The two flagged gaps (no MFA enforcement, and no outbound-traffic monitoring on a database-connected public app) are specific and fixable rather than symptomatic of a broader absence of controls, which is a meaningfully different starting point than an org with no program at all."
   };
 
+  // src/ui/html-safety.js
+  function escapeHtml(s3) {
+    return String(s3 ?? "").replace(/[&<>"']/g, (c4) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c4]);
+  }
+  function safeHttpUrl(url) {
+    if (url == null || url === "") return null;
+    try {
+      const base = typeof location !== "undefined" ? location.href : "https://simplifiedcs.net/";
+      const u3 = new URL(String(url), base);
+      return u3.protocol === "http:" || u3.protocol === "https:" ? u3.href : null;
+    } catch {
+      return null;
+    }
+  }
+  function sanitizeLinksOnlyHtml(html2) {
+    const tpl = document.createElement("template");
+    tpl.innerHTML = String(html2 ?? "");
+    const out = [];
+    const walk = (parent) => {
+      for (const node2 of parent.childNodes) {
+        if (node2.nodeType === 3) {
+          out.push(escapeHtml(node2.nodeValue));
+        } else if (node2.nodeType === 1) {
+          const tag = node2.tagName.toUpperCase();
+          if (tag === "SCRIPT" || tag === "STYLE" || tag === "TEMPLATE") continue;
+          const href = tag === "A" ? safeHttpUrl(node2.getAttribute("href")) : null;
+          if (href) out.push(`<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">`);
+          walk(node2);
+          if (href) out.push("</a>");
+        }
+      }
+    };
+    walk(tpl.content);
+    return out.join("");
+  }
+
   // src/ui/assessment.js
   var SECTION_TRANSITIONS = {
     profile: "Org profile done - let's talk about your team.",
@@ -36298,9 +36334,6 @@
     const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null };
     function panel() {
       return getPanel();
-    }
-    function escapeHtml(s3) {
-      return String(s3 ?? "").replace(/[&<>"']/g, (c4) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c4]);
     }
     function persistProgress() {
       if (ui.phase !== "scope" && ui.phase !== "profile" && ui.phase !== "wizard") return;
@@ -37329,14 +37362,6 @@
         "OT/ICS platform": answers.otVendor || "",
         "MSP/MDR/MSSP provider": mspProvider
       };
-    }
-    function safeHttpUrl(url) {
-      try {
-        const u3 = new URL(url, location.href);
-        return u3.protocol === "http:" || u3.protocol === "https:" ? u3.href : null;
-      } catch {
-        return null;
-      }
     }
     function aiInsightCardsHtml(result) {
       const hasAnything = result.recency && result.recency.length || result.longTail && result.longTail.length || result.narrative && result.narrative.trim();
@@ -60038,7 +60063,7 @@ ${suffix}`;
     wireNavLink(document.getElementById("linkMethodFromMetrics1"), "methodology");
     wireNavLink(document.getElementById("linkMaturityFromMetrics"), "maturity");
   }
-  var SITE_LAST_UPDATED = "September 22, 2026";
+  var SITE_LAST_UPDATED = "September 24, 2026";
   var ROADMAP_SHIPPED = [
     { module: "Adaptive Assessment Engine", desc: "Rebuilt on a data-driven decision graph - sequenced team-structure questions, containerization/virtualization as its own independent branch, per-framework question injection across all eight supported frameworks, and a session-wide de-dup engine so no branch ever asks the same thing twice." },
     { module: "AI Readiness & Governance Track", desc: "A dedicated question track following EC-Council's Adopt/Defend/Govern framework - scoping how AI actually shows up in your environment (licensed platforms, embedded vendor features, custom RAG apps), over-permissioned-retrieval and AI-generated-code review questions where they apply, and defenses against AI-powered social engineering (deepfake/voice-impersonation-aware training, out-of-band verification) for every organization, regardless of whether it has adopted AI itself. Partially fulfills the Cyber Threat Intelligence item below - AI-specific threat coverage is now real, not just planned." },
@@ -60567,21 +60592,24 @@ ${suffix}`;
           ${NEWS_CATS.map((c4) => `<button class="filter-pill ${newsFilter === c4.id ? "active" : ""}" data-cat="${c4.id}">${c4.label}</button>`).join("")}
         </div>
         <div class="news-grid">
-          ${items.map((n2) => `
+          ${items.map((n2) => {
+      const sourceHref = safeHttpUrl(n2.sourceUrl);
+      return `
             <div class="news-card">
-              <div class="news-meta"><span>${new Date(n2.publishedAt).toLocaleDateString(void 0, { month: "short", day: "numeric", year: "numeric" })}</span><span class="news-cat">${NEWS_CATS.find((c4) => c4.id === n2.cat)?.label || n2.cat}</span></div>
-              <h4>${n2.headline}</h4>
-              <p>${n2.body}</p>
+              <div class="news-meta"><span>${new Date(n2.publishedAt).toLocaleDateString(void 0, { month: "short", day: "numeric", year: "numeric" })}</span><span class="news-cat">${escapeHtml(NEWS_CATS.find((c4) => c4.id === n2.cat)?.label || n2.cat)}</span></div>
+              <h4>${escapeHtml(n2.headline)}</h4>
+              <p>${escapeHtml(n2.body)}</p>
               <div class="news-source">${// Only KEV-sourced items are guaranteed to actually have a
-    // matching entry on Exploits (which tracks confirmed
-    // actively-exploited CVEs specifically, not every
-    // high-CVSS NVD disclosure) - checking source here, not
-    // just presence of a CVE id, avoids linking NVD items
-    // through to an Exploits card that may not exist. See §1
-    // of EXPLOITS-FIX-BRIEF.md.
-    n2.cveId && n2.source === "CISA KEV Catalog" ? `<a class="news-source-exploit-link" href="${pathForTab("exploits", `exploit-${n2.cveId}`)}" data-goto-exploit="${n2.cveId}">${n2.source} - full detail on Exploits \u2192</a>` : n2.sourceUrl ? `<a href="${n2.sourceUrl}" target="_blank" rel="noopener noreferrer">${n2.source}</a>` : n2.source}</div>
+      // matching entry on Exploits (which tracks confirmed
+      // actively-exploited CVEs specifically, not every
+      // high-CVSS NVD disclosure) - checking source here, not
+      // just presence of a CVE id, avoids linking NVD items
+      // through to an Exploits card that may not exist. See §1
+      // of EXPLOITS-FIX-BRIEF.md.
+      n2.cveId && n2.source === "CISA KEV Catalog" ? `<a class="news-source-exploit-link" href="${escapeHtml(pathForTab("exploits", `exploit-${n2.cveId}`))}" data-goto-exploit="${escapeHtml(n2.cveId)}">${escapeHtml(n2.source)} - full detail on Exploits \u2192</a>` : sourceHref ? `<a href="${escapeHtml(sourceHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(n2.source)}</a>` : escapeHtml(n2.source)}</div>
             </div>
-          `).join("")}
+          `;
+    }).join("")}
         </div>
       </div>
 
@@ -60717,18 +60745,19 @@ ${suffix}`;
           </div>
           <div class="exploits-grid">
             ${items.map((item) => {
+      const sourceHref = safeHttpUrl(item.source_url);
       const epssPct = item.epss_score != null ? (item.epss_score * 100).toFixed(1) : null;
       const percentilePct = item.epss_percentile != null ? (item.epss_percentile * 100).toFixed(1) : null;
       const dateAdded = new Date(item.date_added).toLocaleDateString(void 0, { month: "short", day: "numeric", year: "numeric" });
       const dueDate = item.due_date ? new Date(item.due_date).toLocaleDateString(void 0, { month: "short", day: "numeric", year: "numeric" }) : null;
       return `
-                <div class="exploit-card" id="exploit-${item.cve_id}">
+                <div class="exploit-card" id="exploit-${escapeHtml(item.cve_id)}">
                   <div class="exploit-meta">
-                    <span class="exploit-cve">${item.cve_id}</span>
+                    <span class="exploit-cve">${escapeHtml(item.cve_id)}</span>
                     ${item.is_ransomware ? '<span class="exploit-ransomware-badge">Ransomware-Linked</span>' : ""}
                   </div>
-                  <h4>${item.headline}</h4>
-                  <div class="exploit-vendor">${item.vendor} \xB7 ${item.product}</div>
+                  <h4>${escapeHtml(item.headline)}</h4>
+                  <div class="exploit-vendor">${escapeHtml(item.vendor)} \xB7 ${escapeHtml(item.product)}</div>
                   ${epssPct != null ? `
                     <div class="exploit-scores">
                       <div class="exploit-score-box">
@@ -60741,13 +60770,13 @@ ${suffix}`;
                       </div>
                     </div>
                   ` : ""}
-                  <div class="exploit-sectors">${(item.sectors_impacted || []).map((s3) => `<span class="exploit-sector-chip">${s3}</span>`).join("")}</div>
-                  <p>${item.description}</p>
-                  <p>${item.explainer}</p>
-                  <p class="exploit-safety"><b>Staying safe:</b> ${item.safe_guidance}</p>
+                  <div class="exploit-sectors">${(item.sectors_impacted || []).map((s3) => `<span class="exploit-sector-chip">${escapeHtml(s3)}</span>`).join("")}</div>
+                  <p>${escapeHtml(item.description)}</p>
+                  <p>${escapeHtml(item.explainer)}</p>
+                  <p class="exploit-safety"><b>Staying safe:</b> ${sanitizeLinksOnlyHtml(item.safe_guidance)}</p>
                   <div class="exploit-footer">
                     <span class="exploit-dates">Added to KEV catalog ${dateAdded}${dueDate ? ` \xB7 CISA remediation due ${dueDate}` : ""}</span>
-                    <a href="${item.source_url}" target="_blank" rel="noopener noreferrer">View on NVD \u2192</a>
+                    ${sourceHref ? `<a href="${escapeHtml(sourceHref)}" target="_blank" rel="noopener noreferrer">View on NVD \u2192</a>` : ""}
                   </div>
                 </div>
               `;
@@ -61712,19 +61741,20 @@ ${suffix}`;
   `;
   }
   function renderCaseStudyCard(c4) {
+    const href = safeHttpUrl(c4.href);
     return `
     <div class="case-card">
-      <div class="case-year">${c4.year}</div>
-      <h4>${c4.title}</h4>
-      <p>${c4.summaryWhat}</p>
-      <div class="case-lesson"><b>Why it's here -</b> ${c4.lesson}</div>
-      <div class="case-section"><b>How to safeguard against it</b>${c4.summarySafeguard}</div>
+      <div class="case-year">${escapeHtml(c4.year)}</div>
+      <h4>${escapeHtml(c4.title)}</h4>
+      <p>${escapeHtml(c4.summaryWhat)}</p>
+      <div class="case-lesson"><b>Why it's here -</b> ${escapeHtml(c4.lesson)}</div>
+      <div class="case-section"><b>How to safeguard against it</b>${escapeHtml(c4.summarySafeguard)}</div>
       <details class="case-detail">
         <summary>Summary</summary>
-        <div class="case-section"><b>How it happened</b>${c4.summaryHow}</div>
-        <div class="case-section"><b>Impact</b>${c4.summaryImpact}</div>
+        <div class="case-section"><b>How it happened</b>${escapeHtml(c4.summaryHow)}</div>
+        <div class="case-section"><b>Impact</b>${escapeHtml(c4.summaryImpact)}</div>
       </details>
-      <a class="case-link link-pill" href="${c4.href}" target="_blank" rel="noopener noreferrer"><span class="link-pill-icon">${icon("external")}</span>Read more${c4.sourceName ? ` - ${c4.sourceName}` : ""}</a>
+      ${href ? `<a class="case-link link-pill" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"><span class="link-pill-icon">${icon("external")}</span>Read more${c4.sourceName ? ` - ${escapeHtml(c4.sourceName)}` : ""}</a>` : ""}
     </div>
   `;
   }

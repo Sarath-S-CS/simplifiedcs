@@ -4,6 +4,7 @@
 // INDUSTRIES/REGIONS/FRAMEWORKS/VENDOR_NOTES + their render/scoring
 // functions) was replaced, by the imports and controller below.
 import { createAssessmentController } from "./ui/assessment.js";
+import { escapeHtml, safeHttpUrl, sanitizeLinksOnlyHtml } from "./ui/html-safety.js";
 import { INDUSTRIES } from "./data/industries.js";
 // FUNCTIONS/FUNC_COLORS used to be plain globals at the top of the original
 // script; the Methodology tab's function-legend (an educational reference
@@ -2902,6 +2903,9 @@ async function renderNewsTab(container){
 }
 
 function renderNewsList(container, newsData){
+  // headline/body/source/source_url come from third-party RSS feeds and
+  // catalogs via fetch-news - every one is escaped (and the link
+  // scheme-checked) here at render, see src/ui/html-safety.js.
   const items = newsData.items.filter(n => newsFilter==='all' || n.cat===newsFilter);
   const freshness = newsData.live
     ? `Refreshed daily from CISA's KEV catalog, NVD, and security RSS feeds, ranked by exploitation status/severity/recency - not just "newest first."`
@@ -2920,11 +2924,11 @@ function renderNewsList(container, newsData){
           ${NEWS_CATS.map(c=>`<button class="filter-pill ${newsFilter===c.id?'active':''}" data-cat="${c.id}">${c.label}</button>`).join('')}
         </div>
         <div class="news-grid">
-          ${items.map(n=>`
+          ${items.map(n=>{ const sourceHref = safeHttpUrl(n.sourceUrl); return `
             <div class="news-card">
-              <div class="news-meta"><span>${new Date(n.publishedAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</span><span class="news-cat">${NEWS_CATS.find(c=>c.id===n.cat)?.label || n.cat}</span></div>
-              <h4>${n.headline}</h4>
-              <p>${n.body}</p>
+              <div class="news-meta"><span>${new Date(n.publishedAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</span><span class="news-cat">${escapeHtml(NEWS_CATS.find(c=>c.id===n.cat)?.label || n.cat)}</span></div>
+              <h4>${escapeHtml(n.headline)}</h4>
+              <p>${escapeHtml(n.body)}</p>
               <div class="news-source">${
                 // Only KEV-sourced items are guaranteed to actually have a
                 // matching entry on Exploits (which tracks confirmed
@@ -2934,11 +2938,11 @@ function renderNewsList(container, newsData){
                 // through to an Exploits card that may not exist. See §1
                 // of EXPLOITS-FIX-BRIEF.md.
                 (n.cveId && n.source === 'CISA KEV Catalog')
-                  ? `<a class="news-source-exploit-link" href="${pathForTab('exploits', `exploit-${n.cveId}`)}" data-goto-exploit="${n.cveId}">${n.source} - full detail on Exploits →</a>`
-                  : (n.sourceUrl ? `<a href="${n.sourceUrl}" target="_blank" rel="noopener noreferrer">${n.source}</a>` : n.source)
+                  ? `<a class="news-source-exploit-link" href="${escapeHtml(pathForTab('exploits', `exploit-${n.cveId}`))}" data-goto-exploit="${escapeHtml(n.cveId)}">${escapeHtml(n.source)} - full detail on Exploits →</a>`
+                  : (sourceHref ? `<a href="${escapeHtml(sourceHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(n.source)}</a>` : escapeHtml(n.source))
               }</div>
             </div>
-          `).join('')}
+          `; }).join('')}
         </div>
       </div>
 
@@ -3124,18 +3128,24 @@ function renderExploitsList(container, exploitsData){
           </div>
           <div class="exploits-grid">
             ${items.map(item=>{
+              // Every text field here comes from CISA/VulnCheck/EUVD via
+              // fetch-exploits - escaped at render. safe_guidance is the one
+              // field that legitimately carries markup (the "see guidance"
+              // links fetch-exploits builds), so it's rebuilt links-only
+              // rather than trusted as-is.
+              const sourceHref = safeHttpUrl(item.source_url);
               const epssPct = item.epss_score != null ? (item.epss_score*100).toFixed(1) : null;
               const percentilePct = item.epss_percentile != null ? (item.epss_percentile*100).toFixed(1) : null;
               const dateAdded = new Date(item.date_added).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
               const dueDate = item.due_date ? new Date(item.due_date).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : null;
               return `
-                <div class="exploit-card" id="exploit-${item.cve_id}">
+                <div class="exploit-card" id="exploit-${escapeHtml(item.cve_id)}">
                   <div class="exploit-meta">
-                    <span class="exploit-cve">${item.cve_id}</span>
+                    <span class="exploit-cve">${escapeHtml(item.cve_id)}</span>
                     ${item.is_ransomware ? '<span class="exploit-ransomware-badge">Ransomware-Linked</span>' : ''}
                   </div>
-                  <h4>${item.headline}</h4>
-                  <div class="exploit-vendor">${item.vendor} · ${item.product}</div>
+                  <h4>${escapeHtml(item.headline)}</h4>
+                  <div class="exploit-vendor">${escapeHtml(item.vendor)} · ${escapeHtml(item.product)}</div>
                   ${epssPct != null ? `
                     <div class="exploit-scores">
                       <div class="exploit-score-box">
@@ -3148,13 +3158,13 @@ function renderExploitsList(container, exploitsData){
                       </div>
                     </div>
                   ` : ''}
-                  <div class="exploit-sectors">${(item.sectors_impacted||[]).map(s=>`<span class="exploit-sector-chip">${s}</span>`).join('')}</div>
-                  <p>${item.description}</p>
-                  <p>${item.explainer}</p>
-                  <p class="exploit-safety"><b>Staying safe:</b> ${item.safe_guidance}</p>
+                  <div class="exploit-sectors">${(item.sectors_impacted||[]).map(s=>`<span class="exploit-sector-chip">${escapeHtml(s)}</span>`).join('')}</div>
+                  <p>${escapeHtml(item.description)}</p>
+                  <p>${escapeHtml(item.explainer)}</p>
+                  <p class="exploit-safety"><b>Staying safe:</b> ${sanitizeLinksOnlyHtml(item.safe_guidance)}</p>
                   <div class="exploit-footer">
                     <span class="exploit-dates">Added to KEV catalog ${dateAdded}${dueDate ? ` · CISA remediation due ${dueDate}` : ''}</span>
-                    <a href="${item.source_url}" target="_blank" rel="noopener noreferrer">View on NVD →</a>
+                    ${sourceHref ? `<a href="${escapeHtml(sourceHref)}" target="_blank" rel="noopener noreferrer">View on NVD →</a>` : ''}
                   </div>
                 </div>
               `;
@@ -4197,19 +4207,24 @@ function renderCaseStudyCard(c){
   // visible (it wasn't part of what needed collapsing) and is now
   // written from the victim's own perspective for this specific attack
   // type, not a generic "have good security" line.
+  //
+  // Live rows are written by fetch-case-studies' web-searching model, which
+  // reads arbitrary pages - so every field is escaped and the link
+  // scheme-checked here, exactly like the News/Exploits renderers.
+  const href = safeHttpUrl(c.href);
   return `
     <div class="case-card">
-      <div class="case-year">${c.year}</div>
-      <h4>${c.title}</h4>
-      <p>${c.summaryWhat}</p>
-      <div class="case-lesson"><b>Why it's here -</b> ${c.lesson}</div>
-      <div class="case-section"><b>How to safeguard against it</b>${c.summarySafeguard}</div>
+      <div class="case-year">${escapeHtml(c.year)}</div>
+      <h4>${escapeHtml(c.title)}</h4>
+      <p>${escapeHtml(c.summaryWhat)}</p>
+      <div class="case-lesson"><b>Why it's here -</b> ${escapeHtml(c.lesson)}</div>
+      <div class="case-section"><b>How to safeguard against it</b>${escapeHtml(c.summarySafeguard)}</div>
       <details class="case-detail">
         <summary>Summary</summary>
-        <div class="case-section"><b>How it happened</b>${c.summaryHow}</div>
-        <div class="case-section"><b>Impact</b>${c.summaryImpact}</div>
+        <div class="case-section"><b>How it happened</b>${escapeHtml(c.summaryHow)}</div>
+        <div class="case-section"><b>Impact</b>${escapeHtml(c.summaryImpact)}</div>
       </details>
-      <a class="case-link link-pill" href="${c.href}" target="_blank" rel="noopener noreferrer"><span class="link-pill-icon">${icon('external')}</span>Read more${c.sourceName ? ` - ${c.sourceName}` : ''}</a>
+      ${href ? `<a class="case-link link-pill" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"><span class="link-pill-icon">${icon('external')}</span>Read more${c.sourceName ? ` - ${escapeHtml(c.sourceName)}` : ''}</a>` : ''}
     </div>
   `;
 }

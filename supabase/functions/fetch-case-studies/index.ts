@@ -143,7 +143,7 @@ Deno.serve(async (_req) => {
 
   const rateLimited = await checkRateLimit(supabase);
   if (rateLimited) {
-    return Response.json({ skipped: true, reason: "ran within the last day already" });
+    return Response.json({ skipped: true, reason: `ran within the last ${MIN_RUN_INTERVAL_HOURS}h already` });
   }
 
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
@@ -166,14 +166,19 @@ Deno.serve(async (_req) => {
 
   // Defensive validation - never trust the model's own self-filtering
   // alone, even though it was instructed to apply it. Reject anything
-  // missing a required field, any Wikipedia source, any malformed URL, or
-  // any external_id that collides with an existing row.
+  // missing a required field, any Wikipedia source, any malformed or
+  // non-http(s) URL (the model reads arbitrary web pages via web_search, so
+  // a prompt-injected javascript:/data: link is a real possibility), or any
+  // external_id that collides with an existing row. Text fields are stored
+  // as-is: the site escapes every case-study field at render
+  // (src/ui/html-safety.js).
   const clean = candidates.filter((c) => {
     if (!c.external_id || !c.title || !c.href || !c.summary_what || !c.summary_how || !c.summary_impact || !c.summary_lesson || !c.summary_safeguard) return false;
     if (existingIds.has(c.external_id)) return false;
     if (/wikipedia\.org/i.test(c.href)) return false;
     try {
-      new URL(c.href);
+      const u = new URL(c.href);
+      if (u.protocol !== "https:" && u.protocol !== "http:") return false;
     } catch {
       return false;
     }
@@ -220,11 +225,16 @@ Deno.serve(async (_req) => {
 
   await logAttempt(supabase, candidates.length, errors);
 
+  // Full error detail (including upstream API response bodies) goes only to
+  // case_study_fetch_log, which RLS keeps private - this endpoint is
+  // triggerable by anyone holding the public anon key, so the response
+  // itself just reports how many steps failed.
+  if (errors.length) console.error("fetch-case-studies:", errors);
   return Response.json({
     candidatesFound: candidates.length,
     upserted,
     deleted,
-    errors,
+    errorCount: errors.length,
   });
 });
 
