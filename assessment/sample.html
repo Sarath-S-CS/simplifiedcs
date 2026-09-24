@@ -275,10 +275,11 @@
 
       <div class="priorities">
         <h3>Where to act first, ranked</h3>
+        <p class="scope-hint">Ranked by risk, not by question order: how directly the gap enables a common attack (the controls CISA's Cross-Sector Performance Goals and #StopRansomware guidance put first rank highest), how far your answer is from the strongest option, and whether it feeds a combined finding above.</p>
         
           <div class="priority-item">
             <div class="priority-rank">01</div>
-            <div><b>Access &amp; Identity:</b> Is multi-factor authentication enforced for remote and admin access?</div>
+            <div><b>Access &amp; Identity:</b> Is multi-factor authentication enforced for remote and admin access? <span class="gap-tier gap-tier-3">Critical control</span></div>
           </div>
           
       <div class="acc-card mitre-panel" data-id="gap-mfa">
@@ -293,22 +294,22 @@
         
           <div class="priority-item">
             <div class="priority-rank">02</div>
-            <div><b>Access &amp; Identity:</b> Does your organization support passkeys or other passwordless authentication methods (e.g. WebAuthn/FIDO2, platform biometrics), in addition to or instead of passwords?</div>
+            <div><b>Recovery &amp; Continuity:</b> Are backups isolated from the production network (offline or immutable)? <span class="gap-tier gap-tier-3">Critical control</span></div>
           </div>
           
-      <div class="acc-card mitre-panel" data-id="gap-passkeys">
+      <div class="acc-card mitre-panel" data-id="gap-backupIsolation">
         <div class="acc-head">
           <div><h4>Why this matters, and what to do now</h4></div>
           <div class="acc-chevron">▸</div>
         </div>
         <div class="acc-body">
-          <ul><li><b>Why this was flagged:</b> You indicated "No - passwords (with or without a separate MFA step) are the only option" for: "Does your organization support passkeys or other passwordless authentication methods (e.g. WebAuthn/FIDO2, platform biometrics), in addition to or instead of passwords?"</li><li><b>Attack pattern:</b> Brute Force (MITRE ATT&amp;CK T1110) - Even with MFA, a password can still be phished, reused, or brute-forced as the first factor. Passkeys remove that weakness structurally - there's no shared secret for an attacker to ever obtain in the first place, since the private key never leaves the device.</li><li><b>Interim step:</b> If passkeys aren't feasible organization-wide yet, ensure MFA is at minimum fully enforced as the interim mitigation for the same underlying credential-theft risk.</li><li><b>How to fix it:</b> Enable passkey/WebAuthn support in your identity provider (Microsoft Entra, Google Workspace, and Okta all support this natively) starting with admin and highest-risk accounts, then expand.</li><li><b>Reference:</b> <a href="https://learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-passkeys-fido2" target="_blank" rel="noopener noreferrer">Microsoft Entra: passkey (FIDO2) authentication</a></li></ul>
+          <ul><li><b>Why this was flagged:</b> You indicated "No" for: "Are backups isolated from the production network (offline or immutable)?"</li><li><b>Attack pattern:</b> Inhibit System Recovery (MITRE ATT&amp;CK T1490) - Ransomware operators specifically target connected backup systems and shadow copies to prevent recovery, not just the primary systems - a backup reachable from the production network can be encrypted or deleted right alongside everything else.</li><li><b>Interim step:</b> As an interim step, prioritize moving just the most recent backup set to an offline or immutable copy - the full re-architecture can follow, but one truly isolated recent copy is what actually matters in a live ransomware scenario.</li><li><b>How to fix it:</b> Adopt the 3-2-1 backup rule (3 copies, 2 media types, 1 offline/immutable) so at least one copy is structurally unreachable from a network-based ransomware event.</li><li><b>Reference:</b> <a href="https://www.cisa.gov/stopransomware" target="_blank" rel="noopener noreferrer">CISA: StopRansomware</a></li></ul>
         </div>
       </div>
         
           <div class="priority-item">
             <div class="priority-rank">03</div>
-            <div><b>Access &amp; Identity:</b> Is that database encrypted at rest?</div>
+            <div><b>Access &amp; Identity:</b> Is that database encrypted at rest? <span class="gap-tier gap-tier-2">High impact</span></div>
           </div>
           
       <div class="acc-card mitre-panel" data-id="gap-dbEncryption">
@@ -323,7 +324,7 @@
         
           <div class="priority-item">
             <div class="priority-rank">04</div>
-            <div><b>Access &amp; Identity:</b> Does routine application access to that database use least-privilege, application-specific credentials - not a shared or admin/root account?</div>
+            <div><b>Access &amp; Identity:</b> Does routine application access to that database use least-privilege, application-specific credentials - not a shared or admin/root account? <span class="gap-tier gap-tier-2">High impact</span></div>
           </div>
           
       <div class="acc-card mitre-panel" data-id="gap-dbAccessControl">
@@ -338,7 +339,7 @@
         
           <div class="priority-item">
             <div class="priority-rank">05</div>
-            <div><b>Detection &amp; Monitoring:</b> Do you monitor for data exfiltration or unusual outbound traffic?</div>
+            <div><b>Detection &amp; Monitoring:</b> Do you monitor for data exfiltration or unusual outbound traffic? <span class="gap-tier gap-tier-2">High impact</span></div>
           </div>
           
       <div class="acc-card mitre-panel" data-id="gap-exfil">
@@ -350,6 +351,321 @@
           <ul><li><b>Why this was flagged:</b> You indicated "No" for: "Do you monitor for data exfiltration or unusual outbound traffic?"</li><li><b>Attack pattern:</b> Exfiltration Over C2 Channel (MITRE ATT&amp;CK T1041) - Without monitoring for unusual outbound traffic, this is how a breach goes from "contained" to "data actually left the building" without anyone noticing at the time.</li><li><b>Interim step:</b> Centralized logging exists - as an interim step, add a basic alert for large or unusual outbound data transfers using what's already being collected, rather than waiting on a dedicated exfiltration-monitoring tool.</li><li><b>How to fix it:</b> Enable outbound traffic monitoring with alerting on unusually large or unusual-destination transfers - most modern firewalls and cloud platforms support this as a built-in feature.</li></ul>
         </div>
       </div>
+        
+      </div>
+
+      
+      <div class="flags gap-register">
+        <h3>Every gap in this assessment (31)</h3>
+        <p class="scope-hint">The full list behind the five above, grouped by area and ordered by the same risk ranking within each. The number is each gap's overall rank.</p>
+        
+          <div class="acc-card">
+            <div class="acc-head">
+              <div><h4>Your Team &amp; Vendors</h4><div class="acc-sub">5 gaps</div></div>
+              <div class="acc-chevron">▸</div>
+            </div>
+            <div class="acc-body">
+              
+                <div class="gap-row">
+                  <div class="priority-rank">20</div>
+                  <div class="gap-row-body">
+                    <div>Is there a documented cybersecurity policy, approved by leadership? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "Yes, but outdated or unreviewed"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Draft a short (1-2 page) policy covering scope, acceptable use, and access basics, and get explicit leadership sign-off - a real, if brief, policy beats a comprehensive one that never gets approved.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">21</div>
+                  <div class="gap-row-body">
+                    <div>Does leadership receive regular reporting on cybersecurity risk? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "Ad hoc, when something goes wrong"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Establish at least a quarterly risk report to leadership covering top findings and progress against them.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">22</div>
+                  <div class="gap-row-body">
+                    <div>Is cybersecurity risk factored into business decisions (new vendors, new products) before they're approved? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "Sometimes, informally"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Add a short vendor security questionnaire as a required step before contract signature for any new vendor touching systems or data.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">23</div>
+                  <div class="gap-row-body">
+                    <div>Do you have signed Business Associate Agreements (BAAs) with every vendor that accesses, stores, or transmits PHI? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "With some, not all"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Execute a BAA with every vendor that creates, receives, maintains, or transmits PHI before continuing to share data with them.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">24</div>
+                  <div class="gap-row-body">
+                    <div>Are AI tools used within the organization, and if so, is that usage tracked and governed? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "Used informally - some awareness, no formal policy"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Establish a formal AI usage policy naming approved tools, prohibited data categories, and track usage the same way other software is inventoried.</div>
+                  </div>
+                </div>
+            </div>
+          </div>
+        
+          <div class="acc-card">
+            <div class="acc-head">
+              <div><h4>Data &amp; Systems</h4><div class="acc-sub">3 gaps</div></div>
+              <div class="acc-chevron">▸</div>
+            </div>
+            <div class="acc-body">
+              
+                <div class="gap-row">
+                  <div class="priority-rank">09</div>
+                  <div class="gap-row-body">
+                    <div>How would you describe your asset inventory? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "Partial, manually maintained spreadsheet"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Deploy automated asset discovery (many EDR and network tools include this) and review the inventory at least quarterly.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">10</div>
+                  <div class="gap-row-body">
+                    <div>How many third-party vendors have access to your systems or data? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "1–5, informally tracked"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Build a vendor inventory recording what each vendor can access, and require a lightweight security review before granting any new vendor access going forward.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">25</div>
+                  <div class="gap-row-body">
+                    <div>Have you conducted a HIPAA-required security risk analysis covering all systems that create, receive, maintain, or transmit ePHI? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "Yes, but outdated or partial"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Commission or conduct a current, comprehensive HIPAA security risk analysis covering all ePHI systems, and track remediation of findings on a schedule.</div>
+                  </div>
+                </div>
+            </div>
+          </div>
+        
+          <div class="acc-card">
+            <div class="acc-head">
+              <div><h4>Access &amp; Identity</h4><div class="acc-sub">16 gaps - 3 on critical controls</div></div>
+              <div class="acc-chevron">▸</div>
+            </div>
+            <div class="acc-body">
+              
+                <div class="gap-row">
+                  <div class="priority-rank">01</div>
+                  <div class="gap-row-body">
+                    <div>Is multi-factor authentication enforced for remote and admin access? <span class="gap-tier gap-tier-3">Critical control</span></div>
+                    <div class="gap-row-answer">Your answer: "No"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Enforce MFA for every account, not just admins - most identity providers (Microsoft Entra, Google Workspace, Okta) support org-wide enforcement from one setting.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">03</div>
+                  <div class="gap-row-body">
+                    <div>Is that database encrypted at rest? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "No / not sure"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Enable at-rest encryption - a native, typically low-effort setting on every major database engine and managed cloud database service, not a migration project.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">04</div>
+                  <div class="gap-row-body">
+                    <div>Does routine application access to that database use least-privilege, application-specific credentials - not a shared or admin/root account? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "No - shared or admin credentials are used for routine app access"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Provision a dedicated, least-privilege application account scoped to only what the app requires, and retire the shared/admin credential from routine use.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">06</div>
+                  <div class="gap-row-body">
+                    <div>How are software patches and updates managed? <span class="gap-tier gap-tier-3">Critical control</span></div>
+                    <div class="gap-row-answer">Your answer: "Scheduled but inconsistent"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Automate patch deployment with a defined SLA (e.g. critical patches within 72 hours, everything else within 30 days) rather than ad hoc manual patching.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">07</div>
+                  <div class="gap-row-body">
+                    <div>How are privileged accounts (domain admins, database admins, local/server administrators) managed? <span class="gap-tier gap-tier-3">Critical control</span></div>
+                    <div class="gap-row-answer">Your answer: "Individually assigned, but not regularly reviewed"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Individually assign every privileged account (no shared logins), and schedule a recurring (at least quarterly) access review with least-privilege enforcement.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">11</div>
+                  <div class="gap-row-body">
+                    <div>Does your organization support passkeys or other passwordless authentication methods (e.g. WebAuthn/FIDO2, platform biometrics), in addition to or instead of passwords? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "No - passwords (with or without a separate MFA step) are the only option"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Enable passkey/WebAuthn support in your identity provider (Microsoft Entra, Google Workspace, and Okta all support this natively) starting with admin and highest-risk accounts, then expand.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">12</div>
+                  <div class="gap-row-body">
+                    <div>Is the database software itself (not just the application) kept current and patched? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "Patched, but inconsistently or behind schedule"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Put database software on the same defined patch cadence as the rest of your infrastructure - most managed cloud database services offer automatic minor-version patching as a configuration option.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">13</div>
+                  <div class="gap-row-body">
+                    <div>Is email authentication (SPF, DKIM, and DMARC set to quarantine/reject) enforced for your domain? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "Partially - e.g. DMARC set to "none""</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Publish SPF and DKIM records and move DMARC to full enforcement (reject) once you've confirmed legitimate mail flows aren't affected during a quarantine period.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">14</div>
+                  <div class="gap-row-body">
+                    <div>Is there a formal process to revoke all access immediately when someone leaves or changes roles? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "Informal / inconsistent"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Automate access revocation tied to HR's own termination workflow (most identity providers support this integration) so it doesn't depend on someone remembering a manual step.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">15</div>
+                  <div class="gap-row-body">
+                    <div>Does that retrieval respect the same access permissions the underlying documents already have, or could someone using it potentially see more than they'd normally have access to? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "Partially - some permission boundaries respected, not comprehensively enforced"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Rebuild retrieval so it queries with the requesting user's own identity/permissions rather than a broad service account, so results are filtered to what that specific user could already see in the source system - most enterprise RAG platforms support this natively.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">16</div>
+                  <div class="gap-row-body">
+                    <div>For payment changes or other sensitive requests, is there an authenticated, out-of-band verification step that would still hold up even if email, voice, and video were all convincingly impersonated? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "Some verification exists, but not out-of-band or not consistently applied"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Define and enforce an authenticated, out-of-band verification step (a callback to a known number, or in-person confirmation) for payment changes and other sensitive requests, documented as a required step regardless of how convincing the original request appeared.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">26</div>
+                  <div class="gap-row-body">
+                    <div>Do you run simulated phishing tests for employees? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "Yes, but infrequently (less than annually)"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Add recurring simulated phishing tests (monthly or quarterly) and track click/report rates over time as the real measure of whether training works.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">27</div>
+                  <div class="gap-row-body">
+                    <div>For those separate admin accounts, is elevated access always-on (standing privileges) or granted just-in-time for specific tasks? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "Some just-in-time elements, not fully enforced"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Adopt a privileged access management (PAM) solution or your identity provider's built-in just-in-time elevation feature (Microsoft Entra PIM, for example) so elevated access is granted per-task and expires automatically.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">28</div>
+                  <div class="gap-row-body">
+                    <div>Do administrators and/or employees use a password management tool? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "Some individuals use one informally"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Deploy an organization-provisioned password manager (most business identity/security suites include one) so unique passwords per service become the default, not a personal discipline problem.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">29</div>
+                  <div class="gap-row-body">
+                    <div>Is AI-generated code or AI tool output reviewed the same way human-written code is, before being merged or deployed? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "Partially - reviewed sometimes, not consistently"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Apply your existing code review and CI security-gate requirements to AI-generated output with no exception - the source of a change shouldn't determine whether it gets reviewed.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">30</div>
+                  <div class="gap-row-body">
+                    <div>Has security awareness training been updated to address AI-generated phishing and voice/video impersonation specifically, not just traditional phishing? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "Mentioned, but not a dedicated focus"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Update security awareness training to explicitly cover AI-generated phishing and voice/video impersonation, including at least one realistic example, alongside the existing traditional-phishing content.</div>
+                  </div>
+                </div>
+            </div>
+          </div>
+        
+          <div class="acc-card">
+            <div class="acc-head">
+              <div><h4>Detection &amp; Monitoring</h4><div class="acc-sub">4 gaps</div></div>
+              <div class="acc-chevron">▸</div>
+            </div>
+            <div class="acc-body">
+              
+                <div class="gap-row">
+                  <div class="priority-rank">05</div>
+                  <div class="gap-row-body">
+                    <div>Do you monitor for data exfiltration or unusual outbound traffic? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "No"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Enable outbound traffic monitoring with alerting on unusually large or unusual-destination transfers - most modern firewalls and cloud platforms support this as a built-in feature.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">17</div>
+                  <div class="gap-row-body">
+                    <div>How quickly would you typically notice a suspicious login or anomaly? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "Days - manual review"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Deploy automated alerting on anomalous logins and behavior (via SIEM correlation rules or your identity provider's built-in risk detection) so detection happens in minutes to hours, not never.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">18</div>
+                  <div class="gap-row-body">
+                    <div>Do you run regular external and internal vulnerability scans? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "Occasionally / ad hoc"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Schedule regular (at minimum quarterly, ideally continuous) external and internal vulnerability scans, and track findings to remediation.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">31</div>
+                  <div class="gap-row-body">
+                    <div>Have you had an external penetration test or red-team engagement in the last 12 months? <span class="gap-tier gap-tier-1">Standard</span></div>
+                    <div class="gap-row-answer">Your answer: "More than 12 months ago"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Schedule an external penetration test or red-team engagement at least annually, and after any major infrastructure change.</div>
+                  </div>
+                </div>
+            </div>
+          </div>
+        
+          <div class="acc-card">
+            <div class="acc-head">
+              <div><h4>Incident Readiness</h4><div class="acc-sub">1 gap</div></div>
+              <div class="acc-chevron">▸</div>
+            </div>
+            <div class="acc-body">
+              
+                <div class="gap-row">
+                  <div class="priority-rank">19</div>
+                  <div class="gap-row-body">
+                    <div>Do you have a documented incident response plan? <span class="gap-tier gap-tier-2">High impact</span></div>
+                    <div class="gap-row-answer">Your answer: "Yes, but never tested"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Write a documented incident response plan and test it annually via a tabletop exercise, updating it based on what the exercise reveals.</div>
+                  </div>
+                </div>
+            </div>
+          </div>
+        
+          <div class="acc-card">
+            <div class="acc-head">
+              <div><h4>Recovery &amp; Continuity</h4><div class="acc-sub">2 gaps - 2 on critical controls</div></div>
+              <div class="acc-chevron">▸</div>
+            </div>
+            <div class="acc-body">
+              
+                <div class="gap-row">
+                  <div class="priority-rank">02</div>
+                  <div class="gap-row-body">
+                    <div>Are backups isolated from the production network (offline or immutable)? <span class="gap-tier gap-tier-3">Critical control</span></div>
+                    <div class="gap-row-answer">Your answer: "No"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Adopt the 3-2-1 backup rule (3 copies, 2 media types, 1 offline/immutable) so at least one copy is structurally unreachable from a network-based ransomware event.</div>
+                  </div>
+                </div>
+                <div class="gap-row">
+                  <div class="priority-rank">08</div>
+                  <div class="gap-row-body">
+                    <div>How often are backups tested by actually restoring data? <span class="gap-tier gap-tier-3">Critical control</span></div>
+                    <div class="gap-row-answer">Your answer: "Rarely"</div>
+                    <div class="gap-row-fix"><b>How to fix it:</b> Schedule quarterly (at minimum) backup-restore tests against real systems, documenting actual restore time against your required recovery targets.</div>
+                  </div>
+                </div>
+            </div>
+          </div>
         
       </div>
     

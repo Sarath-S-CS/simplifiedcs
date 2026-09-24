@@ -99,7 +99,7 @@
     border-radius:var(--radius-input);
   }
   .q-badge, .priority-tag, .alpha-chip, .news-cat,
-  .footer-social-icon, .icon-badge, .exploit-ransomware-badge, .exploit-sector-chip{
+  .footer-social-icon, .icon-badge, .exploit-ransomware-badge, .exploit-sector-chip, .gap-tier{
     border-radius:var(--radius-pill);
   }
   .checkbox{ border-radius:4px; }
@@ -785,6 +785,33 @@
   .priority-rank{
     font-family:var(--mono); color:var(--accent-signal); font-weight:600; flex-shrink:0; width:20px;
   }
+  /* Control-impact tier on each ranked gap (src/data/control-weights.js) -
+     same bordered mono pill as .exploit-ransomware-badge; red/amber are the
+     page's existing severity colors, standard stays neutral. */
+  .gap-tier{
+    display:inline-block; font-family:var(--mono); font-size:9.5px; letter-spacing:0.05em; text-transform:uppercase;
+    padding:1px 7px; margin-left:4px; vertical-align:1px; max-width:100%;
+    color:var(--text-muted); border:1px solid var(--line);
+  }
+  .gap-tier-3{ color:var(--accent-critical); border-color:var(--accent-critical); }
+  .gap-tier-2{ color:var(--accent-amber); border-color:var(--accent-amber); }
+  /* Full gap register - one row per gap inside each area's accordion. These
+     accordions have no icon badge, so the body doesn't need .acc-body's
+     74px icon-aligned left inset - on a phone that inset alone would eat
+     most of the row. */
+  .gap-register .acc-body{ padding:4px 18px 14px; }
+  @media (max-width:480px){
+    .gap-register .acc-body{ padding:4px 12px 12px; }
+    .gap-row{ gap:10px; }
+  }
+  .gap-row{
+    display:flex; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); font-size:13.5px;
+  }
+  .gap-row:last-child{ border-bottom:none; }
+  .gap-row-body{ min-width:0; overflow-wrap:break-word; }
+  .gap-row-answer{ font-size:12.5px; color:var(--text-muted); margin-top:4px; }
+  .gap-row-fix{ font-size:12.5px; margin-top:6px; line-height:1.55; }
+  .gap-row-fix b{ color:var(--accent-signal); font-weight:600; }
   .note-box{
     margin-top:32px; padding:16px 18px; border:1px dashed var(--line);
     font-size:12.5px; color:var(--text-muted); font-family:var(--mono); line-height:1.6;

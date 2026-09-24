@@ -8,7 +8,8 @@ import { jsPDF } from "jspdf";
 import { INDUSTRIES } from "../data/industries.js";
 import { REGIONS } from "../data/regions.js";
 import { FRAMEWORKS } from "../data/frameworks.js";
-import { FUNC_DISPLAY } from "../data/categories.js";
+import { FUNC_DISPLAY, FUNCTIONS } from "../data/categories.js";
+import { WEIGHT_LABELS } from "../data/control-weights.js";
 // FUNC_COLORS' Protect entry is "var(--accent-signal)" - a CSS custom
 // property, meaningless outside a DOM/computed-style context. jsPDF just
 // needs real RGB, so this resolves all six to the literal hex values
@@ -342,6 +343,12 @@ export function buildAssessmentPdfDoc(ctx) {
 
   // --- Priority-ranked action list ---
   y = drawSectionHeading(doc, "Where To Act First, Ranked", y);
+  y = drawWrapped(doc, "Ranked by risk: how directly each gap enables a common attack (the controls CISA's Cross-Sector Performance Goals and #StopRansomware guidance put first rank highest), how far the answer is from the strongest option, and whether it feeds a combined finding.", MARGIN, y, CONTENT_W, {
+    fontSize: 8.5,
+    style: "italic",
+    color: COLOR_MUTED,
+  });
+  y += 8;
   if (priorities.length) {
     priorities.forEach((p, i) => {
       const guidance = guidanceForGapItem(p, answers);
@@ -356,6 +363,29 @@ export function buildAssessmentPdfDoc(ctx) {
   } else {
     y = drawWrapped(doc, "No priority gaps identified - every assessed question scored at maximum coverage.", MARGIN, y, CONTENT_W, { fontSize: 10, color: COLOR_MUTED });
     y += 10;
+  }
+
+  // --- Every gap (the full remediation backlog) ---
+  // Same grouping and order as the on-screen list: by area, then by overall
+  // risk rank. Compact - the five detailed write-ups are above.
+  const rankedGaps = ctx.rankedGaps || [];
+  if (rankedGaps.length) {
+    y = drawSectionHeading(doc, `Every Gap In This Assessment (${rankedGaps.length})`, y);
+    for (const fn of FUNCTIONS) {
+      const gaps = rankedGaps.filter((g) => g.fn === fn);
+      if (!gaps.length) continue;
+      y = ensureSpace(doc, y, LINE_H * 3);
+      y = drawWrapped(doc, `${FUNC_DISPLAY[fn]} - ${gaps.length} gap${gaps.length === 1 ? "" : "s"}`, MARGIN, y, CONTENT_W, { fontSize: 10.5, style: "bold", color: COLOR_HEADING });
+      y += 3;
+      for (const g of gaps) {
+        const fix = guidanceForGapItem(g, answers, false)?.remediation;
+        y = drawWrapped(doc, `${String(g.rank).padStart(2, "0")}. [${WEIGHT_LABELS[g.weight]}] ${g.gap}`, MARGIN + 10, y, CONTENT_W - 10, { fontSize: 9.5, style: "bold" });
+        y = drawWrapped(doc, `Your answer: "${g.chosen}"`, MARGIN + 24, y, CONTENT_W - 24, { fontSize: 9, color: COLOR_MUTED });
+        if (fix) y = drawWrapped(doc, `How to fix it: ${fix}`, MARGIN + 24, y, CONTENT_W - 24, { fontSize: 9 });
+        y += 5;
+      }
+      y += 6;
+    }
   }
 
   // --- AI-Enhanced Insights (only when the person actually requested them) ---

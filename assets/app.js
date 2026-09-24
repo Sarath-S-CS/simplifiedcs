@@ -21454,6 +21454,46 @@
   var ASSESSMENT_ORDER = ASSESSMENT_NODES.map((q2) => q2.id);
   var ASSESSMENT_FLOW = buildFlow(ASSESSMENT_ORDER, ASSESSMENT_NODES);
 
+  // src/data/control-weights.js
+  var CONTROL_WEIGHTS = {
+    // critical
+    mfa: 3,
+    rdpExposed: 3,
+    patching: 3,
+    endpoint: 3,
+    privAccountMgmt: 3,
+    backupIsolation: 3,
+    backupTest: 3,
+    // high
+    siem: 2,
+    exfil: 2,
+    anomalyTime: 2,
+    vulnScanning: 2,
+    emailAuth: 2,
+    privSeparation: 2,
+    offboarding: 2,
+    training: 2,
+    irPlan: 2,
+    irTeam: 2,
+    bcdr: 2,
+    assetInv: 2,
+    vendorCount: 2,
+    dbEncryption: 2,
+    dbAccessControl: 2,
+    dbPatching: 2,
+    aiVerificationStep: 2,
+    aiRagPermissions: 2,
+    hipaaEncryption: 2,
+    pcidssSensitiveAuthData: 2,
+    pcidssCDESegmentation: 2,
+    cyberEssentialsBoundaryFirewall: 2,
+    cyberEssentialsSecureConfig: 2
+  };
+  var WEIGHT_LABELS = { 3: "Critical control", 2: "High impact", 1: "Standard" };
+  function controlWeight(questionId) {
+    return CONTROL_WEIGHTS[questionId] ?? 1;
+  }
+
   // src/engine/scoring.js
   function scoreFunction(fn, state) {
     const qs = visibleNodes(ASSESSMENT_FLOW, state).filter((q2) => q2.fn === fn);
@@ -21539,8 +21579,33 @@
     });
     return items;
   }
-  function computePriorities(state) {
-    return computeGapItems(state).sort((a4, b2) => b2.severity - a4.severity).slice(0, 5);
+  var FLAG_INPUTS = {
+    "mfa-vendor-exposure": ["mfa", "vendorCount"],
+    "no-logging-no-ir": ["siem", "irPlan"],
+    "untested-backup-weak-endpoint": ["backupTest", "endpoint"],
+    "no-training-partial-mfa": ["training", "mfa"],
+    "no-vendor-risk-review": ["govRiskDecisions", "vendorCount"],
+    "no-policy-no-ir": ["govPolicy", "irPlan"],
+    "exposed-db-app-no-monitoring": ["siem", "exfil"],
+    "db-unencrypted-weak-access": ["dbEncryption", "dbAccessControl"],
+    "ai-rag-no-ownership": ["aiRagPermissions", "aiRiskOwnership"],
+    "cloud-no-mfa": ["mfa"],
+    "rdp-exposed-ransomware-path": ["rdpExposed", "backupTest", "endpoint"],
+    "no-email-auth-no-training": ["emailAuth", "training"],
+    "training-no-phishing-sim": ["phishingSim"]
+  };
+  var FLAG_BOOST = 0.5;
+  function computeRankedGaps(state) {
+    const firedInputs = new Set(computeFlags(state).flatMap((f3) => FLAG_INPUTS[f3.id] || []));
+    const nodes = ASSESSMENT_FLOW.index;
+    return computeGapItems(state).map((item) => {
+      const q2 = nodes.get(item.id);
+      const values = q2.options.map((o3) => o3.v);
+      const span = Math.max(...values) - Math.min(...values) || 1;
+      const weight = controlWeight(item.id);
+      const inFlag = firedInputs.has(item.id);
+      return { ...item, weight, inFlag, priorityScore: item.severity / span * weight + (inFlag ? FLAG_BOOST : 0) };
+    }).sort((a4, b2) => b2.priorityScore - a4.priorityScore).map((item, i3) => ({ ...item, rank: i3 + 1 }));
   }
   function verdictLabel(pct) {
     if (pct >= 80) return "Strong health";
@@ -36024,6 +36089,12 @@
       y3 += 14;
     }
     y3 = drawSectionHeading(doc, "Where To Act First, Ranked", y3);
+    y3 = drawWrapped(doc, "Ranked by risk: how directly each gap enables a common attack (the controls CISA's Cross-Sector Performance Goals and #StopRansomware guidance put first rank highest), how far the answer is from the strongest option, and whether it feeds a combined finding.", MARGIN, y3, CONTENT_W, {
+      fontSize: 8.5,
+      style: "italic",
+      color: COLOR_MUTED
+    });
+    y3 += 8;
     if (priorities.length) {
       priorities.forEach((p3, i3) => {
         const guidance = guidanceForGapItem(p3, answers);
@@ -36038,6 +36109,25 @@
     } else {
       y3 = drawWrapped(doc, "No priority gaps identified - every assessed question scored at maximum coverage.", MARGIN, y3, CONTENT_W, { fontSize: 10, color: COLOR_MUTED });
       y3 += 10;
+    }
+    const rankedGaps = ctx.rankedGaps || [];
+    if (rankedGaps.length) {
+      y3 = drawSectionHeading(doc, `Every Gap In This Assessment (${rankedGaps.length})`, y3);
+      for (const fn of FUNCTIONS) {
+        const gaps = rankedGaps.filter((g2) => g2.fn === fn);
+        if (!gaps.length) continue;
+        y3 = ensureSpace(doc, y3, LINE_H * 3);
+        y3 = drawWrapped(doc, `${FUNC_DISPLAY[fn]} - ${gaps.length} gap${gaps.length === 1 ? "" : "s"}`, MARGIN, y3, CONTENT_W, { fontSize: 10.5, style: "bold", color: COLOR_HEADING });
+        y3 += 3;
+        for (const g2 of gaps) {
+          const fix = guidanceForGapItem(g2, answers, false)?.remediation;
+          y3 = drawWrapped(doc, `${String(g2.rank).padStart(2, "0")}. [${WEIGHT_LABELS[g2.weight]}] ${g2.gap}`, MARGIN + 10, y3, CONTENT_W - 10, { fontSize: 9.5, style: "bold" });
+          y3 = drawWrapped(doc, `Your answer: "${g2.chosen}"`, MARGIN + 24, y3, CONTENT_W - 24, { fontSize: 9, color: COLOR_MUTED });
+          if (fix) y3 = drawWrapped(doc, `How to fix it: ${fix}`, MARGIN + 24, y3, CONTENT_W - 24, { fontSize: 9 });
+          y3 += 5;
+        }
+        y3 += 6;
+      }
     }
     const ai = ctx.aiInsights;
     const aiRecency = Array.isArray(ai?.recency) ? ai.recency : [];
@@ -37109,7 +37199,7 @@
       });
       return `conic-gradient(${parts.join(",")})`;
     }
-    function reportBodyHtml({ session: s3, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, otherTexts = [] }) {
+    function reportBodyHtml({ session: s3, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, rankedGaps, otherTexts = [] }) {
       return `
       <div class="snapshot">
         <h3>Infrastructure snapshot (self-reported)</h3>
@@ -37178,17 +37268,56 @@
 
       <div class="priorities">
         <h3>Where to act first, ranked</h3>
+        <p class="scope-hint">Ranked by risk, not by question order: how directly the gap enables a common attack (the controls CISA's Cross-Sector Performance Goals and #StopRansomware guidance put first rank highest), how far your answer is from the strongest option, and whether it feeds a combined finding above.</p>
         ${priorities.map(
         (p22, i3) => `
           <div class="priority-item">
             <div class="priority-rank">${String(i3 + 1).padStart(2, "0")}</div>
-            <div><b>${FUNC_DISPLAY[p22.fn]}:</b> ${p22.gap}</div>
+            <div><b>${FUNC_DISPLAY[p22.fn]}:</b> ${p22.gap} ${gapTierChip(p22)}</div>
           </div>
           ${mitrePanel(guidanceForGapItem(p22, s3.answers, !s3.quickMode), `gap-${p22.id}`)}
         `
       ).join("")}
       </div>
+
+      ${gapRegisterHtml(s3, rankedGaps)}
     `;
+    }
+    function gapTierChip(g2) {
+      return `<span class="gap-tier gap-tier-${g2.weight}">${WEIGHT_LABELS[g2.weight]}</span>`;
+    }
+    function gapRegisterHtml(s3, rankedGaps) {
+      if (!rankedGaps.length) return "";
+      const groups = FUNCTIONS.map((fn) => ({ fn, gaps: rankedGaps.filter((g2) => g2.fn === fn) })).filter((grp) => grp.gaps.length);
+      return `
+      <div class="flags gap-register">
+        <h3>Every gap in this assessment (${rankedGaps.length})</h3>
+        <p class="scope-hint">The full list behind the five above, grouped by area and ordered by the same risk ranking within each. The number is each gap's overall rank.</p>
+        ${groups.map(
+        (grp) => `
+          <div class="acc-card">
+            <div class="acc-head">
+              <div><h4>${FUNC_DISPLAY[grp.fn]}</h4><div class="acc-sub">${grp.gaps.length} gap${grp.gaps.length === 1 ? "" : "s"}${grp.gaps.some((g2) => g2.weight === 3) ? ` - ${grp.gaps.filter((g2) => g2.weight === 3).length} on critical controls` : ""}</div></div>
+              <div class="acc-chevron">\u25B8</div>
+            </div>
+            <div class="acc-body">
+              ${grp.gaps.map((g2) => {
+          const fix = guidanceForGapItem(g2, s3.answers, false)?.remediation;
+          return `
+                <div class="gap-row">
+                  <div class="priority-rank">${String(g2.rank).padStart(2, "0")}</div>
+                  <div class="gap-row-body">
+                    <div>${escapeHtml(g2.gap)} ${gapTierChip(g2)}</div>
+                    <div class="gap-row-answer">Your answer: "${escapeHtml(g2.chosen)}"</div>
+                    ${fix ? `<div class="gap-row-fix"><b>How to fix it:</b> ${escapeHtml(fix)}</div>` : ""}
+                  </div>
+                </div>`;
+        }).join("")}
+            </div>
+          </div>
+        `
+      ).join("")}
+      </div>`;
     }
     async function renderResults() {
       const p3 = panel();
@@ -37198,7 +37327,8 @@
       const overall = computeOverall(funcScores);
       const flags = computeFlags(session);
       const gapItems = computeGapItems(session);
-      const priorities = computePriorities(session);
+      const rankedGaps = computeRankedGaps(session);
+      const priorities = rankedGaps.slice(0, 5);
       const vendorNotes = matchedVendorNotes(session.answers);
       const frameworkRecs = computeFrameworkRecommendations(session);
       const currentGapTexts = gapItems.map((i3) => i3.gap);
@@ -37250,7 +37380,7 @@
         ${newSincePrev.length ? `<div class="delta-new"><b>New:</b> ${newSincePrev.length} item(s) newly flagged</div>` : ""}
       </div>` : ""}
 
-      ${reportBodyHtml({ session, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, otherTexts })}
+      ${reportBodyHtml({ session, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, rankedGaps, otherTexts })}
 
       <div class="note-box">
         <b>About this report -</b> the flags and priority list above are produced by a deterministic rules
@@ -37303,7 +37433,7 @@
       });
       wireNavLink2(document.getElementById("viewHistoryBtn"), "history");
       document.getElementById("exportPdfBtn").addEventListener("click", () => {
-        buildAssessmentPdf({ session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs, aiInsights: lastAiInsights });
+        buildAssessmentPdf({ session, funcScores, overall, flags, priorities, rankedGaps, vendorNotes, frameworkRecs, aiInsights: lastAiInsights });
       });
       document.getElementById("aiInsightsBtn").addEventListener(
         "click",
@@ -37317,7 +37447,8 @@
       const funcScores = computeFuncScores(sampleSession);
       const overall = computeOverall(funcScores);
       const flags = computeFlags(sampleSession);
-      const priorities = computePriorities(sampleSession);
+      const rankedGaps = computeRankedGaps(sampleSession);
+      const priorities = rankedGaps.slice(0, 5);
       const vendorNotes = matchedVendorNotes(sampleSession.answers);
       const frameworkRecs = computeFrameworkRecommendations(sampleSession);
       p3.innerHTML = `
@@ -37326,7 +37457,7 @@
       <h2 class="step-title">Health Reading</h2>
       <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f3) => sampleSession.answers[f3.id]).map((f3) => " + " + f3.name).join("")}${sampleSession.answers.industry ? " \xB7 " + INDUSTRIES.find((i3) => i3.id === sampleSession.answers.industry).label : ""}</p>
 
-      ${reportBodyHtml({ session: sampleSession, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities })}
+      ${reportBodyHtml({ session: sampleSession, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, rankedGaps })}
 
       <div class="note-box">
         <b>About this report -</b> everything above is produced by running a fixed sample answer set through
@@ -37359,7 +37490,7 @@
         renderLanding();
       });
       document.getElementById("samplePdfBtn").addEventListener("click", () => {
-        buildAssessmentPdf({ session: sampleSession, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs, aiInsights: SAMPLE_AI_INSIGHTS });
+        buildAssessmentPdf({ session: sampleSession, funcScores, overall, flags, priorities, rankedGaps, vendorNotes, frameworkRecs, aiInsights: SAMPLE_AI_INSIGHTS });
       });
     }
     const OTHER_TEXT_MULTISELECT_FIELDS = [

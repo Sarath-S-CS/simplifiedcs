@@ -6,6 +6,7 @@
 import { visibleNodes } from "./graph.js";
 import { ASSESSMENT_FLOW } from "../data/assessment-flow.js";
 import { FUNCTIONS } from "../data/categories.js";
+import { controlWeight } from "../data/control-weights.js";
 
 export function scoreFunction(fn, state) {
   const qs = visibleNodes(ASSESSMENT_FLOW, state).filter((q) => q.fn === fn);
@@ -122,10 +123,52 @@ export function computeGapItems(state) {
   return items;
 }
 
-export function computePriorities(state) {
+// Which scored questions feed each compounding-risk flag. A gap that is
+// part of a flag that actually fired gets a small ranking boost - it's
+// doing double duty in this organization's specific risk picture. Flags
+// built only from profile answers (OT, DevSecOps, containers, team
+// structure) have no scored inputs to boost.
+const FLAG_INPUTS = {
+  "mfa-vendor-exposure": ["mfa", "vendorCount"],
+  "no-logging-no-ir": ["siem", "irPlan"],
+  "untested-backup-weak-endpoint": ["backupTest", "endpoint"],
+  "no-training-partial-mfa": ["training", "mfa"],
+  "no-vendor-risk-review": ["govRiskDecisions", "vendorCount"],
+  "no-policy-no-ir": ["govPolicy", "irPlan"],
+  "exposed-db-app-no-monitoring": ["siem", "exfil"],
+  "db-unencrypted-weak-access": ["dbEncryption", "dbAccessControl"],
+  "ai-rag-no-ownership": ["aiRagPermissions", "aiRiskOwnership"],
+  "cloud-no-mfa": ["mfa"],
+  "rdp-exposed-ransomware-path": ["rdpExposed", "backupTest", "endpoint"],
+  "no-email-auth-no-training": ["emailAuth", "training"],
+  "training-no-phishing-sim": ["phishingSim"],
+};
+const FLAG_BOOST = 0.5;
+
+// Every gap, ranked by how much closing it matters:
+//   (how far the answer is from the strongest option, 0-1)
+//   x (the control's impact tier, 1-3 - src/data/control-weights.js)
+//   + a boost if the gap feeds a compounding-risk flag that fired.
+// Ties keep questionnaire order (Array.prototype.sort is stable). Each item
+// keeps computeGapItems()'s fields and gains `weight`, `inFlag`, `rank`.
+export function computeRankedGaps(state) {
+  const firedInputs = new Set(computeFlags(state).flatMap((f) => FLAG_INPUTS[f.id] || []));
+  const nodes = ASSESSMENT_FLOW.index;
   return computeGapItems(state)
-    .sort((a, b) => b.severity - a.severity)
-    .slice(0, 5);
+    .map((item) => {
+      const q = nodes.get(item.id);
+      const values = q.options.map((o) => o.v);
+      const span = Math.max(...values) - Math.min(...values) || 1;
+      const weight = controlWeight(item.id);
+      const inFlag = firedInputs.has(item.id);
+      return { ...item, weight, inFlag, priorityScore: (item.severity / span) * weight + (inFlag ? FLAG_BOOST : 0) };
+    })
+    .sort((a, b) => b.priorityScore - a.priorityScore)
+    .map((item, i) => ({ ...item, rank: i + 1 }));
+}
+
+export function computePriorities(state) {
+  return computeRankedGaps(state).slice(0, 5);
 }
 
 export function verdictLabel(pct) {
