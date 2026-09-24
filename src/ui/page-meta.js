@@ -24,6 +24,7 @@ export const PAGE_DESCRIPTIONS = {
   glossary: "Plain-language definitions of common cybersecurity terms.",
   references: "The standards, frameworks and sources SimplifiedCS draws on.",
   about: "About SimplifiedCS and its creator.",
+  engineering: "What an external review of SimplifiedCS found in September 2026, what was changed, and how each change was checked in tests and in production.",
   feedback: "Send feedback about SimplifiedCS.",
   privacy: "What SimplifiedCS stores, what an optional AI request sends and to whom, and how analytics work only with your permission.",
   assessment: "Take a 14-question Quick screening or a Full cybersecurity assessment, or view example reports for two fictional organizations.",

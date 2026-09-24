@@ -1,8 +1,10 @@
 # Engineering case study: acting on an external review (September 2026)
 
 A factual account of what an external review of SimplifiedCS found, what was changed, and how
-each change was checked. No usage figures or outcomes are claimed - the changes had not been
-deployed when this was written.
+each change was checked. The changes went live on 24 September 2026 and were checked in
+production (below). No usage figures or outcomes are claimed. The same account is published on the
+site at [/engineering](https://simplifiedcs.net/engineering) (`src/pages/engineering.js`); keep
+the two in step.
 
 ## Starting point
 
@@ -44,8 +46,8 @@ cross-product citations, truncated and refused model replies, and valid empty re
 
 - Quick mode was ~52 required answers; it's now a 14-answer screening with a test that walks every
   path.
-- Answers are native radio buttons and checkboxes in fieldsets; focus is kept across re-renders;
-  checked with real keyboard input in a browser. An automated axe-core audit of every page in
+- Answers are native radio buttons and checkboxes in fieldsets; focus is kept across re-renders
+  (including the live-feed pages); checked with real keyboard input in a browser. An automated axe-core audit of every page in
   both themes (`npm run a11y`) found only colour-contrast failures in the light theme, now fixed.
   No screen-reader testing has been done yet; `docs/screen-reader-check.md` is the checklist for it.
 - Section labels used NIST CSF 1.1 codes in a "CSF 2.0" UI; every framework reference is now
@@ -56,11 +58,26 @@ cross-product citations, truncated and refused model replies, and valid empty re
   both margins using the same font metrics.
 - The initial script went from 3.0 MB unminified to 543 KB minified, with the PDF generator and
   database client loaded on demand and content-hashed files cached for a year. CI runs the tests,
-  checks the committed build matches the sources, and audits production dependencies.
+  checks the committed build matches the sources, and audits production dependencies. The
+  4,400-line main script now has one module per page (`src/pages/`).
 
 ## Verification summary
 
-199 automated tests across 24 files pass locally (106 before this work). Browser checks were run
-against a local server that applies the production security headers. Not yet verified: anything
-in production (not deployed), Netlify environment-variable scopes (not visible with the access
-used), and assistive-technology behaviour beyond keyboard use.
+Before release, the automated suite had grown from 106 to 199 tests, all passing, and browser
+checks had run against a local server applying the production security headers.
+
+**In production, 24 September 2026:**
+
+| Area | Result |
+|---|---|
+| Database | Browser-facing roles can only read the three public feed tables; a write with the public key returns 401. Job-lease functions can be run by the server role only. |
+| Feed jobs | Redeployed. Without the scheduler secret: 401; GET: 405. Manual runs refreshed 79 news items and 102 exploit records with no errors; both leases released. |
+| Site | Content-Security-Policy, HSTS and frame blocking enforced; hashed build files cached for a year. |
+| AI endpoints | Empty request → 400 (agreement required), no model call. One authorized test with the fictional IT-services answers: 200 in 22 s, a source status for all 6 products, 4 possible vulnerabilities each citing a retrieved CISA KEV / NVD record, nothing dropped. |
+| Browser | No console errors; no Google Analytics request before consent; News loads 75 items; a Quick screening runs end to end with the AI button disabled until the visitor agrees. Test data cleared afterwards. |
+
+**Not verified yet:** screen-reader behaviour (checklist: `docs/screen-reader-check.md`); the AI
+panel in the live page with a real request (the one paid test called the endpoint directly);
+restricting the Anthropic API key to server functions, which the current Netlify plan doesn't
+allow (the key isn't used by any build step and never reaches the browser); and product versions,
+which aren't asked for, so vulnerability matches stay "potential".

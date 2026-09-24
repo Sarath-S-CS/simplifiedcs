@@ -20,5 +20,6 @@
   <url><loc>https://simplifiedcs.net/glossary</loc><priority>0.5</priority></url>
   <url><loc>https://simplifiedcs.net/references</loc><priority>0.5</priority></url>
   <url><loc>https://simplifiedcs.net/about</loc><priority>0.4</priority></url>
+  <url><loc>https://simplifiedcs.net/engineering</loc><priority>0.4</priority></url>
   <url><loc>https://simplifiedcs.net/privacy</loc><priority>0.3</priority></url>
 </urlset>

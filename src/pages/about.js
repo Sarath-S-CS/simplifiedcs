@@ -1,4 +1,5 @@
 // About page (/about).
+import { wireNavLinksByDataset } from "../router.js";
 
 // Feedback and Privacy pages: ./ui/privacy.js.
 
@@ -25,6 +26,7 @@ export function renderAboutTab(container){
             <li>An <b>AI Readiness &amp; Governance</b> question track following EC-Council's Adopt/Defend/Govern framework - scoped to how AI actually shows up in your environment, scored by the same engine, with real MITRE ATT&amp;CK/ATLAS mapping for AI-specific techniques like prompt injection</li>
             <li>A programmatically-built, <b>selectable-text PDF export</b>, and a real <b>client-side router</b> with working back/forward navigation and shareable URLs - not the "everything is one page pretending to be many" shortcut it's easy to settle for</li>
           </ul>
+          <p class="body-text">What an external review found in September 2026, what changed, and how each change was checked: <a href="/engineering" class="inline-link" data-tab="engineering">engineering case study</a>.</p>
         </div>
       </div>
 
@@ -47,6 +49,7 @@ export function renderAboutTab(container){
       </div>
     </div>
   `;
+  wireNavLinksByDataset(container, 'a.inline-link[data-tab]');
   renderLogoAssembly();
 }
 
