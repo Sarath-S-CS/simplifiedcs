@@ -61,6 +61,7 @@ const ROUTES = {
   "/glossary": "glossary",
   "/references": "references",
   "/about": "about",
+  "/privacy": "privacy",
   "/history": "history",
   // /assessment/sample is the one sub-state of the assessment tab with a
   // real URL (src/ui/assessment.js's currentPathIsSample()) - fixed,
@@ -114,18 +115,12 @@ function setCanonical(html, routePath) {
   return html.replace(/<title>.*?<\/title>/, (m) => `${m}\n${canonicalTag}`);
 }
 
-// build.js inlines the whole ~2.8MB app bundle directly into index.html's
-// <script> tag (see assembleHtml()) - captured verbatim, that would
-// duplicate the bundle into every one of the 19 snapshot files, ~50MB of
-// pure repeated bytes. /assets/app.js is already a real standalone file
-// (esbuild's own output), so swapping the huge inline script for a src
-// reference gives an identical result at runtime for a fraction of the
-// weight. Threshold picks out the bundle specifically, not head.html's
-// small inline gtag snippet.
+// The app is a module script referenced by URL (scripts/build.js), so a
+// snapshot never contains the bundle itself. Scripts the app injected at
+// runtime (on-demand chunks, modulepreload hints) are dropped so each
+// snapshot loads exactly what index.html loads.
 function externalizeBundle(html) {
-  return html.replace(/<script>([\s\S]*?)<\/script>/g, (match, body) =>
-    body.length > 50000 ? '<script src="/assets/app.js"></script>' : match
-  );
+  return html.replace(/<link rel="modulepreload"[^>]*>/g, "");
 }
 
 async function snapshotRoute(browser, routePath) {
@@ -158,7 +153,12 @@ async function snapshotRoute(browser, routePath) {
   // snapshotting a placeholder.
   let html;
   for (let attempt = 0; attempt < 4; attempt++) {
-    html = await page.evaluate(() => document.documentElement.outerHTML);
+    // Per-visitor UI (the analytics choice banner, screen-reader status
+    // region) must never be baked into a static snapshot.
+    html = await page.evaluate(() => {
+      document.querySelectorAll("#cookieBanner, #sr-status").forEach((el) => el.remove());
+      return document.documentElement.outerHTML;
+    });
     if (!html.includes("Loading the latest")) break;
     if (attempt === 3) console.warn(`  WARNING: ${routePath} still shows a loading placeholder after retries`);
     await new Promise((r) => setTimeout(r, 750));

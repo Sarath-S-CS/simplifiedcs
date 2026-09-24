@@ -1,4 +1,5 @@
-// Ported verbatim from the original index.html VENDOR_NOTES array -
+// Originally ported from the index.html VENDOR_NOTES array (two notes
+// reworded in 2026-09 to remove claims that could not be verified) -
 // illustrative only, well-documented historical exploitation patterns for
 // named products. Intentionally NOT a live CVE feed or vulnerability
 // scanner (see §7 of CLAUDE.md - a real RAG-backed version is future scope,
@@ -14,9 +15,9 @@ export const VENDOR_NOTES = [
   { keywords: ["sonicwall"], vendor: "SonicWall", note: "SonicWall firewall/VPN appliances have had repeated critical, actively-exploited vulnerabilities. Confirm firmware is current and management access is restricted." },
   { keywords: ["barracuda"], vendor: "Barracuda", note: "Barracuda's Email Security Gateway was subject to a critical zero-day serious enough that Barracuda recommended full hardware replacement for affected units. If you run Barracuda ESG appliances, verify directly with Barracuda whether your hardware was affected." },
   { keywords: ["proofpoint"], vendor: "Proofpoint", note: "Proofpoint's email security and security-awareness products are widely deployed - confirm URL Defense/attachment sandboxing are actually enabled (not just licensed), and that simulated-phishing results are being reviewed and acted on, not just collected." },
-  { keywords: ["mimecast"], vendor: "Mimecast", note: "Mimecast email security deployments are commonly found with misconfigured DMARC alignment or impersonation-protection settings left at default - confirm these are actively enforced, not merely available in the license." },
+  { keywords: ["mimecast"], vendor: "Mimecast", note: "Check that impersonation protection and DMARC-based handling of inbound mail are actually switched on and set to act (not just monitor) in your Mimecast policies - capabilities included in a licence only help once they're configured." },
   { keywords: ["knowbe4"], vendor: "KnowBe4", note: "Awareness platforms like KnowBe4 are only as effective as their completion and simulated-phishing-failure rates are actually reviewed by someone - track those metrics on a schedule, don't just deploy the training and move on." },
-  { keywords: ["defender for office", "office 365 atp", "microsoft 365 defender"], vendor: "Microsoft Defender for Office 365", note: "Defender for Office 365 requires Safe Links and Safe Attachments to be explicitly enabled per the licensing tier - confirm these are actually turned on, not just included in the plan you're paying for." },
+  { keywords: ["defender for office", "office 365 atp", "microsoft 365 defender"], vendor: "Microsoft Defender for Office 365", note: "Check which Safe Links and Safe Attachments policies apply to which users (Microsoft's preset security policies or your own custom ones), and that every mailbox is covered - coverage depends on your plan and policy configuration." },
 ];
 
 export function matchedVendorNotes(answers) {

@@ -1,79 +1,39 @@
-// PDF-EXPORT-BRIEF.md: a real, programmatically-built report (jsPDF's
-// text/layout APIs, not html2canvas) so the output is selectable/
-// searchable text, a small file, and a clean light/print layout
-// regardless of which theme the site is currently in. Reuses exactly
-// the data renderResults() already computed for the on-screen report -
-// this module doesn't recompute scoring/flags/vendor-notes itself.
+// The PDF export: a real, programmatically-built document (jsPDF text/layout
+// APIs, not a screenshot) so it is selectable, searchable and small. It
+// renders the shared report model (./report-model.js) - the same object the
+// web report and History use - so the PDF can't disagree with the page.
+//
+// Pagination rules (test/pdf-report.test.js checks them on generated
+// documents):
+//   - nothing is drawn below the bottom margin, except the page footer
+//   - a section heading is never the last thing on a page (it keeps with
+//     at least the first lines of its content)
+//   - an item's heading and the start of its body stay together; a block
+//     that fits on one page is moved whole rather than split
 import { jsPDF } from "jspdf";
-import { INDUSTRIES } from "../data/industries.js";
-import { REGIONS } from "../data/regions.js";
-import { FRAMEWORKS } from "../data/frameworks.js";
-import { FUNC_DISPLAY, FUNCTIONS } from "../data/categories.js";
-import { WEIGHT_LABELS } from "../data/control-weights.js";
-// FUNC_COLORS' Protect entry is "var(--accent-signal)" - a CSS custom
-// property, meaningless outside a DOM/computed-style context. jsPDF just
-// needs real RGB, so this resolves all six to the literal hex values
-// currently defined in src/styles/app.css (--accent-signal: #01A982),
-// keeping the PDF's bar colors visually consistent with the site's own
-// per-function color coding rather than picking new ones.
-const FUNC_COLORS_RESOLVED = {
-  Govern: "#B48EC7",
-  Identify: "#E0A94A",
-  Protect: "#01A982",
-  Detect: "#6FA8DC",
-  Respond: "#D6685F",
-  Recover: "#3FC7C0",
-};
-import { verdictLabel } from "./scoring.js";
-import { guidanceForFlag, guidanceForGapItem } from "./mitre-guidance.js";
-import { snapshotRows } from "../ui/snapshot.js";
+import { FUNCTIONS, FUNC_DISPLAY } from "../data/categories.js";
+import { WEIGHT_LABELS } from "../data/controls.js";
 
 const PAGE_W = 612; // US Letter, pt
 const PAGE_H = 792;
 const MARGIN = 48;
+const BOTTOM = PAGE_H - MARGIN;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 const LINE_H = 13;
 
 const COLOR_HEADING = [21, 66, 73];
 const COLOR_TEXT = [35, 35, 35];
-const COLOR_MUTED = [110, 110, 110];
+const COLOR_MUTED = [105, 105, 105];
 const COLOR_RULE = [205, 205, 205];
+const COLOR_CRITICAL = [168, 43, 43];
 
-function ensureSpace(doc, y, needed) {
-  if (y + needed > PAGE_H - MARGIN) {
-    doc.addPage();
-    return MARGIN;
-  }
-  return y;
-}
+// Resolved from src/styles/app.css (the site uses a CSS variable for Protect).
+const FUNC_COLORS_RESOLVED = { Govern: "#B48EC7", Identify: "#E0A94A", Protect: "#01A982", Detect: "#6FA8DC", Respond: "#D6685F", Recover: "#3FC7C0" };
 
-function setStyle(doc, { fontSize = 10, color = COLOR_TEXT, style = "normal" } = {}) {
-  doc.setFont("helvetica", style);
-  doc.setFontSize(fontSize);
-  doc.setTextColor(...color);
-}
-
-// Draws left-flowing wrapped text, page-breaking between lines as needed,
-// and returns the y position just below the last line drawn.
-function drawWrapped(doc, text, x, y, maxWidth, opts = {}) {
-  const { lineHeight = LINE_H } = opts;
-  setStyle(doc, opts);
-  const lines = doc.splitTextToSize(String(text), maxWidth);
-  let cy = y;
-  for (const line of lines) {
-    cy = ensureSpace(doc, cy, lineHeight);
-    doc.text(line, x, cy);
-    cy += lineHeight;
-  }
-  return cy;
-}
-
-// jsPDF's built-in Helvetica only covers Latin-1 (WinAnsi); model-written
-// text regularly includes arrows, curly quotes, and dashes that would
-// otherwise print as garbage. Map the common ones to ASCII and drop the
-// rest. Only applied to AI text - everything else in this PDF is authored
-// in this repo.
-function pdfSafe(s) {
+// jsPDF's built-in Helvetica covers Latin-1 (WinAnsi) only. Map common
+// typographic characters to ASCII and drop anything else, for every string
+// - answers and AI text can contain characters the font can't draw.
+export function pdfSafe(s) {
   return String(s ?? "")
     .replace(/[‘’‚′]/g, "'")
     .replace(/[“”„″]/g, '"')
@@ -85,380 +45,355 @@ function pdfSafe(s) {
     .replace(/[^\u0000-ÿ]/g, "");
 }
 
-function measureWrappedHeight(doc, text, maxWidth, opts = {}) {
-  const { fontSize = 10, lineHeight = LINE_H } = opts;
-  doc.setFontSize(fontSize);
-  return doc.splitTextToSize(String(text), maxWidth).length * lineHeight;
-}
-
-function drawSectionHeading(doc, title, y) {
-  y = ensureSpace(doc, y, 34);
-  setStyle(doc, { fontSize: 13, style: "bold", color: COLOR_HEADING });
-  doc.text(title.toUpperCase(), MARGIN, y);
-  y += 6;
-  doc.setDrawColor(...COLOR_RULE);
-  doc.setLineWidth(1);
-  doc.line(MARGIN, y, PAGE_W - MARGIN, y);
-  return y + 18;
-}
-
-function hexToRgb(hex) {
-  const clean = hex.replace("#", "");
-  return [parseInt(clean.slice(0, 2), 16), parseInt(clean.slice(2, 4), 16), parseInt(clean.slice(4, 6), 16)];
-}
-
-// One function's score as a horizontal bar: label, a full-width gray
-// track, a colored fill proportional to pct, and the number at the end.
-// Plain rects, not rounded - a rounded fill at a very low pct would just
-// render as a small blob rather than a clean bar.
-function drawFunctionBar(doc, label, pct, colorHex, y) {
-  const barH = 14;
-  const labelW = 150;
-  const pctW = 34;
-  const barX = MARGIN + labelW;
-  const barW = CONTENT_W - labelW - pctW;
-  y = ensureSpace(doc, y, barH + 8);
-
-  setStyle(doc, { fontSize: 10, color: COLOR_TEXT });
-  doc.text(label, MARGIN, y + barH - 4);
-
-  doc.setFillColor(232, 232, 232);
-  doc.rect(barX, y, barW, barH, "F");
-  const fillW = Math.max(0, Math.min(barW, (barW * pct) / 100));
-  if (fillW > 0) {
-    doc.setFillColor(...hexToRgb(colorHex));
-    doc.rect(barX, y, fillW, barH, "F");
+class Writer {
+  constructor(doc) {
+    this.doc = doc;
+    this.y = MARGIN;
+    this.pending = null; // a section heading waiting to be placed with its first block
   }
-  doc.setDrawColor(...COLOR_RULE);
-  doc.setLineWidth(0.5);
-  doc.rect(barX, y, barW, barH, "S");
-
-  setStyle(doc, { fontSize: 10, style: "bold", color: COLOR_TEXT });
-  doc.text(`${pct}%`, barX + barW + pctW, y + barH - 4, { align: "right" });
-
-  return y + barH + 9;
+  style({ fontSize = 10, color = COLOR_TEXT, style = "normal" } = {}) {
+    this.doc.setFont("helvetica", style);
+    this.doc.setFontSize(fontSize);
+    this.doc.setTextColor(...color);
+  }
+  // Measured in the font style it will be drawn in: bold is wider, and
+  // measuring bold text as regular let long headings run past the margin.
+  lines(text, width, fontSize = 10, style = "normal") {
+    this.doc.setFont("helvetica", style);
+    this.doc.setFontSize(fontSize);
+    return this.doc.splitTextToSize(pdfSafe(text), width);
+  }
+  height(text, width, fontSize = 10, lineHeight = LINE_H, style = "normal") {
+    return this.lines(text, width, fontSize, style).length * lineHeight;
+  }
+  newPage() {
+    this.doc.addPage();
+    this.y = MARGIN;
+  }
+  // Moves to a new page unless `needed` points fit below the cursor.
+  ensure(needed) {
+    if (this.pending) return this.flush(needed);
+    if (this.y + needed > BOTTOM) this.newPage();
+  }
+  // Keeps a block together when it can fit on a page at all.
+  keep(needed) {
+    if (this.pending) return this.flush(needed);
+    if (needed <= BOTTOM - MARGIN) this.ensure(needed);
+    else this.ensure(LINE_H * 3);
+  }
+  // Section headings are drawn lazily, by the first block that follows, so
+  // the heading can move to the next page together with that block instead
+  // of being left behind at the bottom of this one.
+  flush(needed) {
+    const title = this.pending;
+    this.pending = null;
+    const HEAD = 30;
+    const room = BOTTOM - MARGIN;
+    if (HEAD + needed <= room) this.ensure(HEAD + needed);
+    else this.ensure(HEAD + LINE_H * 3);
+    this.style({ fontSize: 13, style: "bold", color: COLOR_HEADING });
+    this.doc.text(pdfSafe(title).toUpperCase(), MARGIN, this.y);
+    this.y += 6;
+    this.doc.setDrawColor(...COLOR_RULE);
+    this.doc.setLineWidth(1);
+    this.doc.line(MARGIN, this.y, PAGE_W - MARGIN, this.y);
+    this.y += 18;
+  }
+  text(text, { x = MARGIN, width = CONTENT_W, fontSize = 10, lineHeight = LINE_H, style = "normal", color = COLOR_TEXT, after = 0 } = {}) {
+    const lines = this.lines(text, width, fontSize, style);
+    if (this.pending) this.flush(Math.min(lines.length, 3) * lineHeight);
+    this.style({ fontSize, color, style });
+    for (const line of lines) {
+      this.ensure(lineHeight);
+      this.doc.text(line, x, this.y);
+      this.y += lineHeight;
+    }
+    this.y += after;
+  }
+  rule(gapBefore = 4, gapAfter = 14) {
+    this.y += gapBefore;
+    this.doc.setDrawColor(...COLOR_RULE);
+    this.doc.setLineWidth(0.75);
+    this.doc.line(MARGIN, this.y, PAGE_W - MARGIN, this.y);
+    this.y += gapAfter;
+  }
+  // Starts a section; the heading is placed with the section's first block.
+  section(title) {
+    if (this.pending) this.flush(0);
+    this.y += 12;
+    this.pending = title;
+  }
+  bar(label, pct, colorHex, note) {
+    const barH = 12;
+    const labelW = 150;
+    const pctW = 110;
+    const barX = MARGIN + labelW;
+    const barW = CONTENT_W - labelW - pctW;
+    this.ensure(barH + 10);
+    this.style({ fontSize: 9.5 });
+    this.doc.text(pdfSafe(label), MARGIN, this.y + barH - 3);
+    this.doc.setFillColor(232, 232, 232);
+    this.doc.rect(barX, this.y, barW, barH, "F");
+    if (pct !== null && pct > 0) {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(colorHex.slice(i, i + 2), 16));
+      this.doc.setFillColor(r, g, b);
+      this.doc.rect(barX, this.y, (barW * Math.min(100, pct)) / 100, barH, "F");
+    }
+    this.style({ fontSize: 9, style: "bold" });
+    this.doc.text(pdfSafe(note), PAGE_W - MARGIN, this.y + barH - 3, { align: "right" });
+    this.y += barH + 8;
+  }
 }
 
-// A single labeled row: bold-ish label in a fixed-width left column, the
-// (possibly wrapped) value in the remaining width, a thin rule under the
-// taller of the two, page-breaking the whole row together rather than
-// splitting a label from its value across a page boundary.
-function drawKeyValueRow(doc, label, value, y) {
-  const labelW = 172;
-  const valueX = MARGIN + labelW + 10;
-  const valueW = CONTENT_W - labelW - 10;
-  const rowHeight = Math.max(LINE_H, measureWrappedHeight(doc, value || "-", valueW));
-  y = ensureSpace(doc, y, rowHeight + 8);
-  setStyle(doc, { fontSize: 9.5, style: "bold", color: COLOR_MUTED });
-  doc.text(label, MARGIN, y);
-  drawWrapped(doc, value || "-", valueX, y, valueW, { fontSize: 10, color: COLOR_TEXT });
-  y += rowHeight + 6;
-  doc.setDrawColor(...COLOR_RULE);
-  doc.setLineWidth(0.5);
-  doc.line(MARGIN, y - 4, PAGE_W - MARGIN, y - 4);
-  return y + 4;
+function pct(n) {
+  return n === null || n === undefined ? "n/a" : `${n}%`;
 }
 
-// ASSESSMENT-REPORT-DEPTH-BRIEF.md §6/§9: the PDF gets the same five-part
-// treatment as the on-screen report (always the "full" shape - a PDF export
-// has no Quick/Full rendering distinction of its own to condense for),
-// measured as a whole so the block page-breaks as a unit when it fits on a
-// fresh page, rather than splitting mid-explanation whenever avoidable.
-function measureGuidanceHeight(doc, guidance) {
-  if (!guidance) return 0;
-  let h = 0;
-  if (guidance.traceability) h += measureWrappedHeight(doc, `Why this was flagged: ${guidance.traceability}`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
-  h += LINE_H + 4; // technique line
-  h += measureWrappedHeight(doc, `What could go wrong: ${guidance.explain}`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
-  if (guidance.control) h += measureWrappedHeight(doc, `Interim step: ${guidance.control}`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
-  if (guidance.remediation) h += measureWrappedHeight(doc, `How to fix it: ${guidance.remediation}`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
-  if (guidance.reference) h += measureWrappedHeight(doc, `Reference: ${guidance.reference.label} (${guidance.reference.url})`, CONTENT_W - 14, { fontSize: 9.5 }) + 4;
-  return h;
+function areaNote(a, quick) {
+  if (quick) return a.counts.met + a.counts.gap + a.counts.partial + a.counts.unknown ? `${a.counts.gap} not in place, ${a.counts.partial} partly, ${a.counts.unknown} not sure, ${a.counts.met} in place` : "not asked in this screening";
+  if (a.coverage === null) return a.applicable ? "not enough answers" : "not applicable";
+  return `${a.coverage}%  (${a.known}/${a.applicable} answered)`;
 }
 
-function drawGuidance(doc, guidance, y) {
+function drawAction(w, a, { detailed }) {
+  const head = `${a.id}  ${a.title}`;
+  const meta = `${a.area} | ${a.critical ? "CRITICAL | " : ""}${WEIGHT_LABELS[a.weight]} | Owner: ${a.role} | Effort: ${a.effortLabel} | Target: ${a.timeframeDays} days`;
+  const body = [
+    ["Trigger", a.trigger],
+    a.criticalReason ? ["Why critical", a.criticalReason] : null,
+    detailed && a.rationale ? ["Why it matters", a.rationale] : null,
+    a.interim ? ["Interim step", a.interim] : null,
+    a.durableFix ? ["Durable fix", a.durableFix] : null,
+    ["Evidence it's done", a.evidence],
+    detailed && a.technique ? ["MITRE ATT&CK", `${a.technique.id} - ${a.technique.name}`] : null,
+    a.csf.length || a.cis.length ? ["References", [a.csf.length ? `NIST CSF 2.0 ${a.csf.join(", ")}` : "", a.cis.length ? `CIS v8.1 ${a.cis.join(", ")}` : ""].filter(Boolean).join("; ")] : null,
+  ].filter(Boolean);
   const x = MARGIN + 14;
-  const w = CONTENT_W - 14;
-  if (guidance.traceability) {
-    y = drawWrapped(doc, `Why this was flagged: ${guidance.traceability}`, x, y, w, { fontSize: 9.5, color: COLOR_TEXT }) + 4;
-  }
-  const techniqueLabel = guidance.technique ? `MITRE ATT&CK: ${guidance.technique.id} - ${guidance.technique.name}` : "Not mapped to a specific ATT&CK technique - this is a program-level gap, not a single attacker technique.";
-  y = ensureSpace(doc, y, LINE_H + 4);
-  setStyle(doc, { fontSize: 9.5, style: "italic", color: COLOR_MUTED });
-  doc.text(techniqueLabel, x, y);
-  y += LINE_H + 4;
-  y = drawWrapped(doc, `What could go wrong: ${guidance.explain}`, x, y, w, { fontSize: 9.5, color: COLOR_TEXT }) + 4;
-  if (guidance.control) y = drawWrapped(doc, `Interim step: ${guidance.control}`, x, y, w, { fontSize: 9.5, color: COLOR_TEXT }) + 4;
-  if (guidance.remediation) y = drawWrapped(doc, `How to fix it: ${guidance.remediation}`, x, y, w, { fontSize: 9.5, color: COLOR_TEXT }) + 4;
-  if (guidance.reference) y = drawWrapped(doc, `Reference: ${guidance.reference.label} - ${guidance.reference.url}`, x, y, w, { fontSize: 9.5, color: COLOR_MUTED }) + 4;
-  return y;
+  const width = CONTENT_W - 14;
+  const bodyH = body.reduce((h, [k, v]) => h + w.height(`${k}: ${v}`, width, 9) + 2, 0);
+  const headH = w.height(head, CONTENT_W, 10.5, LINE_H, "bold") + w.height(meta, width, 8.5);
+  // Heading + meta + at least the first two body lines together; the whole
+  // item together when it fits.
+  w.keep(headH + Math.min(bodyH, BOTTOM - MARGIN - headH - 1) + 8);
+  w.text(head, { fontSize: 10.5, style: "bold", color: a.critical ? COLOR_CRITICAL : COLOR_TEXT });
+  w.text(meta, { x, width, fontSize: 8.5, color: COLOR_MUTED, after: 2 });
+  for (const [k, v] of body) w.text(`${k}: ${v}`, { x, width, fontSize: 9, after: 2 });
+  w.y += 8;
 }
 
-function slugify(s) {
-  return (s || "General").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "General";
-}
-
-// Builds the jsPDF document and returns it (plus the filename it should be
-// saved as) without triggering a download - split out from
-// buildAssessmentPdf() specifically so it can be tested directly (via
-// doc.output(...)) without needing a browser's download machinery, per
-// CLAUDE.md's "test before you ship, not just a manual click-through".
-// ctx mirrors exactly what renderResults() already has in scope: session,
-// funcScores, overall, flags, priorities, vendorNotes, frameworkRecs - plus
-// an optional aiInsights (the AI-Insights response, when one was requested).
-export function buildAssessmentPdfDoc(ctx) {
-  const { session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs } = ctx;
-  const answers = session.answers;
+// Builds the document without downloading it (so it can be tested).
+export function buildAssessmentPdfDoc(report, { aiInsights = null, aiError = null } = {}) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
-  let y = MARGIN;
+  const w = new Writer(doc);
+  const quick = report.mode === "quick";
 
   // --- Header ---
-  setStyle(doc, { fontSize: 22, style: "bold", color: COLOR_HEADING });
-  doc.text("SimplifiedCS", MARGIN, y);
-  y += 26;
-  setStyle(doc, { fontSize: 13, style: "normal", color: COLOR_TEXT });
-  doc.text("Cybersecurity Posture Assessment Report", MARGIN, y);
-  y += 22;
+  w.style({ fontSize: 22, style: "bold", color: COLOR_HEADING });
+  doc.text("SimplifiedCS", MARGIN, w.y);
+  w.y += 26;
+  w.text(quick ? "Cybersecurity Quick Screening Report" : "Cybersecurity Posture Assessment Report", { fontSize: 13, after: 6 });
+  if (report.sample) w.text("EXAMPLE REPORT - fictional organization and answers, not a real assessment.", { fontSize: 10, style: "bold", color: COLOR_CRITICAL, after: 4 });
+  if (report.context.companyName) w.text(`Prepared for: ${report.context.companyName}`, { fontSize: 11.5, style: "bold", after: 4 });
+  const generated = new Date(report.generatedAt);
+  const meta = [
+    `Generated: ${generated.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
+    report.context.requestedBy ? `Requested by: ${report.context.requestedBy}` : null,
+    `Industry: ${report.context.industry || "Not specified"}`,
+    `Regions: ${report.context.regions.length ? report.context.regions.join(", ") : "Not specified"}`,
+    `Reference frameworks: NIST CSF 2.0, CIS Controls v8.1${report.context.frameworks.length ? ` | Also in scope: ${report.context.frameworks.join(", ")}` : ""}`,
+    `Mode: ${quick ? "Quick screening" : "Full assessment"} | Methodology ${report.methodologyVersion} | Question set ${report.questionSetVersion}`,
+  ].filter(Boolean);
+  for (const m of meta) w.text(m, { fontSize: 9.5, color: COLOR_MUTED });
+  w.rule(6, 18);
 
-  const companyName = (answers.companyName || "").trim();
-  const requestedBy = (answers.reportRequestedBy || "").trim();
-  if (companyName) {
-    setStyle(doc, { fontSize: 11.5, style: "bold", color: COLOR_TEXT });
-    doc.text(`Prepared for: ${companyName}`, MARGIN, y);
-    y += LINE_H + 6;
-  }
-
-  const generatedOn = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-  const industryLabel = INDUSTRIES.find((i) => i.id === answers.industry)?.label;
-  const regionLabels = (answers.regions || []).map((id) => REGIONS.find((r) => r.id === id)?.label).filter(Boolean);
-  const countryLabels = answers.countries || [];
-  const frameworksAssessed = "NIST CSF 2.0 + CIS Controls v8" + FRAMEWORKS.filter((f) => answers[f.id]).map((f) => " + " + f.name).join("");
-
-  setStyle(doc, { fontSize: 9.5, color: COLOR_MUTED });
-  doc.text(`Generated: ${generatedOn}`, MARGIN, y);
-  y += LINE_H + 2;
-  if (requestedBy) {
-    y = drawWrapped(doc, `Requested by: ${requestedBy}`, MARGIN, y, CONTENT_W, { fontSize: 9.5, color: COLOR_MUTED });
-  }
-  y = drawWrapped(doc, `Industry: ${industryLabel || "Not specified"}`, MARGIN, y, CONTENT_W, { fontSize: 9.5, color: COLOR_MUTED });
-  const regionsText = regionLabels.length ? regionLabels.join(", ") + (countryLabels.length ? ` (specific countries: ${countryLabels.join(", ")})` : "") : "Not specified";
-  y = drawWrapped(doc, `Regions: ${regionsText}`, MARGIN, y, CONTENT_W, { fontSize: 9.5, color: COLOR_MUTED });
-  y = drawWrapped(doc, `Assessed against: ${frameworksAssessed}`, MARGIN, y, CONTENT_W, { fontSize: 9.5, color: COLOR_MUTED });
-  y += 6;
-  doc.setDrawColor(...COLOR_RULE);
-  doc.setLineWidth(1);
-  doc.line(MARGIN, y, PAGE_W - MARGIN, y);
-  y += 24;
-
-  // --- Overall score + per-function breakdown ---
-  y = drawSectionHeading(doc, "Overall Score", y);
-  // ASSESSMENT-REPORT-DEPTH-BRIEF.md §9: same one-time, prominent
-  // clarification as the on-screen report - stated once here, not
-  // repeated next to every function bar below.
-  y = drawWrapped(
-    doc,
-    "Higher percentages mean a stronger security posture - not compliance completeness, not exposure level. 100% would mean every control this assessment checks for is fully in place; it doesn't mean risk-free.",
-    MARGIN,
-    y,
-    CONTENT_W,
-    { fontSize: 9, style: "italic", color: COLOR_MUTED }
-  );
-  y += 14;
-  setStyle(doc, { fontSize: 28, style: "bold", color: COLOR_HEADING });
-  doc.text(`${overall}%`, MARGIN, y + 6);
-  setStyle(doc, { fontSize: 13, style: "normal", color: COLOR_TEXT });
-  doc.text(verdictLabel(overall), MARGIN + 90, y + 4);
-  y += 32;
-  for (const f of funcScores) {
-    y = drawFunctionBar(doc, FUNC_DISPLAY[f.fn], f.pct, FUNC_COLORS_RESOLVED[f.fn], y);
-  }
-  y += 14;
-
-  // --- Infrastructure snapshot ---
-  y = drawSectionHeading(doc, "Infrastructure Snapshot (self-reported)", y);
-  for (const [key, value] of snapshotRows(answers)) {
-    y = drawKeyValueRow(doc, key, String(value), y);
-  }
-  y += 10;
-
-  // --- Compounding-risk findings ---
-  if (flags.length) {
-    y = drawSectionHeading(doc, "Compounding Risk - Patterns Across Steps", y);
-    flags.forEach((flag, i) => {
-      const guidance = guidanceForFlag(flag, answers);
-      const headingText = `${i + 1}. ${flag.text}`;
-      const blockHeight = measureWrappedHeight(doc, headingText, CONTENT_W, { fontSize: 10.5 }) + measureGuidanceHeight(doc, guidance) + 14;
-      if (blockHeight <= PAGE_H - MARGIN * 2) y = ensureSpace(doc, y, blockHeight);
-      y = drawWrapped(doc, headingText, MARGIN, y, CONTENT_W, { fontSize: 10.5, style: "bold", color: COLOR_TEXT });
-      y += 3;
-      if (guidance) y = drawGuidance(doc, guidance, y);
-      y += 10;
-    });
-  }
-
-  // --- Vendor-specific mitigation notes ---
-  if (vendorNotes.length) {
-    y = drawSectionHeading(doc, "Vendor-Specific Mitigation Notes", y);
-    for (const v of vendorNotes) {
-      y = drawWrapped(doc, `${v.vendor} - ${v.note}`, MARGIN, y, CONTENT_W, { fontSize: 10 });
-      y += 10;
-    }
-    y = drawWrapped(
-      doc,
-      "Illustrative, based on well-documented historical exploitation patterns for named products - not a live feed. This tool intentionally doesn't do vulnerability scanning; treat this as a prompt to check current vendor advisories for your exact version, not a substitute for doing so.",
-      MARGIN,
-      y,
-      CONTENT_W,
-      { fontSize: 8.5, style: "italic", color: COLOR_MUTED }
-    );
-    y += 14;
-  }
-
-  // --- Compliance considerations ---
-  if (frameworkRecs.length) {
-    y = drawSectionHeading(doc, "Compliance Considerations", y);
-    for (const r of frameworkRecs) {
-      y = drawWrapped(doc, `${r.name} - ${r.summary}`, MARGIN, y, CONTENT_W, { fontSize: 10, style: "bold" });
-      y += 3;
-      if (r.gaps.length) {
-        for (const g of r.gaps) {
-          const gapGuidance = guidanceForGapItem(g, answers);
-          y = drawWrapped(doc, `Gap: ${g.question} - currently: "${g.chosen}"`, MARGIN + 14, y, CONTENT_W - 14, { fontSize: 9.5 });
-          y += 2;
-          if (gapGuidance) y = drawGuidance(doc, gapGuidance, y);
-          y += 6;
-        }
-      } else if (r.questionCount) {
-        y = drawWrapped(doc, `No gaps flagged in the ${r.name}-specific questions above.`, MARGIN + 14, y, CONTENT_W - 14, { fontSize: 9.5, color: COLOR_MUTED });
-      }
-      y += 10;
-    }
-    y = drawWrapped(doc, "This is pattern-based guidance from your own answers, not a certification audit or legal compliance determination.", MARGIN, y, CONTENT_W, {
-      fontSize: 8.5,
-      style: "italic",
-      color: COLOR_MUTED,
-    });
-    y += 14;
-  }
-
-  // --- Priority-ranked action list ---
-  y = drawSectionHeading(doc, "Where To Act First, Ranked", y);
-  y = drawWrapped(doc, "Ranked by risk: how directly each gap enables a common attack (the controls CISA's Cross-Sector Performance Goals and #StopRansomware guidance put first rank highest), how far the answer is from the strongest option, and whether it feeds a combined finding.", MARGIN, y, CONTENT_W, {
-    fontSize: 8.5,
-    style: "italic",
-    color: COLOR_MUTED,
-  });
-  y += 8;
-  if (priorities.length) {
-    priorities.forEach((p, i) => {
-      const guidance = guidanceForGapItem(p, answers);
-      const headingText = `${String(i + 1).padStart(2, "0")}. ${FUNC_DISPLAY[p.fn]}: ${p.gap}`;
-      const blockHeight = measureWrappedHeight(doc, headingText, CONTENT_W, { fontSize: 10.5 }) + measureGuidanceHeight(doc, guidance) + 14;
-      if (blockHeight <= PAGE_H - MARGIN * 2) y = ensureSpace(doc, y, blockHeight);
-      y = drawWrapped(doc, headingText, MARGIN, y, CONTENT_W, { fontSize: 10.5, style: "bold", color: COLOR_TEXT });
-      y += 3;
-      if (guidance) y = drawGuidance(doc, guidance, y);
-      y += 10;
-    });
+  // --- Verdict ---
+  w.section("Reading");
+  w.text(report.verdict.label, { fontSize: 18, style: "bold", color: report.verdict.key === "critical-gaps" ? COLOR_CRITICAL : COLOR_HEADING, lineHeight: 22 });
+  w.text(report.verdict.summary, { fontSize: 10, after: 6 });
+  const o = report.overall;
+  if (quick) {
+    w.text(`Screening results: ${o.counts.met} in place, ${o.counts.partial} partly in place, ${o.counts.gap} not in place, ${o.counts.unknown} not sure, ${o.counts["not-asked"]} not asked.`, { fontSize: 10, after: 4 });
   } else {
-    y = drawWrapped(doc, "No priority gaps identified - every assessed question scored at maximum coverage.", MARGIN, y, CONTENT_W, { fontSize: 10, color: COLOR_MUTED });
-    y += 10;
+    w.text(`Coverage: ${pct(o.coverage)} of the protection you told us about is in place (weighted by control importance).`, { fontSize: 10 });
+    w.text(`Completeness: ${o.known} of ${o.applicable} applicable questions have a definite answer${o.completeness !== null ? ` (${Math.round(o.completeness * 100)}%)` : ""}.`, { fontSize: 10, after: 4 });
   }
+  if (!quick) w.text("Coverage measures how much of what was asked is in place - it is not a compliance score, and 100% does not mean risk-free.", { fontSize: 8.5, style: "italic", color: COLOR_MUTED, after: 6 });
 
-  // --- Every gap (the full remediation backlog) ---
-  // Same grouping and order as the on-screen list: by area, then by overall
-  // risk rank. Compact - the five detailed write-ups are above.
-  const rankedGaps = ctx.rankedGaps || [];
-  if (rankedGaps.length) {
-    y = drawSectionHeading(doc, `Every Gap In This Assessment (${rankedGaps.length})`, y);
-    for (const fn of FUNCTIONS) {
-      const gaps = rankedGaps.filter((g) => g.fn === fn);
-      if (!gaps.length) continue;
-      y = ensureSpace(doc, y, LINE_H * 3);
-      y = drawWrapped(doc, `${FUNC_DISPLAY[fn]} - ${gaps.length} gap${gaps.length === 1 ? "" : "s"}`, MARGIN, y, CONTENT_W, { fontSize: 10.5, style: "bold", color: COLOR_HEADING });
-      y += 3;
-      for (const g of gaps) {
-        const fix = guidanceForGapItem(g, answers, false)?.remediation;
-        y = drawWrapped(doc, `${String(g.rank).padStart(2, "0")}. [${WEIGHT_LABELS[g.weight]}] ${g.gap}`, MARGIN + 10, y, CONTENT_W - 10, { fontSize: 9.5, style: "bold" });
-        y = drawWrapped(doc, `Your answer: "${g.chosen}"`, MARGIN + 24, y, CONTENT_W - 24, { fontSize: 9, color: COLOR_MUTED });
-        if (fix) y = drawWrapped(doc, `How to fix it: ${fix}`, MARGIN + 24, y, CONTENT_W - 24, { fontSize: 9 });
-        y += 5;
-      }
-      y += 6;
+  if (report.criticalGaps.length) {
+    w.section(`Critical gaps (${report.criticalGaps.length})`);
+    for (const c of report.criticalGaps) {
+      w.keep(w.height(c.reason, CONTENT_W - 14, 9.5) + LINE_H * 2);
+      w.text(`${c.area}: ${c.text}`, { fontSize: 10, style: "bold", color: COLOR_CRITICAL });
+      w.text(c.reason, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9.5, after: 6 });
     }
   }
+  if (report.verification.length) {
+    w.section("Critical controls to verify");
+    for (const v of report.verification) w.text(`${v.area}: ${v.text} - answered "Not sure"`, { fontSize: 9.5, after: 3 });
+  }
 
-  // --- AI-Enhanced Insights (only when the person actually requested them) ---
-  // A paid, opt-in API call - it shouldn't vanish the moment the tab closes.
-  // Clearly labeled AI-generated, same as on screen, and kept after the
-  // deterministic sections so it never reads as part of the rules engine.
-  const ai = ctx.aiInsights;
-  const aiRecency = Array.isArray(ai?.recency) ? ai.recency : [];
-  const aiLongTail = Array.isArray(ai?.longTail) ? ai.longTail : [];
-  const aiNarrative = typeof ai?.narrative === "string" ? ai.narrative.trim() : "";
-  if (aiRecency.length || aiLongTail.length || aiNarrative) {
-    y = drawSectionHeading(doc, "AI-Enhanced Insights (AI-generated)", y);
-    if (aiRecency.length) {
-      y = drawWrapped(doc, "Live vendor/product check", MARGIN, y, CONTENT_W, { fontSize: 10.5, style: "bold" });
-      y += 3;
-      for (const r of aiRecency) {
-        y = drawWrapped(doc, pdfSafe(`${r.vendorOrProduct} - ${r.finding} (${r.source}${r.url ? `: ${r.url}` : ""})`), MARGIN + 14, y, CONTENT_W - 14, { fontSize: 9.5 });
-        y += 5;
-      }
-      y += 6;
+  // --- Areas ---
+  w.section(quick ? "Results by area (screening counts)" : "Coverage by area");
+  for (const fn of FUNCTIONS) {
+    const a = report.areas.find((x) => x.fn === fn);
+    if (quick) w.text(`${FUNC_DISPLAY[fn]}: ${areaNote(a, true)}`, { fontSize: 9.5, after: 3 });
+    else w.bar(FUNC_DISPLAY[fn], a.coverage, FUNC_COLORS_RESOLVED[fn], areaNote(a, false));
+  }
+
+  // --- Action plan ---
+  const byId = new Map(report.actions.map((a) => [a.id, a]));
+  w.section(`Action plan (${report.actions.length} actions)`);
+  w.text("Ranked by risk. Each action lists why it ranks where it does, an interim step, the durable fix, a suggested owner, effort, a target timeframe and the evidence that shows it's done. Timeframes are suggestions, not deadlines.", { fontSize: 8.5, style: "italic", color: COLOR_MUTED, after: 8 });
+  if (!report.actions.length) w.text("No actions: every applicable control is in place.", { fontSize: 10, color: COLOR_MUTED });
+  for (const days of [30, 60, 90]) {
+    const ids = report.plan[days];
+    if (!ids.length) continue;
+    w.ensure(LINE_H * 6);
+    w.text(`Within ${days} days (${ids.length})`, { fontSize: 11.5, style: "bold", color: COLOR_HEADING, after: 4 });
+    for (const id of ids) {
+      const a = byId.get(id);
+      drawAction(w, a, { detailed: a.rank <= 5 });
     }
-    if (aiLongTail.length) {
-      y = drawWrapped(doc, "Beyond the rules engine", MARGIN, y, CONTENT_W, { fontSize: 10.5, style: "bold" });
-      y += 3;
-      for (const l of aiLongTail) {
-        y = drawWrapped(doc, pdfSafe(l.finding), MARGIN + 14, y, CONTENT_W - 14, { fontSize: 9.5, style: "bold" });
-        y = drawWrapped(doc, pdfSafe(l.why), MARGIN + 14, y, CONTENT_W - 14, { fontSize: 9.5 });
-        y += 5;
-      }
-      y += 6;
-    }
-    if (aiNarrative) {
-      y = drawWrapped(doc, "Synthesis", MARGIN, y, CONTENT_W, { fontSize: 10.5, style: "bold" });
-      y += 3;
-      y = drawWrapped(doc, pdfSafe(aiNarrative), MARGIN, y, CONTENT_W, { fontSize: 9.5 });
-      y += 6;
-    }
-    y = drawWrapped(doc, "Generated by an AI model from this report and live CISA KEV / NVD lookups - verify against current vendor advisories before acting.", MARGIN, y, CONTENT_W, {
-      fontSize: 8.5,
-      style: "italic",
-      color: COLOR_MUTED,
+  }
+
+  // --- Combined findings ---
+  if (report.flags.length) {
+    w.section(`Combined findings (${report.flags.length})`);
+    report.flags.forEach((f, i) => {
+      const g = f.guidance;
+      const parts = g ? [g.technique ? `MITRE ATT&CK: ${g.technique.id} - ${g.technique.name}` : "Program-level gap (no single ATT&CK technique)", `What could go wrong: ${g.explain}`, g.control ? `Interim step: ${g.control}` : null, g.remediation ? `How to fix it: ${g.remediation}` : null].filter(Boolean) : [];
+      const h = w.height(`${i + 1}. ${f.text}`, CONTENT_W, 10) + parts.reduce((s, p) => s + w.height(p, CONTENT_W - 14, 9) + 2, 0);
+      w.keep(h + 8);
+      w.text(`${i + 1}. ${f.text}`, { fontSize: 10, style: "bold", after: 2 });
+      for (const p of parts) w.text(p, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9, after: 2 });
+      w.y += 8;
     });
-    y += 14;
   }
 
-  // --- Footer / disclaimer ---
-  y = drawSectionHeading(doc, "About This Report", y);
-  y = drawWrapped(
-    doc,
-    "This report is produced by SimplifiedCS, a portfolio project - not affiliated with NIST, CIS, ISO, or CISA. The findings, flags, and priority list above are generated by a rules engine, illustrative pattern-matching based on your own answers - not a live vulnerability feed, a penetration test, or a certification audit. The AI-Enhanced Insights section, when present, is separately AI-generated. Treat this as a starting point for prioritizing real work, not a substitute for professional security or compliance advice.",
-    MARGIN,
-    y,
-    CONTENT_W,
+  if (report.contradictions.length) {
+    w.section("Answers worth double-checking");
+    for (const c of report.contradictions) w.text(`- ${c.text}`, { fontSize: 9.5, after: 4 });
+  }
+  if (report.informational.length) {
+    w.section("Context notes (not scored)");
+    for (const n of report.informational) w.text(`- ${n.text}`, { fontSize: 9.5, after: 4 });
+  }
+
+  if (report.frameworkRecs.length) {
+    w.section("Compliance considerations");
+    for (const r of report.frameworkRecs) {
+      w.keep(LINE_H * 4);
+      w.text(`${r.name} - ${r.summary}`, { fontSize: 10, style: "bold", after: 3 });
+      if (r.gaps.length) for (const g of r.gaps) w.text(`Gap: ${g.question} - answered "${g.chosen}" (see ${"A-" + g.id} in the action plan)`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9, after: 2 });
+      if (r.unknown.length) for (const g of r.unknown) w.text(`Not sure: ${g.question}`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9, after: 2 });
+      if (!r.gaps.length && !r.unknown.length) w.text(`No gaps in the ${r.name}-specific questions.`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9, color: COLOR_MUTED });
+      w.y += 8;
+    }
+    w.text("Pattern-based guidance from your own answers - not a certification audit or legal compliance determination.", { fontSize: 8.5, style: "italic", color: COLOR_MUTED, after: 6 });
+  }
+
+  if (report.vendorNotes.length) {
+    w.section("Vendor-specific notes");
+    for (const v of report.vendorNotes) w.text(`${v.vendor} - ${v.note}`, { fontSize: 9.5, after: 6 });
+    w.text("General guidance about named products, written in advance - not a live feed or a check of your versions. Confirm against the vendor's current advisories.", { fontSize: 8.5, style: "italic", color: COLOR_MUTED, after: 6 });
+  }
+
+  // --- AI insights, only when requested (or a sample) ---
+  if (aiInsights || aiError) drawAi(w, aiInsights, aiError, report);
+
+  // --- Snapshot ---
+  w.section("Environment snapshot (self-reported)");
+  for (const [k, v] of report.snapshot) {
+    const vh = w.height(String(v), CONTENT_W - 182, 9.5);
+    w.ensure(vh + 6);
+    w.style({ fontSize: 9, style: "bold", color: COLOR_MUTED });
+    doc.text(pdfSafe(k), MARGIN, w.y);
+    const top = w.y;
+    w.text(String(v), { x: MARGIN + 182, width: CONTENT_W - 182, fontSize: 9.5 });
+    w.y = Math.max(w.y, top + LINE_H) + 3;
+  }
+
+  // --- Limitations + about ---
+  w.section("Limitations and method");
+  for (const l of report.limitations) w.text(`- ${l}`, { fontSize: 9, after: 3 });
+  w.y += 4;
+  w.text(
+    `Methodology ${report.methodologyVersion}: each answer is graded in place / partly in place / not in place, or recorded as "Not sure" or not applicable (both excluded from coverage). Coverage weights critical controls 3x and high-impact controls 2x. Any critical gap sets the reading to "Critical gaps found" regardless of percentage. Full method: simplifiedcs.net/methodology.`,
+    { fontSize: 9, color: COLOR_MUTED, after: 6 }
+  );
+  w.text(
+    "SimplifiedCS is an independent educational project, not affiliated with NIST, CIS, CISA or MITRE. This report is a structured self-assessment from your own answers - not a penetration test, audit, certification or legal advice.",
     { fontSize: 9, color: COLOR_MUTED }
   );
 
-  // --- Page numbers, added last since the total page count isn't known until here ---
+  // --- Footer ---
   const pageCount = doc.internal.getNumberOfPages();
   for (let p = 1; p <= pageCount; p++) {
     doc.setPage(p);
-    setStyle(doc, { fontSize: 8, color: COLOR_MUTED });
-    doc.text(`SimplifiedCS Assessment Report`, MARGIN, PAGE_H - 24);
+    w.style({ fontSize: 8, color: COLOR_MUTED });
+    doc.text(`SimplifiedCS ${quick ? "Quick Screening" : "Assessment"} Report | Methodology ${report.methodologyVersion}`, MARGIN, PAGE_H - 24);
     doc.text(`Page ${p} of ${pageCount}`, PAGE_W - MARGIN, PAGE_H - 24, { align: "right" });
   }
 
-  const dateSlug = new Date().toISOString().slice(0, 10);
-  const filename = `SimplifiedCS-Assessment-${slugify(industryLabel)}-${dateSlug}.pdf`;
+  const slug = (report.context.industry || "General").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "General";
+  const filename = `SimplifiedCS-${quick ? "Screening" : "Assessment"}-${slug}-${report.generatedAt.slice(0, 10)}.pdf`;
   return { doc, filename };
 }
 
-// The actual button click-handler entry point - builds the doc, then
-// triggers the browser download.
-export function buildAssessmentPdf(ctx) {
-  const { doc, filename } = buildAssessmentPdfDoc(ctx);
+const SOURCE_STATUS_TEXT = {
+  "checked-no-match": "checked - no match",
+  "potential-match": "potential match",
+  "ambiguous-product": "product too ambiguous to check",
+  "source-unavailable": "source unavailable",
+  "not-checked-budget": "not checked (lookup limit)",
+  "not-applicable": "not applicable (managed service)",
+  "not-checked-example": "not checked (example report)",
+};
+
+function drawAi(w, ai, error, report) {
+  w.section("AI-enhanced insights (AI-generated)");
+  if (error) {
+    w.text(`AI insights were requested but not produced: ${error}. The rest of this report doesn't depend on them.`, { fontSize: 9.5, after: 6 });
+    return;
+  }
+  const stale = ai.snapshotId && report.snapshotId && ai.snapshotId !== report.snapshotId;
+  w.text(
+    `${ai.example ? "Illustrative example - no live lookup was run." : `Generated ${new Date(ai.generatedAt).toLocaleString("en-US")} by ${ai.model || "an AI model"} (prompt ${ai.promptVersion || "n/a"}).`}${stale ? " These insights were generated for an earlier version of this report." : ""} AI output can be wrong; every vulnerability item below cites the public record it came from.`,
+    { fontSize: 8.5, style: "italic", color: COLOR_MUTED, after: 6 }
+  );
+  if (ai.sourceStatus?.length) {
+    w.text("Products checked", { fontSize: 10.5, style: "bold", after: 2 });
+    for (const s of ai.sourceStatus) w.text(`${s.name} (${s.category}): CISA KEV - ${SOURCE_STATUS_TEXT[s.kev] || s.kev}; NVD - ${SOURCE_STATUS_TEXT[s.nvd] || s.nvd}`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9, after: 2 });
+    w.y += 6;
+  }
+  if (ai.advisories?.length) {
+    w.text("Vulnerability advisories", { fontSize: 10.5, style: "bold", after: 2 });
+    for (const a of ai.advisories) {
+      const ev = a.evidence.map((e) => `${e.cveId} (${e.source}${e.ransomware ? ", known ransomware use" : ""}) ${e.url}`).join("; ");
+      w.keep(LINE_H * 5);
+      w.text(`${a.productName} - ${a.applicability === "potential-match" ? "potential match" : a.applicability === "vendor-only" ? "vendor match only - product not confirmed" : "platform not indicated"}`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9.5, style: "bold" });
+      w.text(a.summary, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9 });
+      w.text(`Verify: ${a.verification}`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9 });
+      w.text(`Sources: ${ev}`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 8.5, color: COLOR_MUTED, after: 6 });
+    }
+  }
+  if (ai.patterns?.length) {
+    w.text("Patterns across your answers", { fontSize: 10.5, style: "bold", after: 2 });
+    for (const p of ai.patterns) {
+      w.keep(LINE_H * 4);
+      w.text(p.finding, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9.5, style: "bold" });
+      w.text(p.why, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9, after: 5 });
+    }
+  }
+  if (ai.narrative) {
+    w.text("Summary", { fontSize: 10.5, style: "bold", after: 2 });
+    w.text(ai.narrative, { fontSize: 9.5, after: 6 });
+  }
+  for (const l of ai.limitations || []) w.text(`- ${l}`, { fontSize: 8.5, color: COLOR_MUTED, after: 2 });
+}
+
+// The button's click handler - builds the document, then downloads it.
+export function buildAssessmentPdf(report, opts) {
+  const { doc, filename } = buildAssessmentPdfDoc(report, opts);
   doc.save(filename);
 }

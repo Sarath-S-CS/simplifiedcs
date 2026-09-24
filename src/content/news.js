@@ -1,0 +1,43 @@
+// Fallback news items shown when the live feed is unavailable.
+// Moved out of src/main.js unchanged (content only; rendering stays there).
+
+// Curated snapshot, written in original wording from public reporting - see the
+// freshness note rendered in the News tab for how this would be kept live in production.
+export const NEWS_ITEMS = [
+  { date:'2026-08-01', cat:'vuln', catLabel:'Vulnerability',
+    headline:'Chained SharePoint flaws enable full unauthenticated RCE',
+    body:'Two vulnerabilities disclosed across Microsoft\'s June and July 2026 patches - an authentication bypass and a deserialization flaw - can be chained for unauthenticated remote code execution against on-prem SharePoint. Weeks after fixes shipped, researchers still found thousands of exposed servers unpatched.',
+    source:'SecurityWeek / Rapid7' },
+  { date:'2026-07-28', cat:'vuln', catLabel:'Vulnerability',
+    headline:'Fastjson RCE exploited under default configuration',
+    body:'A critical, actively-exploited flaw in the widely used Fastjson Java library allows unauthenticated remote code execution with no special configuration required, affecting deployments still on the unsupported 1.x branch.',
+    source:'SecurityWeek' },
+  { date:'2026-07-26', cat:'vuln', catLabel:'Vulnerability',
+    headline:'Critical Rails flaw forces early public disclosure',
+    body:'A flaw in Ruby on Rails\' Active Storage component allowed unauthenticated file reads capable of exposing an application\'s master cryptographic key. Public proof-of-concept exploits appeared so quickly that maintainers published full details and forensic tooling ahead of schedule.',
+    source:'BleepingComputer / Akamai' },
+  { date:'2026-06-25', cat:'ot', catLabel:'OT / Industrial',
+    headline:'Actively-exploited PLM platform flaw added to CISA\'s KEV catalog',
+    body:'An unauthenticated RCE vulnerability in PTC Windchill and FlexPLM - platforms widely used in engineering and manufacturing - is being actively exploited to plant web shells and gain footholds inside industrial and supply-chain environments. A reminder that OT-adjacent platforms, not just classic ICS/SCADA gear, are squarely in scope for real attacks.',
+    source:'CISA KEV / Field Effect' },
+  { date:'2026-06-11', cat:'ai', catLabel:'AI & Security',
+    headline:'Agentic AI now rated the #1 cybersecurity concern for 2026',
+    body:'A Dark Reading readership poll found 48% of security professionals now rank agentic AI and autonomous systems as the top attack vector for the year, ahead of ransomware and deepfakes. Separate research found most organizations that deployed AI agents had already had a related security incident - most often tied to over-permissioned agent credentials or prompt injection.',
+    source:'Dark Reading / Darktrace State of AI Cybersecurity 2026' },
+  { date:'2026-06-05', cat:'ai', catLabel:'AI & Security',
+    headline:'Anthropic discloses a large-scale, AI-orchestrated espionage campaign',
+    body:'Anthropic reported detecting and disrupting a campaign in which a threat actor used Claude Code to automate significant portions of an attack against roughly 30 organizations - a concrete, disclosed example of the "AI agent as attacker" pattern security teams have been warning about.',
+    source:'Anthropic disclosure' },
+  { date:'2026-07-30', cat:'ai', catLabel:'AI & Security',
+    headline:'Microsoft unveils multi-agent "Project Perception" for security operations',
+    body:'Rather than a single AI assistant, Microsoft\'s new platform coordinates specialized Red Team, Blue Team, and Green Team AI agents that collaborate to discover vulnerabilities, investigate threats, validate defenses, and recommend remediation - a real-world example of the same multi-agent pattern behind this site\'s own synthesis design.',
+    source:'Microsoft / industry coverage' },
+  { date:'2026-03-09', cat:'landscape', catLabel:'Threat Landscape',
+    headline:'Supply-chain attacks and public-facing app exploits both surge',
+    body:'IBM\'s X-Force team recorded a 44% year-over-year rise in exploitation of public-facing applications, and found major supply-chain and third-party breaches have quadrupled over five years. Incidents like the Salesloft/Drift OAuth token compromise show how one trusted-vendor breach cascades into many downstream customer environments.',
+    source:'IBM X-Force Threat Intelligence Index 2026' },
+  { date:'2026-03-23', cat:'landscape', catLabel:'Threat Landscape',
+    headline:'Breach costs diverge sharply by region',
+    body:'Global average breach costs fell to $4.44M in IBM\'s latest Cost of a Data Breach report, credited to wider AI/automation adoption in detection and containment - but U.S. breach costs bucked the trend, rising 9% to $10.22M, the highest of any region measured.',
+    source:'IBM Cost of a Data Breach Report' },
+];

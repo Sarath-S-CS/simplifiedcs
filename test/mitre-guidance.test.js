@@ -3,60 +3,34 @@ import assert from "node:assert/strict";
 import { createSessionState } from "../src/engine/state.js";
 import { computeFlags } from "../src/engine/scoring.js";
 import { NIST_QUESTIONS } from "../src/data/nist-questions.js";
+import { PROFILE_CONTROLS } from "../src/data/controls.js";
+import { runScenario, WEAK_ANSWERS } from "./helpers/scenarios.js";
 import { FLAG_GUIDANCE, QUESTION_GUIDANCE, guidanceForFlag, guidanceForGapItem } from "../src/engine/mitre-guidance.js";
 
-// Fires every computeFlags() combination except training-no-phishing-sim,
-// which needs training !== 0 and so directly conflicts with the
-// no-training-partial-mfa / no-email-auth-no-training flags below.
+// Three realistic walks through the real flows that, between them, fire
+// every combined finding: the shared weak scenario, the "outsourced with no
+// formal arrangement" branch, and training without phishing simulations.
 function stateWithMostFlags() {
-  const state = createSessionState();
-  Object.assign(state.answers, {
-    mfa: 0,
-    vendorCount: 0,
-    siem: 0,
-    irPlan: 0,
-    backupTest: 0,
-    endpoint: 0,
-    training: 0,
-    govRiskDecisions: 0,
-    govPolicy: 0,
-    externalWebsite: "Yes",
-    webDb: "Yes",
-    dbEncryption: 0,
-    dbAccessControl: 0,
-    teamDedicated: "IT services outsourced with no internal IT team",
-    outsourcedStructure: "No formal outsourced arrangement - handled ad hoc",
-    deployModel: "Cloud-only",
-    rdpExposed: 0,
-    emailAuth: 0,
-    hasOT: "Yes",
-    otSegregation: "No - flat/shared network",
-    otRemoteAccess: "Yes, but not via a dedicated secure gateway",
-    developsSoftware: "Yes",
-    devsecopsMaturity: "No formal practice - security reviewed late, if at all",
-    secretsManagement: "Hardcoded or stored in plain config files",
-    usesContainers: "Yes, most/all workloads",
-    containerImageScanning: "No",
-    aiCustomAppRAG: "Yes",
-    aiRagPermissions: 0,
-    aiRiskOwnership: 0,
-  });
-  return state;
+  return runScenario(WEAK_ANSWERS, { scope: { industry: "manufacturing" } });
 }
 
 function stateWithPhishingSimFlag() {
-  const state = createSessionState();
-  Object.assign(state.answers, { training: 2, phishingSim: 0 });
-  return state;
+  return runScenario({ ...WEAK_ANSWERS, training: 2, trainingCadence: 2, phishingSim: 0 }, { scope: { industry: "manufacturing" } });
+}
+
+function stateOutsourcedAdHoc() {
+  const answers = { ...WEAK_ANSWERS, teamDedicated: "IT services outsourced with no internal IT team", outsourcedStructure: "No formal outsourced arrangement - handled ad hoc", socOwnership: "Fully third-party" };
+  return runScenario(answers, { scope: { industry: "manufacturing" } });
+}
+
+function allFired() {
+  return new Set([stateWithMostFlags(), stateWithPhishingSimFlag(), stateOutsourcedAdHoc()].flatMap((s) => computeFlags(s).map((f) => f.id)));
 }
 
 test("every flag id computeFlags() can produce has a FLAG_GUIDANCE entry", () => {
-  const idsA = computeFlags(stateWithMostFlags()).map((f) => f.id);
-  const idsB = computeFlags(stateWithPhishingSimFlag()).map((f) => f.id);
-  const fired = new Set([...idsA, ...idsB]);
-
-  // Sanity: this test's two states are expected to exercise all 18 flags.
-  assert.equal(fired.size, 18, `expected 18 distinct flags to fire, got ${fired.size}: ${[...fired].join(", ")}`);
+  const fired = allFired();
+  // Sanity: these states are expected to exercise all 22 combined findings.
+  assert.equal(fired.size, 22, `expected 22 distinct flags to fire, got ${fired.size}: ${[...fired].join(", ")}`);
 
   for (const id of fired) {
     assert.ok(Object.prototype.hasOwnProperty.call(FLAG_GUIDANCE, id), `no FLAG_GUIDANCE entry for fired flag "${id}"`);
@@ -64,9 +38,7 @@ test("every flag id computeFlags() can produce has a FLAG_GUIDANCE entry", () =>
 });
 
 test("FLAG_GUIDANCE has no stale entries beyond what computeFlags() can produce", () => {
-  const idsA = computeFlags(stateWithMostFlags()).map((f) => f.id);
-  const idsB = computeFlags(stateWithPhishingSimFlag()).map((f) => f.id);
-  const fired = new Set([...idsA, ...idsB]);
+  const fired = allFired();
   for (const id of Object.keys(FLAG_GUIDANCE)) {
     assert.ok(fired.has(id), `FLAG_GUIDANCE has an entry "${id}" that no computeFlags() condition produces`);
   }
@@ -101,11 +73,18 @@ test("guidanceForFlag returns null for an id with no mapping", () => {
   assert.equal(guidanceForFlag({ id: "not-a-real-flag" }, {}), null);
 });
 
-test("every QUESTION_GUIDANCE key is a real NIST question id", () => {
-  const knownIds = new Set(NIST_QUESTIONS.map((q) => q.id));
+test("every QUESTION_GUIDANCE key is a real scored question or setup-screen control", () => {
+  const knownIds = new Set([...NIST_QUESTIONS.map((q) => q.id), ...Object.keys(PROFILE_CONTROLS)]);
   for (const id of Object.keys(QUESTION_GUIDANCE)) {
     assert.ok(knownIds.has(id), `QUESTION_GUIDANCE has an entry "${id}" that doesn't match any NIST_QUESTIONS id`);
   }
+});
+
+test("'Not sure' never produces 'you do have some X' compensating text", () => {
+  const unsure = guidanceForFlag({ id: "mfa-vendor-exposure" }, { siem: "unknown" });
+  const none = guidanceForFlag({ id: "mfa-vendor-exposure" }, { siem: 0 });
+  assert.equal(unsure.control, none.control);
+  assert.doesNotMatch(unsure.control, /You do have some centralized logging/);
 });
 
 test("guidanceForGapItem returns a usable panel for a mapped question, both branches of its compensating control", () => {

@@ -11,13 +11,11 @@
 // aiVerificationStep, aiRiskOwnership - live as real NIST_QUESTIONS
 // entries in nist-questions.js instead, so they carry real scoring
 // weight, MITRE mapping, and gap/priority visibility the way every other
-// scored question does. A profile-only node can't do that: computeGapItems()
-// requires q.options entries shaped {v,t}, which profile-style plain-string
-// options don't have.
+// scored question does, including a "Not sure" option.
 //
 // aiToolGovernance already exists in nist-questions.js's Govern section
-// (asked unconditionally, "Are AI tools used... is usage tracked and
-// governed?") and already covers both of the brief's two "general
+// (asked unless AI use was ruled out, "Is the use of AI tools tracked and
+// governed?") and covers both of the brief's two "general
 // questions" (a written policy, and visibility into unsanctioned tool use)
 // in one blended 0/1/2 scale - so those two aren't duplicated here. §5.10's
 // own principle ("detect real duplicates, don't re-prompt") argues against

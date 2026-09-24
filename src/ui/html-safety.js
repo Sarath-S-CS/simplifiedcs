@@ -8,6 +8,7 @@
 // links always pass through safeHttpUrl(). Static, hand-written content in
 // src/ (NEWS_ITEMS, CASE_STUDIES, ...) is plain text too, so escaping it
 // alongside the live rows is harmless - "&" still renders as "&".
+import DOMPurify from "dompurify";
 
 export function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -32,30 +33,42 @@ export function safeHttpUrl(url) {
 
 // exploit_items.safe_guidance is the one live field that legitimately
 // carries markup: fetch-exploits turns CISA's "(see URL in Notes)"
-// placeholders into real <a> links. Rather than trusting that markup as-is,
-// re-build it from a parse: text nodes are escaped, <a> elements keep only
-// a validated http(s) href (and get this site's standard target/rel), and
-// every other element is dropped while keeping its text. Parsing happens in
-// an inert <template>, so nothing in the input can run or load while it's
-// being inspected.
-export function sanitizeLinksOnlyHtml(html) {
-  const tpl = document.createElement("template");
-  tpl.innerHTML = String(html ?? "");
-  const out = [];
-  const walk = (parent) => {
-    for (const node of parent.childNodes) {
-      if (node.nodeType === 3) {
-        out.push(escapeHtml(node.nodeValue));
-      } else if (node.nodeType === 1) {
-        const tag = node.tagName.toUpperCase();
-        if (tag === "SCRIPT" || tag === "STYLE" || tag === "TEMPLATE") continue;
-        const href = tag === "A" ? safeHttpUrl(node.getAttribute("href")) : null;
-        if (href) out.push(`<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">`);
-        walk(node);
-        if (href) out.push("</a>");
+// placeholders into real <a> links. That markup is never trusted as-is - it
+// goes through DOMPurify (a maintained sanitizer) restricted to exactly what
+// the field needs: <a> elements with an http(s) href. Every other element is
+// removed (its text kept), every other attribute dropped, and surviving
+// links get this site's standard target/rel.
+let purifier = null;
+function guidancePurifier() {
+  if (purifier) return purifier;
+  // Bound to whichever window exists at first use (the page, or jsdom in the
+  // Node tests), so importing this module never requires a DOM.
+  purifier = DOMPurify(globalThis.window);
+  purifier.addHook("afterSanitizeAttributes", (node) => {
+    if (node.tagName === "A") {
+      const href = safeHttpUrl(node.getAttribute("href"));
+      if (!href) {
+        node.removeAttribute("href");
+        return;
       }
+      node.setAttribute("href", href);
+      node.setAttribute("target", "_blank");
+      node.setAttribute("rel", "noopener noreferrer");
     }
-  };
-  walk(tpl.content);
-  return out.join("");
+  });
+  return purifier;
+}
+
+const GUIDANCE_CONFIG = {
+  ALLOWED_TAGS: ["a"],
+  ALLOWED_ATTR: ["href"],
+  ALLOWED_URI_REGEXP: /^https?:\/\//i,
+  KEEP_CONTENT: true,
+};
+
+export function sanitizeGuidanceHtml(html) {
+  const clean = guidancePurifier().sanitize(String(html ?? ""), GUIDANCE_CONFIG);
+  // A link whose href was rejected has no destination - unwrap it to text
+  // rather than leave a dead, clickable-looking anchor.
+  return clean.replace(/<a>([\s\S]*?)<\/a>/g, "$1");
 }

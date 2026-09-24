@@ -24,7 +24,9 @@
 // compensatingControl are the "deeper layering" §7 explicitly trades away
 // for Quick's shorter runtime, not a data-availability limitation.
 import { NIST_QUESTIONS } from "../data/nist-questions.js";
+import { FINDING_ITEMS } from "../data/controls.js";
 import { owaspForFlag, owaspForQuestion } from "./owasp-guidance.js";
+import { hasSome } from "./answers.js";
 
 function t(id, name) {
   return { id, name };
@@ -33,12 +35,16 @@ function ref(label, url) {
   return { label, url };
 }
 
+// Compensating-control text branches on other answers ("you do have some
+// logging, so..."). hasSome() is true only for a definite partial or full
+// answer - "Not sure" must never produce "you do have X".
+//
 // Generic traceability for any single NIST question - "you indicated X for
-// Y" - built directly from computeGapItems()'s own `gap`/`chosen` fields
+// Y" - built directly from a finding's own `question`/`chosen` fields
 // (or, for framework gaps, framework-guidance.js's identical shape), so no
 // per-question traceability text needs hand-authoring at all.
 function questionTraceability(item) {
-  return `You indicated "${item.chosen}" for: "${item.gap || item.question}"`;
+  return `You indicated "${item.chosen}" for: "${item.question || item.gap}"`;
 }
 
 // Small helper for flags spanning a NIST-scored question specifically -
@@ -55,11 +61,11 @@ function chosenLabel(id, answers) {
 export const FLAG_GUIDANCE = {
   "mfa-vendor-exposure": {
     technique: t("T1078", "Valid Accounts"),
-    traceability: (a) => `You indicated MFA enforcement is "${chosenLabel("mfa", a)}" and reported "${chosenLabel("vendorCount", a)}" for third-party vendor access.`,
+    traceability: (a) => `You indicated MFA enforcement is "${chosenLabel("mfa", a)}" and third-party access reviews are "${chosenLabel("vendorAccessReview", a)}".`,
     explain:
       "Once a vendor credential leaks (in a breach that has nothing to do with you), this is the technique that turns it into access: the attacker just logs in as a legitimate user. MFA is the control that specifically stops a leaked password alone from being enough.",
     compensatingControl: (a) =>
-      a.siem !== 0
+      hasSome(a.siem)
         ? "You do have some centralized logging in place - until MFA is rolled out everywhere, add alerting specifically on vendor and service-account logins from new locations or at unusual times, since that's the exact path this gap leaves open."
         : "Start the MFA rollout with vendor-facing and admin accounts specifically, not devices - that's the smallest set of accounts that closes the largest share of this exposure. In parallel, ask your highest-risk vendors for written confirmation of their own access controls until yours are in place.",
     remediation: () =>
@@ -105,12 +111,12 @@ export const FLAG_GUIDANCE = {
   },
   "no-vendor-risk-review": {
     technique: t("T1195", "Supply Chain Compromise"),
-    traceability: (a) => `You indicated cybersecurity risk in vendor decisions is "${chosenLabel("govRiskDecisions", a)}" and reported "${chosenLabel("vendorCount", a)}" for third-party vendor access.`,
+    traceability: (a) => `You indicated cybersecurity risk in vendor decisions is "${chosenLabel("govRiskDecisions", a)}" and third-party access reviews are "${chosenLabel("vendorAccessReview", a)}".`,
     explain:
       "This is risk entering through a trusted third party rather than a direct attack on you - a compromised vendor becomes a way in. It's why unreviewed vendor relationships are treated as a real attack surface, not just a procurement detail.",
     compensatingControl: (a) =>
-      a.assetInv !== 0
-        ? "You have at least a partial asset inventory - use it now to identify which of your 6+ vendors actually touch your most sensitive systems or data, and review just those manually as an interim step before a formal process exists for all of them."
+      hasSome(a.assetInv)
+        ? "You have at least a partial asset inventory - use it now to identify which of your vendors actually touch your most sensitive systems or data, and review just those manually as an interim step before a formal process exists for all of them."
         : "Start with a short list: which vendors have access to your most sensitive systems or data, not all of them. Reviewing that short list manually this month is a realistic interim step; a formal process for every vendor is not.",
     remediation: () =>
       "Require a short security questionnaire before any new vendor gets system or data access, and retroactively review your highest-access existing vendors against the same questions this quarter.",
@@ -134,7 +140,7 @@ export const FLAG_GUIDANCE = {
     explain:
       "A public web app connected to a database is a direct target for this technique - things like SQL injection against the app itself. Centralized logging and outbound-traffic monitoring are what typically catch the follow-on data exfiltration; without them, a successful exploit can run for a long time before anyone notices.",
     compensatingControl: (a) =>
-      a.vulnScanning !== 0
+      hasSome(a.vulnScanning)
         ? "Regular vulnerability scanning helps catch some exploitable issues before they're used, but it doesn't replace monitoring for exfiltration after the fact. As an immediate step, turn on your hosting or cloud provider's built-in access/traffic logging - most include this at no extra cost, and it beats having no visibility at all."
         : "As an immediate step, turn on your hosting or cloud provider's built-in access and traffic logging - most platforms include this by default at no extra cost. It's not a substitute for a real monitoring program, but it's meaningfully better than the current no-visibility state.",
     remediation: () =>
@@ -158,7 +164,7 @@ export const FLAG_GUIDANCE = {
     explain:
       "This is exactly what this technique targets - pulling sensitive content out of an information repository like SharePoint or a document store. A RAG system that doesn't enforce the same permissions as its source documents effectively hands that access to anyone who can query it, not just people who'd normally be allowed to see that content - and with no named AI-risk owner, nobody is specifically positioned to notice.",
     compensatingControl: (a) =>
-      a.aiCodeReviewParity !== 0
+      hasSome(a.aiCodeReviewParity)
         ? "AI-generated output does get at least some review, which is a related but separate control - as an immediate step, audit exactly which documents the retrieval system can currently reach and restrict its service account to a narrower, explicitly-approved set while permission-aware retrieval gets built."
         : "As an immediate step, audit exactly which documents the retrieval system's service account can currently reach and restrict it to a narrower, explicitly-approved set - that bounds the exposure today, even before permission-aware retrieval is fully built.",
     remediation: () =>
@@ -205,7 +211,7 @@ export const FLAG_GUIDANCE = {
     explain:
       "Without SPF/DKIM/DMARC enforced, attackers can send email that appears to come from your own domain - to your employees, or to your customers and partners. Without training, the people receiving it are less equipped to catch what technical filtering alone won't.",
     compensatingControl: (a) =>
-      a.phishingSim !== 0
+      hasSome(a.phishingSim)
         ? "Simulated phishing tests are already happening, which helps build detection reflexes even without formal training - as a fast, low-disruption interim step, move DMARC from monitoring to quarantine (not straight to reject) to start blocking spoofed mail without risking legitimate mail getting dropped."
         : "As a fast, low-disruption interim step, set DMARC to quarantine (not reject yet) - it starts filtering spoofed mail claiming to be from your domain without the risk of legitimate mail bouncing while you're still tuning it.",
     remediation: () =>
@@ -266,6 +272,48 @@ export const FLAG_GUIDANCE = {
         : "Run a one-time manual scan against your existing images now (free tools like Trivy exist for exactly this) - it won't replace ongoing automated scanning, but it tells you today whether anything currently running has a known, already-fixed vulnerability.",
     remediation: () =>
       "Add automated image scanning to your build pipeline (Trivy, Grype, or your registry's built-in scanner - most are free and open-source) so every image is scanned before deployment, not just checked once manually.",
+  },
+  "flat-network-backups-exposed": {
+    technique: t("T1490", "Inhibit System Recovery"),
+    traceability: (a) => `You indicated your network architecture is "${a.networkArch}" and backups are isolated (offline or immutable): "${chosenLabel("backupIsolation", a)}".`,
+    explain:
+      "Ransomware operators deliberately look for backups and delete or encrypt them before triggering encryption, so there is nothing to restore from. On a flat network, the machine they land on can usually reach the backup system directly.",
+    compensatingControl: () =>
+      "This week, copy the most recent full backup to storage that is disconnected afterwards (or to a provider's immutable/object-lock storage), and restrict which accounts can reach the backup system at all.",
+    remediation: () =>
+      "Keep at least one backup copy offline or immutable (the 3-2-1 approach), and move backup infrastructure into its own network zone with access only from the backup service and named administrators.",
+    reference: ref("CISA: StopRansomware", "https://www.cisa.gov/stopransomware"),
+  },
+  "deepfake-no-verification": {
+    technique: t("T1566.004", "Phishing: Spearphishing Voice"),
+    traceability: (a) => `You indicated training on AI-generated phishing and impersonation is "${chosenLabel("aiDeepfakeTraining", a)}" and out-of-band verification for sensitive requests is "${chosenLabel("aiVerificationStep", a)}".`,
+    explain:
+      "Attackers impersonate executives, suppliers or IT staff - increasingly with AI-generated voice, video or writing - to get payments redirected or access granted. Without a verification step that doesn't rely on the same channel, the only defence is someone noticing the fake.",
+    compensatingControl: () =>
+      "Tell finance and anyone who can change payment details today: any request to change bank details or make an urgent payment is confirmed by calling back a number already on file, never one given in the request.",
+    remediation: () =>
+      "Make call-back (or in-person) verification mandatory and documented for payment changes and other sensitive requests, and add AI-generated phishing and voice/video impersonation to awareness training.",
+  },
+  "exposed-devices-no-scanning": {
+    technique: t("T1190", "Exploit Public-Facing Application"),
+    traceability: (a) => `You indicated you have external-facing devices ("${a.externalDevices}") and vulnerability scanning is "${chosenLabel("vulnScanning", a)}".`,
+    explain:
+      "VPN gateways, firewalls and remote-access appliances are among the most exploited systems, because a single flaw gives direct access from the internet. Without scanning, a newly disclosed flaw on one of them can go unnoticed until it is used.",
+    compensatingControl: () =>
+      "Subscribe to your edge-device vendor's security advisories and check each device's firmware version against them this week; many vendors also offer free notification lists.",
+    remediation: () =>
+      "Run authenticated vulnerability scans of internet-facing systems on a schedule (at least monthly, and after major advisories), and patch edge devices first when a flaw is known to be exploited.",
+    reference: ref("CISA Known Exploited Vulnerabilities Catalog", "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"),
+  },
+  "shared-admin-no-separation": {
+    technique: t("T1078", "Valid Accounts"),
+    traceability: (a) => `You indicated privileged accounts are managed as "${chosenLabel("privAccountMgmt", a)}" and admin accounts are separate from everyday accounts: "${chosenLabel("privSeparation", a)}".`,
+    explain:
+      "If administrators read email and browse with the same account that has admin rights, one malicious attachment runs with full privileges. Shared admin credentials make it impossible to revoke one person's access or tell who made a change.",
+    compensatingControl: () =>
+      "Rotate any shared admin passwords now and limit who knows them; as a first step, give each administrator a separate admin account for admin work only.",
+    remediation: () =>
+      "Give every administrator an individually assigned admin account used only for admin tasks, review privileged accounts regularly, and rotate or retire long-standing credentials.",
   },
 };
 
@@ -352,11 +400,11 @@ export const QUESTION_GUIDANCE = {
     compensatingControl: () => "Identify just your single most sensitive data category (e.g. customer PII, financial records) and apply extra access restriction to it now.",
     remediation: () => "Define a simple 3-4 tier classification scheme (e.g. public/internal/confidential/restricted) and label major data stores/systems accordingly.",
   },
-  vendorCount: {
-    technique: t("T1195", "Supply Chain Compromise"),
-    explain: "Unreviewed third-party access is a way for risk to enter through a trusted vendor rather than a direct attack on you.",
+  vendorAccessReview: {
+    technique: t("T1199", "Trusted Relationship"),
+    explain: "Third parties with access to your systems or data are a way in that doesn't require attacking you directly - a compromised IT provider or SaaS vendor account is used as a trusted path into your environment.",
     compensatingControl: (a) =>
-      a.assetInv !== 0
+      hasSome(a.assetInv)
         ? "Use your existing asset inventory to identify which vendors touch your most sensitive systems or data, and review just that short list manually as an interim step."
         : "Start with a short list - which vendors have access to your most sensitive systems or data, not all of them - and review just those manually as a realistic interim step.",
     remediation: () => "Build a vendor inventory recording what each vendor can access, and require a lightweight security review before granting any new vendor access going forward.",
@@ -396,7 +444,7 @@ export const QUESTION_GUIDANCE = {
     technique: t("T1190", "Exploit Public-Facing Application"),
     explain: "Unpatched software is what turns an already-known, already-fixed vulnerability into a working exploit - attackers routinely scan for exactly this rather than looking for something novel.",
     compensatingControl: (a) =>
-      a.vulnScanning !== 0
+      hasSome(a.vulnScanning)
         ? "Vulnerability scanning is happening at least occasionally, which helps surface what's missing - use that output to prioritize patching your internet-facing systems first, ahead of everything else."
         : "Prioritize patching internet-facing systems first, on whatever manual cadence is realistic right now - that's the subset actually reachable by an opportunistic scan.",
     remediation: () => "Automate patch deployment with a defined SLA (e.g. critical patches within 72 hours, everything else within 30 days) rather than ad hoc manual patching.",
@@ -456,7 +504,7 @@ export const QUESTION_GUIDANCE = {
     technique: t("T1566", "Phishing"),
     explain: "Without SPF/DKIM/DMARC enforced, attackers can send mail that appears to come from your own domain, to your own employees, customers, or partners.",
     compensatingControl: (a) =>
-      a.phishingSim !== 0
+      hasSome(a.phishingSim)
         ? "Simulated phishing tests are already running, which helps independent of this gap - as a fast interim step, move DMARC to quarantine (not reject yet) to start filtering spoofed mail without risking legitimate mail bouncing."
         : "As a fast interim step, move DMARC to quarantine (not reject yet) - it filters spoofed mail without the risk of legitimate mail bouncing while it's tuned.",
     remediation: () => "Publish SPF and DKIM records and move DMARC to full enforcement (reject) once you've confirmed legitimate mail flows aren't affected during a quarantine period.",
@@ -486,7 +534,7 @@ export const QUESTION_GUIDANCE = {
     technique: t("T1110", "Brute Force"),
     explain: "Weak or default password requirements make automated password-guessing and credential-stuffing attacks meaningfully more likely to succeed.",
     compensatingControl: (a) =>
-      a.mfa !== 0
+      hasSome(a.mfa)
         ? "MFA is at least partially enforced, which limits what a guessed password alone can do - as an interim step, set a minimum length requirement (length matters more than complexity rules) even before a full policy is formalized."
         : "As an interim step, set a minimum length requirement organization-wide (length matters more than complexity rules) - it's a five-minute setting change, not a program.",
     remediation: () => "Adopt a length-focused password policy (12+ characters, no forced periodic rotation, which NIST no longer recommends since it drives weaker password reuse patterns) and pair it with MFA.",
@@ -505,7 +553,7 @@ export const QUESTION_GUIDANCE = {
     technique: t("T1078", "Valid Accounts"),
     explain: "An account left active after someone leaves is a fully legitimate-looking login that nobody is watching - one of the most common, least sophisticated ways attackers (including former employees) get in.",
     compensatingControl: (a) =>
-      a.siem !== 0
+      hasSome(a.siem)
         ? "Centralized logging is in place - use it to set an alert specifically for logins from accounts belonging to recently departed staff as an interim measure until offboarding is fully automated."
         : "As an interim step, add \"revoke all access\" as the literal first line item on whatever offboarding checklist (formal or not) currently exists, and assign it to a specific person by name.",
     remediation: () => "Automate access revocation tied to HR's own termination workflow (most identity providers support this integration) so it doesn't depend on someone remembering a manual step.",
@@ -603,7 +651,7 @@ export const QUESTION_GUIDANCE = {
     technique: t("T1041", "Exfiltration Over C2 Channel"),
     explain: "Without monitoring for unusual outbound traffic, this is how a breach goes from \"contained\" to \"data actually left the building\" without anyone noticing at the time.",
     compensatingControl: (a) =>
-      a.siem !== 0
+      hasSome(a.siem)
         ? "Centralized logging exists - as an interim step, add a basic alert for large or unusual outbound data transfers using what's already being collected, rather than waiting on a dedicated exfiltration-monitoring tool."
         : "As an interim step, check whether your firewall, hosting provider, or cloud platform already logs outbound traffic volume by default - many do, and enabling an alert on unusually large transfers is often a configuration change, not a new purchase.",
     remediation: () => "Enable outbound traffic monitoring with alerting on unusually large or unusual-destination transfers - most modern firewalls and cloud platforms support this as a built-in feature.",
@@ -688,6 +736,74 @@ export const QUESTION_GUIDANCE = {
     compensatingControl: () => "As an interim step, list your top 3-5 business-critical systems and their rough acceptable downtime, even before a full BCDR plan exists.",
     remediation: () => "Document a business continuity/disaster recovery plan defining recovery priorities, targets (RTO/RPO), and alternate processes, and test it periodically.",
   },
+  // ---------------- Setup-screen controls (scored since methodology 2.0) ----------------
+  networkArch: {
+    technique: t("T1021", "Remote Services"),
+    explain: "On a flat network, anything an attacker compromises can talk to everything else, so one infected laptop can reach servers, backups and admin systems using ordinary remote-access protocols.",
+    compensatingControl: () => "Start by separating the few things that matter most - backups, admin systems and servers holding sensitive data - into their own network zone with restricted access.",
+    remediation: () => "Segment the network into zones (users, servers, management, guests, and any internet-facing systems) and allow only the traffic each zone needs.",
+  },
+  devsecopsMaturity: {
+    technique: t("T1195.001", "Compromise Software Dependencies and Development Tools"),
+    explain: "Without automated security checks in the delivery pipeline, vulnerable dependencies and insecure code reach production unless someone happens to notice them in review.",
+    compensatingControl: () => "Turn on the free dependency and code scanning your code host already offers (for example GitHub Dependabot and code scanning) and review its findings, even before making it a required gate.",
+    remediation: () => "Make dependency scanning and static analysis required checks in CI/CD, so builds with serious findings fail instead of shipping.",
+  },
+  secretsManagement: {
+    technique: t("T1552.001", "Unsecured Credentials: Credentials In Files"),
+    explain: "Secrets in code or config files are readable by anyone with access to the repository, a build log or an artifact - and they stay valid long after they are forgotten.",
+    compensatingControl: () => "Rotate any credential that has ever been committed to a repository, and turn on secret scanning so new ones are caught.",
+    remediation: () => "Move application secrets into a secrets manager (cloud providers include one), load them at runtime, and block commits that contain secrets.",
+  },
+  containerImageScanning: {
+    technique: t("T1190", "Exploit Public-Facing Application"),
+    explain: "An unscanned image can ship software with known, already-fixed vulnerabilities; if the container is reachable from the internet, that is a ready-made way in.",
+    compensatingControl: () => "Run a one-off scan of the images currently in production (free tools such as Trivy do this) and rebuild anything with critical findings.",
+    remediation: () => "Scan every image automatically in the build pipeline or registry, and block deployment of images with critical, fixable vulnerabilities.",
+  },
+  containerHostSecurity: {
+    technique: t("T1611", "Escape to Host"),
+    explain: "Containers share the host's kernel. A weakly configured or unpatched host makes it easier for a compromised container to break out and reach everything else on that host.",
+    compensatingControl: () => "Patch container hosts now and remove software and services they don't need; avoid running containers as root or in privileged mode.",
+    remediation: () => "Use a minimal, hardened host baseline (for example a CIS Benchmark) and patch hosts on a defined schedule.",
+  },
+  hypervisorPatching: {
+    technique: t("T1210", "Exploitation of Remote Services"),
+    explain: "Ransomware groups specifically target hypervisors: one compromised host can encrypt every virtual machine it runs at once.",
+    compensatingControl: () => "Make sure hypervisor management interfaces are not reachable from user networks or the internet, and apply the vendor's latest security patches.",
+    remediation: () => "Patch hypervisor hosts on a defined schedule with an SLA for critical fixes, and keep management interfaces on an isolated admin network.",
+  },
+  vmSegmentation: {
+    technique: t("T1021", "Remote Services"),
+    explain: "When internet-facing, production and test workloads share a network, a compromise of the weakest one - often a test system - gives a route to the rest.",
+    compensatingControl: () => "Restrict inbound access to production and internal workloads to the specific sources that need it, starting with internet-facing systems.",
+    remediation: () => "Separate workloads by trust level with network rules or security groups, and allow only the connections each one requires.",
+  },
+  otSegregation: {
+    technique: t("T1021", "Remote Services"),
+    explain: "If OT shares a network with corporate IT, an ordinary IT compromise such as phishing or ransomware can move straight into industrial control systems.",
+    compensatingControl: () => "Put a firewall between the office network and your most critical OT assets first, allowing only the specific connections operations need.",
+    remediation: () => "Implement an IT/OT segmentation architecture with a demilitarized zone between the two networks and firewalls mediating anything that must cross.",
+  },
+  otRemoteAccess: {
+    technique: t("T1133", "External Remote Services"),
+    explain: "Remote access that reaches OT devices directly gives any compromised remote user's device a path into industrial control systems.",
+    compensatingControl: () => "Restrict OT remote access to known source addresses, require MFA, and disable it when not in use.",
+    remediation: () => "Route all OT remote access through a dedicated, monitored jump host or secure remote-access gateway with MFA and session logging.",
+  },
+  otPatching: {
+    technique: t("T1210", "Exploitation of Remote Services"),
+    explain: "OT devices that are never patched keep known vulnerabilities indefinitely; where patching isn't possible, compensating controls have to carry the load.",
+    compensatingControl: () => "List OT devices with known vulnerabilities and restrict network access to them to only the systems that must talk to them.",
+    remediation: () => "Run an OT patch program with the equipment vendors - patch during maintenance windows where supported, and document compensating controls where not.",
+  },
+  otMonitoring: {
+    technique: null,
+    explain: "Without monitoring of OT network traffic, an intrusion into industrial systems is usually discovered only when something physically goes wrong.",
+    compensatingControl: () => "Start collecting logs from the firewall between IT and OT and review unexpected connections.",
+    remediation: () => "Deploy OT-aware network monitoring covering OT network segments, with alerts routed to whoever monitors security.",
+  },
+
   backupIsolation: {
     technique: t("T1490", "Inhibit System Recovery"),
     explain: "Ransomware operators specifically target connected backup systems and shadow copies to prevent recovery, not just the primary systems - a backup reachable from the production network can be encrypted or deleted right alongside everything else.",
@@ -722,8 +838,15 @@ export function guidanceForFlag(flag, answers, full = true) {
   };
 }
 
+// Finding-only items (controls.js FINDING_ITEMS) carry their own text.
+function findingGuidance(id) {
+  const fi = FINDING_ITEMS[id];
+  if (!fi) return null;
+  return { technique: null, explain: fi.explain, compensatingControl: () => fi.interim, remediation: () => fi.remediation };
+}
+
 export function guidanceForGapItem(item, answers, full = true) {
-  const g = QUESTION_GUIDANCE[item.id];
+  const g = QUESTION_GUIDANCE[item.id] || findingGuidance(item.id);
   if (!g) return null;
   const base = {
     traceability: questionTraceability(item),

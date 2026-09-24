@@ -3,15 +3,16 @@
 # exercised in local preview too, not only once it's live.
 #
 # Content-Security-Policy, source by source:
-#   script-src   'self' serves /assets/app.js and /assets/gtag-init.js; no
-#                inline scripts, eval, or inline event handlers anywhere, so
-#                no 'unsafe-inline'/'unsafe-eval'. Google Analytics per
-#                Google's own GA4 CSP guidance (googletagmanager.com).
+#   script-src   'self' serves the app's module files (/assets/build/) and
+#                /assets/gtag-init.js; no inline scripts, eval, or inline
+#                event handlers anywhere, so no 'unsafe-inline'/'unsafe-eval'.
+#                googletagmanager.com is only used after the visitor allows
+#                analytics (assets/gtag-init.js).
 #   style-src    'unsafe-inline' is required - the UI sets style="" attributes
 #                throughout its rendered templates. Google Fonts CSS.
 #   font-src     Google Fonts files.
-#   img-src      data: for the base64 hero/masthead images, blob: for the
-#                client-side PDF export, GA's collection pixels.
+#   img-src      data: for small inline SVG/icons, blob: for the client-side
+#                PDF export, GA's collection pixels.
 #   connect-src  'self' covers the Netlify functions and the feedback form;
 #                Supabase REST for the live News/Exploits/Case Studies feeds;
 #                GA's collection endpoints.
@@ -22,3 +23,8 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+# Content-hashed build output (scripts/build.js): a file's name changes
+# whenever its content does, so browsers can keep these for a year.
+/assets/build/*
+  Cache-Control: public, max-age=31536000, immutable

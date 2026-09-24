@@ -10,6 +10,9 @@
 //    top-level question (§5.5). devsecopsMaturity/secretsManagement stay
 //    gated on developsSoftware only, per CLAUDE.md: that conditional was
 //    correct and should stay.
+// How each of these answers is used in the report (scored control, context,
+// vendor, informational) is recorded in controls.js's PROFILE_DESIGNATIONS.
+// `quick: true` marks the only setup questions Quick screening asks.
 import { INDUSTRIES } from "./industries.js";
 import {
   ANTIVIRUS_VENDORS,
@@ -35,6 +38,7 @@ export const ORG_PROFILE_NODES = [
     text: "How many employees/users are in the organization?",
     options: ["1–10", "11–50", "51–200", "201–1,000", "1,000+"],
     required: true,
+    quick: true,
   },
 ];
 
@@ -48,6 +52,7 @@ export const INFRA_ORDER = [
   "dlpVendor",
   "deployModel",
   "cloudProvider",
+  "endpointOs",
   "sdwanUsed",
   "sdwanVendor",
   "networkArch",
@@ -74,31 +79,37 @@ export const INFRA_NODES = [
   select("hasAntivirus", "infra", "Do you have an antivirus solution?", ["Yes", "No", "Not sure"], { required: true }),
   vendor("antivirusVendor", "infra", "Which antivirus product?", ANTIVIRUS_VENDORS, {
     visibleIf: (answers) => answers.hasAntivirus === "Yes",
-    quickSkip: true,
   }),
-  vendor("edrVendor", "infra", "What EDR (Endpoint Detection & Response) product is deployed, if any?", EDR_VENDORS, { quickSkip: true }),
-  vendor("emailSecurityVendor", "infra", "What email security / anti-phishing gateway do you use, if any?", EMAIL_SECURITY_VENDORS, { quickSkip: true }),
-  vendor("awarenessLms", "infra", "What security awareness / LMS platform do you use for training, if any?", AWARENESS_LMS_VENDORS, { quickSkip: true }),
+  vendor("edrVendor", "infra", "What EDR (Endpoint Detection & Response) product is deployed, if any?", EDR_VENDORS),
+  vendor("emailSecurityVendor", "infra", "What email security / anti-phishing gateway do you use, if any?", EMAIL_SECURITY_VENDORS),
+  vendor("awarenessLms", "infra", "What security awareness / LMS platform do you use for training, if any?", AWARENESS_LMS_VENDORS),
   select("dlpUsed", "infra", "Do you use a DLP (data loss prevention) solution?", ["Yes", "No", "Not sure"], { required: true }),
   vendor("dlpVendor", "infra", "Which DLP product?", DLP_VENDORS, {
     visibleIf: (answers) => answers.dlpUsed === "Yes",
-    quickSkip: true,
   }),
-  select("deployModel", "infra", "Is your infrastructure on-premises, cloud-only, or hybrid?", ["On-premises only", "Cloud-only", "Hybrid (on-prem + cloud)"], { required: true }),
+  select("deployModel", "infra", "Is your infrastructure on-premises, cloud-only, or hybrid?", ["On-premises only", "Cloud-only", "Hybrid (on-prem + cloud)"], { required: true, quick: true }),
   vendor("cloudProvider", "infra", "Which cloud provider(s)?", CLOUD_PROVIDERS, {
     visibleIf: (answers) => answers.deployModel && answers.deployModel !== "On-premises only",
-    quickSkip: true,
   }),
-  // sdwanUsed/sdwanVendor: SD-WAN presence isn't itself a scored gap the way
-  // missing antivirus/DLP is (no computeFlags rule references it either) -
-  // its only downstream purpose is gating a pure vendor-name follow-up, so
-  // the whole pair is Quick-mode detail rather than a mixed sequence.
-  select("sdwanUsed", "infra", "Do you use SD-WAN?", ["Yes", "No", "Not sure"], { required: true, quickSkip: true }),
+  // Optional context for the AI vulnerability check: lets it tell whether a
+  // CVE for a product on one platform can apply here (see
+  // netlify/lib/evidence.ts). Never scored.
+  {
+    id: "endpointOs",
+    kind: "profile",
+    category: "infra",
+    type: "multiselect",
+    text: "Which operating systems run on your organization's computers and servers? (select all that apply)",
+    options: ["Windows", "macOS", "Linux", "iOS", "Android"].map((os) => ({ id: os, label: os })),
+    required: false,
+  },
+  // sdwanUsed/sdwanVendor: context only - SD-WAN presence isn't itself a
+  // control; its only downstream purpose is gating a vendor-name follow-up.
+  select("sdwanUsed", "infra", "Do you use SD-WAN?", ["Yes", "No", "Not sure"], { required: true }),
   vendor("sdwanVendor", "infra", "Which SD-WAN vendor?", SDWAN_VENDORS, {
     visibleIf: (answers) => answers.sdwanUsed === "Yes",
-    quickSkip: true,
   }),
-  select("networkArch", "infra", "How would you describe your network architecture?", ["Flat / mostly unsegmented", "Segmented (VLANs / zones)", "Zero-trust / microsegmented"], {
+  select("networkArch", "infra", "How would you describe your network architecture?", ["Flat / mostly unsegmented", "Segmented (VLANs / zones)", "Zero-trust / microsegmented", "Not sure"], {
     required: true,
     allowOther: true,
     otherPlaceholder: "e.g. hub-and-spoke across multiple sites, SD-WAN overlay",
@@ -106,7 +117,6 @@ export const INFRA_NODES = [
   select("externalDevices", "infra", "Do you have external-facing devices (VPN gateways, remote-access appliances, firewalls with public IPs)?", ["Yes", "No"], { required: true }),
   vendor("edgeDeviceVendor", "infra", "What firewall / VPN gateway appliance handles that external access?", EDGE_DEVICE_VENDORS, {
     visibleIf: (answers) => answers.externalDevices === "Yes",
-    quickSkip: true,
   }),
   select(
     "externalWebsite",
@@ -119,10 +129,11 @@ export const INFRA_NODES = [
     required: false,
     visibleIf: (answers) => answers.externalWebsite === "Yes",
   }),
-  vendor("hostingProvider", "infra", "Who hosts your web server(s)?", HOSTING_PROVIDERS, { quickSkip: true }),
+  vendor("hostingProvider", "infra", "Who hosts your web server(s)?", HOSTING_PROVIDERS),
   // webServerStack: free-text specificity that only ever feeds vendor-note
-  // matching (see vendors.js/VENDOR_NOTES), not scoring - Quick-mode skip.
-  text("webServerStack", "infra", "What web server software / OS runs it, if known?", "e.g. Nginx on Ubuntu 22.04, IIS on Windows Server", { quickSkip: true }),
+  // matching (see vendors.js/VENDOR_NOTES) and the AI product check, never
+  // scoring.
+  text("webServerStack", "infra", "What web server software / OS runs it, if known?", "e.g. Nginx on Ubuntu 22.04, IIS on Windows Server"),
 ];
 
 export const DEVSEC_ORDER = ["developsSoftware", "devsecopsMaturity", "secretsManagement"];
@@ -137,6 +148,7 @@ export const DEVSEC_NODES = [
       "No formal practice - security reviewed late, if at all",
       "Security scanning exists but isn't enforced in the pipeline",
       "Security gates (SAST/dependency scanning) enforced in CI/CD",
+      "Not sure",
     ],
     {
       visibleIf: (answers) => answers.developsSoftware === "Yes",
@@ -152,6 +164,7 @@ export const DEVSEC_NODES = [
       "Hardcoded or stored in plain config files",
       "Environment variables, informally managed",
       "Dedicated secrets manager (e.g. Vault, cloud KMS)",
+      "Not sure",
     ],
     { visibleIf: (answers) => answers.developsSoftware === "Yes" }
   ),
@@ -164,23 +177,33 @@ export const OT_NODES = [
     required: true,
     visibleIf: (answers) => !otSectionSkipped(answers),
   }),
-  select("otSegregation", "infra", "Is the OT network segregated from the corporate IT network (e.g. dedicated firewalls, DMZ, air-gap)?", ["No - flat/shared network", "Partially segregated", "Yes, fully segregated"], {
-    visibleIf: (answers) => answers.hasOT === "Yes",
+  select("otSegregation", "infra", "Is the OT network segregated from the corporate IT network (e.g. dedicated firewalls, DMZ, air-gap)?", ["No - flat/shared network", "Partially segregated", "Yes, fully segregated", "Not sure"], {
+    visibleIf: otFollowUpsVisible,
   }),
-  select("otRemoteAccess", "infra", "Is remote access to OT systems possible, and if so, how is it controlled?", ["No remote access exists", "Yes, but not via a dedicated secure gateway", "Yes, via a monitored jump host / secure gateway"], {
-    visibleIf: (answers) => answers.hasOT === "Yes",
+  select("otRemoteAccess", "infra", "Is remote access to OT systems possible, and if so, how is it controlled?", ["No remote access exists", "Yes, but not via a dedicated secure gateway", "Yes, via a monitored jump host / secure gateway", "Not sure"], {
+    visibleIf: otFollowUpsVisible,
   }),
-  select("otPatching", "infra", "How are OT/ICS devices patched, given many can't be updated like standard IT?", ["Rarely or never patched (legacy/vendor-locked)", "Patched during scheduled maintenance windows", "Actively managed patch program"], {
-    visibleIf: (answers) => answers.hasOT === "Yes",
+  select("otPatching", "infra", "How are OT/ICS devices patched, given many can't be updated like standard IT?", ["Rarely or never patched (legacy/vendor-locked)", "Patched during scheduled maintenance windows", "Actively managed patch program", "Not sure"], {
+    visibleIf: otFollowUpsVisible,
   }),
-  select("otMonitoring", "infra", "Do you have monitoring specific to OT/ICS traffic (e.g. an OT-aware IDS)?", ["No", "Partial coverage", "Yes"], {
-    visibleIf: (answers) => answers.hasOT === "Yes",
+  select("otMonitoring", "infra", "Do you have monitoring specific to OT/ICS traffic (e.g. an OT-aware IDS)?", ["No", "Partial coverage", "Yes", "Not sure"], {
+    visibleIf: otFollowUpsVisible,
   }),
   vendor("otVendor", "infra", "What ICS/SCADA platform or vendor is primarily in use, if known?", OT_ICS_VENDORS, {
     visibleIf: (answers) => answers.hasOT === "Yes",
-    quickSkip: true,
   }),
 ];
+
+// OT follow-ups apply when OT is confirmed - and also when the answer is
+// "Not sure" in an industry where OT is common, because "we don't know if
+// we have OT" there is itself a finding worth grading rather than skipping.
+// Elsewhere an unsure answer is reported as an informational note instead.
+export function otFollowUpsVisible(answers) {
+  if (answers.hasOT === "Yes") return true;
+  if (answers.hasOT !== "Not sure") return false;
+  const ind = INDUSTRIES.find((i) => i.id === answers.industry);
+  return Boolean(ind && ind.otDefault === "likely");
+}
 
 // Whether the OT section should be skipped by default for the selected
 // industry (still overridable by scope.otOverride) - ported verbatim from

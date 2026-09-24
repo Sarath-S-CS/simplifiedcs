@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark"><head>
+<!-- Analytics only with consent: assets/gtag-init.js sets Google Consent
+     Mode defaults to denied and loads Google's script only after the visitor
+     chooses "Allow analytics" (src/ui/privacy.js). -->
+<script src="/assets/gtag-init.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy - SimplifiedCS</title>
+<meta name="description" content="What SimplifiedCS stores, what an optional AI request sends and to whom, and how analytics work only with your permission.">
+<link rel="canonical" href="https://simplifiedcs.net/privacy">
+<!-- Open Graph / link-preview bots (LinkedIn, Slack, WhatsApp, iMessage,
+     Facebook, ...) never execute JavaScript, so these static tags are the
+     only thing they ever see - without them a shared link previews with no
+     title/description/image at all. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SimplifiedCS">
+<meta property="og:title" content="Privacy - SimplifiedCS">
+<meta property="og:description" content="What SimplifiedCS stores, what an optional AI request sends and to whom, and how analytics work only with your permission.">
+<meta property="og:url" content="https://simplifiedcs.net/privacy">
+<meta property="og:image" content="https://simplifiedcs.net/assets/social-preview.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Privacy - SimplifiedCS">
+<meta name="twitter:description" content="What SimplifiedCS stores, what an optional AI request sends and to whom, and how analytics work only with your permission.">
+<meta name="twitter:image" content="https://simplifiedcs.net/assets/social-preview.png">
+<!-- Real files, not an inline base64 data URI - regenerated from the current
+     masthead icon (assets/social-preview.png's own source; the old inline
+     favicon had drifted to an earlier logo design entirely, disconnected
+     from the live header - FAVICON-UPDATE-BRIEF.md). Real files rather than
+     inline base64 deliberately: prerendering now produces ~20 static pages
+     that all share this same head, so an inline blob here would duplicate
+     it ~20x the same way the JS bundle would have if left inline (see
+     scripts/prerender.js's externalizeBundle()) - a real file is fetched
+     and cached once instead. -->
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<meta name="site-updated" content="September 24, 2026">
+<link rel="stylesheet" href="/assets/build/app-3HUSOICV.css">
+<script type="module" src="/assets/build/main-IYVA5G2M.js"></script>
+</head>
+<body>
+<div id="bgLayer" aria-hidden="true"><canvas id="bgCanvas" width="800" height="600" style="width: 800px; height: 600px;"></canvas></div>
+<div class="app">
+
+  <div class="masthead">
+   <div class="masthead-inner">
+    <a href="/" class="masthead-brand" id="brandHomeLink">
+      <img src="/assets/img/logo.png" alt="SimplifiedCS logo" class="brand-logo">
+      <h1><span class="brand-s">S</span><span class="brand-mid">implified</span><span class="brand-cs">CS</span></h1>
+    </a>
+    <div class="tabnav" id="tabnav">
+        <div class="tab-item has-dropdown">
+          <a class="tab-btn " href="/" data-tab="home">Home <span class="tab-caret" data-toggle="1">▾</span></a>
+          <div class="tab-dropdown">
+            <a class="dropdown-link " href="/what-is-simplifiedcs" data-tab="maturitymodel">What is SimplifiedCS?</a><a class="dropdown-link " href="/methodology" data-tab="methodology">Methodology</a><a class="dropdown-link " href="/roadmap" data-tab="roadmap">Roadmap</a><a class="dropdown-link " href="/about" data-tab="about">About</a>
+          </div>
+        </div>
+      
+        <div class="tab-item has-dropdown">
+          <button type="button" class="tab-btn " data-toggle="1">Framework <span class="tab-caret">▾</span></button>
+          <div class="tab-dropdown">
+            <a class="dropdown-link " href="/maturity-model" data-tab="maturity">Maturity Model</a><a class="dropdown-link " href="/core-principles" data-tab="coreprinciples">Core Principles</a><a class="dropdown-link " href="/metrics" data-tab="metrics">Metrics</a>
+          </div>
+        </div>
+      
+        <div class="tab-item has-dropdown">
+          <button type="button" class="tab-btn " data-toggle="1">Learn <span class="tab-caret">▾</span></button>
+          <div class="tab-dropdown">
+            <a class="dropdown-link " href="/starter-guide" data-tab="starterguide">Starter Guide</a><a class="dropdown-link " href="/threat-modeling" data-tab="threatmodeling">Threat Modeling &amp; Forensics</a><a class="dropdown-link " href="/glossary" data-tab="glossary">Glossary</a><a class="dropdown-link " href="/security-tools-repository" data-tab="securitytools">Security Tooling Repository</a>
+          </div>
+        </div>
+      
+        <div class="tab-item has-dropdown">
+          <button type="button" class="tab-btn " data-toggle="1">Resources <span class="tab-caret">▾</span></button>
+          <div class="tab-dropdown">
+            <a class="dropdown-link " href="/runbooks" data-tab="runbook">Runbooks</a><a class="dropdown-link " href="/playbooks" data-tab="playbooks">Playbooks</a>
+          </div>
+        </div>
+      
+        <div class="tab-item has-dropdown">
+          <button type="button" class="tab-btn " data-toggle="1">Insights <span class="tab-caret">▾</span></button>
+          <div class="tab-dropdown">
+            <a class="dropdown-link " href="/news" data-tab="news">Trends &amp; News</a><a class="dropdown-link " href="/exploits" data-tab="exploits">Exploits</a><a class="dropdown-link " href="/case-studies" data-tab="casestudy">Case Studies</a>
+          </div>
+        </div>
+      
+        <div class="tab-item has-dropdown">
+          <a class="tab-btn " href="/assessment" data-tab="assessment">Assessment <span class="tab-caret" data-toggle="1">▾</span></a>
+          <div class="tab-dropdown">
+            <a class="dropdown-link " href="/assessment" data-tab="assessment">Take Assessment</a><a class="dropdown-link " href="/history" data-tab="history">History</a>
+          </div>
+        </div>
+      </div>
+    <div class="masthead-right">
+      <div class="search-widget" id="searchWidget">
+    <button class="search-toggle-btn" id="searchToggleBtn" aria-label="Search" type="button"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M20 20l-4.8-4.8"></path><path d="M7.5 10.5h6M10.5 7.5v6"></path></svg></button>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search the site…" autocomplete="off">
+    <div class="search-results" id="searchResults"></div>
+  </div>
+      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Switch to light mode">
+    <span class="theme-switch-track">
+      <span class="theme-switch-thumb"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z"></path></svg></span>
+    </span>
+  </button>
+      <button class="nav-hamburger" id="navHamburger" aria-label="Menu" aria-expanded="false" type="button"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+    </div>
+   </div>
+  </div>
+
+  <div id="tabContent" class="">
+    <div class="page">
+      <div class="page-intro revealed">
+        <div class="page-eyebrow">Privacy</div>
+        <h2 class="page-title" tabindex="-1">Privacy and your data</h2>
+        <p class="page-lede">Short version: the assessment runs in your browser. Your answers stay in this browser unless you choose to send them for AI insights. Analytics only run if you allow them.</p>
+      </div>
+
+      <div class="section-tile privacy-page revealed">
+        <h3 class="section-h">Your assessment answers</h3>
+        <p class="body-text">Questions are scored in your browser. Answers are not sent to SimplifiedCS or anyone else, with one exception you control: if you ask for <b>AI-enhanced insights</b> on a report (or AI interpretation of your "Other" answers), the details listed next to that button are sent - after you tick the agreement - to SimplifiedCS's server function, which looks up the products you named in two public sources (CISA's Known Exploited Vulnerabilities catalog and NIST's National Vulnerability Database) and sends the request and those public records to Anthropic's Claude API to generate the text. Company name and "report requested by" are never included. You can see exactly what will be sent before sending it.</p>
+        <p class="body-text">SimplifiedCS doesn't store the content of AI requests. Server logs record technical details only (timing, sizes, error types). To prevent abuse, a salted one-way hash of your IP address is counted in a per-day rate-limit counter; counters older than a day are deleted automatically as the service is used. Anthropic processes the request under <a href="https://www.anthropic.com/legal/commercial-terms" target="_blank" rel="noopener noreferrer">its commercial terms</a> and <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer">privacy policy</a>.</p>
+        <p class="body-text">Your AI choice is currently: <b>not given</b>. You'll be asked on the report page before anything is sent.</p>
+
+        <h3 class="section-h">What's stored in this browser</h3>
+        <p class="body-text">These are kept in your browser's local storage for this site only. They are never sent to a server by SimplifiedCS. On a shared computer, clear them when you're done.</p>
+        <ul class="privacy-list"><li><b>Your in-progress assessment answers, so you can resume</b></li><li><b>Completed assessments: answers, a summary of each report, and any AI insights you requested</b></li><li><b>Completed assessments saved before September 2026</b></li><li><b>Action-plan tracking you entered (owners, dates, status, notes)</b></li><li><b>Whether you've seen the 'saved in this browser' notice</b></li><li><b>Your analytics cookie choice</b></li><li><b>Whether you agreed to send assessment details for AI processing, and which notice version</b></li><li><b>Light or dark theme</b></li></ul>
+        <div class="cta-row"><button type="button" class="cta-btn secondary" id="privacyClearAll">Clear all data stored by this site</button></div>
+        <p class="scope-hint" id="privacyClearResult" role="status"></p>
+
+        <h3 class="section-h">Analytics</h3>
+        <p class="body-text">If you allow it, Google Analytics 4 records page views and a few coarse events (an assessment was started or completed, in which mode; a report was exported, in which format) using cookies. It never receives answers, scores or report content. Google signals and ad personalization are turned off. If you don't allow it, Google's script isn't loaded at all.</p>
+        <p class="body-text">Your analytics choice is currently: <b>not made yet (off)</b>.</p>
+        <div class="cta-row">
+          <button type="button" class="cta-btn secondary" id="privacyAnalyticsAllow">Allow analytics</button>
+          <button type="button" class="cta-btn secondary" id="privacyAnalyticsDeny">Turn analytics off</button>
+        </div>
+
+        <h3 class="section-h">Live feeds</h3>
+        <p class="body-text">The News, Exploit Tracker and Case Studies pages read public data from SimplifiedCS's Supabase database. Those requests contain nothing about you beyond what any web request contains.</p>
+
+        <h3 class="section-h">Hosting</h3>
+        <p class="body-text">The site is hosted on Netlify, which - like any web host - processes standard request information such as IP addresses to deliver pages and protect the service.</p>
+
+        <h3 class="section-h">Questions</h3>
+        <p class="body-text">See the <a href="/about" class="inline-link">About page</a> for how to reach the creator. This page describes how the site works; it isn't legal advice.</p>
+      </div>
+    </div></div>
+
+  <footer class="site-footer">
+    <div class="footer-top">
+      <div class="footer-left">
+        <span class="footer-brand"><span class="brand-s">S</span><span class="brand-mid">implified</span><span class="brand-cs">CS</span></span>
+        <p class="footer-tagline">Making cybersecurity accessible to everyone.</p>
+        <div class="footer-social">
+          <a class="footer-social-icon" href="https://www.linkedin.com/in/sarath-surendran/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-.95 1.83-1.95 3.76-1.95 4.02 0 4.76 2.5 4.76 5.76V21h-4v-5.6c0-1.34-.03-3.07-1.9-3.07-1.9 0-2.2 1.46-2.2 2.97V21h-4z"></path></svg>
+          </a>
+          <a class="footer-social-icon" href="https://sarath-s-cs.github.io/sarath-s-portfolio/" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.6 9.6 0 0 1 12 6.8c.85 0 1.71.11 2.51.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"></path></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <div class="footer-col-title">Framework</div>
+          <a href="/maturity-model" data-tab="maturity">Maturity Model</a>
+          <a href="/core-principles" data-tab="coreprinciples">Core Principles</a>
+          <a href="/metrics" data-tab="metrics">Metrics</a>
+          <a href="/methodology" data-tab="methodology">Methodology</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Resources</div>
+          <a href="/runbooks" data-tab="runbook">Runbooks</a>
+          <a href="/playbooks" data-tab="playbooks">Playbooks</a>
+          <a href="/glossary" data-tab="glossary">Glossary</a>
+          <a href="/references" data-tab="references">References</a>
+          <a href="/starter-guide" data-tab="starterguide">Starter Guide</a>
+          <a href="/news" data-tab="news">Trends &amp; News</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">About</div>
+          <a href="/what-is-simplifiedcs" data-tab="maturitymodel">What is SimplifiedCS?</a>
+          <a href="/roadmap" data-tab="roadmap">Roadmap</a>
+          <a href="/about" data-tab="about">About</a>
+          <a href="/privacy" data-tab="privacy">Privacy</a>
+          <a href="/feedback" data-tab="feedback">Feedback</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">SimplifiedCS - a portfolio project. Not affiliated with NIST, CIS, ISO, CISA or MITRE. <button type="button" class="footer-cookie-btn" id="cookieSettingsBtn" data-wired="1">Cookie settings</button></div>
+  </footer>
+</div>
+
+
+
+
+</body></html>

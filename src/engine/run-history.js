@@ -1,60 +1,168 @@
-// Completed-assessment history, kept in this browser's localStorage - the
-// same no-account, no-backend approach local-save.js already uses for
-// in-progress answers. This replaces window.storage, which only ever
-// existed inside the Claude.ai artifact preview the site was first built
-// in: on the real site every history read/write silently failed, so the
-// "change since your last assessment" view never appeared and History
-// always said "0 assessments saved" - while the results page claimed the
-// run had just been saved.
+// Completed-assessment history, kept only in this browser's localStorage.
 //
-// Each run keeps its answers, so a past report can be re-rendered exactly
-// (History's "View report", and "View your last report" on the assessment
-// landing screen - which is also what makes a completed report survive a
-// page reload). Capped so it can't grow without bound.
-const RUNS_KEY = "simplifiedcs:runs:v1";
+// Version 2 (methodology 2.0) stores, per run:
+//   - the effective answers (answer schema 2) - enough to rebuild the full
+//     report exactly while the methodology is unchanged
+//   - a compact summary of the report as produced (verdict, coverage per
+//     area, critical gaps, findings and actions by id) - what History lists,
+//     what comparisons use, and what proves the original result if the
+//     methodology changes later. A full report is ~100 KB; the summary is a
+//     few KB, which is what keeps 25 runs inside browser storage limits.
+//   - the AI-insights result, if any, with the report snapshot it belongs to
+//
+// Version 1 runs (key "simplifiedcs:runs:v1": overall %, gap texts, answers)
+// are still listed, marked legacy, and are never silently re-scored: opening
+// one migrates its answers and labels the result as recalculated under the
+// current methodology, alongside the original percentage.
+//
+// Every write is read back before it is reported as saved, and a full
+// storage quota evicts the oldest runs first (the caller is told how many).
+import { ANSWER_SCHEMA_VERSION } from "./migrate.js";
+
+const RUNS_KEY_V1 = "simplifiedcs:runs:v1";
+export const RUNS_KEY = "simplifiedcs:runs:v2";
 export const MAX_RUNS = 25;
 
-function readRuns() {
+function storage() {
   try {
-    const raw = localStorage.getItem(RUNS_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((r) => r && typeof r.ts === "number" && typeof r.overall === "number") : [];
+    return typeof localStorage === "undefined" ? null : localStorage;
   } catch {
-    return [];
+    return null;
   }
 }
 
-function writeRuns(runs) {
+function readJson(key) {
+  const s = storage();
+  if (!s) return null;
   try {
-    localStorage.setItem(RUNS_KEY, JSON.stringify(runs));
-    return true;
+    const raw = s.getItem(key);
+    return raw ? JSON.parse(raw) : null;
   } catch {
-    // Private browsing, quota, or storage disabled - history is a
-    // convenience, so the report itself carries on without it.
-    return false;
+    return null;
   }
+}
+
+function readV2() {
+  const parsed = readJson(RUNS_KEY);
+  return Array.isArray(parsed) ? parsed.filter((r) => r && typeof r.id === "string" && typeof r.ts === "number" && r.summary) : [];
+}
+
+function readV1() {
+  const parsed = readJson(RUNS_KEY_V1);
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .filter((r) => r && typeof r.ts === "number" && typeof r.overall === "number")
+    .map((r) => ({
+      id: `legacy-${r.ts}`,
+      ts: r.ts,
+      legacy: true,
+      mode: r.quickMode ? "quick" : "full",
+      methodologyVersion: "1.x",
+      answerSchema: 1,
+      answers: r.answers || null,
+      legacyOverall: r.overall,
+      legacyGapCount: Array.isArray(r.gapTexts) ? r.gapTexts.length : null,
+      industry: r.industry || null,
+      summary: null,
+      ai: null,
+    }));
 }
 
 // Oldest first.
 export function listRuns() {
-  return readRuns().sort((a, b) => a.ts - b.ts);
+  return [...readV1(), ...readV2()].sort((a, b) => a.ts - b.ts);
 }
 
-export function getRun(ts) {
-  return listRuns().find((r) => r.ts === ts) || null;
+export function getRun(id) {
+  return listRuns().find((r) => r.id === id) || null;
 }
 
-// Returns whether the run was actually persisted.
+export function newRunId(now = Date.now()) {
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `r${now.toString(36)}${rand}`;
+}
+
+// The compact, durable record of a report as produced.
+export function summarizeReport(report) {
+  return {
+    methodologyVersion: report.methodologyVersion,
+    questionSetVersion: report.questionSetVersion,
+    mode: report.mode,
+    generatedAt: report.generatedAt,
+    industry: report.context.industry,
+    frameworks: report.context.frameworks,
+    verdict: { key: report.verdict.key, label: report.verdict.label },
+    coverage: report.overall.coverage,
+    completeness: report.overall.completeness,
+    counts: report.overall.counts,
+    areas: report.areas.map((a) => ({ fn: a.fn, coverage: a.coverage, completeness: a.completeness })),
+    criticalGaps: report.criticalGaps.map((c) => c.id),
+    findings: report.findings.map((f) => ({ id: f.id, status: f.status, rank: f.rank, critical: f.critical, title: f.title })),
+    flags: report.flags.map((f) => f.id),
+    actions: report.actions.map((a) => ({ id: a.id, title: a.title, timeframeDays: a.timeframeDays })),
+  };
+}
+
+function write(runs) {
+  const s = storage();
+  if (!s) return { ok: false, reason: "unavailable" };
+  try {
+    s.setItem(RUNS_KEY, JSON.stringify(runs));
+    return { ok: true };
+  } catch (e) {
+    const quota = e && (e.name === "QuotaExceededError" || e.code === 22 || e.code === 1014);
+    return { ok: false, reason: quota ? "quota" : "unavailable" };
+  }
+}
+
+// Saves (or replaces) a run. Returns { ok, reason?, evicted } - ok only once
+// the run has been read back from storage.
 export function saveRun(run) {
-  const runs = listRuns().filter((r) => r.ts !== run.ts);
-  runs.push(run);
-  runs.sort((a, b) => a.ts - b.ts);
-  return writeRuns(runs.slice(-MAX_RUNS));
+  const others = readV2().filter((r) => r.id !== run.id);
+  let runs = [...others, { ...run, answerSchema: ANSWER_SCHEMA_VERSION }].sort((a, b) => a.ts - b.ts);
+  let evicted = Math.max(0, runs.length - MAX_RUNS);
+  runs = runs.slice(-MAX_RUNS);
+  let result = write(runs);
+  while (!result.ok && result.reason === "quota" && runs.length > 1) {
+    runs = runs.filter((r) => r.id !== runs.find((x) => x.id !== run.id).id);
+    evicted++;
+    result = write(runs);
+  }
+  if (!result.ok) return { ...result, evicted: 0 };
+  const saved = readV2().some((r) => r.id === run.id);
+  return saved ? { ok: true, evicted } : { ok: false, reason: "unavailable", evicted: 0 };
+}
+
+// Attaches (or replaces) the AI result on a saved run.
+export function attachAiResult(id, ai) {
+  const run = readV2().find((r) => r.id === id);
+  if (!run) return { ok: false, reason: "missing" };
+  return saveRun({ ...run, ai });
+}
+
+export function deleteRun(id) {
+  const s = storage();
+  if (!s) return false;
+  try {
+    if (id.startsWith("legacy-")) {
+      const ts = Number(id.slice(7));
+      const v1 = readJson(RUNS_KEY_V1);
+      if (Array.isArray(v1)) s.setItem(RUNS_KEY_V1, JSON.stringify(v1.filter((r) => r.ts !== ts)));
+    } else {
+      s.setItem(RUNS_KEY, JSON.stringify(readV2().filter((r) => r.id !== id)));
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function clearRuns() {
+  const s = storage();
+  if (!s) return;
   try {
-    localStorage.removeItem(RUNS_KEY);
+    s.removeItem(RUNS_KEY);
+    s.removeItem(RUNS_KEY_V1);
   } catch {
     /* nothing to clear */
   }

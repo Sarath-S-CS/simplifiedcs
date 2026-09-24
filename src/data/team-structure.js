@@ -43,6 +43,7 @@ export const TEAM_STRUCTURE_ORDER = [
   "socOwnership",
   "cyberInsurance",
   "incidentRecoveryOwner",
+  "vendorCount",
 ];
 
 const a = (answers) => answers; // readability alias
@@ -183,7 +184,6 @@ export const TEAM_STRUCTURE_NODES = [
     ...vendorField("outsourcedMspName", "Which MSP provides this coverage?", MSP_VENDORS),
     dedupeKey: "mspProviderName",
     dedupeValue: vendorNameDedupeValue,
-    quickSkip: true,
     next: () => "socOwnership",
   },
   {
@@ -249,7 +249,6 @@ export const TEAM_STRUCTURE_NODES = [
     ...vendorField("fullMspProviderName", "Which MSP is it completely outsourced to?", MSP_VENDORS),
     dedupeKey: "mspProviderName",
     dedupeValue: vendorNameDedupeValue,
-    quickSkip: true,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("full-msp"),
     next: () => "mspSocOwner",
   },
@@ -273,7 +272,6 @@ export const TEAM_STRUCTURE_NODES = [
     ...vendorField("mixedMspProviderName", "In the mixed arrangement, which MSP is involved?", MSP_VENDORS),
     dedupeKey: "mspProviderName",
     dedupeValue: vendorNameDedupeValue,
-    quickSkip: true,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("mixed-msp-other"),
     next: () => "mixedOtherProviderDetail",
   },
@@ -296,7 +294,6 @@ export const TEAM_STRUCTURE_NODES = [
     ...vendorField("mdrProviderName", "Which MDR service do you use?", MDR_VENDORS),
     dedupeKey: "mdrProviderName",
     dedupeValue: vendorNameDedupeValue,
-    quickSkip: true,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("mdr-msp"),
     next: () => "mdrMspProviderName",
   },
@@ -304,7 +301,6 @@ export const TEAM_STRUCTURE_NODES = [
     ...vendorField("mdrMspProviderName", "And which MSP handles the rest of IT alongside that MDR service?", MSP_VENDORS),
     dedupeKey: "mspProviderName",
     dedupeValue: vendorNameDedupeValue,
-    quickSkip: true,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("mdr-msp"),
     next: () => "msspProviderName",
   },
@@ -312,7 +308,6 @@ export const TEAM_STRUCTURE_NODES = [
     ...vendorField("msspProviderName", "Which MSSP do you use?", MSSP_VENDORS),
     dedupeKey: "msspProviderName",
     dedupeValue: vendorNameDedupeValue,
-    quickSkip: true,
     visibleIf: (answers) => (a(answers).dayToDay || []).includes("mssp"),
     next: () => "socOwnership",
   },
@@ -369,5 +364,16 @@ export const TEAM_STRUCTURE_NODES = [
       const d = ans.dayToDay || [];
       return d.some((id) => id !== "inhouse-all");
     },
+  },
+
+  // Asked on every branch (last in the default order, so every chain above
+  // falls through to it). Context only: how many third parties have access
+  // decides whether the scored Govern control "vendorAccessReview" applies.
+  // Until methodology 2.0 this was a scored question that merged the count
+  // with the review practice and scored "None" as the best answer.
+  {
+    ...profile("vendorCount", "How many third parties (IT providers, SaaS vendors, contractors) have access to your systems or data?"),
+    options: ["None", "1–5", "6 or more", "Not sure"],
+    required: true,
   },
 ];
