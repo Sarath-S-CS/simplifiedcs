@@ -1,0 +1,24 @@
+# Netlify response headers (https://docs.netlify.com/routing/headers/).
+# scripts/serve.js applies this same file locally, so the CSP below is
+# exercised in local preview too, not only once it's live.
+#
+# Content-Security-Policy, source by source:
+#   script-src   'self' serves /assets/app.js and /assets/gtag-init.js; no
+#                inline scripts, eval, or inline event handlers anywhere, so
+#                no 'unsafe-inline'/'unsafe-eval'. Google Analytics per
+#                Google's own GA4 CSP guidance (googletagmanager.com).
+#   style-src    'unsafe-inline' is required - the UI sets style="" attributes
+#                throughout its rendered templates. Google Fonts CSS.
+#   font-src     Google Fonts files.
+#   img-src      data: for the base64 hero/masthead images, blob: for the
+#                client-side PDF export, GA's collection pixels.
+#   connect-src  'self' covers the Netlify functions and the feedback form;
+#                Supabase REST for the live News/Exploits/Case Studies feeds;
+#                GA's collection endpoints.
+#   frame-ancestors 'none' - nothing legitimately frames this site.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://*.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://xufqgrcxufptlptpwlfi.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()

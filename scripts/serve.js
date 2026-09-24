@@ -8,7 +8,32 @@ import path from "node:path";
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const port = process.env.PORT || 5173;
 
-const MIME = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml" };
+const MIME = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png" };
+
+// Applies the repo's Netlify _headers file (the site's CSP and other
+// security headers) to every local response, so a CSP violation shows up in
+// local preview instead of first appearing in production. Only the "/*"
+// block is read - it's the only one _headers uses.
+async function loadSiteHeaders() {
+  try {
+    const text = await readFile(path.join(root, "_headers"), "utf8");
+    const headers = {};
+    let inAll = false;
+    for (const line of text.split(/\r?\n/)) {
+      if (!line.trim() || line.trim().startsWith("#")) continue;
+      if (!/^\s/.test(line)) {
+        inAll = line.trim() === "/*";
+        continue;
+      }
+      const i = line.indexOf(":");
+      if (inAll && i > 0) headers[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+    }
+    return headers;
+  } catch {
+    return {};
+  }
+}
+const siteHeaders = await loadSiteHeaders();
 
 async function readFirstMatch(candidates) {
   for (const candidate of candidates) {
@@ -36,7 +61,7 @@ createServer(async (req, res) => {
     const found = await readFirstMatch(candidates);
     if (!found) throw new Error("not found");
     const ext = path.extname(found.filePath);
-    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": "no-store" });
+    res.writeHead(200, { ...siteHeaders, "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": "no-store" });
     res.end(found.data);
   } catch {
     // Mirrors the repo's _redirects catch-all (/* /index.html 200): any
@@ -45,7 +70,7 @@ createServer(async (req, res) => {
     // through to index.html instead of a bare 404, same as on Netlify.
     try {
       const data = await readFile(path.join(root, "index.html"));
-      res.writeHead(200, { "Content-Type": "text/html", "Cache-Control": "no-store" });
+      res.writeHead(200, { ...siteHeaders, "Content-Type": "text/html", "Cache-Control": "no-store" });
       res.end(data);
     } catch {
       res.writeHead(404);

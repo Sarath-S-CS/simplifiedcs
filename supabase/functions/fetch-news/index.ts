@@ -143,28 +143,67 @@ async function fetchNvd() {
   return out;
 }
 
+// One decode pass over the entities RSS feeds actually use. &amp; goes
+// LAST, so a double-encoded "&amp;lt;" becomes the literal text "&lt;"
+// rather than cascading all the way into a real "<".
+function decodeEntities(s: string): string {
+  const cp = (n: number) => (n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : "");
+  return s
+    .replace(/&#(\d+);/g, (_, d) => cp(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => cp(parseInt(h, 16)))
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&");
+}
+
+// An RSS <title>/<description> is XML text whose content is usually
+// itself entity-encoded HTML ("&lt;p&gt;Patch now&lt;/p&gt;"). The old
+// order - strip tags, THEN decode - turned exactly that encoded markup into
+// live tags in the stored text, and the site rendered news text as HTML: a
+// stored-XSS path fed by any third-party feed (or just an article whose
+// title mentions a tag). Now: unwrap CDATA (raw HTML, not entity-encoded)
+// or decode the XML entities, strip the resulting tags, then decode the
+// HTML's own entities once. What's left is plain text that may still
+// legitimately contain "<" (an article about <script> tags) - correct, and
+// safe, because the site escapes every news field at render
+// (src/ui/html-safety.js).
+function rssText(raw: string): string {
+  const cdata = raw.match(/^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/);
+  const html = cdata ? cdata[1] : decodeEntities(raw.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1"));
+  return decodeEntities(html.replace(/<[^>]*>/g, ""))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function pickRssField(block: string, tag: string): string {
+  const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return m ? rssText(m[1]) : "";
+}
+
+// source_url is rendered as a link on the site - only http(s) is ever
+// stored, so a feed can't smuggle in a javascript:/data: URL.
+function isHttpUrl(s: string): boolean {
+  try {
+    const u = new URL(s);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 function parseRssItems(xml: string, source: string, sourceUrl: string, maxItems: number) {
   const items: any[] = [];
   const itemBlocks = xml.match(/<item[\s\S]*?<\/item>/gi) ?? [];
   for (const block of itemBlocks.slice(0, maxItems)) {
-    const pick = (tag: string) => {
-      const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
-      if (!m) return "";
-      return m[1]
-        .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-        .replace(/<[^>]+>/g, "")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&#8217;/g, "'")
-        .replace(/&#8220;|&#8221;/g, '"')
-        .trim();
-    };
+    const pick = (tag: string) => pickRssField(block, tag);
     const title = pick("title");
     const link = pick("link");
     const pubDate = pick("pubDate");
     const description = pick("description");
-    if (!title || !link || !pubDate) continue;
+    if (!title || !link || !pubDate || !isHttpUrl(link)) continue;
     const published = new Date(pubDate);
     if (isNaN(published.getTime())) continue;
     const category = categorize(title, description);
@@ -236,24 +275,12 @@ async function fetchOtDedicatedRss(feedUrl: string, source: string, maxItems: nu
   const items: any[] = [];
   for (const block of itemBlocks) {
     if (items.length >= maxItems) break;
-    const pick = (tag: string) => {
-      const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
-      if (!m) return "";
-      return m[1]
-        .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-        .replace(/<[^>]+>/g, "")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&#8217;/g, "'")
-        .replace(/&#8220;|&#8221;/g, '"')
-        .trim();
-    };
+    const pick = (tag: string) => pickRssField(block, tag);
     const title = pick("title");
     const link = pick("link");
     const pubDate = pick("pubDate");
     const description = pick("description");
-    if (!title || !link || !pubDate) continue;
+    if (!title || !link || !pubDate || !isHttpUrl(link)) continue;
     if (linkMustInclude && !link.includes(linkMustInclude)) continue;
     const published = new Date(pubDate);
     if (isNaN(published.getTime())) continue;
