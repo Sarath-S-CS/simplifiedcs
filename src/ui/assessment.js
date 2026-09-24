@@ -26,6 +26,7 @@ import { showToast } from "./toast.js";
 import { matchOtherText } from "../engine/other-text-match.js";
 import { SAMPLE_ANSWERS, SAMPLE_AI_INSIGHTS } from "../data/sample-scenario.js";
 import { escapeHtml, safeHttpUrl } from "./html-safety.js";
+import { profileAnswerDigest, scoredAnswerDigest } from "../engine/ai-payload.js";
 
 // ASSESSMENT-EXPERIENCE-BRIEF.md §4: brief, warm section-transition lines -
 // no points/badges/streaks, just tone consistent with About/Core Principles.
@@ -60,6 +61,10 @@ function currentPathIsSample() {
 export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink, storage }) {
   const session = createSessionState();
   const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null };
+  // The live AI-Insights response for the report currently on screen, kept
+  // so "Download as PDF" can include it - it's a paid API call, so it
+  // shouldn't only exist on screen. Reset in renderResults().
+  let lastAiInsights = null;
 
   function panel() {
     return getPanel();
@@ -1040,6 +1045,9 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   async function renderResults() {
     const p = panel();
     p.innerHTML = `<div class="step-eyebrow">Synthesis - all functions considered jointly</div><h2 class="step-title">Calculating your reading…</h2>`;
+    // A fresh report starts without AI insights - they belong to the answer
+    // set they were generated from, not to whatever was rendered last.
+    lastAiInsights = null;
 
     const funcScores = computeFuncScores(session);
     const overall = computeOverall(funcScores);
@@ -1173,7 +1181,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     });
     wireNavLink(document.getElementById("viewHistoryBtn"), "history");
     document.getElementById("exportPdfBtn").addEventListener("click", () => {
-      buildAssessmentPdf({ session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs });
+      buildAssessmentPdf({ session, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs, aiInsights: lastAiInsights });
     });
     document.getElementById("aiInsightsBtn").addEventListener("click", () =>
       requestAiInsights({ session, overall, verdict: verdictLabel(overall), flags, priorities, vendorNotes, frameworkRecs })
@@ -1242,7 +1250,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       renderLanding();
     });
     document.getElementById("samplePdfBtn").addEventListener("click", () => {
-      buildAssessmentPdf({ session: sampleSession, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs });
+      buildAssessmentPdf({ session: sampleSession, funcScores, overall, flags, priorities, vendorNotes, frameworkRecs, aiInsights: SAMPLE_AI_INSIGHTS });
     });
   }
 
@@ -1350,6 +1358,9 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       "security awareness / LMS": answers.awarenessLms || "",
       "OT/ICS platform": answers.otVendor || "",
       "MSP/MDR/MSSP provider": mspProvider,
+      // e.g. "Nginx on Ubuntu 22.04" - collected for exactly this kind of
+      // version-specific check, but never sent before.
+      "web server stack": answers.webServerStack || "",
     };
   }
 
@@ -1406,11 +1417,18 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
         vendorNotes: vendorNotes.map((v) => ({ vendor: v.vendor, note: v.note })),
         frameworkRecs: frameworkRecs.map((r) => ({ name: r.name, summary: r.summary, gaps: r.gaps })),
       },
+      // The answers themselves (../engine/ai-payload.js) - without them the
+      // long-tail pass had nothing to look at beyond the findings above.
+      profileAnswers: profileAnswerDigest(s),
+      scoredAnswers: scoredAnswerDigest(s),
     };
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30_000);
+      // Longer than the function's own worst case (live CVE lookups plus
+      // its 25s Claude timeout), so the server's answer - including its
+      // "try again" error - arrives before the browser gives up.
+      const timeout = setTimeout(() => controller.abort(), 40_000);
       const res = await fetch("/.netlify/functions/ai-insights", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -1421,6 +1439,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       if (!res.ok) throw new Error(`ai-insights returned ${res.status}`);
       const result = await res.json();
       body.innerHTML = aiInsightCardsHtml(result);
+      lastAiInsights = result;
       btn.remove();
     } catch (e) {
       body.innerHTML = `<p class="body-text">AI insights unavailable right now - the rest of this report is unaffected. You can try again below.</p>`;
