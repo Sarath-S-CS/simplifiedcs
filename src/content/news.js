@@ -1,5 +1,5 @@
 // Fallback news items shown when the live feed is unavailable.
-// Moved out of src/main.js unchanged (content only; rendering stays there).
+// Moved out of src/main.js unchanged (content only; the pages in src/pages/ render it).
 
 // Curated snapshot, written in original wording from public reporting - see the
 // freshness note rendered in the News tab for how this would be kept live in production.

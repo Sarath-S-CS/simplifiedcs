@@ -1,5 +1,5 @@
 // Playbooks page content (OWASP Top 10 / MITRE ATT&CK / ATLAS mapped).
-// Moved out of src/main.js unchanged (content only; rendering stays there).
+// Moved out of src/main.js unchanged (content only; the pages in src/pages/ render it).
 
 export const PLAYBOOKS = [
   { cat:'OWASP Web', ref:'A01:2021', title:'Broken Access Control', mitre:'Privilege Escalation - T1548 (Abuse Elevation Control Mechanism)',

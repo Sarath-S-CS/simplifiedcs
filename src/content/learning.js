@@ -1,5 +1,5 @@
 // Learning pages: glossary, starter guide, threat modeling, resources, references.
-// Moved out of src/main.js unchanged (content only; rendering stays there).
+// Moved out of src/main.js unchanged (content only; the pages in src/pages/ render it).
 
 // --- Where to keep following this yourself - real, verified, currently-active sources ---
 // --- Case studies: critical cybersecurity incidents, each tied back to this site's own content ---
