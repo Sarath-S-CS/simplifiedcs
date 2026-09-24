@@ -162,3 +162,25 @@ test("PDF export: minimal assessment (no frameworks, no flags, no vendors) omits
   // No industry selected - filename should fall back to "General", not throw or leave a blank segment.
   assert.match(filename, /^SimplifiedCS-Assessment-General-\d{4}-\d{2}-\d{2}\.pdf$/);
 });
+
+test("PDF export: includes AI-Enhanced Insights only when a response exists, with PDF-safe text", () => {
+  const state = createSessionState();
+  answerAllWorst(state);
+  const ctx = computeResultsCtx(state);
+
+  const without = buildAssessmentPdfDoc(ctx).doc.output();
+  assert.ok(!without.includes("AI-ENHANCED INSIGHTS"), "no AI section when none was requested");
+
+  const aiInsights = {
+    recency: [{ vendorOrProduct: "Proofpoint", finding: "A current advisory applies \u2014 patch now.", source: "CVE-2026-0001", url: "https://nvd.nist.gov/vuln/detail/CVE-2026-0001" }],
+    longTail: [{ finding: "Flat network \u2192 wide ransomware blast radius", why: "Nothing contains lateral movement." }],
+    narrative: "A \u201Csynthesized\u201D paragraph.",
+  };
+  const withAi = buildAssessmentPdfDoc({ ...ctx, aiInsights }).doc;
+  assertRealPdf(withAi);
+  const text = withAi.output();
+  assert.ok(text.includes("AI-ENHANCED INSIGHTS"), "section heading (drawn uppercase)");
+  assert.ok(text.includes("Flat network -> wide ransomware blast radius"), "arrow mapped to ASCII");
+  assert.ok(text.includes('A "synthesized" paragraph.'), "curly quotes mapped to ASCII");
+  assert.ok(text.includes("Proofpoint - A current advisory applies - patch now."), "em dash mapped to ASCII");
+});
