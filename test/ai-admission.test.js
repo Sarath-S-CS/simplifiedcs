@@ -169,3 +169,14 @@ test("cleanup removes old per-client windows and abandoned locks, keeps today's"
   assert.ok(![...store.data.keys()].some((k) => k.includes("/client/") && k.endsWith("/old")));
   assert.ok([...store.data.keys()].some((k) => k.endsWith("/today")));
 });
+
+test("cleanup also removes per-client windows older than two days (a quiet day doesn't strand them)", async () => {
+  const store = casStore();
+  const p = policy();
+  await admit(store, p, { clientHash: "fiveDaysAgo", requestHash: "r", estimatedTokens: 1, now: NOW - 5 * 24 * 3600_000, sleep: noSleep });
+  await admit(store, p, { clientHash: "yesterday", requestHash: "r2", estimatedTokens: 1, now: NOW - 24 * 3600_000, sleep: noSleep });
+  await cleanup(store, p, NOW);
+  const keys = [...store.data.keys()].filter((k) => k.includes("/client/"));
+  assert.ok(!keys.some((k) => k.endsWith("/fiveDaysAgo")));
+  assert.ok(keys.some((k) => k.endsWith("/yesterday")), "yesterday's window is still needed for the rolling limit");
+});

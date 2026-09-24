@@ -256,8 +256,10 @@ export async function settle(store: CasStore, ticket: Ticket, actualTokens: numb
   }
 }
 
-// Bounded retention: per-client windows are bucketed by UTC day and deleted
-// two days later; budget buckets after eight days; abandoned duplicate locks
+// Bounded retention: per-client windows (salted IP hashes) are bucketed by
+// UTC day and every bucket older than yesterday is deleted - not just the
+// one from exactly two days ago, so a day without traffic can't leave older
+// buckets behind; budget buckets after eight days; abandoned duplicate locks
 // (a crashed request) once expired. Run occasionally, never awaited on the
 // request path.
 export async function cleanup(store: CasStore, policy: Policy, now = Date.now(), maxDeletes = 200): Promise<number> {
@@ -267,8 +269,12 @@ export async function cleanup(store: CasStore, policy: Policy, now = Date.now(),
     await store.delete(key);
     deleted++;
   };
-  const twoDaysAgo = utcDay(now - 2 * 24 * HOUR);
-  for (const b of (await store.list({ prefix: `${policy.name}/client/${twoDaysAgo}/` })).blobs) await del(b.key);
+  const yesterday = utcDay(now - 24 * HOUR);
+  const clientPrefix = `${policy.name}/client/`;
+  for (const b of (await store.list({ prefix: clientPrefix })).blobs) {
+    const day = b.key.slice(clientPrefix.length).split("/")[0];
+    if (day < yesterday) await del(b.key);
+  }
   for (let d = 8; d <= 14; d++) {
     const key = `${policy.name}/budget/${utcDay(now - d * 24 * HOUR)}`;
     if (await store.getWithMetadata(key, { type: "json" })) await del(key);

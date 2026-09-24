@@ -40,7 +40,7 @@ function ref(label, url) {
 // answer - "Not sure" must never produce "you do have X".
 //
 // Generic traceability for any single NIST question - "you indicated X for
-// Y" - built directly from computeGapItems()'s own `gap`/`chosen` fields
+// Y" - built directly from a finding's own `question`/`chosen` fields
 // (or, for framework gaps, framework-guidance.js's identical shape), so no
 // per-question traceability text needs hand-authoring at all.
 function questionTraceability(item) {

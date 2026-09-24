@@ -5,8 +5,8 @@
 // functions) was replaced, by the imports and controller below.
 import { createAssessmentController } from "./ui/assessment.js";
 import { newsCardHtml, exploitCardHtml, caseStudyCardHtml } from "./ui/feed-cards.js";
-import { listRuns, clearRuns } from "./engine/run-history.js";
-import { INDUSTRIES } from "./data/industries.js";
+import { renderHistoryPage } from "./ui/history-view.js";
+import { wireAccordions } from "./ui/a11y.js";
 // FUNCTIONS/FUNC_COLORS used to be plain globals at the top of the original
 // script; the Methodology tab's function-legend (an educational reference
 // explaining what NIST CSF's six functions ARE - correctly left showing the
@@ -2407,13 +2407,8 @@ function renderRoadmapTab(container){
   `;
 }
 
-function wireAccordions(container){
-  container.querySelectorAll('.acc-head').forEach(head=>{
-    head.addEventListener('click', ()=>{
-      head.parentElement.classList.toggle('open');
-    });
-  });
-}
+// wireAccordions (./ui/a11y.js): keyboard-operable accordions with
+// aria-expanded, shared with the assessment report.
 
 // Scoped to the Runbooks and Playbooks pages specifically (per VISUAL-
 // UPDATE-BRIEF.md items 8-9) via a --icon-accent custom property set
@@ -4192,67 +4187,16 @@ async function renderCaseStudyTab(container){
 }
 
 
-function buildTrendSvg(runs){
-  const w = 600, h = 120, pad = 20;
-  const points = runs.map((r,i)=>{
-    const x = pad + (runs.length===1 ? 0 : (i/(runs.length-1)) * (w-2*pad));
-    const y = h - pad - (r.overall/100)*(h-2*pad);
-    return [x,y];
-  });
-  const pathD = points.map((p,i)=> (i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
-  const dots = points.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="var(--accent-secure)"/>`).join('');
-  return `<svg class="trend-chart" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="var(--line)" stroke-width="1"/>
-    <path d="${pathD}" fill="none" stroke="var(--accent-secure)" stroke-width="2"/>
-    ${dots}
-  </svg>`;
-}
-
-// Completed assessments saved in this browser (src/engine/run-history.js -
-// localStorage, no account). Each row can reopen its full report.
+// Completed assessments saved in this browser - see ./ui/history-view.js.
 function renderHistory(){
-  const panel = document.getElementById('panel');
-  const runs = listRuns();
-
-  panel.innerHTML = `
-    <div class="page-intro">
-      <div class="page-eyebrow">History</div>
-      <h2 class="page-title">Assessment History</h2>
-      <p class="page-lede">${runs.length} assessment${runs.length===1?'':'s'} saved in this browser. Nothing here is sent to a server - clearing your browser data removes it.</p>
-    </div>
-    <div class="section-tile">
-      ${runs.length>=2 ? buildTrendSvg(runs) : ''}
-      <div class="history-list">
-        ${runs.length ? runs.slice().reverse().map(r=>`
-          <div class="history-row">
-            <div>${new Date(r.ts).toLocaleDateString()} ${new Date(r.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}${r.industry ? ' · ' + (INDUSTRIES.find(i=>i.id===r.industry)?.label || r.industry) : ''}${r.quickMode ? ' · Quick' : ''}</div>
-            <div class="history-row-actions">
-              <div class="history-score">${r.overall}%</div>
-              ${r.answers ? `<button class="history-view-btn" data-run-ts="${r.ts}">View report →</button>` : ''}
-            </div>
-          </div>
-        `).join('') : '<p class="body-text">No assessments saved yet - complete one to start tracking.</p>'}
-      </div>
-      <div class="cta-row">
-        <a class="cta-btn" href="${pathForTab('assessment')}" id="backToScope">← Back to Assessment</a>
-        ${runs.length ? `<button class="cta-btn secondary" id="clearHistory">Clear history</button>` : ''}
-      </div>
-    </div>
-  `;
-  wireNavLink(document.getElementById('backToScope'), 'assessment');
-  panel.querySelectorAll('.history-view-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      if(assessmentController.openRun(Number(btn.dataset.runTs))) goToTab('assessment');
-    });
+  renderHistoryPage({
+    panel: document.getElementById('panel'),
+    pathForTab,
+    wireNavLink,
+    openRun: (id) => assessmentController.openRun(id),
+    goToAssessment: () => goToTab('assessment'),
+    onChange: () => renderHistory(),
   });
-  const clearBtn = document.getElementById('clearHistory');
-  if(clearBtn){
-    clearBtn.addEventListener('click', ()=>{
-      if(!confirm(`Delete all ${runs.length} saved assessment${runs.length===1?'':'s'} from this browser? This can't be undone.`)) return;
-      clearRuns();
-      renderHistory();
-    });
-  }
   observeReveals();
 }
 

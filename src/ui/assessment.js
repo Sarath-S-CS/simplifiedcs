@@ -1,11 +1,12 @@
-// The assessment wizard UI: scope selection -> profile screens -> six
-// scored categories -> results. Adapted from the original renderScope/
-// renderPre/renderStep/renderRail/renderResults, rebuilt on the graph
-// engine so profile screens can branch (§5.2) and gate visibility (§5.5)
-// instead of walking a fixed PRE_STEPS array. Markup/class names are kept
-// identical to the original wherever the behavior didn't need to change,
-// per CLAUDE.md's "preserve the design system" rule.
-import { visibleNodes, resolveNext, isNodeHidden } from "../engine/graph.js";
+// The assessment UI: mode choice -> scope -> setup screens -> six scored
+// sections -> report. Question logic lives in ../engine (graph traversal,
+// statuses, scoring, report model); this file only renders and wires input.
+//
+// Accessibility: every answer is a native radio button or checkbox inside a
+// <fieldset> with a <legend>, so it works with a keyboard and screen
+// readers; screens re-render after each answer, so focus is restored to the
+// same control (a11y.js preserveFocus); accordions are keyboard-operable.
+import { visibleNodes, isNodeHidden } from "../engine/graph.js";
 import { recordAnswer, createSessionState } from "../engine/state.js";
 import { INDUSTRIES } from "../data/industries.js";
 import { REGIONS } from "../data/regions.js";
@@ -13,34 +14,37 @@ import { COUNTRIES } from "../data/countries.js";
 import { FRAMEWORKS } from "../data/frameworks.js";
 import { PROFILE_SCREENS } from "../data/profile-flow.js";
 import { ASSESSMENT_FLOW } from "../data/assessment-flow.js";
-import { FUNCTIONS, FUNC_COLORS, FUNC_DISPLAY, FUNC_REF } from "../data/categories.js";
-import { scoreFunction, computeFuncScores, computeOverall, computeFlags, computeGapItems, computeRankedGaps, verdictLabel } from "../engine/scoring.js";
-import { WEIGHT_LABELS } from "../data/control-weights.js";
-import { matchedVendorNotes } from "../data/vendor-notes.js";
-import { snapshotRows } from "./snapshot.js";
+import { FUNCTIONS, FUNC_DISPLAY, FUNC_REF } from "../data/categories.js";
+import { UNKNOWN, NOT_APPLICABLE, METHODOLOGY_VERSION } from "../data/controls.js";
 import { OTHER as OTHER_VALUE } from "../data/vendors.js";
-import { computeFrameworkRecommendations } from "../engine/framework-guidance.js";
-import { guidanceForFlag, guidanceForGapItem } from "../engine/mitre-guidance.js";
+import { SAMPLE_SCENARIOS, DEFAULT_SAMPLE } from "../data/sample-scenario.js";
+import { buildReport } from "../engine/report-model.js";
+import { effectiveState, isAnswered } from "../engine/answers.js";
+import { migrateAnswers } from "../engine/migrate.js";
 import { buildAssessmentPdf } from "../engine/pdf-report.js";
-import { saveProgress, loadProgress, clearProgress, hasSeenSaveNotice, markSaveNoticeSeen } from "../engine/local-save.js";
-import { listRuns, getRun, saveRun, sameAnswers } from "../engine/run-history.js";
-import { showToast } from "./toast.js";
+import { actionsToCsv, actionsToJson } from "../engine/actions.js";
+import { loadTracking, updateTracking } from "../engine/action-tracking.js";
+import { saveProgress, loadProgress, clearProgress, hasSeenSaveNotice, markSaveNoticeSeen, watchExternalChanges } from "../engine/local-save.js";
+import { listRuns, getRun, saveRun, attachAiResult, sameAnswers, summarizeReport, newRunId } from "../engine/run-history.js";
+import { buildInsightsPayload } from "../engine/ai-payload.js";
+import { AI_CONSENT_VERSION, hasAiConsent, recordAiConsent } from "../engine/ai-consent.js";
 import { matchOtherText } from "../engine/other-text-match.js";
-import { SAMPLE_ANSWERS, SAMPLE_AI_INSIGHTS } from "../data/sample-scenario.js";
-import { escapeHtml, safeHttpUrl } from "./html-safety.js";
-import { profileAnswerDigest, scoredAnswerDigest } from "../engine/ai-payload.js";
+import { showToast } from "./toast.js";
+import { escapeHtml } from "./html-safety.js";
+import { reportBodyHtml } from "./report-view.js";
+import { consentHtml, aiResultHtml, aiErrorText } from "./ai-panel.js";
+import { wireAccordions, preserveFocus, announce } from "./a11y.js";
 
-// ASSESSMENT-EXPERIENCE-BRIEF.md §4: brief, warm section-transition lines -
-// no points/badges/streaks, just tone consistent with About/Core Principles.
-// Keyed by the screen/category id just completed, shown once at the top of
-// the next screen's render then cleared (see ui.transitionNote below).
+const e = escapeHtml;
+
 const SECTION_TRANSITIONS = {
   profile: "Org profile done - let's talk about your team.",
   team: "Team structure done - now the technology itself.",
   infra: "Infrastructure covered - a couple of adjacent areas next.",
   containerization: "Containers and virtualization done - almost through setup.",
-  devsecops: "Nearly there - just Operational Technology left, if it applies to you.",
-  ot: "Setup's done. Now the actual six-function assessment.",
+  devsecops: "Nearly there - just the last setup sections left.",
+  ai: "AI section done.",
+  ot: "Setup's done. Now the six scored sections.",
   Govern: "Governance done - next, what you actually have to protect.",
   Identify: "Identify done - now the safeguards standing in an attacker's way.",
   Protect: "Protect done - how would you even know if something went wrong?",
@@ -48,131 +52,151 @@ const SECTION_TRANSITIONS = {
   Respond: "Respond done - last section: getting back to normal.",
 };
 
-// /assessment/sample is the one sub-state of this tab worth a real,
-// shareable URL - it's a fixed, deterministic view with no in-progress
-// work to lose, unlike scope/profile/wizard/results, which stay
-// deliberately unrouted (ROUTING-FIX-BRIEF.md's "single /assessment route,
-// not step-by-step"). currentPathIsSample() is the one thing that reads
-// this path; everywhere else still only knows about the /assessment tab.
 const ASSESSMENT_PATH = "/assessment";
 const ASSESSMENT_SAMPLE_PATH = "/assessment/sample";
 function currentPathIsSample() {
   return location.pathname.replace(/\/+$/, "") === ASSESSMENT_SAMPLE_PATH;
 }
 
+// Parses a radio value back to its stored type: graded options are numbers,
+// "Not sure" / "Not applicable" are strings.
+function parseScoredValue(raw) {
+  return /^-?\d+$/.test(raw) ? Number(raw) : raw;
+}
+
+function download(filename, text, type) {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink }) {
   const session = createSessionState();
-  // resultRunTs: which saved history run (../engine/run-history.js) the
-  // results screen is showing. Set the first time a report renders, so
-  // re-rendering it (switching tabs away and back, reopening from History)
-  // shows that same run instead of saving a duplicate.
-  const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null, resultRunTs: null };
-  // The live AI-Insights response for the report currently on screen, kept
-  // so "Download as PDF" can include it - it's a paid API call, so it
-  // shouldn't only exist on screen. Reset in renderResults().
-  let lastAiInsights = null;
+  const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null, resultRunId: null, sampleId: DEFAULT_SAMPLE };
+  // The report on screen (results or example) and its AI state.
+  let current = null; // { report, run, ai, aiError, migrationNotes, recalculated }
+  let lastAi = null; // most recent AI result this visit, to show as out of date after edits
+  let saveWarningShown = false;
+  let autosavePaused = false;
+
+  const panel = () => getPanel();
 
   function resetSession() {
     Object.keys(session.answers).forEach((k) => delete session.answers[k]);
     session.asked = [];
     session.dedupe = {};
     session.quickMode = false;
-    ui.resultRunTs = null;
+    ui.resultRunId = null;
+    autosavePaused = false;
   }
 
-  function panel() {
-    return getPanel();
-  }
-
-  // Every dynamic string interpolated into innerHTML below - free-text
-  // answers (vendor "Other" fields, company name, webServerStack) and
-  // AI-Insights response fields - goes through escapeHtml() (imported from
-  // ./html-safety.js, shared with main.js's live-feed renderers).
-  // localStorage save/resume (§2) doesn't change what needs escaping (that's
-  // an XSS-safety property of rendering, not of persistence), but it's the
-  // reason this got a fresh audit: a saved answer set now round-trips
-  // through this renderer many more times per session (loaded fresh on
-  // every "Resume") than an answer typed once and rendered once, so a
-  // missed spot fails more often.
-
-  // ---------- ASSESSMENT-EXPERIENCE-BRIEF.md §2: localStorage save/resume ----------
-  // Fires after every answer - this IS the save mechanism (see the brief:
-  // "no separate 'Save' vs 'Save & Next' button... one save mechanism, one
-  // toast, shown once"). Only persists during the actual data-collection
-  // phases; landing/results have nothing in-progress worth resuming into.
+  // ---------- saving in-progress answers ----------
   function persistProgress() {
-    if (ui.phase !== "scope" && ui.phase !== "profile" && ui.phase !== "wizard") return;
-    saveProgress(session, ui);
-    if (Object.keys(session.answers).length > 0 && !hasSeenSaveNotice()) {
-      showToast("Saved to this browser — close the tab anytime, but this only resumes from the same browser and device.");
-      markSaveNoticeSeen();
+    if (!["scope", "profile", "wizard"].includes(ui.phase) || autosavePaused) return;
+    const result = saveProgress(session, { phase: ui.phase, screenIndex: ui.screenIndex, categoryIndex: ui.categoryIndex });
+    if (result.ok) {
+      if (Object.keys(session.answers).length > 0 && !hasSeenSaveNotice()) {
+        showToast("Saved in this browser only - you can close the tab and resume here later, but not on another device.");
+        markSaveNoticeSeen();
+      }
+    } else if (!saveWarningShown) {
+      saveWarningShown = true;
+      showToast(result.reason === "quota" ? "Your progress can't be saved: this browser's storage for the site is full. Clear old reports in History to free space." : "Your progress isn't being saved (private browsing or site storage turned off). Finish in this tab, or it will be lost.");
     }
   }
 
-  // ---------- ASSESSMENT-EXPERIENCE-BRIEF.md §4: progress/skip UX ----------
+  // Another tab of this browser saved (or cleared) the same in-progress
+  // assessment. Pause saving here so the two tabs don't overwrite each other,
+  // and let the visitor choose.
+  let conflictData = null;
+  watchExternalChanges((data) => {
+    if (!["scope", "profile", "wizard"].includes(ui.phase)) return;
+    autosavePaused = true;
+    conflictData = data;
+    showConflictBanner();
+  });
+  // Re-shown after every re-render while saving is paused.
+  function showConflictBanner() {
+    const p = panel();
+    const data = conflictData;
+    if (!p || document.getElementById("tabConflict")) return;
+    const bar = document.createElement("div");
+    bar.id = "tabConflict";
+    bar.className = "resume-banner";
+    bar.setAttribute("role", "alert");
+    bar.innerHTML = `
+      <div class="resume-banner-text"><b>This assessment was changed in another tab.</b> Saving here is paused so the two don't overwrite each other.</div>
+      <div class="resume-banner-actions">
+        ${data ? `<button type="button" id="loadOtherTab">Load the other tab's answers</button>` : ""}
+        <button type="button" class="primary" id="keepThisTab">Keep this tab's answers</button>
+      </div>`;
+    p.prepend(bar);
+    const load = document.getElementById("loadOtherTab");
+    if (load) load.addEventListener("click", () => resumeFromSave(loadProgress()));
+    document.getElementById("keepThisTab").addEventListener("click", () => {
+      autosavePaused = false;
+      bar.remove();
+      persistProgress();
+    });
+  }
+
+  // ---------- progress ----------
+  function visibleProfileScreens() {
+    return PROFILE_SCREENS.filter((s) => (!s.skipIf || !s.skipIf(session.answers)) && (!session.quickMode || visibleNodes(s.flow, session).length > 0));
+  }
+  function visibleCategories() {
+    return FUNCTIONS.filter((fn) => !session.quickMode || categoryQuestions(fn).length > 0);
+  }
   function allKnownNodes() {
-    return [...PROFILE_SCREENS.flatMap((s) => Array.from(s.flow.index.values())), ...Array.from(ASSESSMENT_FLOW.index.values())];
+    return [...PROFILE_SCREENS.flatMap((s) => [...s.flow.index.values()]), ...ASSESSMENT_FLOW.index.values()];
   }
-  function skippedCount() {
-    return allKnownNodes().filter((n) => isNodeHidden(n, session)).length;
-  }
-  function progressInfo() {
-    const totalSections = visibleProfileScreens().length + FUNCTIONS.length;
-    let sectionIndex = 0;
-    if (ui.phase === "profile") sectionIndex = visibleProfileScreens().indexOf(PROFILE_SCREENS[ui.screenIndex]);
-    else if (ui.phase === "wizard") sectionIndex = visibleProfileScreens().length + ui.categoryIndex;
-    const remaining = Math.max(0, totalSections - sectionIndex);
-    const baseMinutes = session.quickMode ? 2 : 5;
-    // UX-VISUAL-CREDIBILITY-BRIEF.md §2: this genuinely recalculates every
-    // render (it's not a cached/one-time value) - the bug was Math.round()
-    // plateauing across several sections before the displayed integer
-    // finally ticked down (e.g. 12 sections into a 5-minute estimate: going
-    // from 12/12 remaining to 11/12 remaining rounds 5.0 -> 4.58 -> still
-    // "5"). Math.floor() instead guarantees the very first completed
-    // section already reads as real, visible progress.
-    const estimateMinutes = Math.max(1, Math.floor((baseMinutes * remaining) / totalSections));
-    return { position: sectionIndex + 1, totalSections, estimateMinutes };
+  function answeredCount() {
+    const eff = effectiveState(session).answers;
+    return allKnownNodes().filter((n) => isAnswered(eff[n.id])).length;
   }
   function progressMetaHtml() {
-    const { position, totalSections, estimateMinutes } = progressInfo();
-    const skipped = skippedCount();
+    const screens = visibleProfileScreens();
+    const total = screens.length + visibleCategories().length;
+    let position = 1;
+    if (ui.phase === "profile") position = screens.indexOf(PROFILE_SCREENS[ui.screenIndex]) + 1;
+    else if (ui.phase === "wizard") position = screens.length + visibleCategories().indexOf(FUNCTIONS[ui.categoryIndex]) + 1;
+    const skipped = session.quickMode ? 0 : allKnownNodes().filter((n) => isNodeHidden(n, session)).length;
     return `
-      <div class="progress-meta"><b>${position} of ${totalSections}</b> sections · ~${estimateMinutes} minute${estimateMinutes === 1 ? "" : "s"} left</div>
-      ${skipped > 0 ? `<p class="skip-note">Based on your answers, we've skipped ${skipped} question${skipped === 1 ? "" : "s"} that don't apply to your setup.</p>` : ""}
-    `;
+      <div class="progress-meta"><b>Section ${position} of ${total}</b> · ${answeredCount()} answered${session.quickMode ? " · Quick screening" : ""}</div>
+      ${skipped > 0 ? `<p class="skip-note">Based on your answers, ${skipped} question${skipped === 1 ? " doesn't" : "s don't"} apply to your setup and won't be asked.</p>` : ""}`;
   }
-  // Rendered once at the top of the next screen, then cleared so re-renders
-  // of that same screen (e.g. after answering another question on it) don't
-  // keep repeating it.
   function transitionNoteHtml() {
     if (!ui.transitionNote) return "";
     const text = ui.transitionNote;
     ui.transitionNote = null;
-    return `<p class="section-transition">${text}</p>`;
+    return `<p class="section-transition">${e(text)}</p>`;
   }
 
-  // ---------- visibility helpers ----------
-  function visibleProfileScreens() {
-    return PROFILE_SCREENS.filter((s) => !s.skipIf || !s.skipIf(session.answers));
+  function nextScreenIndex(from) {
+    const vis = visibleProfileScreens();
+    for (let i = from + 1; i < PROFILE_SCREENS.length; i++) if (vis.includes(PROFILE_SCREENS[i])) return i;
+    return PROFILE_SCREENS.length;
   }
-  function firstVisibleScreenIndex() {
-    const list = visibleProfileScreens();
-    return list.length ? PROFILE_SCREENS.indexOf(list[0]) : PROFILE_SCREENS.length;
+  function prevScreenIndex(from) {
+    const vis = visibleProfileScreens();
+    for (let i = from - 1; i >= 0; i--) if (vis.includes(PROFILE_SCREENS[i])) return i;
+    return -1;
   }
-  function nextVisibleScreenIndex(from) {
-    let i = from + 1;
-    while (i < PROFILE_SCREENS.length && PROFILE_SCREENS[i].skipIf && PROFILE_SCREENS[i].skipIf(session.answers)) i++;
-    return i;
+  function nextCategoryIndex(from) {
+    const vis = visibleCategories();
+    for (let i = from + 1; i < FUNCTIONS.length; i++) if (vis.includes(FUNCTIONS[i])) return i;
+    return FUNCTIONS.length;
   }
-  function prevVisibleScreenIndex(from) {
-    let i = from - 1;
-    while (i >= 0 && PROFILE_SCREENS[i].skipIf && PROFILE_SCREENS[i].skipIf(session.answers)) i--;
-    return i;
-  }
-  function lastVisibleScreenIndex() {
-    let i = PROFILE_SCREENS.length - 1;
-    while (i >= 0 && PROFILE_SCREENS[i].skipIf && PROFILE_SCREENS[i].skipIf(session.answers)) i--;
-    return i;
+  function prevCategoryIndex(from) {
+    const vis = visibleCategories();
+    for (let i = from - 1; i >= 0; i--) if (vis.includes(FUNCTIONS[i])) return i;
+    return -1;
   }
 
   // ---------- rail ----------
@@ -180,79 +204,60 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     const rail = getRail();
     if (!rail) return;
     if (ui.phase === "landing" || ui.phase === "sample") {
-      // ASSESSMENT-REPORT-DEPTH-BRIEF.md §1: an empty rail still reserved
-      // its 180px + 40px gap grid column (see .layout in app.css), which is
-      // exactly the ~220px the panel sat shifted right by - .rail-empty
-      // lets the grid collapse to a single column instead of leaving that
-      // space allocated to nothing.
       rail.innerHTML = "";
       rail.classList.add("rail-empty");
       return;
     }
     rail.classList.remove("rail-empty");
-    const visiblePre = visibleProfileScreens();
-    const items = ["Scope", ...visiblePre.map((s) => s.title), ...FUNCTIONS.map((fn) => FUNC_DISPLAY[fn]), "Reading"];
+    const screens = visibleProfileScreens();
+    const cats = visibleCategories();
+    const items = ["Scope", ...screens.map((s) => s.title), ...cats.map((fn) => FUNC_DISPLAY[fn]), "Report"];
     let activeIdx;
     if (ui.phase === "scope") activeIdx = 0;
-    else if (ui.phase === "profile") {
-      const posInVisible = visiblePre.indexOf(PROFILE_SCREENS[ui.screenIndex]);
-      activeIdx = 1 + (posInVisible >= 0 ? posInVisible : 0);
-    } else if (ui.phase === "wizard") activeIdx = 1 + visiblePre.length + ui.categoryIndex;
+    else if (ui.phase === "profile") activeIdx = 1 + Math.max(0, screens.indexOf(PROFILE_SCREENS[ui.screenIndex]));
+    else if (ui.phase === "wizard") activeIdx = 1 + screens.length + Math.max(0, cats.indexOf(FUNCTIONS[ui.categoryIndex]));
     else activeIdx = items.length - 1;
     rail.innerHTML =
-      '<div class="rail-line"></div>' +
-      '<div class="rail-dots">' +
+      '<div class="rail-line" aria-hidden="true"></div>' +
+      '<ol class="rail-dots" aria-label="Assessment progress">' +
       items
-        .map((label, i) => {
-          let cls = "node";
-          if (i < activeIdx) cls += " done";
-          if (i === activeIdx) cls += " active";
-          return `<div class="${cls}"><div class="dot"></div><div class="label">${label}</div></div>`;
-        })
+        .map((label, i) => `<li class="node${i < activeIdx ? " done" : ""}${i === activeIdx ? " active" : ""}"${i === activeIdx ? ' aria-current="step"' : ""}><div class="dot" aria-hidden="true"></div><div class="label">${e(label)}</div></li>`)
         .join("") +
-      "</div>" +
-      // Only rendered below 720px (see .rail-active-label in app.css) - the
-      // horizontal mobile rail hides each node's own label and shows this
-      // one instead, since there's no room for 8-15+ of them at once.
-      `<div class="rail-active-label">${items[activeIdx]}</div>`;
+      "</ol>" +
+      `<div class="rail-active-label" aria-hidden="true">${e(items[activeIdx])}</div>`;
   }
 
-  // ---------- ASSESSMENT-EXPERIENCE-BRIEF.md §5: mode-selection landing screen ----------
+  // ---------- landing ----------
   function startFresh(quickMode) {
     resetSession();
+    clearProgress();
     session.quickMode = quickMode;
     ui.phase = "scope";
     renderRail();
     renderScope();
+    focusHeading();
   }
 
   function resumeFromSave(saved) {
+    if (!saved) return;
     resetSession();
     Object.assign(session.answers, saved.answers || {});
     session.asked = Array.isArray(saved.asked) ? saved.asked : [];
     session.dedupe = saved.dedupe && typeof saved.dedupe === "object" ? saved.dedupe : {};
     session.quickMode = Boolean(saved.quickMode);
-    Object.assign(ui, saved.ui || {});
+    const s = saved.ui || {};
+    ui.phase = ["scope", "profile", "wizard"].includes(s.phase) ? s.phase : "scope";
+    ui.screenIndex = Number.isInteger(s.screenIndex) ? s.screenIndex : 0;
+    ui.categoryIndex = Number.isInteger(s.categoryIndex) ? s.categoryIndex : 0;
+    if (saved.migrationNotes?.length) showToast(saved.migrationNotes.join(" "));
     renderRail();
     dispatchPhase();
   }
 
-  // ASSESSMENT-REPORT-DEPTH-BRIEF.md §2: the "Assessment" nav link is a
-  // deliberate "start over" action - the landing screen (with its own
-  // Resume banner) is the one true entry point, not a silent resume of
-  // wherever the wizard was left. Only warn when that would actually
-  // discard something real: genuine in-progress answers mid-scope/profile/
-  // wizard. Sample Report, Results, and the landing screen itself have
-  // nothing at risk, so they proceed with no prompt - this is also what
-  // fixes "Assessment does nothing while viewing a Sample Report", since
-  // that phase now actively resets to landing instead of re-rendering itself.
   function requestLanding() {
-    const midAssessment = (ui.phase === "scope" || ui.phase === "profile" || ui.phase === "wizard") && Object.keys(session.answers).length > 0;
-    if (midAssessment && !confirm("Starting a new assessment will discard your current progress. Continue?")) {
-      return false;
-    }
+    const midAssessment = ["scope", "profile", "wizard"].includes(ui.phase) && Object.keys(session.answers).length > 0;
+    if (midAssessment && !confirm("Leave this assessment? Your answers so far stay saved in this browser, and you can resume from the Assessment page.")) return false;
     resetSession();
-    clearProgress();
     if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
     ui.phase = "landing";
     ui.screenIndex = 0;
@@ -263,70 +268,54 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     return true;
   }
 
-  // Re-open a completed report from browser history (History's "View
-  // report", or the landing screen's "View your last report"). Returns
-  // false for runs saved before answers were kept alongside them.
-  function openRun(ts) {
-    const run = getRun(ts);
-    if (!run || !run.answers) return false;
-    resetSession();
-    Object.assign(session.answers, JSON.parse(JSON.stringify(run.answers)));
-    session.quickMode = Boolean(run.quickMode);
-    ui.phase = "results";
-    ui.resultRunTs = run.ts;
-    if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
-    return true;
+  function lastReportRun() {
+    return listRuns().filter((r) => r.answers).pop() || null;
   }
 
   function renderLanding() {
     const p = panel();
     const saved = loadProgress();
-    // An in-progress assessment takes the banner slot; otherwise offer the
-    // most recent completed report, which is what lets a finished report
-    // survive a reload or a closed tab.
-    const lastRun = saved ? null : listRuns().filter((r) => r.answers).pop() || null;
+    const lastRun = saved ? null : lastReportRun();
+    const lastLabel = lastRun ? (lastRun.summary ? `${lastRun.summary.verdict.label}${lastRun.summary.coverage !== null && lastRun.mode === "full" ? `, ${lastRun.summary.coverage}% coverage` : ""}` : `${lastRun.legacyOverall}% under the earlier method`) : "";
     p.innerHTML = `
       <div class="step-eyebrow">Assessment</div>
-      <h2 class="step-title">Choose how to start</h2>
-      <p class="step-sub">Every mode runs the same six-function NIST CSF scoring, compounding-risk detection, and MITRE ATT&CK mapping at full strength - Quick just collects less vendor-specific detail along the way.</p>
+      <h2 class="step-title" tabindex="-1">Choose how to start</h2>
+      <p class="step-sub">A structured self-assessment against NIST CSF 2.0 and CIS Controls v8.1, built from your own answers. It runs in your browser: your answers aren't sent anywhere unless you choose to request AI insights at the end. <a href="/methodology" class="inline-link">How it's scored</a> · <a href="/privacy" class="inline-link">Privacy</a></p>
       ${
         saved
           ? `<div class="resume-banner">
-               <div class="resume-banner-text">You have an <b>in-progress assessment</b> saved on this browser.</div>
+               <div class="resume-banner-text">You have an <b>in-progress ${saved.quickMode ? "Quick screening" : "Full assessment"}</b> saved in this browser.</div>
                <div class="resume-banner-actions">
-                 <button id="discardResumeBtn">Start fresh</button>
-                 <button class="primary" id="resumeBtn">Resume →</button>
+                 <button type="button" id="discardResumeBtn">Discard it</button>
+                 <button type="button" class="primary" id="resumeBtn">Resume →</button>
                </div>
              </div>`
           : lastRun
             ? `<div class="resume-banner">
-               <div class="resume-banner-text">Your <b>last report</b> (${new Date(lastRun.ts).toLocaleDateString()}, ${lastRun.overall}%) is saved in this browser.</div>
-               <div class="resume-banner-actions">
-                 <button class="primary" id="viewLastReportBtn">View report →</button>
-               </div>
-             </div>`
+                 <div class="resume-banner-text">Your <b>last report</b> (${e(new Date(lastRun.ts).toLocaleDateString())}, ${e(lastLabel)}) is saved in this browser.</div>
+                 <div class="resume-banner-actions"><button type="button" class="primary" id="viewLastReportBtn">View report →</button></div>
+               </div>`
             : ""
       }
       <div class="mode-grid">
-        <div class="mode-card" id="modeQuick">
-          <div class="mode-card-time">${icon("clock")} ~2 minutes</div>
-          <h4>Quick Assessment</h4>
-          <p>Core NIST function scoring across all six functions - skips vendor-specific detail like which product or provider you use.</p>
-          <div class="mode-card-cta">Start Quick →</div>
-        </div>
-        <div class="mode-card" id="modeFull">
-          <div class="mode-card-time">${icon("clock")} ~5 minutes</div>
-          <h4>Full Assessment</h4>
-          <p>Everything, including vendor-specific mitigation guidance for the exact products and providers in your environment.</p>
-          <div class="mode-card-cta">Start Full →</div>
-        </div>
-        <div class="mode-card" id="modeSample">
-          <h4>See a Sample Report</h4>
-          <p>View a complete example report with no questions to answer - full depth, real scoring, nothing to fill in.</p>
-          <div class="mode-card-cta">View sample →</div>
-        </div>
-      </div>
-    `;
+        <button type="button" class="mode-card" id="modeQuick">
+          <span class="mode-card-time">${icon("clock")} 14 questions</span>
+          <span class="mode-card-title">Quick screening</span>
+          <span class="mode-card-body">Checks 11 core controls across all six areas and flags critical gaps. A screening, not a full reading - you can continue into the Full assessment afterwards without re-answering.</span>
+          <span class="mode-card-cta">Start screening →</span>
+        </button>
+        <button type="button" class="mode-card" id="modeFull">
+          <span class="mode-card-time">${icon("clock")} Adapts to your setup</span>
+          <span class="mode-card-title">Full assessment</span>
+          <span class="mode-card-body">Every question that applies to your organization, with coverage and completeness by area, a ranked action plan, compliance considerations and product-specific notes.</span>
+          <span class="mode-card-cta">Start full assessment →</span>
+        </button>
+        <button type="button" class="mode-card" id="modeSample">
+          <span class="mode-card-title">See example reports</span>
+          <span class="mode-card-body">Two fictional organizations - an IT services firm and a SaaS company - run through the real scoring engine. Nothing to fill in.</span>
+          <span class="mode-card-cta">View examples →</span>
+        </button>
+      </div>`;
     document.getElementById("modeQuick").addEventListener("click", () => startFresh(true));
     document.getElementById("modeFull").addEventListener("click", () => startFresh(false));
     document.getElementById("modeSample").addEventListener("click", () => {
@@ -334,467 +323,370 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       if (!currentPathIsSample()) history.pushState({}, "", ASSESSMENT_SAMPLE_PATH);
       renderRail();
       renderSampleReport();
+      focusHeading();
     });
     const resumeBtn = document.getElementById("resumeBtn");
     if (resumeBtn) resumeBtn.addEventListener("click", () => resumeFromSave(saved));
     const viewLastBtn = document.getElementById("viewLastReportBtn");
-    if (viewLastBtn)
-      viewLastBtn.addEventListener("click", () => {
-        if (!openRun(lastRun.ts)) return;
-        renderRail();
-        dispatchPhase();
-      });
+    if (viewLastBtn) viewLastBtn.addEventListener("click", () => openRun(lastRun.id) && (renderRail(), dispatchPhase()));
     const discardBtn = document.getElementById("discardResumeBtn");
     if (discardBtn)
       discardBtn.addEventListener("click", () => {
+        if (!confirm("Discard the saved in-progress assessment? This can't be undone.")) return;
         clearProgress();
         renderLanding();
       });
   }
 
-  // ---------- scope screen (§5.1) ----------
+  function focusHeading() {
+    const h = panel()?.querySelector(".step-title");
+    if (h) {
+      h.setAttribute("tabindex", "-1");
+      h.focus({ preventScroll: false });
+    }
+  }
+
+  // ---------- scope ----------
   function updateSerial() {
     const el = document.getElementById("serial");
     if (!el) return;
     const extra = FRAMEWORKS.filter((f) => session.answers[f.id]).map((f) => f.name);
-    const label = extra.length ? `NIST CSF 2.0 · CIS Controls v8 + ${extra.join(" + ")}` : "NIST CSF 2.0 · CIS Controls v8";
-    el.innerHTML = `SIMPLIFIEDCS / PROTOTYPE&nbsp;v0.1 · ${label}`;
+    el.textContent = `SIMPLIFIEDCS · NIST CSF 2.0 · CIS Controls v8.1${extra.length ? " + " + extra.join(" + ") : ""}`;
   }
 
-  async function renderScope() {
+  function renderScope() {
     persistProgress();
+    const restore = preserveFocus(panel());
     const p = panel();
-    p.innerHTML = `<div class="step-eyebrow">Scope</div><h2 class="step-title">Before we start</h2>`;
-    const historyCount = listRuns().length;
-
+    const quick = session.quickMode;
     const ind = session.answers.industry ? INDUSTRIES.find((i) => i.id === session.answers.industry) : null;
     const selectedRegions = session.answers.regions || [];
     const selectedCountries = session.answers.countries || [];
-
     const reasons = {};
-    const addReason = (fid, r) => {
-      reasons[fid] = reasons[fid] || [];
-      reasons[fid].push(r);
-    };
-    if (ind && ind.topPriority) addReason(ind.topPriority, { type: "top", label: `★ Top priority recommendation for ${ind.label}` });
-    if (ind && ind.alsoRelevant) ind.alsoRelevant.forEach((fid) => addReason(fid, { type: "industry", label: `Commonly relevant for ${ind.label}` }));
+    const addReason = (fid, r) => (reasons[fid] = [...(reasons[fid] || []), r]);
+    if (ind?.topPriority) addReason(ind.topPriority, { type: "top", label: `Commonly the first framework for ${ind.label}` });
+    (ind?.alsoRelevant || []).forEach((fid) => addReason(fid, { type: "industry", label: `Commonly relevant for ${ind.label}` }));
     selectedRegions.forEach((rid) => {
       const r = REGIONS.find((x) => x.id === rid);
       if (r) r.frameworks.forEach((fid) => addReason(fid, { type: "region", label: `Relevant for ${r.label} operations` }));
     });
-    const highlightedIds = Object.keys(reasons);
-    const highlightedFw = FRAMEWORKS.filter((f) => highlightedIds.includes(f.id)).sort((a, b) => (a.id === ind?.topPriority ? -1 : 0) - (b.id === ind?.topPriority ? -1 : 0));
-    const otherFw = FRAMEWORKS.filter((f) => !highlightedIds.includes(f.id));
-    const regularRegions = REGIONS.filter((r) => !r.standalone);
-    const globalRegion = REGIONS.find((r) => r.standalone);
+    const highlightedFw = FRAMEWORKS.filter((f) => reasons[f.id]);
+    const otherFw = FRAMEWORKS.filter((f) => !reasons[f.id]);
+    const fwCheck = (f) => `
+      <label class="fw-card ${session.answers[f.id] ? "selected" : ""}">
+        <input type="checkbox" class="sr-only" data-fw="${f.id}" data-fkey="fw-${f.id}" ${session.answers[f.id] ? "checked" : ""}>
+        <span class="fw-card-text">
+          <span class="fw-name">${e(f.name)}</span>
+          ${(reasons[f.id] || []).map((r) => `<span class="priority-tag">${e(r.label)}</span>`).join("")}
+          <span class="fw-desc">${e(f.desc)}</span>
+        </span>
+        <span class="checkbox" aria-hidden="true"></span>
+      </label>`;
 
     p.innerHTML = `
-      <div class="step-eyebrow">Scope · ${session.quickMode ? "Quick Assessment" : "Full Assessment"}</div>
-      <h2 class="step-title">Before we start</h2>
-      <p class="step-sub">Every assessment includes the NIST CSF 2.0 + CIS Controls baseline. Add any compliance standards that apply to your organization - none are selected automatically, even if we flag one as relevant for your industry or region.</p>
-      ${historyCount ? `<a class="history-link" id="historyLink" href="${pathForTab("history")}">You have ${historyCount} previous assessment${historyCount === 1 ? "" : "s"} saved in this browser - <u>view history</u></a>` : ""}
+      <div class="step-eyebrow">Scope · ${quick ? "Quick screening" : "Full assessment"}</div>
+      <h2 class="step-title" tabindex="-1">Before we start</h2>
+      <p class="step-sub">${quick ? "Quick screening needs just your industry here. Region and compliance-framework questions are part of the Full assessment." : "Every assessment is measured against NIST CSF 2.0 and CIS Controls v8.1. Add any compliance standards that apply - none are selected automatically."}</p>
 
-      <div class="fw-section-label">Industry</div>
-      <div class="industry-grid">
-        ${INDUSTRIES.map((i) => `<div class="industry-card ${session.answers.industry === i.id ? "selected" : ""}" data-industry="${i.id}">${i.label}</div>`).join("")}
-      </div>
-
-      ${(() => {
-        if (!ind) return "";
-        if (ind.otDefault === "skip")
-          return `<div class="ot-skip-note">
-          Based on <b>${ind.label}</b>, we've assumed no dedicated OT/ICS environment and will skip those questions.
-          <label class="ot-override-label"><input type="checkbox" id="otOverrideCheck" ${session.answers.otOverride ? "checked" : ""}> Include OT questions anyway</label>
-        </div>`;
-        if (ind.otDefault === "likely")
-          return `<div class="ot-likely-note">
-          OT/ICS environments are common in <b>${ind.label}</b> - we've kept those questions in your assessment by default. Answer "No" on that step if it genuinely doesn't apply to you.
-        </div>`;
-        return "";
-      })()}
-
-      <div class="fw-section-label">Where do you operate?</div>
-      <p class="scope-hint" style="margin-top:-6px;">Select every region your organization is registered or operating in - this surfaces the specific frameworks mandated there. Choose Global if this doesn't apply, or narrow down to specific countries below.</p>
-
-      <div class="region-global-standalone ${selectedRegions.includes(globalRegion.id) ? "selected" : ""}" data-region="${globalRegion.id}">
-        <div class="checkbox"></div><b>${globalRegion.label}</b> - not tied to a specific region
-      </div>
-
-      <div class="region-grid">
-        ${regularRegions
-          .map(
-            (r) => `
-          <div class="region-chip ${selectedRegions.includes(r.id) ? "selected" : ""}" data-region="${r.id}">
-            <div class="checkbox"></div>${r.label}
-          </div>
-        `
-          )
-          .join("")}
-      </div>
-      ${selectedRegions
-        .map((rid) => {
-          const r = REGIONS.find((x) => x.id === rid);
-          return r ? `<div class="region-note"><b>${r.label}:</b> ${r.note}</div>` : "";
-        })
-        .join("")}
-
-      <div class="acc-card ${selectedCountries.length ? "open" : ""}" style="margin-top:10px;">
-        <div class="acc-head">
-          <div class="icon-badge">${icon("register")}</div>
-          <div><h4>Select specific countries</h4><div class="acc-sub">Optional - ${selectedCountries.length ? `${selectedCountries.length} selected` : "for granular, per-country tracking"}</div></div>
-          <div class="acc-chevron">▸</div>
+      <fieldset class="scope-group">
+        <legend class="fw-section-label">Industry <span class="req-tag">required</span></legend>
+        <div class="industry-grid">
+          ${INDUSTRIES.map(
+            (i) => `<label class="industry-card ${session.answers.industry === i.id ? "selected" : ""}"><input type="radio" class="sr-only" name="industry" value="${i.id}" data-fkey="industry-${i.id}" ${session.answers.industry === i.id ? "checked" : ""}>${e(i.label)}</label>`
+          ).join("")}
         </div>
-        <div class="acc-body">
+      </fieldset>
+
+      ${
+        !ind || quick
+          ? ""
+          : ind.otDefault === "skip"
+            ? `<div class="ot-skip-note">Based on <b>${e(ind.label)}</b>, we've assumed no dedicated OT/ICS environment and will skip those questions.
+                 <label class="ot-override-label"><input type="checkbox" id="otOverrideCheck" data-fkey="otOverride" ${session.answers.otOverride ? "checked" : ""}> Include OT questions anyway</label></div>`
+            : ind.otDefault === "likely"
+              ? `<div class="ot-likely-note">OT/ICS environments are common in <b>${e(ind.label)}</b>, so those questions are included. Answer "No" if it doesn't apply.</div>`
+              : ""
+      }
+
+      ${
+        quick
+          ? ""
+          : `
+      <fieldset class="scope-group">
+        <legend class="fw-section-label">Where do you operate? <span class="opt-tag">optional</span></legend>
+        <p class="scope-hint">Select every region you're registered or operate in - this highlights the frameworks commonly required there.</p>
+        <div class="region-grid">
+          ${REGIONS.map(
+            (r) => `<label class="region-chip ${selectedRegions.includes(r.id) ? "selected" : ""}"><input type="checkbox" class="sr-only" data-region="${r.id}" data-fkey="region-${r.id}" ${selectedRegions.includes(r.id) ? "checked" : ""}><span class="checkbox" aria-hidden="true"></span>${e(r.label)}</label>`
+          ).join("")}
+        </div>
+        ${selectedRegions.map((rid) => REGIONS.find((x) => x.id === rid)).filter(Boolean).map((r) => `<div class="region-note"><b>${e(r.label)}:</b> ${e(r.note)}</div>`).join("")}
+        <details class="acc-details" ${selectedCountries.length ? "open" : ""}>
+          <summary>Select specific countries <span class="opt-tag">${selectedCountries.length ? `${selectedCountries.length} selected` : "optional"}</span></summary>
           <div class="country-checklist">
-            ${COUNTRIES.map(
-              (c) => `
-              <label class="country-check-item">
-                <input type="checkbox" data-country="${c}" ${selectedCountries.includes(c) ? "checked" : ""}> ${c}
-              </label>
-            `
-            ).join("")}
+            ${COUNTRIES.map((c) => `<label class="country-check-item"><input type="checkbox" data-country="${e(c)}" ${selectedCountries.includes(c) ? "checked" : ""}> ${e(c)}</label>`).join("")}
           </div>
-        </div>
-      </div>
+        </details>
+      </fieldset>
 
-      <div class="fw-section-label">Frameworks</div>
-      <div class="fw-baseline"><b>Always included:</b> NIST CSF 2.0 + CIS Controls v8 (the baseline this instrument is built on)</div>
-      ${(() => {
-        const hasOtherSelected = otherFw.some((f) => session.answers[f.id]);
-        const fwCardHtml = (f) => `
-          <div class="fw-card ${session.answers[f.id] ? "selected" : ""} ${reasons[f.id]?.some((r) => r.type === "top") ? "fw-top-priority" : ""}" data-fw="${f.id}">
-            <div>
-              <div class="fw-name">${f.name}</div>
-              ${(reasons[f.id] || []).map((r) => `<div class="priority-tag">${r.label}</div>`).join("")}
-              <div class="fw-desc">${f.desc}</div>
-            </div>
-            <div class="checkbox"></div>
-          </div>
-        `;
-        return `
-          ${highlightedFw.map(fwCardHtml).join("")}
-          <div class="acc-card ${hasOtherSelected ? "open" : ""}" style="margin-top:10px;">
-            <div class="acc-head">
-              <div class="icon-badge">${icon("register")}</div>
-              <div><h4>Additional Compliance & Regulatory Frameworks</h4><div class="acc-sub">${otherFw.length} more standards available - ${hasOtherSelected ? "you have one selected below" : "optional, select any that apply"}</div></div>
-              <div class="acc-chevron">▸</div>
-            </div>
-            <div class="acc-body" style="padding-left:18px;">
-              ${otherFw.map(fwCardHtml).join("")}
-            </div>
-          </div>
-        `;
-      })()}
-      <p class="scope-hint">These are common patterns, not a legal determination - confirm exact obligations (especially NIS2 sector/size thresholds) with your regulatory counsel.</p>
+      <fieldset class="scope-group">
+        <legend class="fw-section-label">Compliance frameworks <span class="opt-tag">optional</span></legend>
+        <div class="fw-baseline"><b>Always included:</b> NIST CSF 2.0 + CIS Controls v8.1 (the reference this assessment is aligned to)</div>
+        ${highlightedFw.map(fwCheck).join("")}
+        <details class="acc-details" ${otherFw.some((f) => session.answers[f.id]) ? "open" : ""}>
+          <summary>${otherFw.length} more standards</summary>
+          ${otherFw.map(fwCheck).join("")}
+        </details>
+        <p class="scope-hint">Common patterns, not a legal determination - confirm exact obligations (for example NIS2 size and sector thresholds) with your regulatory counsel.</p>
+      </fieldset>`
+      }
 
       <div class="nav">
-        <button id="backToLandingBtn">← Change assessment type</button>
-        <button class="primary" id="scopeNext">Start assessment →</button>
-      </div>
-    `;
+        <button type="button" id="backToLandingBtn">← Change assessment type</button>
+        <button type="button" class="primary" id="scopeNext" ${session.answers.industry ? "" : "disabled"}>${session.answers.industry ? "Start →" : "Choose an industry to start"}</button>
+      </div>`;
 
-    p.querySelectorAll(".industry-card").forEach((el) => {
-      el.addEventListener("click", () => {
-        session.answers.industry = el.dataset.industry;
-        renderScope();
-      });
-    });
-    p.querySelectorAll(".region-chip, .region-global-standalone").forEach((el) => {
-      el.addEventListener("click", () => {
-        const rid = el.dataset.region;
-        session.answers.regions = session.answers.regions || [];
-        const i = session.answers.regions.indexOf(rid);
-        if (i >= 0) session.answers.regions.splice(i, 1);
-        else session.answers.regions.push(rid);
-        renderScope();
-      });
-    });
-    p.querySelectorAll("input[data-country]").forEach((el) => {
+    p.querySelectorAll('input[name="industry"]').forEach((el) =>
       el.addEventListener("change", () => {
-        session.answers.countries = session.answers.countries || [];
-        const c = el.dataset.country;
-        const i = session.answers.countries.indexOf(c);
-        if (el.checked && i < 0) session.answers.countries.push(c);
-        else if (!el.checked && i >= 0) session.answers.countries.splice(i, 1);
-      });
-    });
-    const otCheck = document.getElementById("otOverrideCheck");
-    if (otCheck) {
-      otCheck.addEventListener("change", () => {
-        session.answers.otOverride = otCheck.checked;
+        session.answers.industry = el.value;
         renderScope();
-      });
-    }
-    const historyLinkEl = document.getElementById("historyLink");
-    if (historyLinkEl) wireNavLink(historyLinkEl, "history");
+      })
+    );
+    p.querySelectorAll("input[data-region]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const set = new Set(session.answers.regions || []);
+        el.checked ? set.add(el.dataset.region) : set.delete(el.dataset.region);
+        session.answers.regions = [...set];
+        renderScope();
+      })
+    );
+    p.querySelectorAll("input[data-country]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const set = new Set(session.answers.countries || []);
+        el.checked ? set.add(el.dataset.country) : set.delete(el.dataset.country);
+        session.answers.countries = [...set];
+        persistProgress();
+      })
+    );
+    p.querySelectorAll("input[data-fw]").forEach((el) =>
+      el.addEventListener("change", () => {
+        session.answers[el.dataset.fw] = el.checked;
+        renderScope();
+        updateSerial();
+      })
+    );
+    const otCheck = document.getElementById("otOverrideCheck");
+    if (otCheck) otCheck.addEventListener("change", () => ((session.answers.otOverride = otCheck.checked), renderScope()));
     document.getElementById("backToLandingBtn").addEventListener("click", () => {
       ui.phase = "landing";
       renderRail();
       renderLanding();
-    });
-    p.querySelectorAll(".acc-head").forEach((el) => {
-      el.addEventListener("click", (e) => {
-        if (e.target.closest(".fw-card")) return;
-        el.parentElement.classList.toggle("open");
-      });
-    });
-    p.querySelectorAll(".fw-card").forEach((el) => {
-      el.addEventListener("click", () => {
-        const id = el.dataset.fw;
-        session.answers[id] = !session.answers[id];
-        renderScope();
-        updateSerial();
-      });
+      focusHeading();
     });
     document.getElementById("scopeNext").addEventListener("click", () => {
       updateSerial();
-      const idx = firstVisibleScreenIndex();
-      if (idx >= PROFILE_SCREENS.length) {
-        ui.phase = "wizard";
-        ui.categoryIndex = 0;
-        renderRail();
-        renderAssessmentCategory();
-      } else {
-        ui.phase = "profile";
-        ui.screenIndex = idx;
-        renderRail();
-        renderProfileScreen();
-      }
+      goToFirstScreen();
     });
+    restore();
+    if (autosavePaused) showConflictBanner();
   }
 
-  // ---------- profile screens (§5.2/§5.3/§5.4/§5.5) ----------
+  function goToFirstScreen() {
+    const idx = nextScreenIndex(-1);
+    if (idx >= PROFILE_SCREENS.length) {
+      ui.phase = "wizard";
+      ui.categoryIndex = nextCategoryIndex(-1);
+      renderRail();
+      renderAssessmentCategory();
+    } else {
+      ui.phase = "profile";
+      ui.screenIndex = idx;
+      renderRail();
+      renderProfileScreen();
+    }
+    focusHeading();
+  }
+
+  // ---------- setup screens ----------
+  function optTag(node) {
+    return node.required === false ? ' <span class="opt-tag">optional</span>' : "";
+  }
+
   function fieldHtml(node) {
     const val = session.answers[node.id] ?? "";
-    if (node.type === "info") return `<div class="info-box">${node.text}</div>`;
+    const id = node.id;
+    if (node.type === "info") return `<div class="info-box">${e(node.text)}</div>`;
     if (node.type === "select") {
-      // UX-VISUAL-CREDIBILITY-BRIEF.md §1: every profile "select" node has a
-      // small, fixed option set (confirmed ≤5 across every data file) - a
-      // single click beats open-then-pick, and reusing the same .question/
-      // .options/.option/.radio pattern the scored NIST questions already
-      // use keeps a consistent look across the whole wizard. Vendor fields
-      // (type "vendor") keep the dropdown - open-ended, larger lists pair
-      // better with a native select's own "Other" fallback than a wall of
-      // radio buttons would.
-      // ASSESSMENT-REPORT-DEPTH-BRIEF.md §5: "Other" added where a fixed
-      // option set could genuinely miss a real answer - node.allowOther is
-      // opt-in per question, not universal (a plain Yes/No has no
-      // meaningful "Other"). Mirrors the vendor-field pattern: an __isOther
-      // flag plus the main answer left blank/typed-text until something
-      // real is entered, so a required field isn't "complete" on selecting
-      // Other alone.
-      const isOtherSelected = Boolean(node.allowOther && session.answers[node.id + "__isOther"]);
+      const isOther = Boolean(node.allowOther && session.answers[id + "__isOther"]);
+      const radio = (value, label) => `
+        <label class="option ${(!isOther && val === value) || (isOther && value === OTHER_VALUE) ? "selected" : ""}">
+          <input type="radio" class="sr-only" name="p-${id}" value="${e(value)}" data-fid="${id}" data-fkey="${id}:${e(value)}" ${(!isOther && val === value) || (isOther && value === OTHER_VALUE) ? "checked" : ""}>
+          <span class="radio" aria-hidden="true"></span><span>${e(label)}</span>
+        </label>`;
       return `
-        <div class="question">
-          <p>${node.text}${node.required ? "" : ' <span class="opt-tag">optional</span>'}</p>
+        <fieldset class="question">
+          <legend>${e(node.text)}${optTag(node)}</legend>
           <div class="options">
-            ${node.options
-              .map(
-                (o) => `
-              <div class="option ${!isOtherSelected && val === o ? "selected" : ""}" data-fid="${node.id}" data-val="${escapeHtml(o)}">
-                <div class="radio"></div><div>${escapeHtml(o)}</div>
-              </div>
-            `
-              )
-              .join("")}
-            ${
-              node.allowOther
-                ? `
-              <div class="option ${isOtherSelected ? "selected" : ""}" data-fid="${node.id}" data-val="${OTHER_VALUE}">
-                <div class="radio"></div><div>Other</div>
-              </div>`
-                : ""
-            }
+            ${node.options.map((o) => radio(o, o)).join("")}
+            ${node.allowOther ? radio(OTHER_VALUE, "Other") : ""}
           </div>
-          ${isOtherSelected ? `<input type="text" data-select-other-fid="${node.id}" value="${escapeHtml(val)}" placeholder="${escapeHtml(node.otherPlaceholder || "Please specify")}" style="margin-top:10px;">` : ""}
-        </div>`;
+          ${isOther ? `<label class="other-input"><span class="sr-only">Describe your answer</span><input type="text" data-select-other-fid="${id}" data-fkey="${id}:other-text" value="${e(val)}" placeholder="${e(node.otherPlaceholder || "Please specify")}"></label>` : ""}
+        </fieldset>`;
     }
     if (node.type === "multiselect") {
       const selected = Array.isArray(val) ? val : [];
       const otherChecked = selected.includes(OTHER_VALUE);
-      const otherText = session.answers[node.id + "__otherText"] || "";
+      const box = (optId, label) => `
+        <label class="checkbox-option ${selected.includes(optId) ? "selected" : ""}">
+          <input type="checkbox" data-multi-fid="${id}" value="${e(optId)}" data-fkey="${id}:${e(optId)}" ${selected.includes(optId) ? "checked" : ""}> ${e(label)}
+        </label>`;
       return `
-        <div class="field">
-          <label>${node.text}${node.required ? "" : ' <span class="opt-tag">optional</span>'}</label>
-          <div class="checkbox-group" data-fid="${node.id}">
-            ${node.options
-              .map(
-                (o) => `
-              <label class="checkbox-option ${selected.includes(o.id) ? "selected" : ""}">
-                <input type="checkbox" data-optid="${o.id}" ${selected.includes(o.id) ? "checked" : ""}> ${o.label}
-              </label>
-            `
-              )
-              .join("")}
-            ${
-              node.allowOther
-                ? `
-              <label class="checkbox-option ${otherChecked ? "selected" : ""}">
-                <input type="checkbox" data-optid="${OTHER_VALUE}" ${otherChecked ? "checked" : ""}> Other
-              </label>`
-                : ""
-            }
+        <fieldset class="field">
+          <legend>${e(node.text)}${optTag(node)}</legend>
+          <div class="checkbox-group">
+            ${node.options.map((o) => box(o.id, o.label)).join("")}
+            ${node.allowOther ? box(OTHER_VALUE, "Other") : ""}
           </div>
-          ${otherChecked ? `<input type="text" data-fid-other="${node.id}" value="${escapeHtml(otherText)}" placeholder="${escapeHtml(node.otherPlaceholder || "Please specify")}">` : ""}
-        </div>`;
+          ${otherChecked ? `<label class="other-input"><span class="sr-only">Describe the other option</span><input type="text" data-fid-other="${id}" data-fkey="${id}:other-text" value="${e(session.answers[id + "__otherText"] || "")}" placeholder="${e(node.otherPlaceholder || "Please specify")}"></label>` : ""}
+        </fieldset>`;
     }
     if (node.type === "vendor") {
-      const isOther = session.answers[node.id + "__isOther"] || (val !== "" && !node.vendorOptions.includes(val));
+      const isOther = session.answers[id + "__isOther"] || (val !== "" && !node.vendorOptions.includes(val));
       return `
         <div class="field">
-          <label>${node.text}${node.required ? "" : ' <span class="opt-tag">optional</span>'}</label>
-          <select data-vendor-fid="${node.id}">
-            <option value="" ${val === "" && !isOther ? "selected" : ""} disabled>Select…</option>
-            ${node.vendorOptions.map((v) => `<option value="${v}" ${!isOther && val === v ? "selected" : ""}>${v}</option>`).join("")}
+          <label for="v-${id}">${e(node.text)}${optTag(node)}</label>
+          <select id="v-${id}" data-vendor-fid="${id}" data-fkey="${id}:select">
+            <option value="" ${val === "" && !isOther ? "selected" : ""}>Not specified</option>
+            ${node.vendorOptions.map((v) => `<option value="${e(v)}" ${!isOther && val === v ? "selected" : ""}>${e(v)}</option>`).join("")}
             <option value="${OTHER_VALUE}" ${isOther ? "selected" : ""}>Other</option>
           </select>
-          ${isOther ? `<input type="text" data-vendor-other-fid="${node.id}" value="${escapeHtml(!node.vendorOptions.includes(val) ? val : "")}" placeholder="Please specify">` : ""}
+          ${isOther ? `<label class="other-input"><span class="sr-only">Product or provider name</span><input type="text" data-vendor-other-fid="${id}" data-fkey="${id}:other-text" value="${e(!node.vendorOptions.includes(val) ? val : "")}" placeholder="Please specify"></label>` : ""}
         </div>`;
     }
-    // text
     return `
       <div class="field">
-        <label>${node.text}${node.required ? "" : ' <span class="opt-tag">optional</span>'}</label>
-        <input type="text" data-fid="${node.id}" value="${escapeHtml(val)}" placeholder="${escapeHtml(node.placeholder || "")}">
+        <label for="t-${id}">${e(node.text)}${optTag(node)}</label>
+        <input type="text" id="t-${id}" data-text-fid="${id}" data-fkey="${id}:text" value="${e(val)}" placeholder="${e(node.placeholder || "")}">
       </div>`;
   }
 
   function screenComplete(screen) {
-    return visibleNodes(screen.flow, session).every((n) => !n.required || (session.answers[n.id] !== undefined && session.answers[n.id] !== "" && !(Array.isArray(session.answers[n.id]) && session.answers[n.id].length === 0)));
+    return visibleNodes(screen.flow, session).every((n) => n.required === false || isAnswered(session.answers[n.id]));
   }
 
   function renderProfileScreen() {
     persistProgress();
+    const restore = preserveFocus(panel());
     const screen = PROFILE_SCREENS[ui.screenIndex];
     const p = panel();
     const nodes = visibleNodes(screen.flow, session);
-    const isLastVisible = nextVisibleScreenIndex(ui.screenIndex) >= PROFILE_SCREENS.length;
+    const isLast = nextScreenIndex(ui.screenIndex) >= PROFILE_SCREENS.length;
     p.innerHTML = `
-      <div class="step-eyebrow">Pre-Assessment</div>
-      <h2 class="step-title">${screen.title}</h2>
+      <div class="step-eyebrow">Setup</div>
+      <h2 class="step-title" tabindex="-1">${e(screen.title)}</h2>
       ${transitionNoteHtml()}
       ${progressMetaHtml()}
-      <p class="step-sub">${screen.sub}</p>
+      <p class="step-sub">${e(screen.sub)}</p>
       ${nodes.map(fieldHtml).join("")}
       <div class="nav">
-        <button id="backBtn">← Back</button>
-        <button class="primary" id="nextBtn" ${screenComplete(screen) ? "" : "disabled"}>${isLastVisible ? "Continue to assessment →" : "Continue →"}</button>
-      </div>
-    `;
+        <button type="button" id="backBtn">← Back</button>
+        <button type="button" class="primary" id="nextBtn" ${screenComplete(screen) ? "" : "disabled"}>${isLast ? "Continue to the scored sections →" : "Continue →"}</button>
+      </div>`;
+    const node = (fid) => screen.flow.index.get(fid);
+    const refreshNext = () => (document.getElementById("nextBtn").disabled = !screenComplete(screen));
 
-    function refreshNext() {
-      document.getElementById("nextBtn").disabled = !screenComplete(screen);
-    }
-
-    p.querySelectorAll(".option[data-fid]").forEach((el) => {
-      el.addEventListener("click", () => {
-        const node = screen.flow.index.get(el.dataset.fid);
-        if (el.dataset.val === OTHER_VALUE) {
-          session.answers[node.id + "__isOther"] = true;
-          recordAnswer(session, node, "");
+    p.querySelectorAll("input[type=radio][data-fid]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const n = node(el.dataset.fid);
+        if (el.value === OTHER_VALUE) {
+          session.answers[n.id + "__isOther"] = true;
+          recordAnswer(session, n, "");
         } else {
-          delete session.answers[node.id + "__isOther"];
-          recordAnswer(session, node, el.dataset.val);
+          delete session.answers[n.id + "__isOther"];
+          recordAnswer(session, n, el.value);
         }
         renderProfileScreen();
-      });
-    });
+      })
+    );
     p.querySelectorAll("input[data-select-other-fid]").forEach((el) => {
       el.addEventListener("input", () => {
-        const node = screen.flow.index.get(el.dataset.selectOtherFid);
-        recordAnswer(session, node, el.value);
+        recordAnswer(session, node(el.dataset.selectOtherFid), el.value);
         refreshNext();
+        persistProgress();
       });
-      // Same keyword-match-first principle as the multiselect handler above,
-      // adapted for a single answer: a match converts the answer directly
-      // to the existing option's own canonical value instead of adding to a
-      // set, since a single-select only ever holds one.
+      // A typed answer that matches an existing option becomes that option.
       el.addEventListener("blur", () => {
-        const node = screen.flow.index.get(el.dataset.selectOtherFid);
-        const text = (session.answers[node.id] || "").trim();
+        const n = node(el.dataset.selectOtherFid);
+        const text = String(session.answers[n.id] || "").trim();
         if (!text) return;
-        const match = matchOtherText(text, node.options.map((o) => ({ id: o, label: o })));
+        const match = matchOtherText(text, n.options.map((o) => ({ id: o, label: o })));
         if (!match) return;
-        delete session.answers[node.id + "__isOther"];
-        recordAnswer(session, node, match.id);
+        delete session.answers[n.id + "__isOther"];
+        recordAnswer(session, n, match.id);
         renderProfileScreen();
       });
     });
-    p.querySelectorAll("input[type=text][data-fid]").forEach((el) => {
+    p.querySelectorAll("input[data-text-fid]").forEach((el) =>
       el.addEventListener("input", () => {
-        const node = screen.flow.index.get(el.dataset.fid);
-        recordAnswer(session, node, el.value);
+        recordAnswer(session, node(el.dataset.textFid), el.value);
         refreshNext();
-      });
-    });
-    p.querySelectorAll("select[data-vendor-fid]").forEach((el) => {
+        persistProgress();
+      })
+    );
+    p.querySelectorAll("select[data-vendor-fid]").forEach((el) =>
       el.addEventListener("change", () => {
-        const node = screen.flow.index.get(el.dataset.vendorFid);
+        const n = node(el.dataset.vendorFid);
         if (el.value === OTHER_VALUE) {
-          session.answers[node.id + "__isOther"] = true;
-          recordAnswer(session, node, "");
+          session.answers[n.id + "__isOther"] = true;
+          recordAnswer(session, n, "");
         } else {
-          delete session.answers[node.id + "__isOther"];
-          recordAnswer(session, node, el.value);
+          delete session.answers[n.id + "__isOther"];
+          recordAnswer(session, n, el.value);
         }
         renderProfileScreen();
-      });
-    });
-    p.querySelectorAll("input[data-vendor-other-fid]").forEach((el) => {
+      })
+    );
+    p.querySelectorAll("input[data-vendor-other-fid]").forEach((el) =>
       el.addEventListener("input", () => {
-        const node = screen.flow.index.get(el.dataset.vendorOtherFid);
-        recordAnswer(session, node, el.value);
+        recordAnswer(session, node(el.dataset.vendorOtherFid), el.value);
         refreshNext();
-      });
-    });
-    p.querySelectorAll(".checkbox-group[data-fid]").forEach((groupEl) => {
-      groupEl.querySelectorAll("input[data-optid]").forEach((cb) => {
-        cb.addEventListener("change", () => {
-          const node = screen.flow.index.get(groupEl.dataset.fid);
-          const current = Array.isArray(session.answers[node.id]) ? [...session.answers[node.id]] : [];
-          const optId = cb.dataset.optid;
-          const i = current.indexOf(optId);
-          if (cb.checked && i < 0) current.push(optId);
-          else if (!cb.checked && i >= 0) current.splice(i, 1);
-          recordAnswer(session, node, current);
-          renderProfileScreen();
-        });
-      });
-    });
+        persistProgress();
+      })
+    );
+    p.querySelectorAll("input[data-multi-fid]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const n = node(el.dataset.multiFid);
+        const set = new Set(Array.isArray(session.answers[n.id]) ? session.answers[n.id] : []);
+        el.checked ? set.add(el.value) : set.delete(el.value);
+        recordAnswer(session, n, [...set]);
+        renderProfileScreen();
+      })
+    );
     p.querySelectorAll("input[data-fid-other]").forEach((el) => {
       el.addEventListener("input", () => {
         session.answers[el.dataset.fidOther + "__otherText"] = el.value;
         refreshNext();
+        persistProgress();
       });
-      // ASSESSMENT-REPORT-DEPTH-BRIEF.md §5: keyword-match first, checked
-      // once typing pauses (blur) rather than per keystroke - a mid-word
-      // partial match would flicker the checkbox state distractingly while
-      // someone is still typing. A match silently also checks the existing
-      // structured option (in addition to keeping their own typed text
-      // intact) so downstream logic - dedupe, compounding-risk flags -
-      // sees it exactly as if they'd picked it from the list, at zero cost.
       el.addEventListener("blur", () => {
-        const node = screen.flow.index.get(el.dataset.fidOther);
-        const text = (session.answers[node.id + "__otherText"] || "").trim();
-        if (!text || node.type !== "multiselect") return;
-        const match = matchOtherText(text, node.options);
+        const n = node(el.dataset.fidOther);
+        const text = String(session.answers[n.id + "__otherText"] || "").trim();
+        if (!text) return;
+        const match = matchOtherText(text, n.options);
         if (!match) return;
-        const current = Array.isArray(session.answers[node.id]) ? [...session.answers[node.id]] : [];
+        const current = Array.isArray(session.answers[n.id]) ? [...session.answers[n.id]] : [];
         if (current.includes(match.id)) return;
-        current.push(match.id);
-        recordAnswer(session, node, current);
+        recordAnswer(session, n, [...current, match.id]);
         renderProfileScreen();
       });
     });
 
-    refreshNext();
-
     document.getElementById("nextBtn").addEventListener("click", () => {
-      const nxt = nextVisibleScreenIndex(ui.screenIndex);
+      const nxt = nextScreenIndex(ui.screenIndex);
       ui.transitionNote = SECTION_TRANSITIONS[screen.id] || null;
       if (nxt >= PROFILE_SCREENS.length) {
         ui.phase = "wizard";
-        ui.categoryIndex = 0;
+        ui.categoryIndex = nextCategoryIndex(-1);
         renderRail();
         renderAssessmentCategory();
       } else {
@@ -802,9 +694,10 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
         renderRail();
         renderProfileScreen();
       }
+      focusHeading();
     });
     document.getElementById("backBtn").addEventListener("click", () => {
-      const prv = prevVisibleScreenIndex(ui.screenIndex);
+      const prv = prevScreenIndex(ui.screenIndex);
       if (prv < 0) {
         ui.phase = "scope";
         renderRail();
@@ -814,82 +707,88 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
         renderRail();
         renderProfileScreen();
       }
+      focusHeading();
     });
+    restore();
+    if (autosavePaused) showConflictBanner();
   }
 
-  // ---------- scored assessment categories (six NIST functions) ----------
+  // ---------- scored sections ----------
   function categoryQuestions(fn) {
     return visibleNodes(ASSESSMENT_FLOW, session).filter((q) => q.fn === fn);
   }
   function categoryAnswered(fn) {
-    return categoryQuestions(fn).every((q) => session.answers[q.id] !== undefined);
+    return categoryQuestions(fn).every((q) => isAnswered(session.answers[q.id]));
   }
 
   function renderAssessmentCategory() {
     persistProgress();
+    const restore = preserveFocus(panel());
     const fn = FUNCTIONS[ui.categoryIndex];
     const p = panel();
     const qs = categoryQuestions(fn);
+    const isLast = nextCategoryIndex(ui.categoryIndex) >= FUNCTIONS.length;
     p.innerHTML = `
-      <div class="step-eyebrow">${FUNC_REF[fn]}</div>
-      <h2 class="step-title">${FUNC_DISPLAY[fn]}</h2>
+      <div class="step-eyebrow">${e(FUNC_REF[fn])}</div>
+      <h2 class="step-title" tabindex="-1">${e(FUNC_DISPLAY[fn])}</h2>
       ${transitionNoteHtml()}
       ${progressMetaHtml()}
-      <p class="step-sub"></p>
+      <p class="step-sub">If you don't know an answer, choose "Not sure" - it's recorded as unknown, not as a "No", and the report tells you what to confirm.</p>
       ${qs
-        .map(
-          (q) => `
-        <div class="question">
-          <p>${q.text}${q.framework ? `<span class="q-badge">${FRAMEWORKS.find((f) => f.id === q.framework).name}</span>` : ""}</p>
+        .map((q) => {
+          const fw = q.framework ? FRAMEWORKS.find((f) => f.id === q.framework) : null;
+          return `
+        <fieldset class="question">
+          <legend>${e(q.text)}${fw ? ` <span class="q-badge">${e(fw.name)}</span>` : ""}</legend>
           <div class="options">
             ${q.options
-              .map(
-                (o) => `
-              <div class="option ${session.answers[q.id] === o.v ? "selected" : ""}" data-qid="${q.id}" data-val="${o.v}">
-                <div class="radio"></div><div>${o.t}</div>
-              </div>
-            `
-              )
+              .map((o) => {
+                const checked = session.answers[q.id] === o.v;
+                const extraCls = o.v === UNKNOWN ? " option-unknown" : o.v === NOT_APPLICABLE ? " option-na" : "";
+                return `
+              <label class="option${checked ? " selected" : ""}${extraCls}">
+                <input type="radio" class="sr-only" name="q-${q.id}" value="${e(String(o.v))}" data-qid="${q.id}" data-fkey="${q.id}:${e(String(o.v))}" ${checked ? "checked" : ""}>
+                <span class="radio" aria-hidden="true"></span><span>${e(o.t)}</span>
+              </label>`;
+              })
               .join("")}
           </div>
-        </div>
-      `
-        )
+        </fieldset>`;
+        })
         .join("")}
       <div class="nav">
-        <button id="backBtn">← Back</button>
-        <button class="primary" id="nextBtn" ${categoryAnswered(fn) ? "" : "disabled"}>${ui.categoryIndex === FUNCTIONS.length - 1 ? "Generate reading" : "Continue →"}</button>
-      </div>
-    `;
+        <button type="button" id="backBtn">← Back</button>
+        <button type="button" class="primary" id="nextBtn" ${categoryAnswered(fn) ? "" : "disabled"}>${isLast ? "See the report →" : "Continue →"}</button>
+      </div>`;
 
-    p.querySelectorAll(".option").forEach((el) => {
-      el.addEventListener("click", () => {
-        const qid = el.dataset.qid;
-        const node = ASSESSMENT_FLOW.index.get(qid);
-        recordAnswer(session, node, Number(el.dataset.val));
+    p.querySelectorAll("input[data-qid]").forEach((el) =>
+      el.addEventListener("change", () => {
+        recordAnswer(session, ASSESSMENT_FLOW.index.get(el.dataset.qid), parseScoredValue(el.value));
         renderAssessmentCategory();
-      });
-    });
-
+      })
+    );
     document.getElementById("nextBtn").addEventListener("click", () => {
       ui.transitionNote = SECTION_TRANSITIONS[fn] || null;
-      if (ui.categoryIndex === FUNCTIONS.length - 1) {
+      const nxt = nextCategoryIndex(ui.categoryIndex);
+      if (nxt >= FUNCTIONS.length) {
         ui.phase = "results";
         renderRail();
         renderResults();
       } else {
-        ui.categoryIndex++;
+        ui.categoryIndex = nxt;
         renderRail();
         renderAssessmentCategory();
       }
+      focusHeading();
     });
     document.getElementById("backBtn").addEventListener("click", () => {
-      if (ui.categoryIndex > 0) {
-        ui.categoryIndex--;
+      const prv = prevCategoryIndex(ui.categoryIndex);
+      if (prv >= 0) {
+        ui.categoryIndex = prv;
         renderRail();
         renderAssessmentCategory();
       } else {
-        const idx = lastVisibleScreenIndex();
+        const idx = prevScreenIndex(PROFILE_SCREENS.length);
         if (idx < 0) {
           ui.phase = "scope";
           renderRail();
@@ -901,664 +800,392 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           renderProfileScreen();
         }
       }
+      focusHeading();
     });
-  }
-
-  // §2: one collapsed "Why this matters, and what to do now" expander per
-  // compounding-risk flag / notably-low-scoring priority item that has a
-  // confident MITRE ATT&CK mapping (see engine/mitre-guidance.js - items
-  // without a genuine mapping simply don't get a panel, rather than
-  // fabricating one). Reuses the existing acc-card/acc-head/acc-body
-  // accordion pattern verbatim so the interaction matches Runbooks/Playbooks.
-  // ASSESSMENT-REPORT-DEPTH-BRIEF.md §6/§7: renders whichever fields
-  // guidanceForFlag()/guidanceForGapItem() actually returned - Full mode's
-  // five parts (traceability, technique, consequence, interim step,
-  // remediation, plus an optional verified reference link) or Quick
-  // mode's condensed three (traceability, consequence, remediation), since
-  // those functions were already called with `full = !session.quickMode`.
-  // Escaped throughout: traceability in particular can echo a profile
-  // "Other" free-text field (e.g. devsecopsMaturity) back into the page.
-  function mitrePanel(guidance, panelId) {
-    if (!guidance) return "";
-    const rows = [];
-    if (guidance.traceability) rows.push(`<li><b>Why this was flagged:</b> ${escapeHtml(guidance.traceability)}</li>`);
-    if (guidance.technique) {
-      rows.push(`<li><b>Attack pattern:</b> ${escapeHtml(guidance.technique.name)} (MITRE ATT&CK ${escapeHtml(guidance.technique.id)}) - ${escapeHtml(guidance.explain)}</li>`);
-    } else {
-      rows.push(`<li><b>What could go wrong:</b> ${escapeHtml(guidance.explain)}</li>`);
-    }
-    if (guidance.control) rows.push(`<li><b>Interim step:</b> ${escapeHtml(guidance.control)}</li>`);
-    if (guidance.remediation) rows.push(`<li><b>How to fix it:</b> ${escapeHtml(guidance.remediation)}</li>`);
-    if (guidance.owasp) {
-      rows.push(`<li><b>OWASP Top 10:</b> <a href="${pathForTab("playbooks", guidance.owasp.ref)}" class="inline-link">${escapeHtml(guidance.owasp.ref)} - ${escapeHtml(guidance.owasp.title)}, with the matching Playbook →</a></li>`);
-    }
-    if (guidance.reference) {
-      const safeUrl = safeHttpUrl(guidance.reference.url);
-      if (safeUrl) rows.push(`<li><b>Reference:</b> <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(guidance.reference.label)}</a></li>`);
-    }
-    return `
-      <div class="acc-card mitre-panel" data-id="${panelId}">
-        <div class="acc-head">
-          <div><h4>Why this matters, and what to do now</h4></div>
-          <div class="acc-chevron">▸</div>
-        </div>
-        <div class="acc-body">
-          <ul>${rows.join("")}</ul>
-        </div>
-      </div>`;
-  }
-
-  // Conic-gradient string for the overall-score gauge - shared by the real
-  // results screen and §6's Sample Report, since both render the same gauge.
-  function conicFor(funcScores) {
-    const slice = 360 / funcScores.length;
-    let acc = 0;
-    const parts = funcScores.map((f) => {
-      const start = acc;
-      acc += slice;
-      return `${FUNC_COLORS[f.fn]} ${start}deg ${acc}deg`;
-    });
-    return `conic-gradient(${parts.join(",")})`;
-  }
-
-  // The deterministic report body - scores, snapshot, compounding-risk
-  // flags, vendor notes, framework recommendations, and the ranked priority
-  // list. ASSESSMENT-EXPERIENCE-BRIEF.md §6: the Sample Report must be
-  // "generated by running a fixed, realistic set of sample answers through
-  // the actual real engine... so it automatically stays correct as the
-  // real scoring/rules logic evolves" rather than a second, hand-maintained
-  // copy - so this is the one place that markup exists, shared by
-  // renderResults() and renderSampleReport() alike.
-  function reportBodyHtml({ session: s, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, rankedGaps, otherTexts = [] }) {
-    return `
-      <div class="snapshot">
-        <h3>Infrastructure snapshot (self-reported)</h3>
-        ${snapshotRows(s.answers)
-          .map(([k, v]) => `<div class="snapshot-row"><div class="skey">${k}</div><div>${escapeHtml(v)}</div></div>`)
-          .join("")}
-      </div>
-
-      <p class="score-direction-legend">Higher percentages mean a <b>stronger security posture</b> - not compliance completeness, not exposure level. 100% would mean every control this assessment checks for is fully in place; it doesn't mean risk-free.</p>
-      <div class="gauge-row">
-        <div class="gauge" style="background:${conicFor(funcScores)}">
-          <div class="gauge-inner">
-            <div class="pct">${overall}%</div>
-            <div class="verdict">${verdictLabel(overall)}</div>
-          </div>
-        </div>
-        <div class="func-bars">
-          ${funcScores
-            .map(
-              (f) => `
-            <div class="func-bar-row">
-              <div class="fname">${FUNC_DISPLAY[f.fn]}</div>
-              <div class="func-bar-track"><div class="func-bar-fill" style="width:${f.pct}%; background:${FUNC_COLORS[f.fn]}"></div></div>
-              <div class="fpct">${f.pct}%</div>
-            </div>
-          `
-            )
-            .join("")}
-        </div>
-      </div>
-
-      ${
-        flags.length
-          ? `
-      <div class="flags">
-        <h3>Compounding risk - patterns across steps</h3>
-        ${flags
-          .map(
-            (f) => `
-          <div class="flag-item"><b>Combined finding -</b> ${f.text}</div>
-          ${mitrePanel(guidanceForFlag(f, s.answers, !s.quickMode), `flag-${f.id}`)}
-        `
-          )
-          .join("")}
-      </div>`
-          : ""
-      }
-
-      ${
-        vendorNotes.length
-          ? `
-      <div class="flags">
-        <h3>Vendor-specific mitigation notes</h3>
-        ${vendorNotes.map((v) => `<div class="vendor-note-item"><b>${v.vendor} -</b> ${v.note}</div>`).join("")}
-        <p class="scope-hint">Illustrative, based on well-documented historical exploitation patterns for named products - not a live feed. This tool intentionally doesn't do vulnerability scanning; treat this as a prompt to check current vendor advisories for your exact version, not a substitute for doing so.</p>
-      </div>`
-          : ""
-      }
-
-      ${otherTextSectionHtml(otherTexts)}
-
-      ${
-        frameworkRecs.length
-          ? `
-      <div class="flags">
-        <h3>Compliance considerations</h3>
-        ${frameworkRecs
-          .map(
-            (r) => `
-          <div class="vendor-note-item">
-            <b>${r.name} -</b> ${r.summary}
-            ${
-              r.gaps.length
-                ? `<div class="fw-gap-list">${r.gaps
-                    .map(
-                      (g) => `
-                  <div class="fw-gap-item">Gap: <i>${g.question}</i> - currently: "${g.chosen}"</div>
-                  ${mitrePanel(guidanceForGapItem(g, s.answers, !s.quickMode), `fwgap-${r.id}-${g.id}`)}
-                `
-                    )
-                    .join("")}</div>`
-                : r.questionCount
-                  ? `<div class="fw-gap-list"><div class="fw-gap-item">No gaps flagged in the ${r.name}-specific questions above.</div></div>`
-                  : ""
-            }
-          </div>
-        `
-          )
-          .join("")}
-        <p class="scope-hint">This is pattern-based guidance from your own answers, not a certification audit or legal compliance determination.</p>
-      </div>`
-          : ""
-      }
-
-      <div class="priorities">
-        <h3>Where to act first, ranked</h3>
-        <p class="scope-hint">Ranked by risk, not by question order: how directly the gap enables a common attack (the controls CISA's Cross-Sector Performance Goals and #StopRansomware guidance put first rank highest), how far your answer is from the strongest option, and whether it feeds a combined finding above.</p>
-        ${priorities
-          .map(
-            (p2, i) => `
-          <div class="priority-item">
-            <div class="priority-rank">${String(i + 1).padStart(2, "0")}</div>
-            <div><b>${FUNC_DISPLAY[p2.fn]}:</b> ${p2.gap} ${gapTierChip(p2)}</div>
-          </div>
-          ${mitrePanel(guidanceForGapItem(p2, s.answers, !s.quickMode), `gap-${p2.id}`)}
-        `
-          )
-          .join("")}
-      </div>
-
-      ${gapRegisterHtml(s, rankedGaps)}
-    `;
-  }
-
-  function gapTierChip(g) {
-    return `<span class="gap-tier gap-tier-${g.weight}">${WEIGHT_LABELS[g.weight]}</span>`;
-  }
-
-  // The full remediation backlog - every gap on this run, not only the top
-  // five. Grouped by area (what a CISO reports on), ordered by the same risk
-  // ranking within each group (what an IT admin works through), each with
-  // the same "how to fix it" text the detailed panels above use.
-  function gapRegisterHtml(s, rankedGaps) {
-    if (!rankedGaps.length) return "";
-    const groups = FUNCTIONS.map((fn) => ({ fn, gaps: rankedGaps.filter((g) => g.fn === fn) })).filter((grp) => grp.gaps.length);
-    return `
-      <div class="flags gap-register">
-        <h3>Every gap in this assessment (${rankedGaps.length})</h3>
-        <p class="scope-hint">The full list behind the five above, grouped by area and ordered by the same risk ranking within each. The number is each gap's overall rank.</p>
-        ${groups
-          .map(
-            (grp) => `
-          <div class="acc-card">
-            <div class="acc-head">
-              <div><h4>${FUNC_DISPLAY[grp.fn]}</h4><div class="acc-sub">${grp.gaps.length} gap${grp.gaps.length === 1 ? "" : "s"}${grp.gaps.some((g) => g.weight === 3) ? ` - ${grp.gaps.filter((g) => g.weight === 3).length} on critical controls` : ""}</div></div>
-              <div class="acc-chevron">▸</div>
-            </div>
-            <div class="acc-body">
-              ${grp.gaps
-                .map((g) => {
-                  const fix = guidanceForGapItem(g, s.answers, false)?.remediation;
-                  return `
-                <div class="gap-row">
-                  <div class="priority-rank">${String(g.rank).padStart(2, "0")}</div>
-                  <div class="gap-row-body">
-                    <div>${escapeHtml(g.gap)} ${gapTierChip(g)}</div>
-                    <div class="gap-row-answer">Your answer: "${escapeHtml(g.chosen)}"</div>
-                    ${fix ? `<div class="gap-row-fix"><b>How to fix it:</b> ${escapeHtml(fix)}</div>` : ""}
-                  </div>
-                </div>`;
-                })
-                .join("")}
-            </div>
-          </div>
-        `
-          )
-          .join("")}
-      </div>`;
+    restore();
+    if (autosavePaused) showConflictBanner();
   }
 
   // ---------- results ----------
-  async function renderResults() {
-    const p = panel();
-    p.innerHTML = `<div class="step-eyebrow">Synthesis - all functions considered jointly</div><h2 class="step-title">Calculating your reading…</h2>`;
-    // A fresh report starts without AI insights - they belong to the answer
-    // set they were generated from, not to whatever was rendered last.
-    lastAiInsights = null;
-
-    const funcScores = computeFuncScores(session);
-    const overall = computeOverall(funcScores);
-    const flags = computeFlags(session);
-    const gapItems = computeGapItems(session);
-    const rankedGaps = computeRankedGaps(session);
-    const priorities = rankedGaps.slice(0, 5);
-    const vendorNotes = matchedVendorNotes(session.answers);
-    const frameworkRecs = computeFrameworkRecommendations(session);
-    const currentGapTexts = gapItems.map((i) => i.gap);
-    // §2: the in-progress save exists to resume an incomplete run - once
-    // it's actually complete, there's nothing left to resume into.
-    clearProgress();
-
-    // ASSESSMENT-REPORT-DEPTH-BRIEF.md §5: resolve any "Other" free text
-    // keyword-matching couldn't place, before the report's first paint -
-    // same reasoning as the history fetch below, this is data the initial
-    // render needs, not a progressive enhancement bolted on after.
-    const otherTexts = await interpretUnresolvedOtherTexts(collectUnresolvedOtherTexts(session.answers));
-
-    // Browser-local history (../engine/run-history.js). A report that's
-    // already been saved - re-rendered after a tab switch, reopened from
-    // History or "View your last report", or regenerated from unchanged
-    // answers - reuses its run rather than recording a duplicate.
-    const runsBefore = listRuns();
-    let thisRun = ui.resultRunTs ? runsBefore.find((r) => r.ts === ui.resultRunTs) : null;
-    if (!thisRun) {
-      const latest = runsBefore[runsBefore.length - 1];
-      if (latest && latest.answers && sameAnswers(latest.answers, session.answers)) {
-        thisRun = latest;
-      } else {
-        thisRun = {
-          ts: Date.now(),
-          overall,
-          gapTexts: currentGapTexts,
-          industry: session.answers.industry,
-          quickMode: session.quickMode,
-          answers: JSON.parse(JSON.stringify(session.answers)),
-        };
-        saveRun(thisRun);
-      }
-    }
-    ui.resultRunTs = thisRun.ts;
-    const historyCount = listRuns().length;
-    const prevRun = runsBefore.filter((r) => r.ts < thisRun.ts).pop() || null;
-
-    let resolvedSincePrev = [],
-      newSincePrev = [];
-    if (prevRun && prevRun.gapTexts) {
-      resolvedSincePrev = prevRun.gapTexts.filter((g) => !currentGapTexts.includes(g));
-      newSincePrev = currentGapTexts.filter((g) => !prevRun.gapTexts.includes(g));
-    }
-
-    const delta = prevRun ? overall - prevRun.overall : null;
-
-    p.innerHTML = `
-      <div class="step-eyebrow">Synthesis - all functions considered jointly</div>
-      <h2 class="step-title">Health Reading</h2>
-      <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f) => session.answers[f.id]).map((f) => " + " + f.name).join("")}${session.answers.industry ? " · " + INDUSTRIES.find((i) => i.id === session.answers.industry).label : ""}</p>
-
-      <div class="report-meta-fields">
-        <div class="field">
-          <label>Company / firm name <span class="opt-tag">optional</span></label>
-          <input type="text" id="reportCompanyName" placeholder="e.g. Acme Corp" value="${escapeHtml(session.answers.companyName || "")}">
-        </div>
-        <div class="field">
-          <label>Report requested by <span class="opt-tag">optional</span></label>
-          <input type="text" id="reportRequestedBy" placeholder="e.g. Jane Smith, CISO" value="${escapeHtml(session.answers.reportRequestedBy || "")}">
-        </div>
-      </div>
-
-      ${
-        prevRun
-          ? `
-      <div class="delta-box">
-        <h3>Change since your last assessment (${new Date(prevRun.ts).toLocaleDateString()})</h3>
-        <div class="delta-score ${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "+" : ""}${delta}% overall</div>
-        ${resolvedSincePrev.length ? `<div class="delta-resolved"><b>Resolved:</b> ${resolvedSincePrev.length} item(s) closed since last time</div>` : ""}
-        ${newSincePrev.length ? `<div class="delta-new"><b>New:</b> ${newSincePrev.length} item(s) newly flagged</div>` : ""}
-      </div>`
-          : ""
-      }
-
-      ${reportBodyHtml({ session, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, rankedGaps, otherTexts })}
-
-      <div class="note-box">
-        <b>About this report -</b> the flags and priority list above are produced by a deterministic rules
-        engine, tested and running the same way for every assessment - nothing above this line depends on a
-        live API call, and it renders instantly and for free, same as always.
-        <br><br>
-        The "Get AI-Enhanced Insights" button below is a separate, opt-in second pass: a live check of your
-        named vendors/products (EDR, email security, hosting, cloud, and the rest of the snapshot above)
-        against CISA's Known Exploited Vulnerabilities catalog and NVD's own CVE database for anything current
-        the rules engine can't know by nature, plus a look at this specific combination of answers for anything
-        genuinely outside a fixed rule set. It calls the Claude API, so it's triggered explicitly rather than
-        automatically - the report above is already complete without it.
-        <br><br>
-        ${
-          historyCount
-            ? `This report is saved in this browser only - no account, and nothing is sent to a server. That's what
-        powers History and the change-since-last-time view. Clearing your browser data removes it, so use
-        "Download as PDF" to keep a copy.`
-            : `This browser isn't allowing local storage (private browsing, or site data blocked), so this report
-        won't appear in History - use "Download as PDF" to keep a copy.`
-        }
-      </div>
-
-      <div class="ai-insights-section">
-        <div class="ai-insights-intro">
-          <div>
-            <h3>AI-Enhanced Insights <span class="ai-badge">AI-generated</span></h3>
-            <p class="body-text">A live check of your named vendors against current CVE data, plus a second pass for anything this specific answer combination raises that the rules engine above didn't anticipate.</p>
-          </div>
-          <button id="aiInsightsBtn">Get AI-Enhanced Insights ✨</button>
-        </div>
-        <div id="aiInsightsBody"></div>
-      </div>
-
-      <div class="nav">
-        <button id="backBtn2">← Review answers</button>
-        <button id="exportPdfBtn">Download as PDF ↓</button>
-        ${historyCount ? `<a id="viewHistoryBtn" href="${pathForTab("history")}">View history (${historyCount}) →</a>` : ""}
-      </div>
-    `;
-    p.querySelectorAll(".acc-head").forEach((el) => {
-      el.addEventListener("click", () => el.parentElement.classList.toggle("open"));
-    });
-    document.getElementById("reportCompanyName").addEventListener("input", (e) => {
-      session.answers.companyName = e.target.value;
-    });
-    document.getElementById("reportRequestedBy").addEventListener("input", (e) => {
-      session.answers.reportRequestedBy = e.target.value;
-    });
-    document.getElementById("backBtn2").addEventListener("click", () => {
-      // Editing answers makes whatever gets generated next a new run (or,
-      // if nothing actually changes, renderResults() matches it back to
-      // this one via sameAnswers()).
-      ui.resultRunTs = null;
-      ui.phase = "wizard";
-      ui.categoryIndex = FUNCTIONS.length - 1;
-      renderRail();
-      renderAssessmentCategory();
-    });
-    const viewHistoryBtn = document.getElementById("viewHistoryBtn");
-    if (viewHistoryBtn) wireNavLink(viewHistoryBtn, "history");
-    document.getElementById("exportPdfBtn").addEventListener("click", () => {
-      buildAssessmentPdf({ session, funcScores, overall, flags, priorities, rankedGaps, vendorNotes, frameworkRecs, aiInsights: lastAiInsights });
-    });
-    document.getElementById("aiInsightsBtn").addEventListener("click", () =>
-      requestAiInsights({ session, overall, verdict: verdictLabel(overall), flags, priorities, vendorNotes, frameworkRecs })
-    );
+  function linksForReport() {
+    return { playbook: (ref) => pathForTab("playbooks", ref) };
   }
 
-  // ---------- ASSESSMENT-EXPERIENCE-BRIEF.md §6: Sample Report ----------
-  // "A recruiter clicking 'See a Sample Report' should see full depth
-  // instantly - vendor notes, MITRE mapping, AI-enhanced insights, the PDF
-  // export - with zero clicks and zero wait." The deterministic portion
-  // below runs the fixed SAMPLE_ANSWERS through the exact same scoring/
-  // flags/vendor-notes/framework-guidance functions renderResults() uses
-  // (via the shared reportBodyHtml() above), so it can never silently drift
-  // out of sync with how a real report is produced. Only AI-Enhanced
-  // Insights is static (SAMPLE_AI_INSIGHTS) - rendered through the same
-  // aiInsightCardsHtml() formatter a live response would use, just without
-  // ever calling the API, so the sample stays instant and free to view.
-  function renderSampleReport() {
-    const p = panel();
-    const sampleSession = createSessionState();
-    Object.assign(sampleSession.answers, SAMPLE_ANSWERS);
+  // Saves the current answers as a run (or finds the identical last one), and
+  // returns { run, saved: {ok, reason, evicted} }.
+  function saveCurrentRun(report) {
+    const answers = effectiveState(session).answers;
+    const runs = listRuns();
+    let run = ui.resultRunId ? runs.find((r) => r.id === ui.resultRunId) : null;
+    if (run) return { run, saved: { ok: true, evicted: 0, existing: true } };
+    const latest = runs.filter((r) => !r.legacy).pop();
+    if (latest && latest.answers && latest.mode === report.mode && latest.methodologyVersion === report.methodologyVersion && sameAnswers(latest.answers, answers)) {
+      return { run: latest, saved: { ok: true, evicted: 0, existing: true } };
+    }
+    const id = newRunId();
+    run = { id, ts: Date.now(), mode: report.mode, methodologyVersion: report.methodologyVersion, industry: answers.industry || null, answers, summary: null, ai: null };
+    report.snapshotId = id;
+    run.summary = summarizeReport(report);
+    const saved = saveRun(run);
+    return { run: saved.ok ? run : null, saved };
+  }
 
-    const funcScores = computeFuncScores(sampleSession);
-    const overall = computeOverall(funcScores);
-    const flags = computeFlags(sampleSession);
-    const rankedGaps = computeRankedGaps(sampleSession);
-    const priorities = rankedGaps.slice(0, 5);
-    const vendorNotes = matchedVendorNotes(sampleSession.answers);
-    const frameworkRecs = computeFrameworkRecommendations(sampleSession);
+  function renderResults() {
+    clearProgress();
+    const report = buildReport(session);
+    const { run, saved } = saveCurrentRun(report);
+    if (run) {
+      ui.resultRunId = run.id;
+      report.snapshotId = run.id;
+    }
+    const staleAi = lastAi && run && lastAi.snapshotId !== run.id ? lastAi : null;
+    current = { report, run, ai: run?.ai?.result || null, aiError: null, staleAi, saved, migrationNotes: [], recalculated: null, interpretations: run?.otherInterpretations || null };
+    renderReportPage();
+  }
 
-    p.innerHTML = `
-      <div class="sample-banner"><b>Sample</b>&nbsp;This is example data from a fixed, realistic answer set - not a real assessment result.</div>
-      <div class="step-eyebrow">Synthesis - all functions considered jointly</div>
-      <h2 class="step-title">Health Reading</h2>
-      <p class="step-sub">Assessed against: NIST CSF 2.0 + CIS Controls v8${FRAMEWORKS.filter((f) => sampleSession.answers[f.id]).map((f) => " + " + f.name).join("")}${sampleSession.answers.industry ? " · " + INDUSTRIES.find((i) => i.id === sampleSession.answers.industry).label : ""}</p>
+  // Opens a saved run (History, or the landing banner). Legacy runs and runs
+  // from another methodology are rebuilt from their answers and clearly
+  // labelled as recalculated, alongside the original result.
+  function openRun(id) {
+    const run = getRun(id);
+    if (!run || !run.answers) return false;
+    resetSession();
+    const { answers, notes } = migrateAnswers(run.answers, run.answerSchema || (run.legacy ? 1 : 2));
+    Object.assign(session.answers, answers);
+    session.quickMode = run.mode === "quick";
+    ui.phase = "results";
+    ui.resultRunId = run.id;
+    if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
+    const report = buildReport(session, { generatedAt: new Date(run.ts).toISOString() });
+    report.snapshotId = run.id;
+    const original = run.legacy
+      ? { label: `${run.legacyOverall}% overall`, methodology: "1.x" }
+      : run.summary && run.summary.methodologyVersion !== METHODOLOGY_VERSION
+        ? { label: `${run.summary.verdict.label}${run.summary.coverage !== null ? `, ${run.summary.coverage}% coverage` : ""}`, methodology: run.summary.methodologyVersion }
+        : null;
+    current = { report, run, ai: run.ai?.result || null, aiError: null, staleAi: null, saved: { ok: true, existing: true }, migrationNotes: notes, recalculated: original, interpretations: run.otherInterpretations || null };
+    return true;
+  }
 
-      ${reportBodyHtml({ session: sampleSession, funcScores, overall, flags, vendorNotes, frameworkRecs, priorities, rankedGaps })}
+  function reportHeaderHtml(report) {
+    const quick = report.mode === "quick";
+    return `
+      <div class="step-eyebrow">${quick ? "Quick screening result" : "Assessment report"}</div>
+      <h2 class="step-title" tabindex="-1">${quick ? "Screening result" : "Your security reading"}</h2>
+      <p class="step-sub">Measured against NIST CSF 2.0 and CIS Controls v8.1${report.context.frameworks.map((f) => " + " + e(f)).join("")}${report.context.industry ? " · " + e(report.context.industry) : ""}</p>`;
+  }
 
-      <div class="note-box">
-        <b>About this report -</b> everything above is produced by running a fixed sample answer set through
-        this site's real, deterministic scoring engine - the same one every actual assessment uses - so this
-        sample stays accurate as that engine evolves, rather than being a separately-maintained mockup.
-      </div>
+  function savedNoticeHtml() {
+    const { saved, recalculated, migrationNotes, report } = current;
+    const notes = [];
+    if (recalculated)
+      notes.push(`<div class="stale-banner" role="note"><b>Recalculated.</b> This report was originally produced under methodology ${e(recalculated.methodology)} (result: ${e(recalculated.label)}). It's shown here rebuilt from your saved answers under methodology ${e(report.methodologyVersion)}, which scores differently - the two aren't directly comparable.</div>`);
+    if (migrationNotes?.length) notes.push(`<div class="stale-banner" role="note">${migrationNotes.map(e).join(" ")}</div>`);
+    if (saved && !saved.ok)
+      notes.push(`<div class="stale-banner" role="alert"><b>Not saved.</b> ${saved.reason === "quota" ? "This browser's storage for the site is full." : "This browser isn't allowing the site to store data (private browsing, or site data blocked)."} Download the PDF or JSON below to keep a copy.</div>`);
+    else if (saved?.evicted) notes.push(`<p class="scope-hint">Saved in this browser. To make room, the ${saved.evicted} oldest saved report${saved.evicted === 1 ? " was" : "s were"} removed from History.</p>`);
+    return notes.join("");
+  }
 
-      <div class="ai-insights-section">
+  function quickFooterHtml(report) {
+    if (report.mode !== "quick") return "";
+    return `
+      <div class="continue-full">
+        <div><b>Want the full picture?</b> The Full assessment covers every applicable control. Every answer you've given here is kept - you'll only be asked what's missing.</div>
+        <button type="button" class="primary" id="continueFullBtn">Continue to the Full assessment →</button>
+      </div>`;
+  }
+
+  // "Other" answers the keyword matcher couldn't place. Shown as typed; an
+  // AI reading is only fetched when the visitor asks (and has agreed).
+  const OTHER_TEXT_FIELDS = [
+    ["outsourcedFunctionBreakdown", "multi"],
+    ["partialOutsourceFunctions", "multi"],
+    ["mixedOtherProviderDetail", "multi"],
+    ["dayToDay", "multi"],
+    ["aiUsageTypes", "multi"],
+    ["networkArch", "select"],
+    ["devsecopsMaturity", "select"],
+  ];
+  function unresolvedOtherTexts(answers) {
+    const nodes = new Map(PROFILE_SCREENS.flatMap((s) => [...s.flow.index.values()].map((n) => [n.id, n])));
+    const items = [];
+    for (const [id, kind] of OTHER_TEXT_FIELDS) {
+      const node = nodes.get(id);
+      if (!node) continue;
+      const text = kind === "multi" ? (Array.isArray(answers[id]) && answers[id].includes(OTHER_VALUE) ? answers[id + "__otherText"] : "") : answers[id + "__isOther"] ? answers[id] : "";
+      if (text && String(text).trim()) items.push({ fieldLabel: node.text.slice(0, 300), freeText: String(text).trim().slice(0, 500) });
+    }
+    return items;
+  }
+
+  function otherTextHtml(items, interpretations) {
+    if (!items.length) return "";
+    return `
+      <section class="flags" aria-labelledby="otherTitle">
+        <h3 id="otherTitle">Additional context you provided</h3>
+        ${items
+          .map((it, i) => {
+            const interp = interpretations?.find((x) => x.index === i);
+            return `<div class="vendor-note-item"><b>${e(it.fieldLabel)} -</b> "${e(it.freeText)}"${
+              interp ? `<br><span class="ai-badge">AI reading</span> ${e(interp.interpretation)}` : `<br><span class="scope-hint">Recorded as typed. Free text isn't scored.</span>`
+            }</div>`;
+          })
+          .join("")}
+      </section>`;
+  }
+
+  function aiSectionHtml() {
+    const { report, ai, aiError, staleAi, run } = current;
+    const payload = buildInsightsPayload(session, report, { snapshotId: run?.id, consentVersion: AI_CONSENT_VERSION });
+    const others = unresolvedOtherTexts(effectiveState(session).answers);
+    let body;
+    if (ai) body = aiResultHtml(ai);
+    else
+      body = `
+        ${staleAi ? `<div class="ai-stale">${aiResultHtml(staleAi, { stale: true })}</div>` : ""}
+        ${consentHtml(payload)}
+        ${aiError ? `<p class="stale-banner" role="alert">${e(aiError)}</p>` : ""}
+        <div class="ai-actions">
+          <button type="button" id="aiInsightsBtn" ${hasAiConsent() ? "" : "disabled"}>Get AI-enhanced insights</button>
+          ${others.length && !current.interpretations ? `<button type="button" id="aiInterpretBtn" ${hasAiConsent() ? "" : "disabled"}>Also interpret my ${others.length} "Other" answer${others.length === 1 ? "" : "s"}</button>` : ""}
+        </div>`;
+    return `
+      <section class="ai-insights-section" aria-labelledby="aiTitle">
         <div class="ai-insights-intro">
           <div>
-            <h3>AI-Enhanced Insights <span class="ai-badge">AI-generated</span></h3>
-            <p class="body-text">A static example of what the live, opt-in "Get AI-Enhanced Insights" pass on a real report looks like, shown here without an actual API call so the sample stays instant and free to view.</p>
+            <h3 id="aiTitle">AI-enhanced insights <span class="ai-badge">optional · AI-generated</span></h3>
+            <p class="body-text">A check of the products you named against current public vulnerability records, plus a second look at your answers for combinations the rules above don't cover. Nothing is sent unless you choose to.</p>
           </div>
         </div>
-        <div>${aiInsightCardsHtml(SAMPLE_AI_INSIGHTS)}</div>
-      </div>
+        <div id="aiInsightsBody" aria-live="polite">${body}</div>
+      </section>`;
+  }
 
-      <div class="nav">
-        <button id="sampleBackBtn">← Back to assessment options</button>
-        <button id="samplePdfBtn">Download as PDF ↓</button>
+  function renderReportPage() {
+    const p = panel();
+    const { report } = current;
+    const tracking = loadTracking();
+    const others = unresolvedOtherTexts(effectiveState(session).answers);
+    p.innerHTML = `
+      ${reportHeaderHtml(report)}
+      ${savedNoticeHtml()}
+      <div class="report-meta-fields">
+        <div class="field">
+          <label for="reportCompanyName">Company / organization name <span class="opt-tag">optional - PDF only, never sent anywhere</span></label>
+          <input type="text" id="reportCompanyName" placeholder="Shown on the PDF cover" value="${e(session.answers.companyName || "")}">
+        </div>
+        <div class="field">
+          <label for="reportRequestedBy">Report requested by <span class="opt-tag">optional</span></label>
+          <input type="text" id="reportRequestedBy" placeholder="Name and role" value="${e(session.answers.reportRequestedBy || "")}">
+        </div>
       </div>
-    `;
-    p.querySelectorAll(".acc-head").forEach((el) => {
-      el.addEventListener("click", () => el.parentElement.classList.toggle("open"));
+      <div id="reportBody">${reportBodyHtml(report, { tracking, interactive: true, links: linksForReport() })}</div>
+      ${otherTextHtml(others, current.interpretations)}
+      ${quickFooterHtml(report)}
+      <div class="export-row" role="group" aria-label="Download this report">
+        <button type="button" id="exportPdfBtn">Download PDF</button>
+        <button type="button" id="exportCsvBtn" ${report.actions.length ? "" : "disabled"}>Action plan (CSV)</button>
+        <button type="button" id="exportJsonBtn">Action plan (JSON)</button>
+      </div>
+      ${aiSectionHtml()}
+      <div class="nav">
+        <button type="button" id="backBtn2">← Review answers</button>
+        <a id="viewHistoryBtn" href="${pathForTab("history")}">History (${listRuns().length}) →</a>
+      </div>`;
+    wireReportPage();
+  }
+
+  function wireReportPage() {
+    const p = panel();
+    const { report } = current;
+    wireAccordions(p);
+    document.getElementById("reportCompanyName").addEventListener("input", (ev) => {
+      session.answers.companyName = ev.target.value;
+      report.context.companyName = ev.target.value;
     });
+    document.getElementById("reportRequestedBy").addEventListener("input", (ev) => {
+      session.answers.reportRequestedBy = ev.target.value;
+      report.context.requestedBy = ev.target.value;
+    });
+    p.querySelectorAll("[data-track]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const result = updateTracking(el.dataset.track, { [el.dataset.field]: el.value });
+        if (!result.ok) showToast("Couldn't save tracking in this browser.");
+        else announce("Saved");
+        if (el.dataset.field === "status") {
+          const restore = preserveFocus(p);
+          document.getElementById("reportBody").innerHTML = reportBodyHtml(report, { tracking: loadTracking(), interactive: true, links: linksForReport() });
+          wireReportPage();
+          const card = document.getElementById(el.dataset.track);
+          if (card) card.classList.add("open"), card.querySelector(".acc-head")?.setAttribute("aria-expanded", "true");
+          restore();
+        }
+      })
+    );
+    document.getElementById("backBtn2").addEventListener("click", () => {
+      ui.resultRunId = null;
+      if (current.ai) lastAi = { ...current.ai, snapshotId: current.run?.id };
+      ui.phase = "wizard";
+      ui.categoryIndex = prevCategoryIndex(FUNCTIONS.length);
+      renderRail();
+      renderAssessmentCategory();
+      focusHeading();
+    });
+    const hist = document.getElementById("viewHistoryBtn");
+    if (hist) wireNavLink(hist, "history");
+    document.getElementById("exportPdfBtn").addEventListener("click", () => buildAssessmentPdf(report, { aiInsights: current.ai || null }));
+    document.getElementById("exportCsvBtn").addEventListener("click", () => download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.csv`, actionsToCsv(report.actions, loadTracking()), "text/csv;charset=utf-8"));
+    document.getElementById("exportJsonBtn").addEventListener("click", () => download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.json`, actionsToJson(report, loadTracking()), "application/json"));
+    const cont = document.getElementById("continueFullBtn");
+    if (cont)
+      cont.addEventListener("click", () => {
+        session.quickMode = false;
+        ui.resultRunId = null;
+        ui.phase = "scope";
+        renderRail();
+        renderScope();
+        focusHeading();
+        announce("Continuing to the Full assessment. Your Quick answers are kept.");
+      });
+    wireAi();
+  }
+
+  function wireAi() {
+    const check = document.getElementById("aiConsentCheck");
+    const btn = document.getElementById("aiInsightsBtn");
+    const interpretBtn = document.getElementById("aiInterpretBtn");
+    if (check)
+      check.addEventListener("change", () => {
+        if (btn) btn.disabled = !check.checked;
+        if (interpretBtn) interpretBtn.disabled = !check.checked;
+      });
+    if (btn) btn.addEventListener("click", () => check?.checked && requestAiInsights());
+    if (interpretBtn) interpretBtn.addEventListener("click", () => check?.checked && requestInterpretation());
+  }
+
+  async function postJson(url, body, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: controller.signal });
+      let json = null;
+      try {
+        json = await res.json();
+      } catch {
+        json = null;
+      }
+      return { status: res.status, ok: res.ok, json };
+    } catch {
+      return { status: 0, ok: false, json: null };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function requestAiInsights() {
+    const btn = document.getElementById("aiInsightsBtn");
+    if (!btn || btn.dataset.busy) return;
+    btn.dataset.busy = "1";
+    btn.disabled = true;
+    btn.textContent = "Checking sources and generating…";
+    recordAiConsent();
+    const { report, run } = current;
+    const payload = buildInsightsPayload(session, report, { snapshotId: run?.id, consentVersion: AI_CONSENT_VERSION });
+    // Longer than the server's own worst case (lookups plus its model
+    // timeout), so its own error message arrives before the browser gives up.
+    const res = await postJson("/.netlify/functions/ai-insights", payload, 45_000);
+    if (res.ok && res.json && res.json.schemaVersion === 2) {
+      current.ai = res.json;
+      current.aiError = null;
+      current.staleAi = null;
+      lastAi = { ...res.json, snapshotId: run?.id };
+      if (run) {
+        const stored = attachAiResult(run.id, { snapshotId: run.id, generatedAt: res.json.generatedAt, promptVersion: res.json.promptVersion, model: res.json.model, result: res.json });
+        if (!stored.ok) showToast("AI insights are shown, but couldn't be saved with this report in this browser.");
+      }
+      announce("AI insights ready");
+    } else {
+      current.aiError = aiErrorText(res.status, res.json);
+    }
+    const section = document.querySelector(".ai-insights-section");
+    if (section) {
+      section.outerHTML = aiSectionHtml();
+      wireAccordions(panel());
+      wireAi();
+    }
+  }
+
+  async function requestInterpretation() {
+    const btn = document.getElementById("aiInterpretBtn");
+    if (!btn || btn.dataset.busy) return;
+    btn.dataset.busy = "1";
+    btn.disabled = true;
+    btn.textContent = "Interpreting…";
+    recordAiConsent();
+    const items = unresolvedOtherTexts(effectiveState(session).answers).slice(0, 8);
+    const res = await postJson("/.netlify/functions/other-text-interpret", { consent: { version: AI_CONSENT_VERSION, accepted: true }, items }, 25_000);
+    if (res.ok && Array.isArray(res.json?.interpretations)) {
+      current.interpretations = res.json.interpretations;
+      if (current.run) saveRun({ ...getRun(current.run.id), otherInterpretations: res.json.interpretations });
+      renderReportPage();
+      announce("Interpretations added");
+    } else {
+      btn.textContent = "Interpretation unavailable";
+      showToast(aiErrorText(res.status, res.json));
+    }
+  }
+
+  // ---------- example reports ----------
+  function renderSampleReport() {
+    const p = panel();
+    const sample = SAMPLE_SCENARIOS[ui.sampleId] || SAMPLE_SCENARIOS[DEFAULT_SAMPLE];
+    const state = createSessionState();
+    Object.assign(state.answers, sample.answers);
+    const report = buildReport(state, { sample: sample.id });
+    p.innerHTML = `
+      <div class="sample-banner" role="note"><b>Example</b>&nbsp;A fictional organization and fictional answers, run through the real scoring engine - not a real assessment.</div>
+      <div class="step-eyebrow">Example report</div>
+      <h2 class="step-title" tabindex="-1">${e(sample.label)}</h2>
+      <div class="sample-picker" role="group" aria-label="Choose an example">
+        ${Object.values(SAMPLE_SCENARIOS).map((s) => `<button type="button" data-sample="${s.id}" aria-pressed="${s.id === sample.id}" class="${s.id === sample.id ? "primary" : ""}">${e(s.label)}</button>`).join("")}
+      </div>
+      <p class="step-sub">${e(sample.blurb)}</p>
+      ${reportBodyHtml(report, { links: linksForReport() })}
+      <section class="ai-insights-section" aria-labelledby="aiTitle">
+        <h3 id="aiTitle">AI-enhanced insights <span class="ai-badge">example</span></h3>
+        <p class="body-text">What the optional AI section looks like. For examples no request is made and no vulnerability source is queried, so no vulnerability items are shown.</p>
+        ${aiResultHtml(sample.ai)}
+      </section>
+      <div class="nav">
+        <button type="button" id="sampleBackBtn">← Back to assessment options</button>
+        <button type="button" id="samplePdfBtn">Download this example as PDF</button>
+      </div>`;
+    wireAccordions(p);
+    p.querySelectorAll("[data-sample]").forEach((b) =>
+      b.addEventListener("click", () => {
+        ui.sampleId = b.dataset.sample;
+        renderSampleReport();
+        focusHeading();
+      })
+    );
     document.getElementById("sampleBackBtn").addEventListener("click", () => {
       ui.phase = "landing";
       if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
       renderRail();
       renderLanding();
+      focusHeading();
     });
-    document.getElementById("samplePdfBtn").addEventListener("click", () => {
-      buildAssessmentPdf({ session: sampleSession, funcScores, overall, flags, priorities, rankedGaps, vendorNotes, frameworkRecs, aiInsights: SAMPLE_AI_INSIGHTS });
-    });
+    document.getElementById("samplePdfBtn").addEventListener("click", () => buildAssessmentPdf(report, { aiInsights: sample.ai }));
   }
 
-  // ---------- ASSESSMENT-REPORT-DEPTH-BRIEF.md §5: "Other" free text ----------
-  // Fields where "Other" answers a genuinely structured, closed question
-  // (a category/function list) rather than naming a vendor/product - vendor
-  // "Other" text is already handled by the existing matchedVendorNotes()
-  // substring match plus the separate, already-opt-in AI-Insights recency
-  // lookup, so it isn't duplicated here.
-  const OTHER_TEXT_MULTISELECT_FIELDS = [
-    { fieldId: "outsourcedFunctionBreakdown", label: "Which specific functions are handled by your outsourced provider(s)?" },
-    { fieldId: "partialOutsourceFunctions", label: "Which specific functions are outsourced?" },
-    { fieldId: "mixedOtherProviderDetail", label: "Which specific functions do those other outsourced providers handle?" },
-    { fieldId: "dayToDay", label: "How is cybersecurity managed day to day?" },
-  ];
-  const OTHER_TEXT_SELECT_FIELDS = [
-    { fieldId: "networkArch", label: "How would you describe your network architecture?" },
-    { fieldId: "devsecopsMaturity", label: "How would you describe your DevSecOps practice?" },
-  ];
-
-  // Keyword matching (other-text-match.js) already runs the moment each
-  // field is answered, converting a match into the real structured option
-  // immediately - anything still sitting here as free text at report time
-  // is exactly the "no reasonable match" case the brief scopes the AI
-  // fallback to.
-  function collectUnresolvedOtherTexts(answers) {
-    const items = [];
-    for (const f of OTHER_TEXT_MULTISELECT_FIELDS) {
-      const selected = answers[f.fieldId];
-      const text = answers[f.fieldId + "__otherText"];
-      if (Array.isArray(selected) && selected.includes(OTHER_VALUE) && text && text.trim()) {
-        items.push({ fieldLabel: f.label, freeText: text.trim() });
-      }
-    }
-    for (const f of OTHER_TEXT_SELECT_FIELDS) {
-      if (answers[f.fieldId + "__isOther"] && answers[f.fieldId] && String(answers[f.fieldId]).trim()) {
-        items.push({ fieldLabel: f.label, freeText: String(answers[f.fieldId]).trim() });
-      }
-    }
-    return items;
-  }
-
-  // Fires automatically as part of building the report - independent of
-  // the separate, opt-in "Get AI-Enhanced Insights" button below, per the
-  // brief ("it fires automatically when needed... The report should never
-  // simply ignore or silently drop 'Other' text"). A failure here degrades
-  // to showing the raw typed text unexplained, never to hiding it.
-  async function interpretUnresolvedOtherTexts(items) {
-    if (!items.length) return items.map((it) => ({ ...it, interpretation: null }));
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20_000);
-      const res = await fetch("/.netlify/functions/other-text-interpret", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ items }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      if (!res.ok) throw new Error(`other-text-interpret returned ${res.status}`);
-      const result = await res.json();
-      const byIndex = new Map((result.interpretations || []).map((r) => [r.index, r.interpretation]));
-      return items.map((it, i) => ({ ...it, interpretation: byIndex.get(i) || null }));
-    } catch {
-      return items.map((it) => ({ ...it, interpretation: null }));
-    }
-  }
-
-  function otherTextSectionHtml(resolvedOtherTexts) {
-    if (!resolvedOtherTexts.length) return "";
-    return `
-      <div class="flags">
-        <h3>Additional context you provided</h3>
-        ${resolvedOtherTexts
-          .map(
-            (it) => `
-          <div class="vendor-note-item">
-            <b>${escapeHtml(it.fieldLabel)} -</b> "${escapeHtml(it.freeText)}"
-            ${it.interpretation ? `<br>${escapeHtml(it.interpretation)}` : `<br><span class="scope-hint">Noted, but not incorporated into the scoring or findings above.</span>`}
-          </div>
-        `
-          )
-          .join("")}
-      </div>`;
-  }
-
-  // ---------- AI-Enhanced Insights (AI-RAG-HYBRID-BRIEF.md) ----------
-  // Opt-in only - never called automatically on assessment completion. The
-  // deterministic report above has already fully rendered before this can
-  // even be triggered, so any failure here (network error, function
-  // timeout, non-200 response, malformed JSON) is caught and scoped to
-  // just #aiInsightsBody - it must never affect the rest of the page.
-  function namedVendorsFor(answers) {
-    const mspProvider =
-      answers.outsourcedMspName || answers.fullMspProviderName || answers.mixedMspProviderName || answers.mdrMspProviderName || answers.mdrProviderName || answers.msspProviderName || "";
-    return {
-      "antivirus": answers.antivirusVendor || "",
-      "EDR": answers.edrVendor || "",
-      "email security": answers.emailSecurityVendor || "",
-      "DLP": answers.dlpVendor || "",
-      "SD-WAN": answers.sdwanVendor || "",
-      "edge device / firewall": answers.edgeDeviceVendor || "",
-      "hosting provider": answers.hostingProvider || "",
-      "cloud provider": answers.cloudProvider || "",
-      "security awareness / LMS": answers.awarenessLms || "",
-      "OT/ICS platform": answers.otVendor || "",
-      "MSP/MDR/MSSP provider": mspProvider,
-      // e.g. "Nginx on Ubuntu 22.04" - collected for exactly this kind of
-      // version-specific check, but never sent before.
-      "web server stack": answers.webServerStack || "",
-    };
-  }
-
-  // Everything rendered here originated as a Claude API response, but that
-  // response is built from a prompt containing this person's own free-text
-  // answers (vendor "Other" fields, company name) submitted directly to a
-  // public endpoint (netlify/functions/ai-insights.mts) that has no way to
-  // know those values came from this site's own UI rather than a raw POST,
-  // so this isn't purely a self-XSS case. escapeHtml() and safeHttpUrl()
-  // (./html-safety.js) are used the same way any other server-sourced
-  // content would need.
-  function aiInsightCardsHtml(result) {
-    const hasAnything = (result.recency && result.recency.length) || (result.longTail && result.longTail.length) || (result.narrative && result.narrative.trim());
-    if (!hasAnything) {
-      return `<p class="body-text">No additional live findings beyond what's already in the report above - your named vendors/products didn't turn up anything current, and this specific answer combination didn't surface a pattern outside the rules engine's coverage.</p>`;
-    }
-    const recencyHtml = (result.recency || [])
-      .map((r) => {
-        const safeUrl = r.url ? safeHttpUrl(r.url) : null;
-        return `
-        <div class="vendor-note-item"><b>${escapeHtml(r.vendorOrProduct)} -</b> ${escapeHtml(r.finding)} <span class="ai-source">(${escapeHtml(r.source)}${safeUrl ? ` - <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">source</a>` : ""})</span></div>`;
-      })
-      .join("");
-    const longTailHtml = (result.longTail || [])
-      .map((l) => `<div class="vendor-note-item"><b>${escapeHtml(l.finding)}</b><br>${escapeHtml(l.why)}</div>`)
-      .join("");
-    return `
-      ${recencyHtml ? `<h4>Live vendor/product check</h4>${recencyHtml}` : ""}
-      ${longTailHtml ? `<h4>Beyond the rules engine</h4>${longTailHtml}` : ""}
-      ${result.narrative && result.narrative.trim() ? `<h4>Synthesis</h4><p class="body-text">${escapeHtml(result.narrative)}</p>` : ""}
-    `;
-  }
-
-  async function requestAiInsights({ session: s, overall, verdict, flags, priorities, vendorNotes, frameworkRecs }) {
-    const btn = document.getElementById("aiInsightsBtn");
-    const body = document.getElementById("aiInsightsBody");
-    if (!btn || !body) return;
-    btn.disabled = true;
-    btn.textContent = "Getting insights…";
-    body.innerHTML = `<p class="body-text">Checking your named vendors against current CVE data and looking for anything the rules engine above didn't anticipate…</p>`;
-
-    const payload = {
-      profile: {
-        industry: s.answers.industry ? INDUSTRIES.find((i) => i.id === s.answers.industry)?.label || s.answers.industry : "",
-        regions: (s.answers.regions || []).map((id) => REGIONS.find((r) => r.id === id)?.label || id),
-        frameworks: FRAMEWORKS.filter((f) => s.answers[f.id]).map((f) => f.name),
-        overall,
-        verdict,
-      },
-      namedVendors: namedVendorsFor(s.answers),
-      findings: {
-        flags: flags.map((f) => ({ text: f.text })),
-        priorities: priorities.map((p2) => ({ fn: FUNC_DISPLAY[p2.fn], gap: p2.gap })),
-        vendorNotes: vendorNotes.map((v) => ({ vendor: v.vendor, note: v.note })),
-        frameworkRecs: frameworkRecs.map((r) => ({ name: r.name, summary: r.summary, gaps: r.gaps })),
-      },
-      // The answers themselves (../engine/ai-payload.js) - without them the
-      // long-tail pass had nothing to look at beyond the findings above.
-      profileAnswers: profileAnswerDigest(s),
-      scoredAnswers: scoredAnswerDigest(s),
-    };
-
-    try {
-      const controller = new AbortController();
-      // Longer than the function's own worst case (live CVE lookups plus
-      // its 25s Claude timeout), so the server's answer - including its
-      // "try again" error - arrives before the browser gives up.
-      const timeout = setTimeout(() => controller.abort(), 40_000);
-      const res = await fetch("/.netlify/functions/ai-insights", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      if (!res.ok) throw new Error(`ai-insights returned ${res.status}`);
-      const result = await res.json();
-      body.innerHTML = aiInsightCardsHtml(result);
-      lastAiInsights = result;
-      btn.remove();
-    } catch (e) {
-      body.innerHTML = `<p class="body-text">AI insights unavailable right now - the rest of this report is unaffected. You can try again below.</p>`;
-      btn.disabled = false;
-      btn.textContent = "Get AI-Enhanced Insights ✨";
-    }
-  }
-
-  // Shared by the public renderCurrentPhase() entry point and §2's
-  // resumeFromSave() - both need to render whatever ui.phase currently is.
   function dispatchPhase() {
     if (ui.phase === "landing") renderLanding();
     else if (ui.phase === "scope") renderScope();
     else if (ui.phase === "profile") renderProfileScreen();
     else if (ui.phase === "wizard") renderAssessmentCategory();
     else if (ui.phase === "sample") renderSampleReport();
+    else if (current) renderReportPage();
     else renderResults();
   }
 
@@ -1568,18 +1195,9 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     },
     session,
     renderRail,
-    renderScope,
-    renderProfileScreen,
-    renderAssessmentCategory,
-    renderResults,
     requestLanding,
     openRun,
-    // entry point used by renderActiveTab() when switching into the assessment tab
     renderCurrentPhase() {
-      // Sync just the landing<->sample boundary from the URL on every
-      // (re)entry - covers a direct /assessment/sample load, popstate
-      // back/forward, and switching tabs away and back. Never touches
-      // scope/profile/wizard/results, which have no URL of their own.
       if (currentPathIsSample() && ui.phase !== "sample") ui.phase = "sample";
       else if (!currentPathIsSample() && ui.phase === "sample") ui.phase = "landing";
       updateSerial();

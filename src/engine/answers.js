@@ -21,11 +21,29 @@ const SCOPE_KEYS = ["industry", "regions", "countries", "otOverride", "companyNa
 // Companion keys the UI stores next to a node's own answer.
 const COMPANION_SUFFIXES = ["__isOther", "__otherText"];
 
+const DEDUPE_NODES = PROFILE_SCREENS.flatMap((s) => [...s.flow.index.values()]).filter((n) => n.dedupeKey);
+
+// The dedupe map (which answers were carried over between questions) is
+// derived from answers, so it can be rebuilt for answers that come from
+// storage or an example - otherwise a carried-over answer (for example "who
+// runs SOC monitoring", answered by the outsourced-functions checklist)
+// would look unanswered and hide every question after it.
+export function rebuildDedupe(answers, dedupe = {}) {
+  const out = { ...dedupe };
+  for (const node of DEDUPE_NODES) {
+    if (Object.prototype.hasOwnProperty.call(out, node.dedupeKey) || !isAnswered(answers[node.id])) continue;
+    const v = typeof node.dedupeValue === "function" ? node.dedupeValue(answers[node.id]) : answers[node.id];
+    if (v !== undefined) out[node.dedupeKey] = v;
+  }
+  return out;
+}
+
 export function cloneState(state) {
+  const answers = JSON.parse(JSON.stringify(state.answers || {}));
   return {
-    answers: JSON.parse(JSON.stringify(state.answers || {})),
+    answers,
     asked: [...(state.asked || [])],
-    dedupe: { ...(state.dedupe || {}) },
+    dedupe: rebuildDedupe(answers, state.dedupe || {}),
     quickMode: Boolean(state.quickMode),
   };
 }
