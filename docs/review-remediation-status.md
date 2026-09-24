@@ -149,8 +149,8 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
 3. **The AI panel in the live UI** wasn't exercised with a real request (the smoke test called the
    endpoint directly, to keep it to one paid request); the panel's rendering is covered by local
    tests with the same response shape.
-4. **`fetch-case-studies`** is still not deployed; its workflow fails until it is deployed or
-   disabled (decision needed: it makes paid AI calls on a schedule).
+4. **`fetch-case-studies`** is intentionally not deployed (it makes paid AI calls). Its workflow is
+   manual-only and has never run, so nothing is failing; how to enable it is in `docs/rollout.md`.
 5. **IP-hash counter cleanup** runs opportunistically (4% of AI requests), so deletion after a day
    isn't time-guaranteed if the service is idle; the privacy text says so.
 6. **Product versions** aren't collected, so vulnerability matches are always "potential" and ask
