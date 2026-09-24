@@ -6,7 +6,7 @@ export function createSessionState() {
     answers: {},   // nodeId -> answer value (number for scored questions, string/array otherwise)
     asked: [],     // ordered list of node ids actually shown to the user, for progress/back-nav
     dedupe: {},    // dedupeKey -> value already collected under a different node id
-    quickMode: false, // §1: when true, graph.js's resolveNext() also skips any node.quickSkip
+    quickMode: false, // Quick screening: graph.js's isNodeHidden() hides every node not marked `quick`
   };
 }
 

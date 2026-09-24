@@ -1,58 +1,55 @@
-// ASSESSMENT-EXPERIENCE-BRIEF.md §6: "See a Sample Report" runs a fixed
-// answer set through the real engine rather than a hardcoded fake report -
-// this guards against that answer set silently going stale (producing zero
-// flags, zero vendor notes, or crashing a report function) as scoring.js/
-// vendor-notes.js/framework-guidance.js evolve, without pinning to brittle
-// exact numbers.
+// The example reports are fictional answer sets run through the real engine.
+// These guard against an example going stale (a question it doesn't answer,
+// or a report that stops demonstrating anything) and against examples
+// making claims no lookup supports.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createSessionState } from "../src/engine/state.js";
-import { SAMPLE_ANSWERS } from "../src/data/sample-scenario.js";
-import { computeFuncScores, computeOverall, computeFlags, computeGapItems, computePriorities } from "../src/engine/scoring.js";
-import { matchedVendorNotes } from "../src/data/vendor-notes.js";
-import { computeFrameworkRecommendations } from "../src/engine/framework-guidance.js";
-import { guidanceForFlag } from "../src/engine/mitre-guidance.js";
-import { FUNCTIONS } from "../src/data/categories.js";
+import { SAMPLE_SCENARIOS, DEFAULT_SAMPLE } from "../src/data/sample-scenario.js";
+import { buildReport } from "../src/engine/report-model.js";
+import { runScenario } from "./helpers/scenarios.js";
 
-function sampleState() {
-  const state = createSessionState();
-  Object.assign(state.answers, SAMPLE_ANSWERS);
-  return state;
+const SCOPE_KEYS = ["industry", "regions", "soc2", "gdpr", "companyName"];
+
+function stateFor(sample) {
+  const scope = Object.fromEntries(Object.entries(sample.answers).filter(([k]) => SCOPE_KEYS.includes(k)));
+  // No fallback: every question an example reaches must have an answer.
+  return runScenario(sample.answers, { scope });
 }
 
-test("§6 sample scenario: produces a full six-function score in a believable mid-range band", () => {
-  const state = sampleState();
-  const funcScores = computeFuncScores(state);
-  assert.deepEqual(funcScores.map((f) => f.fn), FUNCTIONS);
-  for (const f of funcScores) assert.ok(f.pct > 0 && f.pct < 100, `${f.fn} should be neither 0% nor 100% for a "realistic mixed" sample`);
-  const overall = computeOverall(funcScores);
-  assert.ok(overall > 30 && overall < 85, `expected a moderate overall score, got ${overall}%`);
+test("there are IT-services and SaaS examples, and the default exists", () => {
+  assert.deepEqual(Object.keys(SAMPLE_SCENARIOS).sort(), ["itServices", "saas"]);
+  assert.ok(SAMPLE_SCENARIOS[DEFAULT_SAMPLE]);
 });
 
-test("§6 sample scenario: triggers at least one compounding-risk flag with real MITRE guidance", () => {
-  const state = sampleState();
-  const flags = computeFlags(state);
-  assert.ok(flags.length >= 1, "sample scenario should demonstrate the compounding-risk engine, not show zero flags");
-  const withGuidance = flags.filter((f) => guidanceForFlag(f, state.answers));
-  assert.ok(withGuidance.length >= 1, "expected at least one flag with a real MITRE ATT&CK mapping, to actually demo that panel");
-});
+for (const sample of Object.values(SAMPLE_SCENARIOS)) {
+  test(`${sample.id}: answers every question its path reaches, and nothing it doesn't`, () => {
+    const state = stateFor(sample);
+    const report = buildReport(state);
+    assert.equal(report.staleAnswerCount, 0, "every answer in the example should be for a question that applies");
+    assert.equal(report.overall.counts.unanswered, 0);
+  });
 
-test("§6 sample scenario: matches at least one vendor-specific mitigation note", () => {
-  const state = sampleState();
-  const notes = matchedVendorNotes(state.answers);
-  assert.ok(notes.length >= 1, "sample scenario's named vendors should demo the vendor-notes panel, not show it empty");
-});
+  test(`${sample.id}: is clearly fictional and demonstrates the report`, () => {
+    const report = buildReport(stateFor(sample));
+    assert.match(sample.answers.companyName, /fictional/i);
+    assert.ok(report.findings.length >= 5);
+    assert.ok(report.actions.length === report.findings.length);
+    assert.ok(report.overall.coverage > 30 && report.overall.coverage < 95, `coverage ${report.overall.coverage}`);
+    assert.ok(report.frameworkRecs.length >= 1);
+  });
 
-test("§6 sample scenario: surfaces its selected framework's recommendations", () => {
-  const state = sampleState();
-  const recs = computeFrameworkRecommendations(state);
-  assert.ok(recs.some((r) => r.name === "HIPAA"), "sample scenario selects HIPAA and should surface its recommendations");
-});
+  test(`${sample.id}: the static AI example makes no vulnerability claims`, () => {
+    assert.equal(sample.ai.example, true);
+    assert.equal(sample.ai.advisories.length, 0);
+    for (const s of sample.ai.sourceStatus) assert.match(s.kev + s.nvd, /not-checked-example/);
+    assert.doesNotMatch(JSON.stringify(sample.ai), /CVE-\d{4}-\d+/);
+  });
+}
 
-test("§6 sample scenario: produces a non-empty, ranked priority list", () => {
-  const state = sampleState();
-  const gaps = computeGapItems(state);
-  const priorities = computePriorities(state);
-  assert.ok(gaps.length >= 5);
-  assert.ok(priorities.length >= 1 && priorities.length <= 5);
+test("the two examples differ in a way worth showing: one has critical gaps, one doesn't", () => {
+  const it = buildReport(stateFor(SAMPLE_SCENARIOS.itServices));
+  const saas = buildReport(stateFor(SAMPLE_SCENARIOS.saas));
+  assert.equal(it.verdict.key, "critical-gaps");
+  assert.notEqual(saas.verdict.key, "critical-gaps");
+  assert.equal(saas.verdict.key, "verify", "the SaaS example's 'Not sure' on restore testing asks for verification");
 });

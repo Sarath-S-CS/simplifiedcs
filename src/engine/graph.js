@@ -32,16 +32,15 @@ function isAnswered(state, nodeId) {
   return v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0);
 }
 
-// ASSESSMENT-EXPERIENCE-BRIEF.md §1: quickSkip composes with visibleIf
-// rather than replacing it - a node is hidden if either its own visibility
-// condition fails, or Quick mode is on and this node is flagged as
-// vendor/specificity detail Quick mode doesn't collect. Exported (rather
-// than kept private to resolveNext) so §4's "we've skipped N questions"
-// count can use the exact same hiding rule instead of a second, driftable
-// copy of it.
+// A node is hidden if its own visibility condition fails, or Quick
+// screening is on and the node isn't one of the few Quick asks (`quick:
+// true` on the node - see controls.js for the scored ones). Quick is an
+// allow-list so its question count can't grow by accident: test/quick-mode
+// .test.js walks every Quick path and checks the count stays within limit.
+// Exported so the "we've skipped N questions" count uses this same rule.
 export function isNodeHidden(node, state) {
   const hiddenByVisibleIf = node.visibleIf && !node.visibleIf(state.answers);
-  const hiddenByQuickMode = state.quickMode && node.quickSkip;
+  const hiddenByQuickMode = state.quickMode && !node.quick;
   return Boolean(hiddenByVisibleIf || hiddenByQuickMode);
 }
 

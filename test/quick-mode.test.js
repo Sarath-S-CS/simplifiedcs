@@ -1,252 +1,98 @@
-// ASSESSMENT-EXPERIENCE-BRIEF.md §1 verification requirement: "walk both a
-// Quick and a Full run with the same underlying weak answers and confirm
-// the score, compounding-risk flags, and MITRE mapping are consistent
-// between them (same core findings present in both), with Full simply
-// having additional vendor-specific detail layered on top."
-//
-// This drives every profile screen + the NIST assessment flow via the same
-// resolveNext()-based walk the real UI uses (see assessment.js's
-// renderProfileScreen/renderAssessmentCategory), fed by one shared weak/
-// vulnerable answer set. Run once with quickMode:false and once with
-// quickMode:true - since quickSkip only ever hides pure vendor-identification
-// fields (never a scored NIST question or a field any computeFlags() rule
-// reads directly), Quick mode's walk should simply never visit those nodes
-// while producing an otherwise identical report.
+// Quick screening (methodology 2.0): at most 15 required responses on every
+// path, including setup; an honest screening report with limited coverage;
+// and a "Continue to Full" that keeps every compatible answer.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildFlow, resolveNext } from "../src/engine/graph.js";
-import { createSessionState, recordAnswer } from "../src/engine/state.js";
-import { ORG_PROFILE_ORDER, ORG_PROFILE_NODES, INFRA_ORDER, INFRA_NODES, DEVSEC_ORDER, DEVSEC_NODES, OT_ORDER, OT_NODES } from "../src/data/profile-questions.js";
-import { TEAM_STRUCTURE_ORDER, TEAM_STRUCTURE_NODES } from "../src/data/team-structure.js";
-import { CONTAINERIZATION_ORDER, CONTAINERIZATION_NODES } from "../src/data/containerization.js";
-import { AI_GOVERNANCE_ORDER, AI_GOVERNANCE_NODES } from "../src/data/ai-governance.js";
+import { visibleNodes } from "../src/engine/graph.js";
+import { createSessionState } from "../src/engine/state.js";
+import { PROFILE_SCREENS } from "../src/data/profile-flow.js";
+import { ASSESSMENT_FLOW } from "../src/data/assessment-flow.js";
 import { NIST_QUESTIONS } from "../src/data/nist-questions.js";
-import { computeFuncScores, computeOverall, computeFlags, computeGapItems, computePriorities } from "../src/engine/scoring.js";
-import { matchedVendorNotes } from "../src/data/vendor-notes.js";
-import { computeFrameworkRecommendations } from "../src/engine/framework-guidance.js";
-import { guidanceForFlag, guidanceForGapItem } from "../src/engine/mitre-guidance.js";
+import { buildReport } from "../src/engine/report-model.js";
+import { computeFlags } from "../src/engine/scoring.js";
+import { visibleProfileScreens } from "../src/engine/answers.js";
+import { runScenario, WEAK_ANSWERS, bestAnswer } from "./helpers/scenarios.js";
 
-function assessmentFlow() {
-  const nodes = NIST_QUESTIONS.map((q) => (q.framework ? { ...q, visibleIf: (a) => Boolean(a[q.framework]) } : q));
-  return buildFlow(nodes.map((q) => q.id), nodes);
+// Scope-screen responses Quick requires (industry only - Quick hides the
+// region and framework pickers).
+const QUICK_SCOPE_REQUIRED = 1;
+
+function requiredVisibleCount(state) {
+  let n = 0;
+  for (const screen of visibleProfileScreens(state)) n += visibleNodes(screen.flow, state).filter((x) => x.required !== false).length;
+  n += visibleNodes(ASSESSMENT_FLOW, state).length;
+  return n;
 }
 
-function flows() {
-  return {
-    org: buildFlow(ORG_PROFILE_ORDER, ORG_PROFILE_NODES),
-    team: buildFlow(TEAM_STRUCTURE_ORDER, TEAM_STRUCTURE_NODES),
-    infra: buildFlow(INFRA_ORDER, INFRA_NODES),
-    container: buildFlow(CONTAINERIZATION_ORDER, CONTAINERIZATION_NODES),
-    devsec: buildFlow(DEVSEC_ORDER, DEVSEC_NODES),
-    ai: buildFlow(AI_GOVERNANCE_ORDER, AI_GOVERNANCE_NODES),
-    ot: buildFlow(OT_ORDER, OT_NODES),
-    nist: assessmentFlow(),
-  };
-}
+// Every graded option position plus "Not sure", for every Quick question.
+const pickers = [
+  (node) => (node.kind === "scored" ? node.options[0].v : node.options[0]),
+  (node) => (node.kind === "scored" ? node.options[node.options.length - 1].v : node.options[node.options.length - 1]),
+  (node) => bestAnswer(node),
+  (node) => (node.kind === "scored" ? "unknown" : node.options[Math.floor(node.options.length / 2)]),
+];
 
-// One realistic, deliberately weak/vulnerable answer set covering every
-// node that's reachable across the org/team/infra/container/devsec/ot/nist
-// flows on this specific branch path - including several pure
-// vendor-identification fields (fullMspProviderName, antivirusVendor,
-// edrVendor, emailSecurityVendor, awarenessLms, cloudProvider,
-// edgeDeviceVendor, hostingProvider, webServerStack, otVendor) that should
-// be visited in Full mode and silently skipped in Quick mode.
-const WEAK_ANSWERS = {
-  employeeCount: "51–200",
-
-  teamDedicated: "Our IT team takes care of both IT and cybersecurity",
-  combinedHeadcount: "3–10",
-  dayToDay: ["full-msp"],
-  fullMspProviderName: "Kyndryl",
-  mspSocOwner: "Same MSP",
-  cyberInsurance: "No",
-  incidentRecoveryOwner: "Not defined",
-
-  hasAntivirus: "Yes",
-  antivirusVendor: "Cisco",
-  edrVendor: "Cisco",
-  emailSecurityVendor: "Mimecast",
-  awarenessLms: "KnowBe4",
-  dlpUsed: "No",
-  deployModel: "Hybrid (on-prem + cloud)",
-  cloudProvider: "Microsoft Azure",
-  sdwanUsed: "No",
-  networkArch: "Flat / mostly unsegmented",
-  externalDevices: "Yes",
-  edgeDeviceVendor: "Fortinet",
-  externalWebsite: "Yes",
-  webDb: "Yes",
-  hostingProvider: "Self-hosted / on-premises",
-  webServerStack: "Nginx on Ubuntu 22.04",
-
-  usesContainers: "Yes, some workloads",
-  containerOrchestration: "No, containers run without an orchestrator",
-  containerImageScanning: "No",
-  containerHostSecurity: "Not specifically hardened - same as general servers",
-  usesVirtualization: "No / cloud-native only",
-  vmSegmentation: "No - flat network",
-
-  developsSoftware: "Yes",
-  devsecopsMaturity: "No formal practice - security reviewed late, if at all",
-  secretsManagement: "Hardcoded or stored in plain config files",
-
-  aiUsage: "Yes, broadly across the organization",
-  aiUsageTypes: ["custom-ai-app", "ai-dev-tools"],
-  aiCustomAppRAG: "Yes",
-
-  hasOT: "Yes",
-  otSegregation: "No - flat/shared network",
-  otRemoteAccess: "Yes, but not via a dedicated secure gateway",
-  otPatching: "Rarely or never patched (legacy/vendor-locked)",
-  otMonitoring: "No",
-  otVendor: "Siemens",
-
-  govPolicy: 0,
-  govRoles: 0,
-  govReporting: 0,
-  govRiskDecisions: 0,
-  aiToolGovernance: 0,
-  aiRiskOwnership: 0,
-  isoIsms: 0,
-  assetInv: 0,
-  dataClass: 0,
-  vendorCount: 0,
-  isoRiskAssess: 0,
-  mfa: 0,
-  passkeys: 0,
-  patching: 0,
-  dbEncryption: 0,
-  dbAccessControl: 0,
-  dbPatching: 1,
-  training: 0,
-  phishingSim: 0,
-  aiRagPermissions: 0,
-  aiCodeReviewParity: 0,
-  aiDeepfakeTraining: 0,
-  aiVerificationStep: 0,
-  endpoint: 1,
-  rdpExposed: 0,
-  emailAuth: 0,
-  privSeparation: 0,
-  privAccountMgmt: 0,
-  passwordPolicy: 0,
-  passwordManager: 0,
-  offboarding: 0,
-  siem: 0,
-  anomalyTime: 0,
-  exfil: 0,
-  vulnScanning: 0,
-  pentest: 0,
-  irPlan: 0,
-  irTeam: 0,
-  commsPlan: 0,
-  backupTest: 0,
-  bcdr: 0,
-  backupIsolation: 0,
-};
-
-// Faithfully mirrors how the real UI drives a flow (renderProfileScreen's
-// nextBtn handler, renderAssessmentCategory's option click): repeatedly ask
-// the engine what to show next, answer it, move on. A node quickMode hides
-// is simply never returned by resolveNext(), so this loop naturally answers
-// fewer fields under Quick mode without needing separate Quick/Full answer
-// lists.
-function driveFlow(state, flow) {
-  let id = resolveNext(flow, null, state);
-  let guard = 0;
-  while (id !== null) {
-    if (++guard > 200) throw new Error(`driveFlow: possible infinite loop, stuck around "${id}"`);
-    const node = flow.index.get(id);
-    const value = WEAK_ANSWERS[id];
-    assert.notEqual(value, undefined, `WEAK_ANSWERS has no entry for visible node "${id}" - add one`);
-    recordAnswer(state, node, value);
-    id = resolveNext(flow, id, state);
-  }
-}
-
-function runScenario(quickMode) {
-  const f = flows();
-  const state = createSessionState();
-  state.quickMode = quickMode;
-  state.answers.iso27001 = true; // scope-level answer, set directly like renderScope() does
-  driveFlow(state, f.org);
-  driveFlow(state, f.team);
-  driveFlow(state, f.infra);
-  driveFlow(state, f.container);
-  driveFlow(state, f.devsec);
-  driveFlow(state, f.ai);
-  driveFlow(state, f.ot);
-  driveFlow(state, f.nist);
-  return state;
-}
-
-test("§1: Quick and Full modes produce identical NIST function scores on the same weak answers", () => {
-  const full = runScenario(false);
-  const quick = runScenario(true);
-  assert.deepEqual(computeFuncScores(quick), computeFuncScores(full));
-  assert.equal(computeOverall(computeFuncScores(quick)), computeOverall(computeFuncScores(full)));
-});
-
-test("§1: Quick and Full modes flag the same compounding-risk findings", () => {
-  const full = runScenario(false);
-  const quick = runScenario(true);
-  const fullFlags = computeFlags(full);
-  const quickFlags = computeFlags(quick);
-  // A non-trivial scenario: this weak answer set should actually trigger
-  // several flags, or the "consistency" being asserted below is vacuous.
-  assert.ok(fullFlags.length >= 8, `expected several compounding-risk flags from this weak scenario, got ${fullFlags.length}`);
-  assert.deepEqual(quickFlags.map((f) => f.id), fullFlags.map((f) => f.id));
-});
-
-test("§1: Quick and Full modes produce identical gap items, priorities, and framework recommendations", () => {
-  const full = runScenario(false);
-  const quick = runScenario(true);
-  assert.deepEqual(computeGapItems(quick), computeGapItems(full));
-  assert.deepEqual(computePriorities(quick), computePriorities(full));
-  assert.deepEqual(computeFrameworkRecommendations(quick), computeFrameworkRecommendations(full));
-});
-
-test("§1: Quick and Full modes produce identical MITRE ATT&CK guidance for every flag and priority item", () => {
-  const full = runScenario(false);
-  const quick = runScenario(true);
-  const fullFlags = computeFlags(full);
-  const quickFlags = computeFlags(quick);
-  for (let i = 0; i < fullFlags.length; i++) {
-    assert.deepEqual(guidanceForFlag(quickFlags[i], quick.answers), guidanceForFlag(fullFlags[i], full.answers), `MITRE guidance for flag "${fullFlags[i].id}" differs between Quick and Full`);
-  }
-  const fullPriorities = computePriorities(full);
-  const quickPriorities = computePriorities(quick);
-  for (let i = 0; i < fullPriorities.length; i++) {
-    assert.deepEqual(guidanceForGapItem(quickPriorities[i], quick.answers), guidanceForGapItem(fullPriorities[i], full.answers), `MITRE guidance for priority item "${fullPriorities[i].id}" differs between Quick and Full`);
+test("Quick asks at most 15 required responses on every path, including setup", () => {
+  for (const industry of ["health", "saas", "finance", "other"]) {
+    for (const pick of pickers) {
+      const state = runScenario({}, { quickMode: true, scope: { industry }, fallback: pick });
+      const total = QUICK_SCOPE_REQUIRED + requiredVisibleCount(state);
+      assert.ok(total <= 15, `${industry}: ${total} required responses`);
+      assert.ok(state.asked.length + QUICK_SCOPE_REQUIRED <= 15, `${industry}: asked ${state.asked.length}`);
+    }
   }
 });
 
-test("§1: vendor-specific mitigation notes are the one honest, expected difference - present in Full, absent in Quick", () => {
-  const full = runScenario(false);
-  const quick = runScenario(true);
-  const fullNotes = matchedVendorNotes(full.answers);
-  const quickNotes = matchedVendorNotes(quick.answers);
-  assert.ok(fullNotes.length > 0, "expected the weak scenario's named vendors (Cisco, Fortinet, Mimecast, KnowBe4) to match at least one vendor note in Full mode");
-  assert.equal(quickNotes.length, 0, "Quick mode should collect zero vendor-identification fields, so it should produce zero vendor notes");
+test("Quick covers every one of the six areas with at least one control", () => {
+  const quickFns = new Set(NIST_QUESTIONS.filter((q) => q.quick).map((q) => q.fn));
+  assert.equal(quickFns.size, 6);
 });
 
-test("§1: Quick mode never asks a pure vendor-identification field", () => {
-  const quick = runScenario(true);
-  const vendorFieldIds = [
-    "antivirusVendor", "edrVendor", "emailSecurityVendor", "awarenessLms", "dlpVendor",
-    "cloudProvider", "sdwanUsed", "sdwanVendor", "edgeDeviceVendor", "hostingProvider",
-    "webServerStack", "otVendor", "outsourcedMspName", "fullMspProviderName",
-    "mixedMspProviderName", "mdrProviderName", "mdrMspProviderName", "msspProviderName",
-  ];
-  for (const id of vendorFieldIds) {
-    assert.equal(quick.asked.includes(id), false, `Quick mode should never ask "${id}"`);
+test("Quick asks only its allow-listed questions - never vendor identification", () => {
+  const state = runScenario(WEAK_ANSWERS, { quickMode: true, scope: { industry: "manufacturing" } });
+  for (const id of state.asked) {
+    const node = [...PROFILE_SCREENS.flatMap((s) => [...s.flow.index.values()]), ...ASSESSMENT_FLOW.index.values()].find((n) => n.id === id);
+    assert.ok(node.quick, `${id} is not a Quick question`);
+  }
+  for (const id of ["edrVendor", "cloudProvider", "edgeDeviceVendor", "fullMspProviderName", "otVendor"]) assert.ok(!state.asked.includes(id), id);
+});
+
+test("the Quick report is a screening: counts and limited-coverage note, never a 'Strong' verdict", () => {
+  const best = runScenario({}, { quickMode: true, scope: { industry: "other" }, fallback: bestAnswer });
+  const report = buildReport(best);
+  assert.equal(report.mode, "quick");
+  assert.equal(report.verdict.key, "screened");
+  assert.match(report.limitations.join(" "), /Quick screening asked \d+ of \d+ baseline controls/);
+  assert.ok(report.controls.some((c) => c.status === "not-asked"));
+  assert.ok(!report.controls.some((c) => c.status === "not-asked" && report.findings.some((f) => f.id === c.id)), "controls not asked are never findings");
+});
+
+test("Quick finds the same critical gaps Full finds on the controls both ask", () => {
+  const full = buildReport(runScenario(WEAK_ANSWERS, { scope: { industry: "manufacturing" } }));
+  const quick = buildReport(runScenario(WEAK_ANSWERS, { quickMode: true, scope: { industry: "manufacturing" } }));
+  assert.equal(quick.verdict.key, "critical-gaps");
+  const quickIds = new Set(NIST_QUESTIONS.filter((q) => q.quick).map((q) => q.id));
+  const fullCriticalOnQuick = full.criticalGaps.map((c) => c.id).filter((id) => quickIds.has(id));
+  assert.deepEqual(quick.criticalGaps.map((c) => c.id).sort(), fullCriticalOnQuick.sort());
+  // Combined findings only fire where Quick has the inputs; none are invented.
+  for (const f of computeFlags(runScenario(WEAK_ANSWERS, { quickMode: true, scope: { industry: "manufacturing" } }))) {
+    assert.ok(f.inputs.every((id) => quickIds.has(id) || id === "outsourcedStructure"), f.id);
   }
 });
 
-test("§1: Full mode still asks the vendor-identification fields this scenario's branch reaches", () => {
-  const full = runScenario(false);
-  const reachedInThisScenario = ["antivirusVendor", "edrVendor", "emailSecurityVendor", "awarenessLms", "cloudProvider", "edgeDeviceVendor", "hostingProvider", "webServerStack", "otVendor", "fullMspProviderName"];
-  for (const id of reachedInThisScenario) {
-    assert.equal(full.asked.includes(id), true, `Full mode should still ask "${id}"`);
+test("Continue to Full keeps every Quick answer and asks only what's missing", () => {
+  const quick = runScenario(WEAK_ANSWERS, { quickMode: true, scope: { industry: "health" } });
+  const quickAnswers = { ...quick.answers };
+  quick.quickMode = false; // what the "Continue to Full assessment" button does
+  for (const [id, v] of Object.entries(quickAnswers)) assert.deepEqual(quick.answers[id], v);
+  const fullVisible = visibleNodes(ASSESSMENT_FLOW, quick).map((n) => n.id);
+  for (const q of NIST_QUESTIONS.filter((x) => x.quick)) {
+    assert.ok(fullVisible.includes(q.id));
+    assert.notEqual(quick.answers[q.id], undefined, `${q.id} should be pre-answered`);
   }
+  assert.ok(fullVisible.some((id) => quick.answers[id] === undefined), "Full still has unanswered questions to ask");
+});
+
+test("a fresh session isn't in Quick mode", () => {
+  assert.equal(createSessionState().quickMode, false);
 });

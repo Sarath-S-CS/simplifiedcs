@@ -32,16 +32,18 @@ export const FUNC_DISPLAY = {
   Recover: "Recovery & Continuity",
 };
 
-// Preserved verbatim from the original STEPS[].ref values (index.html) —
-// do not "correct" these to full NIST CSF 2.0 subcategory sets without
-// checking with Sarath first, since they may be intentionally abbreviated.
+// The CSF 2.0 categories each section's questions draw on (per the
+// per-question references in ./controls.js). Methodology 2.0 replaced
+// "PR.AC" and "RS.RP", which are CSF 1.1 categories that no longer exist in
+// CSF 2.0 (they became PR.AA and RS.MA). test/control-catalog.test.js
+// checks every category here against the official CSF 2.0 list.
 export const FUNC_REF = {
-  Govern: "NIST CSF · GV.PO / GV.RR / GV.SC",
-  Identify: "NIST CSF · ID.AM / ID.RA",
-  Protect: "NIST CSF · PR.AC / PR.DS",
-  Detect: "NIST CSF · DE.CM",
-  Respond: "NIST CSF · RS.RP / RS.CO",
-  Recover: "NIST CSF · RC.RP",
+  Govern: "NIST CSF 2.0 · GV.PO / GV.RR / GV.OV / GV.SC",
+  Identify: "NIST CSF 2.0 · ID.AM / ID.RA",
+  Protect: "NIST CSF 2.0 · PR.AA / PR.AT / PR.DS / PR.PS / PR.IR",
+  Detect: "NIST CSF 2.0 · DE.CM / DE.AE",
+  Respond: "NIST CSF 2.0 · RS.MA / RS.CO",
+  Recover: "NIST CSF 2.0 · RC.RP",
 };
 
 export function displayLabel(fn) {

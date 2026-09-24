@@ -1,198 +1,150 @@
-// PDF-EXPORT-BRIEF.md: "test with a real completed assessment... to
-// confirm the PDF actually renders all sections correctly and page
-// breaks don't mangle content, not just that the button produces a
-// file." doc.save() needs a browser's download machinery, so this tests
-// buildAssessmentPdfDoc() directly via doc.output(...) - real PDF bytes,
-// no DOM needed - walking the actual engine (not hand-built fixtures) so
-// this exercises the same code path renderResults() does.
+// PDF export, checked on the generated document itself: every page's text
+// is parsed back out of the PDF (jsPDF writes uncompressed content streams),
+// so these assertions are about where text actually landed on each page -
+// not just that a file was produced.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildFlow, visibleNodes } from "../src/engine/graph.js";
-import { createSessionState, recordAnswer } from "../src/engine/state.js";
-import { ASSESSMENT_FLOW } from "../src/data/assessment-flow.js";
-import { TEAM_STRUCTURE_ORDER, TEAM_STRUCTURE_NODES } from "../src/data/team-structure.js";
-import { ORG_PROFILE_ORDER, ORG_PROFILE_NODES, INFRA_ORDER, INFRA_NODES, DEVSEC_ORDER, DEVSEC_NODES, OT_ORDER, OT_NODES } from "../src/data/profile-questions.js";
-import { CONTAINERIZATION_ORDER, CONTAINERIZATION_NODES } from "../src/data/containerization.js";
-import { computeFuncScores, computeOverall, computeFlags, computePriorities, computeRankedGaps } from "../src/engine/scoring.js";
-import { matchedVendorNotes } from "../src/data/vendor-notes.js";
-import { computeFrameworkRecommendations } from "../src/engine/framework-guidance.js";
 import { buildAssessmentPdfDoc } from "../src/engine/pdf-report.js";
+import { buildReport } from "../src/engine/report-model.js";
+import { SAMPLE_SCENARIOS } from "../src/data/sample-scenario.js";
+import { runScenario, WEAK_ANSWERS, bestAnswer } from "./helpers/scenarios.js";
 
-function answer(state, f, id, value) {
-  recordAnswer(state, f.index.get(id), value);
+const PAGE_H = 792;
+const BOTTOM = 744;
+const FOOTER_Y = 768;
+
+function unescape(s) {
+  return s.replace(/\\([()\\])/g, "$1");
 }
 
-function profileFlows() {
-  return {
-    org: buildFlow(ORG_PROFILE_ORDER, ORG_PROFILE_NODES),
-    team: buildFlow(TEAM_STRUCTURE_ORDER, TEAM_STRUCTURE_NODES),
-    infra: buildFlow(INFRA_ORDER, INFRA_NODES),
-    container: buildFlow(CONTAINERIZATION_ORDER, CONTAINERIZATION_NODES),
-    devsec: buildFlow(DEVSEC_ORDER, DEVSEC_NODES),
-    ot: buildFlow(OT_ORDER, OT_NODES),
-  };
-}
-
-// Every visible NIST question answered with its lowest-scoring option -
-// maximizes compounding-risk flags and gap items, the same worst-case
-// shape used to stress-test multi-page pagination live this session.
-function answerAllWorst(state) {
-  let progressed = true;
-  while (progressed) {
-    progressed = false;
-    for (const q of visibleNodes(ASSESSMENT_FLOW, state)) {
-      if (state.answers[q.id] === undefined) {
-        recordAnswer(state, q, Math.min(...q.options.map((o) => o.v)));
-        progressed = true;
-      }
-    }
+// Returns [{ page, items: [{ y, size, text }] }] with y measured from the top.
+function pages(doc) {
+  const out = doc.output();
+  const result = [];
+  const pageRe = /\/Type \/Page\n[\s\S]*?stream\n([\s\S]*?)endstream/g;
+  let m;
+  while ((m = pageRe.exec(out))) {
+    const items = [];
+    const textRe = /\/F\d+ ([\d.]+) Tf[\s\S]*?([\d.-]+) ([\d.-]+) Td\n\(((?:\\.|[^\\)])*)\) Tj/g;
+    let t;
+    while ((t = textRe.exec(m[1]))) items.push({ size: Number(t[1]), y: PAGE_H - Number(t[3]), text: unescape(t[4]) });
+    result.push({ page: result.length + 1, items });
   }
+  return result;
 }
 
-function computeResultsCtx(session) {
-  const funcScores = computeFuncScores(session);
-  const overall = computeOverall(funcScores);
-  const flags = computeFlags(session);
-  const priorities = computePriorities(session);
-  const vendorNotes = matchedVendorNotes(session.answers);
-  const frameworkRecs = computeFrameworkRecommendations(session);
-  return { session, funcScores, overall, flags, priorities, rankedGaps: computeRankedGaps(session), vendorNotes, frameworkRecs };
-}
-
-function assertRealPdf(doc, { minPages = 1 } = {}) {
-  const bytes = doc.output("arraybuffer");
-  assert.ok(bytes.byteLength > 1000, `expected a real PDF, got ${bytes.byteLength} bytes`);
-  const header = Buffer.from(bytes.slice(0, 5)).toString("ascii");
-  assert.equal(header, "%PDF-", "output should start with a valid PDF file header");
-  const pageCount = doc.internal.getNumberOfPages();
-  assert.ok(pageCount >= minPages, `expected at least ${minPages} page(s), got ${pageCount}`);
-}
-
-test("PDF export: worst-case, multi-framework, many-findings assessment renders a valid multi-page PDF", () => {
-  const flows = profileFlows();
-  const state = createSessionState();
-  state.answers.industry = "finance";
-  state.answers.regions = ["na"];
-  state.answers.companyName = "Acme Financial Corp";
-  state.answers.reportRequestedBy = "Jane Smith, CISO";
-  state.answers.pcidss = true;
-  state.answers.hipaa = true;
-
-  answer(state, flows.org, "employeeCount", "51–200");
-  answer(state, flows.team, "teamDedicated", "Yes, dedicated IT and cybersecurity team");
-  answer(state, flows.team, "itHeadcountSeparate", "3–10");
-  answer(state, flows.team, "cybersecHeadcount", "1–2");
-  answer(state, flows.team, "dayToDay", ["partial-outsource"]);
-  answer(state, flows.team, "partialOutsourceFunctions", ["patch-management"]);
-  answer(state, flows.team, "socOwnership", "Fully in-house");
-  answer(state, flows.infra, "hasAntivirus", "Yes");
-  answer(state, flows.infra, "antivirusVendor", "CrowdStrike Falcon");
-  answer(state, flows.infra, "edgeDeviceVendor", "Fortinet FortiGate");
-  answer(state, flows.infra, "dlpUsed", "Yes");
-  answer(state, flows.infra, "deployModel", "Hybrid (on-prem + cloud)");
-  answer(state, flows.infra, "sdwanUsed", "No");
-  answer(state, flows.infra, "networkArch", "Flat / mostly unsegmented");
-  answer(state, flows.infra, "externalDevices", "Yes");
-  answer(state, flows.infra, "externalWebsite", "Yes");
-  answer(state, flows.infra, "webDb", "Yes");
-  answer(state, flows.container, "usesContainers", "No");
-  answer(state, flows.container, "usesVirtualization", "No / cloud-native only");
-  answer(state, flows.devsec, "developsSoftware", "Yes");
-  answer(state, flows.devsec, "devsecopsMaturity", "No formal practice - security reviewed late, if at all");
-  answer(state, flows.devsec, "secretsManagement", "Hardcoded or stored in plain config files");
-  answer(state, flows.ot, "hasOT", "No");
-
-  answerAllWorst(state);
-  const ctx = computeResultsCtx(state);
-
-  // Sanity-check this scenario actually exercises what it's meant to,
-  // before trusting the PDF assertions below to mean anything.
-  assert.ok(ctx.flags.length >= 5, `expected several compounding-risk flags in this worst-case scenario, got ${ctx.flags.length}`);
-  assert.ok(ctx.vendorNotes.length >= 1, "expected at least one vendor-note match (Fortinet)");
-  assert.ok(ctx.frameworkRecs.length === 2, "expected PCI DSS + HIPAA framework recommendations");
-
-  const { doc, filename } = buildAssessmentPdfDoc(ctx);
-  assertRealPdf(doc, { minPages: 2 });
-  assert.match(filename, /^SimplifiedCS-Assessment-Financial-Services-\d{4}-\d{2}-\d{2}\.pdf$/);
-});
-
-test("PDF export: minimal assessment (no frameworks, no flags, no vendors) omits optional sections without crashing", () => {
-  const flows = profileFlows();
-  const state = createSessionState();
-  // No industry, no regions, no frameworks selected.
-
-  answer(state, flows.org, "employeeCount", "1–10");
-  answer(state, flows.team, "teamDedicated", "Yes, only a dedicated IT team maintaining infrastructure");
-  answer(state, flows.team, "itOnlyHeadcount", "1–2");
-  answer(state, flows.team, "dayToDay", ["inhouse-all"]);
-  answer(state, flows.team, "inhouseSocCapability", "Yes, all three in-house");
-  answer(state, flows.infra, "hasAntivirus", "No");
-  answer(state, flows.infra, "dlpUsed", "No");
-  answer(state, flows.infra, "deployModel", "On-premises only");
-  answer(state, flows.infra, "sdwanUsed", "No");
-  answer(state, flows.infra, "networkArch", "Segmented (VLANs / zones)");
-  answer(state, flows.infra, "externalDevices", "No");
-  answer(state, flows.infra, "externalWebsite", "No");
-  answer(state, flows.container, "usesContainers", "No");
-  answer(state, flows.container, "usesVirtualization", "No / cloud-native only");
-  answer(state, flows.devsec, "developsSoftware", "No");
-  answer(state, flows.ot, "hasOT", "No");
-
-  // Every question answered at max score - no compounding-risk flags,
-  // no priority gaps, and (with no frameworks selected and no vendor
-  // fields filled in) no vendor notes or framework recommendations
-  // either. This is the "everything optional is empty" edge case.
-  let progressed = true;
-  while (progressed) {
-    progressed = false;
-    for (const q of visibleNodes(ASSESSMENT_FLOW, state)) {
-      if (state.answers[q.id] === undefined) {
-        recordAnswer(state, q, Math.max(...q.options.map((o) => o.v)));
-        progressed = true;
-      }
-    }
+function checkLayout(doc) {
+  const ps = pages(doc);
+  assert.equal(ps.length, doc.internal.getNumberOfPages());
+  for (const p of ps) {
+    const body = p.items.filter((i) => Math.abs(i.y - FOOTER_Y) > 1);
+    const footer = p.items.filter((i) => Math.abs(i.y - FOOTER_Y) <= 1);
+    assert.ok(footer.some((i) => i.text === `Page ${p.page} of ${ps.length}`), `page ${p.page} footer`);
+    for (const i of body) assert.ok(i.y <= BOTTOM + 0.5 && i.y >= 40, `page ${p.page}: "${i.text.slice(0, 40)}" drawn at y=${i.y}, outside the margins`);
+    // A section heading (13pt) must be followed by content on the same page.
+    body.forEach((i, idx) => {
+      if (i.size === 13) assert.ok(body.length - idx - 1 >= 2, `page ${p.page}: heading "${i.text}" is stranded at the bottom of the page`);
+    });
   }
-  const ctx = computeResultsCtx(state);
-  assert.equal(ctx.flags.length, 0);
-  assert.equal(ctx.vendorNotes.length, 0);
-  assert.equal(ctx.frameworkRecs.length, 0);
+  return ps;
+}
 
-  const { doc, filename } = buildAssessmentPdfDoc(ctx);
-  assertRealPdf(doc);
-  // No industry selected - filename should fall back to "General", not throw or leave a blank segment.
-  assert.match(filename, /^SimplifiedCS-Assessment-General-\d{4}-\d{2}-\d{2}\.pdf$/);
+const allText = (ps) => ps.flatMap((p) => p.items.map((i) => i.text)).join("\n");
+
+function weakReport({ quick = false } = {}) {
+  const state = runScenario(WEAK_ANSWERS, { quickMode: quick, scope: { industry: "finance", regions: ["na"], pcidss: true, hipaa: true, companyName: "Example Co (fictional)", reportRequestedBy: "Test Reader" }, fallback: (n) => (n.kind === "scored" ? 0 : undefined) });
+  return buildReport(state, { generatedAt: "2026-09-24T12:00:00.000Z" });
+}
+
+function strongReport({ quick = false } = {}) {
+  const profile = { employeeCount: "1–10", teamDedicated: "Yes, only a dedicated IT team maintaining infrastructure", itOnlyHeadcount: "1–2", dayToDay: ["inhouse-all"], inhouseSocCapability: "Yes, all three in-house", vendorCount: "None", hasAntivirus: "Yes", dlpUsed: "Yes", deployModel: "On-premises only", sdwanUsed: "No", networkArch: "Segmented (VLANs / zones)", externalDevices: "No", externalWebsite: "No", usesContainers: "No", usesVirtualization: "No / cloud-native only", developsSoftware: "No", aiUsage: "No, not currently" };
+  const state = runScenario(profile, { quickMode: quick, fallback: bestAnswer });
+  return buildReport(state, { generatedAt: "2026-09-24T12:00:00.000Z" });
+}
+
+test("long report (worst case, two frameworks): multi-page, nothing outside the margins, no stranded headings", () => {
+  const report = weakReport();
+  assert.ok(report.actions.length > 30 && report.flags.length >= 8, "fixture exercises a long report");
+  const { doc, filename } = buildAssessmentPdfDoc(report);
+  const ps = checkLayout(doc);
+  assert.ok(ps.length >= 6, `expected a long document, got ${ps.length} pages`);
+  const text = allText(ps);
+  assert.match(text, /Critical gaps found/);
+  assert.match(text, /Prepared for: Example Co \(fictional\)/);
+  for (const a of report.actions) assert.ok(text.includes(a.id), `action ${a.id} is in the PDF`);
+  assert.match(text, /Within 30 days/);
+  assert.match(filename, /^SimplifiedCS-Assessment-Financial-Services-2026-09-24\.pdf$/);
 });
 
-test("PDF export: includes AI-Enhanced Insights only when a response exists, with PDF-safe text", () => {
-  const state = createSessionState();
-  answerAllWorst(state);
-  const ctx = computeResultsCtx(state);
+test("short report (everything in place): valid, and says there's nothing to do rather than inventing items", () => {
+  const report = strongReport();
+  assert.equal(report.actions.length, 0);
+  const ps = checkLayout(buildAssessmentPdfDoc(report).doc);
+  const text = allText(ps);
+  assert.match(text, /Strong foundations/);
+  assert.match(text, /No actions: every applicable control is in place/);
+});
 
-  const without = buildAssessmentPdfDoc(ctx).doc.output();
-  assert.ok(!without.includes("AI-ENHANCED INSIGHTS"), "no AI section when none was requested");
+test("Quick screening PDF: says it's a screening, shows counts not a percentage, and lists what wasn't asked", () => {
+  const report = weakReport({ quick: true });
+  const ps = checkLayout(buildAssessmentPdfDoc(report).doc);
+  const text = allText(ps);
+  assert.match(text, /Quick Screening Report/);
+  assert.match(text, /not asked/);
+  assert.doesNotMatch(text, /Coverage: \d+%/);
+  assert.match(text, /Quick screening asked \d+ of \d+ baseline controls/);
+});
 
-  const aiInsights = {
-    recency: [{ vendorOrProduct: "Proofpoint", finding: "A current advisory applies \u2014 patch now.", source: "CVE-2026-0001", url: "https://nvd.nist.gov/vuln/detail/CVE-2026-0001" }],
-    longTail: [{ finding: "Flat network \u2192 wide ransomware blast radius", why: "Nothing contains lateral movement." }],
-    narrative: "A \u201Csynthesized\u201D paragraph.",
+test("'Not sure' and not-applicable answers are reported as such", () => {
+  const state = runScenario({ ...WEAK_ANSWERS, mfa: "unknown", emailAuth: "na" }, { scope: { industry: "manufacturing" } });
+  const report = buildReport(state);
+  const text = allText(checkLayout(buildAssessmentPdfDoc(report).doc));
+  assert.match(text, /Find out: Is multi-factor authentication enforced/);
+  assert.match(text, /answered "Not sure" and (is|are) excluded from the coverage percentage/);
+  assert.doesNotMatch(text, /A-emailAuth/);
+});
+
+test("AI section: absent unless requested; success cites evidence; failure is stated; text is PDF-safe", () => {
+  const report = weakReport();
+  assert.doesNotMatch(allText(pages(buildAssessmentPdfDoc(report).doc)), /AI-ENHANCED INSIGHTS/);
+
+  const ai = {
+    schemaVersion: 2,
+    generatedAt: "2026-09-24T12:05:00.000Z",
+    model: "claude-sonnet-5",
+    promptVersion: "insights-2026-09-v2",
+    sourceStatus: [{ productKey: "p0-fortinet", name: "Fortinet", category: "edge device / firewall", kind: "vendor-family", kev: "potential-match", nvd: "source-unavailable", notes: [] }],
+    advisories: [
+      {
+        productKey: "p0-fortinet",
+        productName: "Fortinet",
+        summary: "A fictional test advisory — check the firmware → now.",
+        verification: "Compare the installed firmware with the fixed version.",
+        applicability: "vendor-only",
+        evidence: [{ id: "E1", source: "CISA KEV", cveId: "CVE-2099-0001", title: "Test", url: "https://nvd.nist.gov/vuln/detail/CVE-2099-0001", publishedAt: "2099-01-01", match: "vendor-only", platforms: [], versionInfo: null, ransomware: true }],
+      },
+    ],
+    patterns: [{ finding: "A “pattern”", why: "Because.", basedOn: ["q"] }],
+    narrative: "Narrative text.",
+    limitations: ["NVD was unavailable during this check."],
   };
-  const withAi = buildAssessmentPdfDoc({ ...ctx, aiInsights }).doc;
-  assertRealPdf(withAi);
-  const text = withAi.output();
-  assert.ok(text.includes("AI-ENHANCED INSIGHTS"), "section heading (drawn uppercase)");
-  assert.ok(text.includes("Flat network -> wide ransomware blast radius"), "arrow mapped to ASCII");
-  assert.ok(text.includes('A "synthesized" paragraph.'), "curly quotes mapped to ASCII");
-  assert.ok(text.includes("Proofpoint - A current advisory applies - patch now."), "em dash mapped to ASCII");
+  const text = allText(checkLayout(buildAssessmentPdfDoc(report, { aiInsights: ai }).doc));
+  assert.match(text, /AI-ENHANCED INSIGHTS/);
+  assert.match(text, /CVE-2099-0001 \(CISA KEV, known ransomware use\)/);
+  assert.match(text, /vendor match only - product not confirmed/);
+  assert.match(text, /A fictional test advisory - check the firmware -> now\./);
+  assert.match(text, /A "pattern"/);
+  assert.match(text, /NVD - source unavailable/);
+
+  const failed = allText(checkLayout(buildAssessmentPdfDoc(report, { aiError: "the AI service didn't respond in time" }).doc));
+  assert.match(failed, /AI insights were requested but not produced: the AI service didn't respond in time/);
 });
 
-test("PDF export: lists every gap, not only the top five", () => {
-  const state = createSessionState();
-  answerAllWorst(state);
-  const ctx = computeResultsCtx(state);
-  assert.ok(ctx.rankedGaps.length > 5, "worst-case run should have more than five gaps");
-  const text = buildAssessmentPdfDoc(ctx).doc.output();
-  // jsPDF escapes parentheses inside PDF string literals.
-  assert.ok(text.includes(`EVERY GAP IN THIS ASSESSMENT \\(${ctx.rankedGaps.length}\\)`), "section heading with the gap count");
-  const last = ctx.rankedGaps[ctx.rankedGaps.length - 1];
-  assert.ok(text.includes(`${String(last.rank).padStart(2, "0")}. [`), "the lowest-ranked gap is listed too");
+test("example reports are labelled as fictional in the PDF", () => {
+  const sample = SAMPLE_SCENARIOS.saas;
+  const state = runScenario(sample.answers, { scope: { industry: "saas", regions: ["eu", "na"], soc2: true, gdpr: true, companyName: sample.answers.companyName } });
+  const report = buildReport(state, { sample: sample.id });
+  const text = allText(checkLayout(buildAssessmentPdfDoc(report, { aiInsights: sample.ai }).doc));
+  assert.match(text, /EXAMPLE REPORT - fictional organization/);
+  assert.match(text, /not checked \(example report\)/);
 });

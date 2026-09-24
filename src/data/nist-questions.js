@@ -1,12 +1,13 @@
-// The six NIST CSF function question sets - ported verbatim (ids, question
-// text, and option text/values all unchanged) from the original index.html
-// STEPS array, just flattened into individual graph nodes. `fn` remains the
-// internal NIST scoring key; `category` is the new §5.9 business-facing
-// label the UI actually shows. Framework-tagged questions (`framework:`)
-// keep their original visibility gating: shown only when that framework is
-// selected in scope.
+// The scored questions, one graph node each, grouped by NIST CSF function.
+// `fn` is the internal NIST scoring key; `category` is the business-facing
+// label the UI shows. Framework-tagged questions (`framework:`) are shown
+// only when that framework is selected in scope. Weights, framework
+// references and suggested actions for each question live in ./controls.js.
+// Question-set version: QUESTION_SET_VERSION in ./controls.js - bump it
+// whenever a question's options change meaning.
 import { FUNC_DISPLAY, FUNC_REF } from "./categories.js";
 import { usesAiDevOrCicd } from "./ai-governance.js";
+import { CONTROL_META, UNKNOWN, NOT_APPLICABLE } from "./controls.js";
 
 export const SECTION_META = {
   Govern: { sub: "The mandate and oversight that make everything else more than good intentions." },
@@ -17,8 +18,17 @@ export const SECTION_META = {
   Recover: { sub: "How you get back to operating - and how sure you are it'll work." },
 };
 
-function scored(fn, id, text, options, extra) {
-  return { id, kind: "scored", fn, category: FUNC_DISPLAY[fn], text, options, ...extra };
+// Every scored question offers "Not sure" (stored as UNKNOWN), so nobody has
+// to pick a graded answer they can't vouch for - and "don't know" is never
+// silently treated as "no". `na` adds a justified "Not applicable" option
+// only where one genuinely exists. Methodology 2.0 split every old combined
+// "No / not sure" option into separate answers.
+function scored(fn, id, text, options, extra = {}) {
+  const { na, ...rest } = extra;
+  const all = [...options];
+  if (na) all.push({ v: NOT_APPLICABLE, t: na });
+  all.push({ v: UNKNOWN, t: "Not sure" });
+  return { id, kind: "scored", fn, category: FUNC_DISPLAY[fn], text, options: all, quick: Boolean(CONTROL_META[id]?.quick), ...rest };
 }
 
 export const NIST_QUESTIONS = [
@@ -39,6 +49,16 @@ export const NIST_QUESTIONS = [
   scored("Govern", "govRiskDecisions", "Is cybersecurity risk factored into business decisions (new vendors, new products) before they're approved?", [
     { v: 0, t: "No" }, { v: 1, t: "Sometimes, informally" }, { v: 2, t: "Yes, a formal process" },
   ]),
+  // Methodology 2.0: replaces the old Identify "vendorCount" question, which
+  // merged how many vendors there are with whether they are reviewed (and
+  // scored "None" as the best answer). How many is now context
+  // (vendorCount on the team screen); whether they are reviewed is this
+  // control. Hidden - and therefore not applicable - when there are none.
+  scored("Govern", "vendorAccessReview", "Are third parties with access to your systems or data (IT providers, SaaS vendors, contractors) reviewed for security before they get access, and periodically after?", [
+    { v: 0, t: "No - not reviewed" },
+    { v: 1, t: "Informally, or only when they're first onboarded" },
+    { v: 2, t: "Yes - before access is granted and on a regular schedule" },
+  ], { na: "Not applicable - no third parties have access to our systems or data", visibleIf: (answers) => answers.vendorCount !== "None" }),
   scored("Govern", "isoIsms", "Do you maintain a formal Information Security Management System (ISMS) with a defined scope and periodic management review?", [
     { v: 0, t: "No" }, { v: 1, t: "Informally" }, { v: 2, t: "Yes, formally documented" },
   ], { framework: "iso27001" }),
@@ -57,11 +77,14 @@ export const NIST_QUESTIONS = [
     { v: 0, t: "No" }, { v: 1, t: "Informal, no defined timeframe" }, { v: 2, t: "Yes, a documented process exists" },
   ], { framework: "gdpr" }),
   // §5.8
-  scored("Govern", "aiToolGovernance", "Are AI tools used within the organization, and if so, is that usage tracked and governed?", [
+  // Only asked when AI use is confirmed or unknown: an organization that
+  // answered "No, not currently" on the AI screen has no truthful option
+  // here, so for them it is not applicable rather than a forced "gap".
+  scored("Govern", "aiToolGovernance", "Is the organization's use of AI tools tracked and governed?", [
     { v: 0, t: "Used with no tracking or policy" },
     { v: 1, t: "Used informally - some awareness, no formal policy" },
     { v: 2, t: "A formal AI usage policy exists and usage is tracked" },
-  ]),
+  ], { visibleIf: (answers) => answers.aiUsage !== "No, not currently" }),
   // AI-READINESS-GOVERNANCE-BRIEF.md §2, Govern-tier - shown to everyone,
   // regardless of the AI-usage gate answer (an org with no AI adoption
   // today still benefits from a named owner and an IR plan that at least
@@ -80,11 +103,6 @@ export const NIST_QUESTIONS = [
   ]),
   scored("Identify", "dataClass", "Do you classify data by sensitivity (public / internal / confidential / restricted)?", [
     { v: 0, t: "No" }, { v: 2, t: "Yes" },
-  ]),
-  scored("Identify", "vendorCount", "How many third-party vendors have access to your systems or data?", [
-    { v: 2, t: "None" },
-    { v: 1, t: "1–5, informally tracked" },
-    { v: 0, t: "6+, and not formally reviewed" },
   ]),
   scored("Identify", "isoRiskAssess", "Do you conduct a formal asset-based risk assessment at least annually?", [
     { v: 0, t: "No" }, { v: 1, t: "Ad hoc, not annual" }, { v: 2, t: "Yes, at least annually" },
@@ -118,7 +136,7 @@ export const NIST_QUESTIONS = [
   // "Yes" to webDb actually feeds the compounding-risk and compliance logic
   // the way every other infrastructure fact in this assessment does.
   scored("Protect", "dbEncryption", "Is that database encrypted at rest?", [
-    { v: 0, t: "No / not sure" }, { v: 1, t: "Some databases, not all" }, { v: 2, t: "Yes, all of them" },
+    { v: 0, t: "No" }, { v: 1, t: "Some databases, not all" }, { v: 2, t: "Yes, all of them" },
   ], { visibleIf: (answers) => answers.webDb === "Yes" }),
   scored("Protect", "dbAccessControl", "Does routine application access to that database use least-privilege, application-specific credentials - not a shared or admin/root account?", [
     { v: 0, t: "No - shared or admin credentials are used for routine app access" },
@@ -146,11 +164,11 @@ export const NIST_QUESTIONS = [
     { v: 0, t: "No" }, { v: 1, t: "Partial coverage" }, { v: 2, t: "Yes, all devices" },
   ]),
   scored("Protect", "rdpExposed", "Is RDP or another remote-admin protocol reachable directly from the internet (not behind a VPN/ZTNA)?", [
-    { v: 0, t: "Yes" }, { v: 2, t: "No - behind VPN/ZTNA only" },
+    { v: 0, t: "Yes" }, { v: 2, t: "No - only reachable through a VPN/ZTNA, or no remote-admin access exists" },
   ]),
   scored("Protect", "emailAuth", "Is email authentication (SPF, DKIM, and DMARC set to quarantine/reject) enforced for your domain?", [
-    { v: 0, t: "No / not sure" }, { v: 1, t: "Partially - e.g. DMARC set to \"none\"" }, { v: 2, t: "Yes, fully enforced" },
-  ]),
+    { v: 0, t: "No" }, { v: 1, t: "Partially - e.g. DMARC set to \"none\"" }, { v: 2, t: "Yes, fully enforced" },
+  ], { na: "Not applicable - we don't send email from our own domain" }),
   scored("Protect", "privSeparation", "Are administrative accounts kept separate from everyday user accounts?", [
     { v: 0, t: "No - same account used for both" }, { v: 1, t: "Partially" }, { v: 2, t: "Yes, fully separated" },
   ]),
@@ -209,7 +227,7 @@ export const NIST_QUESTIONS = [
     { v: 0, t: "No" }, { v: 1, t: "Partially segmented" }, { v: 2, t: "Yes, fully segmented" },
   ], { framework: "pcidss" }),
   scored("Protect", "pcidssSensitiveAuthData", "Do you store sensitive authentication data (full track data, CVV/CVC, PIN) after authorization?", [
-    { v: 0, t: "Yes, some is retained" }, { v: 1, t: "Not sure" }, { v: 2, t: "No, none is stored post-authorization" },
+    { v: 0, t: "Yes, some is retained" }, { v: 2, t: "No, none is stored post-authorization" },
   ], { framework: "pcidss" }),
   // AI-READINESS-GOVERNANCE-BRIEF.md §2 - the single most important
   // RAG-security question from the brief's reference material:
@@ -217,7 +235,7 @@ export const NIST_QUESTIONS = [
   // than a given user would normally be able to see. Only meaningful once
   // a custom AI app is in use AND that app retrieves internal documents.
   scored("Protect", "aiRagPermissions", "Does that retrieval respect the same access permissions the underlying documents already have, or could someone using it potentially see more than they'd normally have access to?", [
-    { v: 0, t: "No / not sure - retrieval isn't permission-aware" },
+    { v: 0, t: "No - retrieval isn't permission-aware" },
     { v: 1, t: "Partially - some permission boundaries respected, not comprehensively enforced" },
     { v: 2, t: "Yes, retrieval enforces the same permissions as the source documents" },
   ], { visibleIf: (answers) => answers.aiCustomAppRAG === "Yes" }),
@@ -283,11 +301,11 @@ export const NIST_QUESTIONS = [
     { v: 0, t: "No" }, { v: 2, t: "Yes" },
   ]),
   scored("Respond", "nis2Notify", "If you experienced a significant incident, could you notify your national CSIRT/authority within 24 hours, as NIS2's early-warning rule requires?", [
-    { v: 0, t: "No / unsure" }, { v: 1, t: "Possibly, no defined process" }, { v: 2, t: "Yes, a defined process exists" },
+    { v: 0, t: "No" }, { v: 1, t: "Possibly, no defined process" }, { v: 2, t: "Yes, a defined process exists" },
   ], { framework: "nis2" }),
   // §5.6 — GDPR
   scored("Respond", "gdprBreach72h", "If a personal data breach occurred, could you notify the relevant supervisory authority within GDPR's 72-hour window?", [
-    { v: 0, t: "No / unsure" }, { v: 1, t: "Possibly, no defined process" }, { v: 2, t: "Yes, a defined process exists" },
+    { v: 0, t: "No" }, { v: 1, t: "Possibly, no defined process" }, { v: 2, t: "Yes, a defined process exists" },
   ], { framework: "gdpr" }),
 
   // Recover

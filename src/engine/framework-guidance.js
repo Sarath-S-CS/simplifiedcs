@@ -4,6 +4,8 @@
 // questions (not generic boilerplate - tied to what was actually answered).
 import { FRAMEWORKS } from "../data/frameworks.js";
 import { NIST_QUESTIONS } from "../data/nist-questions.js";
+import { STATUS } from "../data/controls.js";
+import { effectiveState, scoredStatus, chosenOptionLabel } from "./answers.js";
 
 const FRAMEWORK_SUMMARY = {
   iso27001:
@@ -20,28 +22,28 @@ const FRAMEWORK_SUMMARY = {
     "PCI DSS compliance hinges on keeping the cardholder data environment segmented, never retaining prohibited authentication data post-authorization, and running the required quarterly ASV scans.",
 };
 
+// Gaps are definite "not in place" / "partly in place" answers; "Not sure"
+// answers are listed separately so they aren't presented as failures.
 export function computeFrameworkRecommendations(state) {
-  return FRAMEWORKS.filter((f) => state.answers[f.id]).map((f) => {
+  const answers = effectiveState(state).answers;
+  return FRAMEWORKS.filter((f) => answers[f.id]).map((f) => {
     const questions = NIST_QUESTIONS.filter((q) => q.framework === f.id);
-    const gaps = questions
-      .filter((q) => state.answers[q.id] !== undefined)
-      .map((q) => {
-        const maxOpt = Math.max(...q.options.map((o) => o.v));
-        const val = state.answers[q.id];
-        if (val >= maxOpt) return null;
-        const chosen = q.options.find((o) => o.v === val);
-        // ASSESSMENT-REPORT-DEPTH-BRIEF.md §6: `id` lets the results screen
-        // look up the exact same QUESTION_GUIDANCE entry used in the
-        // Priorities list, so a compliance gap gets the identical five-part
-        // treatment instead of a second, separately-maintained copy of it.
-        return { id: q.id, question: q.text, chosen: chosen ? chosen.t : String(val), severity: maxOpt - val };
-      })
-      .filter(Boolean);
+    const gaps = [];
+    const unknown = [];
+    for (const q of questions) {
+      const status = scoredStatus(q, answers[q.id]);
+      // `id` lets the report reuse the same QUESTION_GUIDANCE entry as the
+      // findings register, so a compliance gap gets identical guidance.
+      const item = { id: q.id, question: q.text, chosen: chosenOptionLabel(q, answers[q.id]), status };
+      if (status === STATUS.GAP || status === STATUS.PARTIAL) gaps.push(item);
+      else if (status === STATUS.UNKNOWN) unknown.push(item);
+    }
     return {
       id: f.id,
       name: f.name,
       summary: FRAMEWORK_SUMMARY[f.id] || f.desc,
       gaps,
+      unknown,
       questionCount: questions.length,
     };
   });

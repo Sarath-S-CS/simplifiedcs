@@ -91,6 +91,10 @@ const KNOWN_OVERLAPS = [
   { a: "edrVendor", b: "endpoint", reason: "cross-flow: which EDR product (profile, unscored) vs. whether it's deployed on all devices (NIST, scored) - product choice isn't the same as coverage completeness" },
   { a: "inhouseSocCapability", b: "irPlan", reason: "cross-flow: in-house SOC/IR/forensics staffing breadth (profile, unscored) vs. whether a documented IR plan exists (NIST, scored) - having the people isn't the same as having a written plan" },
   { a: "inhouseSocCapability", b: "irTeam", reason: "cross-flow: in-house SOC/IR/forensics staffing breadth (profile, unscored, only asked on the fully-in-house branch) vs. whether any designated IR contact exists at all, in-house or not (NIST, scored, universal)" },
+  // --- Methodology 2.0 splits: one context question decides whether a
+  // scored question applies. Deliberately two different facts.
+  { a: "vendorCount", b: "vendorAccessReview", reason: "methodology 2.0 split: how many third parties have access (context) vs. whether they're reviewed (scored) - these were wrongly merged into one scored question before" },
+  { a: "aiUsage", b: "aiToolGovernance", reason: "gate + scored follow-up: whether AI is used at all (context) vs. whether that use is governed (scored, only asked when use isn't ruled out)" },
   // --- Cross-flow coincidental short-phrase overlap - unrelated questions
   // sharing a generic word ("access", "managed", "provider(s)") rather
   // than asking about the same real-world fact.

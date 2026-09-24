@@ -107,27 +107,28 @@ test("§2: the five new scored AI questions exist, use the standard 0/2 range, a
   for (const id of ids) {
     const q = NIST_QUESTIONS.find((n) => n.id === id);
     assert.ok(q, `missing question: ${id}`);
-    assert.deepEqual([...new Set(q.options.map((o) => o.v))].sort(), [0, 1, 2], `${id} should use the standard 0/1/2 scoring range`);
+    assert.deepEqual([...new Set(q.options.map((o) => o.v).filter((v) => typeof v === "number"))].sort(), [0, 1, 2], `${id} should use the standard 0/1/2 scoring range`);
+    assert.ok(q.options.some((o) => o.v === "unknown"), `${id} should offer "Not sure"`);
     assert.ok(FUNCTIONS.includes(q.fn), `${id} has an invalid fn: ${q.fn}`);
   }
 });
 
 test("§2 compounding-risk flag: fires only when a custom AI app over-retrieves AND no one owns AI risk", () => {
   const state = createSessionState();
-  Object.assign(state.answers, { aiCustomAppRAG: "Yes", aiRagPermissions: 0, aiRiskOwnership: 0 });
+  Object.assign(state.answers, { aiUsage: "Yes, limited to specific teams or tools", aiUsageTypes: ["custom-ai-app"], aiCustomAppRAG: "Yes", aiRagPermissions: 0, aiRiskOwnership: 0 });
   assert.ok(computeFlags(state).some((f) => f.id === "ai-rag-no-ownership"));
 });
 
 test("§2 compounding-risk flag: does not fire if either half of the combination is healthy", () => {
   const partialOwnership = createSessionState();
-  Object.assign(partialOwnership.answers, { aiCustomAppRAG: "Yes", aiRagPermissions: 0, aiRiskOwnership: 2 });
+  Object.assign(partialOwnership.answers, { aiUsage: "Yes, limited to specific teams or tools", aiUsageTypes: ["custom-ai-app"], aiCustomAppRAG: "Yes", aiRagPermissions: 0, aiRiskOwnership: 2 });
   assert.ok(!computeFlags(partialOwnership).some((f) => f.id === "ai-rag-no-ownership"), "should not fire when AI risk ownership is in place");
 
   const permissionAware = createSessionState();
-  Object.assign(permissionAware.answers, { aiCustomAppRAG: "Yes", aiRagPermissions: 2, aiRiskOwnership: 0 });
+  Object.assign(permissionAware.answers, { aiUsage: "Yes, limited to specific teams or tools", aiUsageTypes: ["custom-ai-app"], aiCustomAppRAG: "Yes", aiRagPermissions: 2, aiRiskOwnership: 0 });
   assert.ok(!computeFlags(permissionAware).some((f) => f.id === "ai-rag-no-ownership"), "should not fire when retrieval is already permission-aware");
 
   const noCustomApp = createSessionState();
-  Object.assign(noCustomApp.answers, { aiCustomAppRAG: "No", aiRagPermissions: 0, aiRiskOwnership: 0 });
+  Object.assign(noCustomApp.answers, { aiUsage: "Yes, limited to specific teams or tools", aiUsageTypes: ["custom-ai-app"], aiCustomAppRAG: "No", aiRagPermissions: 0, aiRiskOwnership: 0 });
   assert.ok(!computeFlags(noCustomApp).some((f) => f.id === "ai-rag-no-ownership"), "should not fire when there's no custom RAG app to begin with");
 });

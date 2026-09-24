@@ -40,6 +40,8 @@ export function snapshotRows(answers) {
     rows.push(["Security managed by", providerNames.join(", ")]);
   }
 
+  if (answers.vendorCount) rows.push(["Third parties with access", answers.vendorCount]);
+
   rows.push(["EDR / antivirus", answers.edrVendor || "Not specified"]);
   rows.push(["Email security gateway", answers.emailSecurityVendor || "Not specified"]);
   rows.push(["Awareness / LMS platform", answers.awarenessLms || "Not specified"]);
@@ -51,6 +53,8 @@ export function snapshotRows(answers) {
   let deploy = answers.deployModel || "-";
   if (answers.cloudProvider) deploy += ` - ${answers.cloudProvider}`;
   rows.push(["Deployment model", deploy]);
+
+  if (Array.isArray(answers.endpointOs) && answers.endpointOs.length) rows.push(["Operating systems", answers.endpointOs.join(", ")]);
 
   rows.push(["Network architecture", answers.networkArch || "-"]);
 
@@ -82,7 +86,7 @@ export function snapshotRows(answers) {
 
   if (answers.hasOT) {
     let ot = answers.hasOT;
-    if (answers.hasOT === "Yes" && answers.otSegregation) ot += ` - segregation: ${answers.otSegregation}`;
+    if (answers.otSegregation) ot += ` - segregation: ${answers.otSegregation}`;
     rows.push(["OT / ICS environment", ot]);
     if (answers.otVendor) rows.push(["ICS/SCADA platform", answers.otVendor]);
   }

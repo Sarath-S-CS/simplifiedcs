@@ -1,19 +1,21 @@
-// "Where to act first, ranked" must be ranked by risk, not by the order the
+// "Where to act first" must be ranked by risk, not by the order the
 // questions happened to be asked. These replay the two live assessments run
-// against simplifiedcs.net during the review that found the problem (answer
-// sets copied from those runs), where the old ranking put governance
-// paperwork and passkeys above internet-exposed RDP, missing logging, and
-// untested or non-isolated backups.
+// against simplifiedcs.net during the August 2026 review (answer sets copied
+// from those runs, so they use the old v1 answer format and go through the
+// same migration a saved run would), where the original ranking put
+// governance paperwork and passkeys above internet-exposed RDP, missing
+// logging, and untested or non-isolated backups.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createSessionState } from "../src/engine/state.js";
-import { computeGapItems, computeRankedGaps, computePriorities } from "../src/engine/scoring.js";
-import { controlWeight } from "../src/data/control-weights.js";
-import { SAMPLE_ANSWERS } from "../src/data/sample-scenario.js";
+import { computeFindings } from "../src/engine/scoring.js";
+import { buildReport } from "../src/engine/report-model.js";
+import { migrateAnswers } from "../src/engine/migrate.js";
+import { SAMPLE_SCENARIOS } from "../src/data/sample-scenario.js";
 
 function stateWith(answers) {
   const state = createSessionState();
-  Object.assign(state.answers, answers);
+  Object.assign(state.answers, migrateAnswers(answers, 1).answers);
   return state;
 }
 
@@ -50,48 +52,53 @@ const ENERGY_FULL = {
 };
 
 test("energy run: exposed RDP, no MFA, untested backups and shared admin creds lead the list", () => {
-  const top = computePriorities(stateWith(ENERGY_FULL)).map((p) => p.id);
-  assert.deepEqual(top, ["mfa", "rdpExposed", "backupTest", "privAccountMgmt", "siem"]);
+  const top = computeFindings(stateWith(ENERGY_FULL)).slice(0, 4).map((p) => p.id);
+  assert.deepEqual([...top].sort(), ["backupTest", "mfa", "privAccountMgmt", "rdpExposed"]);
 });
 
 test("energy run: passkeys (a maturity refinement) ranks below internet-exposed RDP and missing logging", () => {
-  const ranked = computeRankedGaps(stateWith(ENERGY_FULL));
+  const ranked = computeFindings(stateWith(ENERGY_FULL));
   const rankOf = (id) => ranked.find((g) => g.id === id).rank;
   assert.ok(rankOf("passkeys") > rankOf("rdpExposed"));
   assert.ok(rankOf("passkeys") > rankOf("siem"));
   assert.ok(rankOf("passkeys") > 5);
 });
 
-test("healthcare run: non-isolated backups and unmonitored exfiltration outrank governance paperwork", () => {
-  const top = computePriorities(stateWith(HEALTHCARE_QUICK)).map((p) => p.id);
+test("healthcare run: non-isolated backups lead; governance paperwork stays out of the top five", () => {
+  const ranked = computeFindings(stateWith(HEALTHCARE_QUICK));
+  const top = ranked.slice(0, 5).map((p) => p.id);
   assert.equal(top[0], "backupIsolation");
-  assert.equal(top[1], "exfil", "exfil also feeds the exposed-database flag, so it gets the flag boost");
+  // MFA on admin accounts only, in a hybrid organization, is a critical gap.
+  assert.ok(top.includes("mfa"));
+  assert.ok(top.includes("exfil"), "exfil also feeds the exposed-database finding");
   for (const paperwork of ["govPolicy", "govRoles", "aiToolGovernance", "aiRiskOwnership"]) assert.ok(!top.includes(paperwork), `${paperwork} should not be in the top five`);
 });
 
-test("ranked list contains every gap exactly once, with consecutive ranks", () => {
-  for (const answers of [HEALTHCARE_QUICK, ENERGY_FULL, SAMPLE_ANSWERS]) {
+test("ranked list contains every non-met control exactly once, with consecutive ranks and non-increasing scores", () => {
+  for (const answers of [HEALTHCARE_QUICK, ENERGY_FULL, SAMPLE_SCENARIOS.itServices.answers, SAMPLE_SCENARIOS.saas.answers]) {
     const state = stateWith(answers);
-    const gaps = computeGapItems(state).map((g) => g.id).sort();
-    const ranked = computeRankedGaps(state);
-    assert.deepEqual(ranked.map((g) => g.id).sort(), gaps);
+    const report = buildReport(state);
+    const expected = report.controls.filter((c) => ["gap", "partial", "unknown"].includes(c.status)).map((c) => c.id);
+    const ranked = computeFindings(state);
+    for (const id of expected) assert.equal(ranked.filter((g) => g.id === id).length, 1, id);
     assert.deepEqual(ranked.map((g) => g.rank), ranked.map((_, i) => i + 1));
     for (let i = 1; i < ranked.length; i++) assert.ok(ranked[i - 1].priorityScore >= ranked[i].priorityScore);
   }
 });
 
-test("a partial answer on a critical control ranks between a full gap and a standard gap", () => {
-  const ranked = computeRankedGaps(stateWith(HEALTHCARE_QUICK));
-  const score = (id) => ranked.find((g) => g.id === id).priorityScore;
-  // mfa answered "Admin accounts only" (1 of 2) on a critical (3) control.
-  assert.equal(score("mfa"), 1.5);
-  assert.ok(score("mfa") < score("backupIsolation"));
-  assert.ok(score("mfa") > score("govPolicy"));
+test("a partial answer on a critical control outranks a standard-weight gap, and says why", () => {
+  const ranked = computeFindings(stateWith(HEALTHCARE_QUICK));
+  const item = (id) => ranked.find((g) => g.id === id);
+  assert.ok(item("mfa").priorityScore > item("govPolicy").priorityScore);
+  assert.ok(item("mfa").reasons.some((r) => /admin accounts only/.test(r)));
+  assert.ok(item("govPolicy").reasons.some((r) => /Your answer/.test(r)));
 });
 
-test("control weights default to standard for unlisted questions", () => {
-  assert.equal(controlWeight("mfa"), 3);
-  assert.equal(controlWeight("siem"), 2);
-  assert.equal(controlWeight("govPolicy"), 1);
-  assert.equal(controlWeight("no-such-question"), 1);
+test("old saved answers are migrated, not misread: v1 vendorCount becomes count + review", () => {
+  const { answers, notes } = migrateAnswers({ vendorCount: 0, mfa: 2 }, 1);
+  assert.equal(answers.vendorCount, "6 or more");
+  assert.equal(answers.vendorAccessReview, 0);
+  assert.ok(notes.length >= 1);
+  assert.equal(migrateAnswers({ vendorCount: 2 }, 1).answers.vendorCount, "None");
+  assert.equal(migrateAnswers({ pcidssSensitiveAuthData: 1 }, 1).answers.pcidssSensitiveAuthData, "unknown");
 });
