@@ -1059,7 +1059,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           document.getElementById("reportBody").innerHTML = reportBodyHtml(report, { tracking: loadTracking(), interactive: true, links: linksForReport() });
           wireReportPage();
           const card = document.getElementById(el.dataset.track);
-          if (card) card.classList.add("open"), card.querySelector(".acc-head")?.setAttribute("aria-expanded", "true");
+          if (card) card.classList.add("open");
           restore();
         }
       })

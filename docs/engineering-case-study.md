@@ -45,7 +45,9 @@ cross-product citations, truncated and refused model replies, and valid empty re
 - Quick mode was ~52 required answers; it's now a 14-answer screening with a test that walks every
   path.
 - Answers are native radio buttons and checkboxes in fieldsets; focus is kept across re-renders;
-  checked with real keyboard input in a browser. No screen-reader testing was done.
+  checked with real keyboard input in a browser. An automated axe-core audit of every page in
+  both themes (`npm run a11y`) found only colour-contrast failures in the light theme, now fixed.
+  No screen-reader testing has been done yet; `docs/screen-reader-check.md` is the checklist for it.
 - Section labels used NIST CSF 1.1 codes in a "CSF 2.0" UI; every framework reference is now
   checked against official identifier lists, and every MITRE ATT&CK technique against ATT&CK
   v19.2 (one deprecated technique was caught and replaced).

@@ -39,20 +39,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <meta name="site-updated" content="September 24, 2026">
-<link rel="stylesheet" href="/assets/build/app-3HUSOICV.css">
-<script type="module" src="/assets/build/main-IYVA5G2M.js"></script>
+<link rel="stylesheet" href="/assets/build/app-F2EEY6SZ.css">
+<script type="module" src="/assets/build/main-4YCRL6XV.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#tabContent">Skip to main content</a>
 <div id="bgLayer" aria-hidden="true"><canvas id="bgCanvas" width="800" height="600" style="width: 800px; height: 600px;"></canvas></div>
 <div class="app">
 
-  <div class="masthead">
+  <div class="masthead" role="banner">
    <div class="masthead-inner">
     <a href="/" class="masthead-brand" id="brandHomeLink">
       <img src="/assets/img/logo.png" alt="SimplifiedCS logo" class="brand-logo">
       <h1><span class="brand-s">S</span><span class="brand-mid">implified</span><span class="brand-cs">CS</span></h1>
     </a>
-    <div class="tabnav" id="tabnav">
+    <div class="tabnav" id="tabnav" role="navigation" aria-label="Main">
         <div class="tab-item has-dropdown">
           <a class="tab-btn " href="/" data-tab="home">Home <span class="tab-caret" data-toggle="1">▾</span></a>
           <div class="tab-dropdown">
@@ -101,7 +102,7 @@
     <input type="text" class="search-input" id="searchInput" placeholder="Search the site…" autocomplete="off">
     <div class="search-results" id="searchResults"></div>
   </div>
-      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Switch to light mode">
+      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Light mode">
     <span class="theme-switch-track">
       <span class="theme-switch-thumb"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z"></path></svg></span>
     </span>
@@ -111,7 +112,7 @@
    </div>
   </div>
 
-  <div id="tabContent" class="">
+  <main id="tabContent" class="">
     <div class="page">
       <div class="page-intro revealed">
         <div class="page-eyebrow">Reference</div>
@@ -171,10 +172,10 @@
         <h3 class="section-h">Example playbooks</h3>
         <div id="playbookAccordions">
     <div class="acc-card" data-id="A01:2021">
-      <div class="acc-head" id="A01:2021" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-1" aria-expanded="false">
+      <div class="acc-head" id="A01:2021" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-signal);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Broken Access Control <span class="q-badge">OWASP Web</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-1" aria-expanded="false">Broken Access Control <span class="q-badge">OWASP Web</span></button></h4>
           <div class="acc-sub">A01:2021 · Privilege Escalation - T1548 (Abuse Elevation Control Mechanism)</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -186,10 +187,10 @@
     </div>
   
     <div class="acc-card" data-id="A02:2021">
-      <div class="acc-head" id="A02:2021" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-2" aria-expanded="false">
+      <div class="acc-head" id="A02:2021" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-secure);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Cryptographic Failures <span class="q-badge">OWASP Web</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-2" aria-expanded="false">Cryptographic Failures <span class="q-badge">OWASP Web</span></button></h4>
           <div class="acc-sub">A02:2021 · Credential Access - T1552 (Unsecured Credentials)</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -201,10 +202,10 @@
     </div>
   
     <div class="acc-card" data-id="A03:2021">
-      <div class="acc-head" id="A03:2021" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-3" aria-expanded="false">
+      <div class="acc-head" id="A03:2021" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-violet);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Injection <span class="q-badge">OWASP Web</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-3" aria-expanded="false">Injection <span class="q-badge">OWASP Web</span></button></h4>
           <div class="acc-sub">A03:2021 · Initial Access / Execution - T1190 (Exploit Public-Facing Application)</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -216,10 +217,10 @@
     </div>
   
     <div class="acc-card" data-id="A04:2021">
-      <div class="acc-head" id="A04:2021" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-4" aria-expanded="false">
+      <div class="acc-head" id="A04:2021" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-amber);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Insecure Design <span class="q-badge">OWASP Web</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-4" aria-expanded="false">Insecure Design <span class="q-badge">OWASP Web</span></button></h4>
           <div class="acc-sub">A04:2021 · Spans multiple tactics - an architectural gap, not a single technique</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -231,10 +232,10 @@
     </div>
   
     <div class="acc-card" data-id="A05:2021">
-      <div class="acc-head" id="A05:2021" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-5" aria-expanded="false">
+      <div class="acc-head" id="A05:2021" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-critical);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Security Misconfiguration <span class="q-badge">OWASP Web</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-5" aria-expanded="false">Security Misconfiguration <span class="q-badge">OWASP Web</span></button></h4>
           <div class="acc-sub">A05:2021 · Initial Access - T1190 (Exploit Public-Facing Application)</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -246,10 +247,10 @@
     </div>
   
     <div class="acc-card" data-id="A06:2021">
-      <div class="acc-head" id="A06:2021" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-6" aria-expanded="false">
+      <div class="acc-head" id="A06:2021" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-pop);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Vulnerable and Outdated Components <span class="q-badge">OWASP Web</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-6" aria-expanded="false">Vulnerable and Outdated Components <span class="q-badge">OWASP Web</span></button></h4>
           <div class="acc-sub">A06:2021 · Initial Access - T1190 (Exploit Public-Facing Application)</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -261,10 +262,10 @@
     </div>
   
     <div class="acc-card" data-id="A07:2021">
-      <div class="acc-head" id="A07:2021" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-7" aria-expanded="false">
+      <div class="acc-head" id="A07:2021" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-signal);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Identification and Authentication Failures <span class="q-badge">OWASP Web</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-7" aria-expanded="false">Identification and Authentication Failures <span class="q-badge">OWASP Web</span></button></h4>
           <div class="acc-sub">A07:2021 · Credential Access - T1110 (Brute Force)</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -276,10 +277,10 @@
     </div>
   
     <div class="acc-card" data-id="A08:2021">
-      <div class="acc-head" id="A08:2021" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-8" aria-expanded="false">
+      <div class="acc-head" id="A08:2021" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-secure);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Software and Data Integrity Failures <span class="q-badge">OWASP Web</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-8" aria-expanded="false">Software and Data Integrity Failures <span class="q-badge">OWASP Web</span></button></h4>
           <div class="acc-sub">A08:2021 · Supply Chain Compromise - T1195</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -291,10 +292,10 @@
     </div>
   
     <div class="acc-card" data-id="A09:2021">
-      <div class="acc-head" id="A09:2021" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-9" aria-expanded="false">
+      <div class="acc-head" id="A09:2021" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-violet);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Security Logging and Monitoring Failures <span class="q-badge">OWASP Web</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-9" aria-expanded="false">Security Logging and Monitoring Failures <span class="q-badge">OWASP Web</span></button></h4>
           <div class="acc-sub">A09:2021 · Defense Evasion - T1070 (Indicator Removal)</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -306,10 +307,10 @@
     </div>
   
     <div class="acc-card" data-id="A10:2021">
-      <div class="acc-head" id="A10:2021" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-10" aria-expanded="false">
+      <div class="acc-head" id="A10:2021" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-amber);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Server-Side Request Forgery (SSRF) <span class="q-badge">OWASP Web</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-10" aria-expanded="false">Server-Side Request Forgery (SSRF) <span class="q-badge">OWASP Web</span></button></h4>
           <div class="acc-sub">A10:2021 · Initial Access / C2 - T1190 (Exploit Public-Facing Application)</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -321,10 +322,10 @@
     </div>
   
     <div class="acc-card" data-id="LLM01:2025">
-      <div class="acc-head" id="LLM01:2025" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-11" aria-expanded="false">
+      <div class="acc-head" id="LLM01:2025" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-critical);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Prompt Injection <span class="q-badge">AI / LLM</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-11" aria-expanded="false">Prompt Injection <span class="q-badge">AI / LLM</span></button></h4>
           <div class="acc-sub">LLM01:2025 · MITRE ATLAS - AI Model Access / Execution</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -336,10 +337,10 @@
     </div>
   
     <div class="acc-card" data-id="LLM02:2025">
-      <div class="acc-head" id="LLM02:2025" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-12" aria-expanded="false">
+      <div class="acc-head" id="LLM02:2025" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-pop);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Sensitive Information Disclosure <span class="q-badge">AI / LLM</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-12" aria-expanded="false">Sensitive Information Disclosure <span class="q-badge">AI / LLM</span></button></h4>
           <div class="acc-sub">LLM02:2025 · MITRE ATLAS - Exfiltration</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -351,10 +352,10 @@
     </div>
   
     <div class="acc-card" data-id="LLM03:2025">
-      <div class="acc-head" id="LLM03:2025" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-13" aria-expanded="false">
+      <div class="acc-head" id="LLM03:2025" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-signal);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Supply Chain <span class="q-badge">AI / LLM</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-13" aria-expanded="false">Supply Chain <span class="q-badge">AI / LLM</span></button></h4>
           <div class="acc-sub">LLM03:2025 · Supply Chain Compromise - T1195</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -366,10 +367,10 @@
     </div>
   
     <div class="acc-card" data-id="LLM04:2025">
-      <div class="acc-head" id="LLM04:2025" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-14" aria-expanded="false">
+      <div class="acc-head" id="LLM04:2025" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-secure);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Data and Model Poisoning <span class="q-badge">AI / LLM</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-14" aria-expanded="false">Data and Model Poisoning <span class="q-badge">AI / LLM</span></button></h4>
           <div class="acc-sub">LLM04:2025 · MITRE ATLAS - Resource Development / Persistence</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -381,10 +382,10 @@
     </div>
   
     <div class="acc-card" data-id="LLM06:2025">
-      <div class="acc-head" id="LLM06:2025" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-15" aria-expanded="false">
+      <div class="acc-head" id="LLM06:2025" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-violet);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Excessive Agency <span class="q-badge">AI / LLM</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-15" aria-expanded="false">Excessive Agency <span class="q-badge">AI / LLM</span></button></h4>
           <div class="acc-sub">LLM06:2025 · MITRE ATLAS - Impact</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -396,10 +397,10 @@
     </div>
   
     <div class="acc-card" data-id="LLM10:2025">
-      <div class="acc-head" id="LLM10:2025" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-16" aria-expanded="false">
+      <div class="acc-head" id="LLM10:2025" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-amber);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 15.5H3z"></path><path d="M12 9.5v4"></path><circle cx="12" cy="16.5" r="0.6" fill="currentColor"></circle></svg></div>
         <div>
-          <h4>Unbounded Consumption <span class="q-badge">AI / LLM</span></h4>
+          <h4><button type="button" class="acc-toggle" aria-controls="acc-body-16" aria-expanded="false">Unbounded Consumption <span class="q-badge">AI / LLM</span></button></h4>
           <div class="acc-sub">LLM10:2025 · Impact - T1499 (Endpoint Denial of Service, closest classic analogue)</div>
         </div>
         <div class="acc-chevron">▸</div>
@@ -412,7 +413,7 @@
   </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <footer class="site-footer">
     <div class="footer-top">

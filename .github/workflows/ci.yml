@@ -27,8 +27,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      # Puppeteer's browser download is only needed for scripts/prerender.js,
-      # which CI doesn't run.
+      # This job skips Puppeteer's browser download; the accessibility job
+      # below is the one that needs it.
       - name: Install dependencies
         run: npm ci
         env:
@@ -48,3 +48,30 @@ jobs:
 
       - name: Dependency audit (production dependencies)
         run: npm audit --omit=dev --audit-level=high
+
+  # Runs the committed site in headless Chrome and checks every page and
+  # assessment state against WCAG 2.2 A/AA with axe-core, in both themes
+  # (scripts/a11y-audit.js). The News and Exploit pages read the public
+  # Supabase feeds, as a visitor's browser would.
+  accessibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies (including Puppeteer's browser)
+        run: npm ci
+
+      # Ubuntu 23.10+ restricts the user namespaces Chrome's sandbox needs.
+      # Puppeteer's documented CI fix is to lift that restriction on the
+      # runner, which keeps the browser sandbox on.
+      - name: Allow Chrome's sandbox on the runner
+        run: echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
+
+      - name: Accessibility audit
+        run: npm run a11y

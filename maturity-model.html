@@ -39,20 +39,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <meta name="site-updated" content="September 24, 2026">
-<link rel="stylesheet" href="/assets/build/app-3HUSOICV.css">
-<script type="module" src="/assets/build/main-IYVA5G2M.js"></script>
+<link rel="stylesheet" href="/assets/build/app-F2EEY6SZ.css">
+<script type="module" src="/assets/build/main-4YCRL6XV.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#tabContent">Skip to main content</a>
 <div id="bgLayer" aria-hidden="true"><canvas id="bgCanvas" width="800" height="600" style="width: 800px; height: 600px;"></canvas></div>
 <div class="app">
 
-  <div class="masthead">
+  <div class="masthead" role="banner">
    <div class="masthead-inner">
     <a href="/" class="masthead-brand" id="brandHomeLink">
       <img src="/assets/img/logo.png" alt="SimplifiedCS logo" class="brand-logo">
       <h1><span class="brand-s">S</span><span class="brand-mid">implified</span><span class="brand-cs">CS</span></h1>
     </a>
-    <div class="tabnav" id="tabnav">
+    <div class="tabnav" id="tabnav" role="navigation" aria-label="Main">
         <div class="tab-item has-dropdown">
           <a class="tab-btn " href="/" data-tab="home">Home <span class="tab-caret" data-toggle="1">▾</span></a>
           <div class="tab-dropdown">
@@ -101,7 +102,7 @@
     <input type="text" class="search-input" id="searchInput" placeholder="Search the site…" autocomplete="off">
     <div class="search-results" id="searchResults"></div>
   </div>
-      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Switch to light mode">
+      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Light mode">
     <span class="theme-switch-track">
       <span class="theme-switch-thumb"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z"></path></svg></span>
     </span>
@@ -111,7 +112,7 @@
    </div>
   </div>
 
-  <div id="tabContent" class="">
+  <main id="tabContent" class="">
     <div class="page">
       <div class="page-intro revealed">
         <div class="page-intro-row">
@@ -140,7 +141,7 @@
                 <tr>
                   <td class="dt-level">01</td>
                   <td class="dt-title">Asset &amp; Data Discovery</td>
-                  <td><span class="stage-chip" style="--stage-color:var(--accent-signal)">Discovery</span></td>
+                  <td><span class="stage-chip" style="--stage-color:var(--accent-signal);--stage-ink:var(--accent-signal-ink)">Discovery</span></td>
                   <td>Hardware, software, and cloud resource lists; data stores; shadow IT reports.</td>
                   <td>A living asset inventory covering every system and data store.</td>
                   <td>Every asset can be named to an owner - nothing is on the network by surprise.</td>
@@ -149,7 +150,7 @@
                 <tr>
                   <td class="dt-level">02</td>
                   <td class="dt-title">Attack Surface Mapping</td>
-                  <td><span class="stage-chip" style="--stage-color:var(--accent-signal)">Discovery</span></td>
+                  <td><span class="stage-chip" style="--stage-color:var(--accent-signal);--stage-ink:var(--accent-signal-ink)">Discovery</span></td>
                   <td>External-facing infrastructure: websites, APIs, VPNs, remote access, third-party integrations.</td>
                   <td>A complete external attack-surface map showing every entry point.</td>
                   <td>You can name every way in from outside, not just the obvious ones.</td>
@@ -158,7 +159,7 @@
                 <tr>
                   <td class="dt-level">03</td>
                   <td class="dt-title">Governance &amp; Ownership Baseline</td>
-                  <td><span class="stage-chip" style="--stage-color:var(--accent-signal)">Discovery</span></td>
+                  <td><span class="stage-chip" style="--stage-color:var(--accent-signal);--stage-ink:var(--accent-signal-ink)">Discovery</span></td>
                   <td>Org chart, existing decision-making authority, current (if any) security responsibilities.</td>
                   <td>Named ownership assigned for every security decision and control.</td>
                   <td>You can point to the specific person accountable for any given control.</td>
@@ -167,7 +168,7 @@
                 <tr>
                   <td class="dt-level">04</td>
                   <td class="dt-title">Gap Analysis &amp; Prioritization</td>
-                  <td><span class="stage-chip" style="--stage-color:var(--accent-signal)">Discovery</span></td>
+                  <td><span class="stage-chip" style="--stage-color:var(--accent-signal);--stage-ink:var(--accent-signal-ink)">Discovery</span></td>
                   <td>Current-state controls measured against a recognized framework (NIST CSF, CIS Controls).</td>
                   <td>A ranked backlog of gaps ordered by risk - this is what the Assessment tab generates.</td>
                   <td>Every gap has a severity ranking and a place in the backlog, not just a list of problems.</td>
@@ -176,7 +177,7 @@
                 <tr>
                   <td class="dt-level">05</td>
                   <td class="dt-title">Control Implementation</td>
-                  <td><span class="stage-chip" style="--stage-color:var(--accent-secure)">Transformation</span></td>
+                  <td><span class="stage-chip" style="--stage-color:var(--accent-secure);--stage-ink:var(--accent-secure-ink)">Transformation</span></td>
                   <td>The prioritized gap backlog from Phase 4.</td>
                   <td>Deployed technical controls - MFA, EDR, segmentation, email auth, backup isolation.</td>
                   <td>The gap that triggered a control's deployment no longer shows up on the next Assessment.</td>
@@ -185,7 +186,7 @@
                 <tr>
                   <td class="dt-level">06</td>
                   <td class="dt-title">Policy &amp; Documentation</td>
-                  <td><span class="stage-chip" style="--stage-color:var(--accent-secure)">Transformation</span></td>
+                  <td><span class="stage-chip" style="--stage-color:var(--accent-secure);--stage-ink:var(--accent-secure-ink)">Transformation</span></td>
                   <td>Controls implemented in Phase 5, plus any regulatory or compliance obligations.</td>
                   <td>Written policy, incident response plan, backup/DR plan, and risk register (see Runbooks).</td>
                   <td>The program is documented well enough that someone new could follow it without tribal knowledge.</td>
@@ -194,7 +195,7 @@
                 <tr>
                   <td class="dt-level">07</td>
                   <td class="dt-title">Response Readiness &amp; Testing</td>
-                  <td><span class="stage-chip" style="--stage-color:var(--accent-secure)">Transformation</span></td>
+                  <td><span class="stage-chip" style="--stage-color:var(--accent-secure);--stage-ink:var(--accent-secure-ink)">Transformation</span></td>
                   <td>The written plans and runbooks produced in Phase 6.</td>
                   <td>Completed tabletop exercises, backup-restore drills, and rehearsed runbook walkthroughs.</td>
                   <td>Every plan has actually been rehearsed, not just filed.</td>
@@ -203,7 +204,7 @@
                 <tr>
                   <td class="dt-level">08</td>
                   <td class="dt-title">Continuous Monitoring &amp; Tuning</td>
-                  <td><span class="stage-chip" style="--stage-color:var(--accent-violet)">Optimization</span></td>
+                  <td><span class="stage-chip" style="--stage-color:var(--accent-violet);--stage-ink:var(--accent-violet-ink)">Optimization</span></td>
                   <td>Live telemetry - logs, alerts, and detection signals.</td>
                   <td>Tuned detection with a signal-to-noise ratio the team actually trusts.</td>
                   <td>False-positive rate is trending down, not just alert volume trending up.</td>
@@ -212,7 +213,7 @@
                 <tr>
                   <td class="dt-level">09</td>
                   <td class="dt-title">Auditing &amp; Validation</td>
-                  <td><span class="stage-chip" style="--stage-color:var(--accent-violet)">Optimization</span></td>
+                  <td><span class="stage-chip" style="--stage-color:var(--accent-violet);--stage-ink:var(--accent-violet-ink)">Optimization</span></td>
                   <td>Deployed controls and monitoring output from Phases 5 and 8.</td>
                   <td>Vulnerability scan results, penetration test findings, and compliance audits (ISO 27001, SOC 2).</td>
                   <td>Findings are tracked to remediation, not just discovered.</td>
@@ -221,7 +222,7 @@
                 <tr>
                   <td class="dt-level">10</td>
                   <td class="dt-title">Adaptive Iteration</td>
-                  <td><span class="stage-chip" style="--stage-color:var(--accent-violet)">Optimization</span></td>
+                  <td><span class="stage-chip" style="--stage-color:var(--accent-violet);--stage-ink:var(--accent-violet-ink)">Optimization</span></td>
                   <td>Lessons from real incidents, audit findings, and a changing threat landscape.</td>
                   <td>Updated priorities fed back into Phase 4's gap analysis.</td>
                   <td>Next quarter's priorities visibly reflect what was actually learned.</td>
@@ -232,7 +233,7 @@
         </div>
       </div>
   <div class="section-tile" id="maturity-discovery">
-      <div class="stage-band" style="--stage-color:var(--accent-signal)">
+      <div class="stage-band" style="--stage-color:var(--accent-signal);--stage-ink:var(--accent-signal-ink)">
         <div class="stage-illustration stage-illustration-sm">
       <svg viewBox="0 0 100 100" width="72" height="72">
         <defs><radialGradient id="gDisc" cx="50%" cy="42%" r="60%">
@@ -251,27 +252,27 @@
         <p>You don't have a security program yet so much as a starting point - the goal is visibility: what exists, where it's exposed, and who owns fixing it.</p>
       </div>
     
-        <div class="phase-row" style="--phase-color:var(--accent-signal)">
+        <div class="phase-row" style="--phase-color:var(--accent-signal);--phase-ink:var(--accent-signal-ink)">
           <div class="phase-num">01</div>
           <div><h4>Asset &amp; Data Discovery</h4><p>Inventory hardware, software, cloud resources, and data stores - including shadow IT. You can't protect what you don't know exists, and this is where most real gaps first surface.</p></div>
         </div>
       
-        <div class="phase-row" style="--phase-color:var(--accent-signal)">
+        <div class="phase-row" style="--phase-color:var(--accent-signal);--phase-ink:var(--accent-signal-ink)">
           <div class="phase-num">02</div>
           <div><h4>Attack Surface Mapping</h4><p>Identify every external-facing entry point - websites, APIs, VPNs, remote access, third-party integrations - and understand how an attacker would actually get in.</p></div>
         </div>
       
-        <div class="phase-row" style="--phase-color:var(--accent-signal)">
+        <div class="phase-row" style="--phase-color:var(--accent-signal);--phase-ink:var(--accent-signal-ink)">
           <div class="phase-num">03</div>
           <div><h4>Governance &amp; Ownership Baseline</h4><p>Assign real accountability for security decisions before writing a single control. Without an owner, findings from every later phase just accumulate unactioned.</p></div>
         </div>
       
-        <div class="phase-row" style="--phase-color:var(--accent-signal)">
+        <div class="phase-row" style="--phase-color:var(--accent-signal);--phase-ink:var(--accent-signal-ink)">
           <div class="phase-num">04</div>
           <div><h4>Gap Analysis &amp; Prioritization</h4><p>Compare current state against a recognized framework (NIST CSF, CIS Controls) and rank gaps by risk - this is the exact function this site's Assessment tab performs.</p></div>
         </div>
       </div><div class="section-tile" id="maturity-transformation">
-      <div class="stage-band" style="--stage-color:var(--accent-secure)">
+      <div class="stage-band" style="--stage-color:var(--accent-secure);--stage-ink:var(--accent-secure-ink)">
         <div class="stage-illustration stage-illustration-sm">
       <svg viewBox="0 0 100 100" width="72" height="72">
         <defs>
@@ -300,22 +301,22 @@
         <p>Findings become controls, and controls become documented, rehearsed processes - this is where most of the actual engineering and writing happens.</p>
       </div>
     
-        <div class="phase-row" style="--phase-color:var(--accent-secure)">
+        <div class="phase-row" style="--phase-color:var(--accent-secure);--phase-ink:var(--accent-secure-ink)">
           <div class="phase-num">05</div>
           <div><h4>Control Implementation</h4><p>Roll out the prioritized technical controls - MFA, EDR, network segmentation, email authentication, backup isolation - turning the roadmap into deployed defenses.</p></div>
         </div>
       
-        <div class="phase-row" style="--phase-color:var(--accent-secure)">
+        <div class="phase-row" style="--phase-color:var(--accent-secure);--phase-ink:var(--accent-secure-ink)">
           <div class="phase-num">06</div>
           <div><h4>Policy &amp; Documentation</h4><p>Formalize the program in writing: security policy, incident response plan, backup/DR plan, risk register. See the Runbooks tab for what each of these should actually contain.</p></div>
         </div>
       
-        <div class="phase-row" style="--phase-color:var(--accent-secure)">
+        <div class="phase-row" style="--phase-color:var(--accent-secure);--phase-ink:var(--accent-secure-ink)">
           <div class="phase-num">07</div>
           <div><h4>Response Readiness &amp; Testing</h4><p>Rehearse the plans, don't just file them - tabletop exercises, restore drills from backup, and walkthroughs of the ransomware/phishing/DDoS runbooks before a real incident forces it.</p></div>
         </div>
       </div><div class="section-tile" id="maturity-optimization">
-      <div class="stage-band" style="--stage-color:var(--accent-violet)">
+      <div class="stage-band" style="--stage-color:var(--accent-violet);--stage-ink:var(--accent-violet-ink)">
         <div class="stage-illustration stage-illustration-sm">
       <svg viewBox="0 0 100 100" width="72" height="72">
         <defs><radialGradient id="gOpt" cx="50%" cy="50%" r="60%">
@@ -332,17 +333,17 @@
         <p>The program runs continuously - monitored, tested, and adjusted as the environment and threat landscape change, rather than declared "done."</p>
       </div>
     
-        <div class="phase-row" style="--phase-color:var(--accent-violet)">
+        <div class="phase-row" style="--phase-color:var(--accent-violet);--phase-ink:var(--accent-violet-ink)">
           <div class="phase-num">08</div>
           <div><h4>Continuous Monitoring &amp; Tuning</h4><p>Operationalize logging and detection, and tune it against real telemetry - an alert nobody trusts because of noise is functionally the same as no alert.</p></div>
         </div>
       
-        <div class="phase-row" style="--phase-color:var(--accent-violet)">
+        <div class="phase-row" style="--phase-color:var(--accent-violet);--phase-ink:var(--accent-violet-ink)">
           <div class="phase-num">09</div>
           <div><h4>Auditing &amp; Validation</h4><p>Vulnerability scans, penetration tests, and control audits confirm defenses work as intended rather than just existing on paper - this is also where compliance audits (ISO 27001, SOC 2) fit in.</p></div>
         </div>
       
-        <div class="phase-row" style="--phase-color:var(--accent-violet)">
+        <div class="phase-row" style="--phase-color:var(--accent-violet);--phase-ink:var(--accent-violet-ink)">
           <div class="phase-num">10</div>
           <div><h4>Adaptive Iteration</h4><p>Feed lessons from incidents, audits, and a changing threat landscape back into the program - and back into Phase 4's gap analysis, since this loop never really ends.</p></div>
         </div>
@@ -462,7 +463,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <footer class="site-footer">
     <div class="footer-top">

@@ -39,20 +39,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <meta name="site-updated" content="September 24, 2026">
-<link rel="stylesheet" href="/assets/build/app-3HUSOICV.css">
-<script type="module" src="/assets/build/main-IYVA5G2M.js"></script>
+<link rel="stylesheet" href="/assets/build/app-F2EEY6SZ.css">
+<script type="module" src="/assets/build/main-4YCRL6XV.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#tabContent">Skip to main content</a>
 <div id="bgLayer" aria-hidden="true"><canvas id="bgCanvas" width="800" height="600" style="width: 800px; height: 600px;"></canvas></div>
 <div class="app">
 
-  <div class="masthead">
+  <div class="masthead" role="banner">
    <div class="masthead-inner">
     <a href="/" class="masthead-brand" id="brandHomeLink">
       <img src="/assets/img/logo.png" alt="SimplifiedCS logo" class="brand-logo">
       <h1><span class="brand-s">S</span><span class="brand-mid">implified</span><span class="brand-cs">CS</span></h1>
     </a>
-    <div class="tabnav" id="tabnav">
+    <div class="tabnav" id="tabnav" role="navigation" aria-label="Main">
         <div class="tab-item has-dropdown">
           <a class="tab-btn " href="/" data-tab="home">Home <span class="tab-caret" data-toggle="1">▾</span></a>
           <div class="tab-dropdown">
@@ -101,7 +102,7 @@
     <input type="text" class="search-input" id="searchInput" placeholder="Search the site…" autocomplete="off">
     <div class="search-results" id="searchResults"></div>
   </div>
-      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Switch to light mode">
+      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Light mode">
     <span class="theme-switch-track">
       <span class="theme-switch-thumb"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z"></path></svg></span>
     </span>
@@ -111,7 +112,7 @@
    </div>
   </div>
 
-  <div id="tabContent" class="">
+  <main id="tabContent" class="">
     <div class="page">
       <div class="page-intro revealed">
         <div class="page-eyebrow">On-Ramp</div>
@@ -130,9 +131,9 @@
       <div class="section-tile">
         <div id="sgAccordions">
     <div class="acc-card" data-id="sg-audience">
-      <div class="acc-head" id="sg-audience" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-1" aria-expanded="false">
+      <div class="acc-head" id="sg-audience" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-signal);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3"></path><path d="M5 4.5c3-2 5 2 8 0s5 2 8 0v9c-3 2-5-2-8 0s-5-2-8 0"></path></svg></div>
-        <div><h4>Who this page is for</h4></div>
+        <div><h4><button type="button" class="acc-toggle" aria-controls="acc-body-1" aria-expanded="false">Who this page is for</button></h4></div>
         <div class="acc-chevron">▸</div>
       </div>
       <div class="acc-body" id="acc-body-1">
@@ -143,9 +144,9 @@
     </div>
   
     <div class="acc-card" data-id="sg-identity">
-      <div class="acc-head" id="sg-identity" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-2" aria-expanded="false">
+      <div class="acc-head" id="sg-identity" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-secure);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8.5" r="4"></circle><path d="M11 11.5l9 9M15.5 16l2.5-2.5M18 18.5l2.5-2.5"></path></svg></div>
-        <div><h4>Identity &amp; Access</h4></div>
+        <div><h4><button type="button" class="acc-toggle" aria-controls="acc-body-2" aria-expanded="false">Identity &amp; Access</button></h4></div>
         <div class="acc-chevron">▸</div>
       </div>
       <div class="acc-body" id="acc-body-2">
@@ -160,9 +161,9 @@
     </div>
   
     <div class="acc-card" data-id="sg-devices">
-      <div class="acc-head" id="sg-devices" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-3" aria-expanded="false">
+      <div class="acc-head" id="sg-devices" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-violet);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="1.3"></rect><path d="M8 20h8M12 16.5V20"></path></svg></div>
-        <div><h4>Devices &amp; Data</h4></div>
+        <div><h4><button type="button" class="acc-toggle" aria-controls="acc-body-3" aria-expanded="false">Devices &amp; Data</button></h4></div>
         <div class="acc-chevron">▸</div>
       </div>
       <div class="acc-body" id="acc-body-3">
@@ -175,9 +176,9 @@
     </div>
   
     <div class="acc-card" data-id="sg-infrastructure">
-      <div class="acc-head" id="sg-infrastructure" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-4" aria-expanded="false">
+      <div class="acc-head" id="sg-infrastructure" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-amber);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17a4 4 0 0 1 .3-8 5.5 5.5 0 0 1 10.6 1.8A3.5 3.5 0 0 1 17 17z"></path><path d="M12 20v-3M10 19l2-2 2 2" opacity="0.75"></path></svg></div>
-        <div><h4>Infrastructure &amp; Services</h4></div>
+        <div><h4><button type="button" class="acc-toggle" aria-controls="acc-body-4" aria-expanded="false">Infrastructure &amp; Services</button></h4></div>
         <div class="acc-chevron">▸</div>
       </div>
       <div class="acc-body" id="acc-body-4">
@@ -190,9 +191,9 @@
     </div>
   
     <div class="acc-card" data-id="sg-protecting">
-      <div class="acc-head" id="sg-protecting" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-5" aria-expanded="false">
+      <div class="acc-head" id="sg-protecting" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-critical);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="2.5"></ellipse><path d="M5 6v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6"></path><path d="M5 12v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6"></path><path d="M18.5 9.5a3 3 0 1 1-1-2.3" transform="translate(0,-1)"></path></svg></div>
-        <div><h4>Protecting What You Have</h4></div>
+        <div><h4><button type="button" class="acc-toggle" aria-controls="acc-body-5" aria-expanded="false">Protecting What You Have</button></h4></div>
         <div class="acc-chevron">▸</div>
       </div>
       <div class="acc-body" id="acc-body-5">
@@ -205,9 +206,9 @@
     </div>
   
     <div class="acc-card" data-id="sg-people">
-      <div class="acc-head" id="sg-people" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-6" aria-expanded="false">
+      <div class="acc-head" id="sg-people" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-pop);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"></circle><path d="M3 19c0-3.3 2.5-5.5 5.5-5.5S14 15.7 14 19"></path><circle cx="16.5" cy="9" r="2.4"></circle><path d="M14.8 19c0-2.6 1.8-4.4 3.9-4.4"></path></svg></div>
-        <div><h4>People Matter Too</h4></div>
+        <div><h4><button type="button" class="acc-toggle" aria-controls="acc-body-6" aria-expanded="false">People Matter Too</button></h4></div>
         <div class="acc-chevron">▸</div>
       </div>
       <div class="acc-body" id="acc-body-6">
@@ -220,9 +221,9 @@
     </div>
   
     <div class="acc-card" data-id="sg-tools">
-      <div class="acc-head" id="sg-tools" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-7" aria-expanded="false">
+      <div class="acc-head" id="sg-tools" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-signal);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="1.4"></rect><rect x="9" y="2.3" width="6" height="3" rx="1"></rect><path d="M9 12l1.8 1.8L15 10"></path></svg></div>
-        <div><h4>Tools That Help</h4></div>
+        <div><h4><button type="button" class="acc-toggle" aria-controls="acc-body-7" aria-expanded="false">Tools That Help</button></h4></div>
         <div class="acc-chevron">▸</div>
       </div>
       <div class="acc-body" id="acc-body-7">
@@ -239,9 +240,9 @@
     </div>
   
     <div class="acc-card" data-id="sg-nextsteps">
-      <div class="acc-head" id="sg-nextsteps" data-acc-wired="1" role="button" tabindex="0" aria-controls="acc-body-8" aria-expanded="false">
+      <div class="acc-head" id="sg-nextsteps" data-acc-wired="1">
         <div class="icon-badge" style="--icon-accent:var(--accent-secure);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="12" r="5"></circle><circle cx="15.5" cy="12" r="5"></circle></svg></div>
-        <div><h4>Where to go from here</h4></div>
+        <div><h4><button type="button" class="acc-toggle" aria-controls="acc-body-8" aria-expanded="false">Where to go from here</button></h4></div>
         <div class="acc-chevron">▸</div>
       </div>
       <div class="acc-body" id="acc-body-8">
@@ -312,7 +313,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <footer class="site-footer">
     <div class="footer-top">

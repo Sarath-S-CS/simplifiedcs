@@ -39,20 +39,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <meta name="site-updated" content="September 24, 2026">
-<link rel="stylesheet" href="/assets/build/app-3HUSOICV.css">
-<script type="module" src="/assets/build/main-IYVA5G2M.js"></script>
+<link rel="stylesheet" href="/assets/build/app-F2EEY6SZ.css">
+<script type="module" src="/assets/build/main-4YCRL6XV.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#tabContent">Skip to main content</a>
 <div id="bgLayer" aria-hidden="true"><canvas id="bgCanvas" width="800" height="600" style="width: 800px; height: 600px;"></canvas></div>
 <div class="app">
 
-  <div class="masthead">
+  <div class="masthead" role="banner">
    <div class="masthead-inner">
     <a href="/" class="masthead-brand" id="brandHomeLink">
       <img src="/assets/img/logo.png" alt="SimplifiedCS logo" class="brand-logo">
       <h1><span class="brand-s">S</span><span class="brand-mid">implified</span><span class="brand-cs">CS</span></h1>
     </a>
-    <div class="tabnav" id="tabnav">
+    <div class="tabnav" id="tabnav" role="navigation" aria-label="Main">
         <div class="tab-item has-dropdown">
           <a class="tab-btn " href="/" data-tab="home">Home <span class="tab-caret" data-toggle="1">▾</span></a>
           <div class="tab-dropdown">
@@ -101,7 +102,7 @@
     <input type="text" class="search-input" id="searchInput" placeholder="Search the site…" autocomplete="off">
     <div class="search-results" id="searchResults"></div>
   </div>
-      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Switch to light mode">
+      <button class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="Light mode">
     <span class="theme-switch-track">
       <span class="theme-switch-thumb"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z"></path></svg></span>
     </span>
@@ -111,7 +112,7 @@
    </div>
   </div>
 
-  <div id="tabContent" class="">
+  <main id="tabContent" class="">
     <div class="page">
       <div class="page-intro revealed">
         <div class="page-eyebrow">Stay Current</div>
@@ -219,16 +220,16 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 22, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Check Point Multiple Products Improper Certificate Validation Vulnerability</h4>
-              <p>Check Point Security Gateway and Check Point Spark Firewall using Site to Site VPN or Remote Access VPN contain an improper certificate validation vulnerability which could allow an unauthenticated remote attacker to execute arbitrary code on the Gateway.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-85102" data-goto-exploit="CVE-2026-85102">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>F5 BIG-IP APM Heap-based Buffer Overflow Vulnerability</h4>
+              <p>F5 BIG-IP APM contains a heap-based buffer overflow vulnerability when access policy and an OAuth profile are configured on a virtual server. This vulnerability could allow an unauthenticated attacker to perform remote code execution.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-94127" data-goto-exploit="CVE-2026-94127">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 22, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>F5 BIG-IP APM Heap-based Buffer Overflow Vulnerability</h4>
-              <p>F5 BIG-IP APM contains a heap-based buffer overflow vulnerability when access policy and an OAuth profile are configured on a virtual server. This vulnerability could allow an unauthenticated attacker to perform remote code execution.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-94127" data-goto-exploit="CVE-2026-94127">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>Check Point Multiple Products Improper Certificate Validation Vulnerability</h4>
+              <p>Check Point Security Gateway and Check Point Spark Firewall using Site to Site VPN or Remote Access VPN contain an improper certificate validation vulnerability which could allow an unauthenticated remote attacker to execute arbitrary code on the Gateway.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-85102" data-goto-exploit="CVE-2026-85102">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -275,6 +276,13 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 8, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Microsoft Windows Link Following Vulnerability</h4>
+              <p>Microsoft Windows Update Stack contains a link following vulnerability that allows a local attacker to escalate privileges locally up to SYSTEM.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-81963" data-goto-exploit="CVE-2026-81963">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 8, 2026</span><span class="news-cat">Vulnerabilities</span></div>
               <h4>Microsoft Windows Heap-Based Buffer Overflow Vulnerability</h4>
               <p>Microsoft Windows Advanced Local Procedure Call contains a heap-based buffer overflow vulnerability that allows an attacker to elevate privileges locally.</p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-85880" data-goto-exploit="CVE-2026-85880">CISA KEV Catalog - full detail on Exploits →</a></div>
@@ -295,13 +303,6 @@
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Sep 8, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Microsoft Windows Link Following Vulnerability</h4>
-              <p>Microsoft Windows Update Stack contains a link following vulnerability that allows a local attacker to escalate privileges locally up to SYSTEM.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-81963" data-goto-exploit="CVE-2026-81963">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
               <div class="news-meta"><span>Sep 2, 2026</span><span class="news-cat">Vulnerabilities</span></div>
               <h4>SonicWall SMA1000 Appliances Server-Side Request Forgery Vulnerability</h4>
               <p>SonicWall SMA1000 Appliances contains a server-side request forgery vulnerability that could allow a remote unauthenticated attacker to gain unauthorized access to sensitive functionality and perform unauthorized operations.</p>
@@ -310,16 +311,16 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Aug 31, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>PaperCut NG/MF Missing Authentication for Critical Function Vulnerability</h4>
-              <p>PaperCut NG/MF contains a missing authentication for critical function vulnerability which allows an unauthenticated remote attacker to modify certain system configurations. This vulnerability can be chained with CVE-2026-82078.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-81578" data-goto-exploit="CVE-2026-81578">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>PaperCut NG/MF Unsafe Reflection Vulnerability</h4>
+              <p>PaperCut NG/MF contains an unsafe reflection vulnerability that allows an attacker to manipulate system configuration parameters and execute arbitrary Java bytecode residing on the application classpath under the security context of the PaperCut server process. This vulnerability can be chained with CVE-2026-81578.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-82078" data-goto-exploit="CVE-2026-82078">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
               <div class="news-meta"><span>Aug 31, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>PaperCut NG/MF Unsafe Reflection Vulnerability</h4>
-              <p>PaperCut NG/MF contains an unsafe reflection vulnerability that allows an attacker to manipulate system configuration parameters and execute arbitrary Java bytecode residing on the application classpath under the security context of the PaperCut server process. This vulnerability can be chained with CVE-2026-81578.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-82078" data-goto-exploit="CVE-2026-82078">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>PaperCut NG/MF Missing Authentication for Critical Function Vulnerability</h4>
+              <p>PaperCut NG/MF contains a missing authentication for critical function vulnerability which allows an unauthenticated remote attacker to modify certain system configurations. This vulnerability can be chained with CVE-2026-82078.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-81578" data-goto-exploit="CVE-2026-81578">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -408,13 +409,6 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 11, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>ConnectWise ScreenConnect Improper Privilege Management and Missing Authorization Vulnerability</h4>
-              <p>ConnectWise ScreenConnect contains both an improper privilege management and missing authorization vulnerability that may allow an attacker to transfer and execute files through an active remote session without authorization or host confirmation.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-84869" data-goto-exploit="CVE-2026-84869">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 11, 2026</span><span class="news-cat">Vulnerabilities</span></div>
               <h4>JFrog Artifactory Incorrect Authorization Vulnerability</h4>
               <p>JFrog Artifactory contains an incorrect authorization vulnerability that leads to a privilege escalation attack due to a validation check of the token signature/issuer and not the token’s scope.</p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-42016" data-goto-exploit="CVE-2026-42016">CISA KEV Catalog - full detail on Exploits →</a></div>
@@ -428,10 +422,10 @@
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Sep 10, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>MikroTik RouterOS Missing Authentication for Critical Function Vulnerability</h4>
-              <p>MikroTik RouterOS contains a missing authenticaion for critical function vulnerability which allows kernel memory disclosure and denial of service in the btest service.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-67277" data-goto-exploit="CVE-2026-67277">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <div class="news-meta"><span>Sep 11, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>ConnectWise ScreenConnect Improper Privilege Management and Missing Authorization Vulnerability</h4>
+              <p>ConnectWise ScreenConnect contains both an improper privilege management and missing authorization vulnerability that may allow an attacker to transfer and execute files through an active remote session without authorization or host confirmation.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-84869" data-goto-exploit="CVE-2026-84869">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -442,10 +436,38 @@
             </div>
           
             <div class="news-card">
+              <div class="news-meta"><span>Sep 10, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>MikroTik RouterOS Missing Authentication for Critical Function Vulnerability</h4>
+              <p>MikroTik RouterOS contains a missing authenticaion for critical function vulnerability which allows kernel memory disclosure and denial of service in the btest service.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-67277" data-goto-exploit="CVE-2026-67277">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
               <div class="news-meta"><span>Jan 30, 2026</span><span class="news-cat">OT / Industrial</span></div>
               <h4>Coordinated destructive cyberattack hit 30+ Polish energy facilities and a heat plant serving 500,000 customers</h4>
               <p>On 29 December 2025, a Russia-linked actor - CERT Polska's own analysis shows strong infrastructure overlap with the cluster tracked elsewhere as Static Tundra/Berserk Bear/Dragonfly - carried out coordinated, purely destructive attacks against more than 30 wind and photovoltaic facilities plus a large combined heat and power plant supplying nearly half a million customers, using wiper malware and firmware-damaging techniques against RTUs, HMIs, and protection relays. Ongoing energy production wasn't disrupted, but CERT Polska calls it a significant escalation - the first publicly documented destructive activity attributed to this actor.</p>
               <div class="news-source"><a href="https://cert.pl/en/posts/2026/01/incident-report-energy-sector-2025/" target="_blank" rel="noopener noreferrer">CERT Polska</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 24, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>Eufy Omni C20, Omni X10 Pro</h4>
+              <p>View CSAF Summary Successful exploitation of these vulnerabilities could allow an attacker to run system level commands or execute arbitrary code. The following versions of Eufy Omni C20, Omni X10 Pro are affected: Omni C20 &lt;1.6.4 (CVE-2026-93289, CVE-2026-93290, CVE-2026-93291) Omni X10 Pro &lt;1.6.4 (CVE-2026-93289) CVSS Vendor Equipment Vulnerabilities v3 9.4 Eufy Eufy Omni C20, Omni X10 Pro Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection'), Use of Hard-…</p>
+              <div class="news-source"><a href="https://www.cisa.gov/news-events/ics-advisories/icsa-26-267-02" target="_blank" rel="noopener noreferrer">CISA ICS Advisories</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 24, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>Botslab G980H Dashcams</h4>
+              <p>View CSAF Summary Successful exploitation of these vulnerabilities could allow an attacker to bypass authentication controls, gain unauthorized access to sensitive data and privileged device functionality, modify device configuration, disrupt device operation. The following versions of Botslab G980H Dashcams are affected: G980H dash cam series 30010_QHG980HN5294SysFW+ (CVE-2026-84399, CVE-2026-82566, CVE-2026-85496, CVE-2026-77967, CVE-2026-88761, CVE-2026-82716, CVE-2026-84403, CVE-2026-75558,…</p>
+              <div class="news-source"><a href="https://www.cisa.gov/news-events/ics-advisories/icsa-26-267-01" target="_blank" rel="noopener noreferrer">CISA ICS Advisories</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 24, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>Siemens Mendix Runtime (Update A)</h4>
+              <p>View CSAF Summary This advisory is revoked. Re-investigation confirmed the reported behavior is expected platform configuration and does not expose the protected attribute. The following versions of Siemens Mendix Runtime are affected: Siemens Mendix Runtime vers:all/* (CVE-2026-7891) CVSS Vendor Equipment Vulnerabilities v3 9.1 Siemens Siemens Mendix Runtime Insecure Inherited Permissions Background Critical Infrastructure Sectors: Critical Manufacturing Countries/Areas Deployed: Worldwide Com…</p>
+              <div class="news-source"><a href="https://www.cisa.gov/news-events/ics-advisories/icsa-26-209-02" target="_blank" rel="noopener noreferrer">CISA ICS Advisories</a></div>
             </div>
           
             <div class="news-card">
@@ -530,27 +552,6 @@
               <h4>Honeywell 2026 OT Security Benchmark highlights gaps in OT visibility, incident recovery, cybersecurity readiness</h4>
               <p>New data from Honeywell Technologies reveals a significant disconnect between organizations’ perception of cybersecurity maturity and their actual... The post Honeywell 2026 OT Security Benchmark highlights gaps in OT visibility, incident recovery, cybersecurity readiness appeared first on Industrial Cyber.</p>
               <div class="news-source"><a href="https://industrialcyber.co/reports/honeywell-2026-ot-security-benchmark-highlights-gaps-in-ot-visibility-incident-recovery-cybersecurity-readiness/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 23, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>GAO flags FAA cybersecurity weaknesses across aviation communications, spectrum threats and real-time monitoring</h4>
-              <p>The U.S. Government Accountability Office (GAO) reported that the Federal Aviation Administration (FAA) has not sufficiently addressed cybersecurity... The post GAO flags FAA cybersecurity weaknesses across aviation communications, spectrum threats and real-time monitoring appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/transport/gao-flags-faa-cybersecurity-weaknesses-across-aviation-communications-spectrum-threats-and-real-time-monitoring/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 23, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>ENISA Threat Landscape 2026 highlights ransomware, vulnerability exploitation, AI-enabled attacks across EU organizations</h4>
-              <p>Ransomware attacks remain the most damaging cyber threat facing the European Union, with operators continuing to disrupt organizations... The post ENISA Threat Landscape 2026 highlights ransomware, vulnerability exploitation, AI-enabled attacks across EU organizations appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/reports/enisa-threat-landscape-2026-highlights-ransomware-vulnerability-exploitation-ai-enabled-attacks-across-eu-organizations/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 23, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>Cybersplice launches UK OT cybersecurity operation targeting manufacturing and industrial environments</h4>
-              <p>Cybersplice has established Cybersplice UK Ltd, expanding its OT (operational technology) cybersecurity activities into the U.K. market, with... The post Cybersplice launches UK OT cybersecurity operation targeting manufacturing and industrial environments appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/news/cybersplice-launches-uk-ot-cybersecurity-operation-targeting-manufacturing-and-industrial-environments/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
             </div>
           
             <div class="news-card">
@@ -681,7 +682,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <footer class="site-footer">
     <div class="footer-top">
