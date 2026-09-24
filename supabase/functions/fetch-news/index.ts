@@ -12,53 +12,13 @@
 // access" policy in the news_items migration).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { CATEGORIES, detectOt, recencyBonus, truncate, parseRssItems, parseOtDedicatedItems } from "./parse.ts";
+import { verifySchedulerRequest } from "../_shared/scheduler-auth.ts";
+import { runWithJobLease, type JobOutcome } from "../_shared/job-lease.ts";
 
 const RETENTION_CAP = 75;
 const CATEGORY_FLOOR = 10; // reserve up to this many of each category before filling remaining slots by pure priority - otherwise high-CVSS vuln items (which score far higher than narrative RSS content) crowd out ai/ot/landscape entirely
-const MIN_RUN_INTERVAL_HOURS = 20; // cheap abuse guard - see checkRateLimit()
-const CATEGORIES = ["vuln", "ot", "ai", "landscape"];
-
-const OT_KEYWORDS = [
-  "siemens", "rockwell", "allen-bradley", "schneider electric", "honeywell",
-  "abb ", "emerson", "ge vernova", "yokogawa", "mitsubishi electric",
-  "scada", " ics ", " plc ", "industrial control", "programmable logic controller",
-];
-const AI_PATTERN = /\b(ai|artificial intelligence|llm|large language model|agentic|chatbot|genai|generative ai)\b/i;
-const VULN_PATTERN = /\b(cve-|vulnerability|vulnerabilities|exploit|patch|flaw|rce|zero-day|0-day|remote code execution)\b/i;
-// CONSOLIDATED-WORK-BRIEF.md §1c: categorize() used to fall through to
-// "landscape" unconditionally for anything that didn't match AI/OT/VULN -
-// not a filter at all, just a default bucket. Confirmed live: BleepingComputer's
-// feed is site-wide (Security, Gaming, Deals, general tech...), not a
-// security-only feed, so unrelated stories (a Windows gaming bug, a ChatGPT
-// outage, an Anthropic pricing change, a piracy sentencing) were landing in
-// "Threat Landscape" by default. This is the actual relevance gate that was
-// missing - "landscape" now requires a genuine threat/incident signal
-// instead of being the catch-all for "matched nothing else."
-const LANDSCAPE_PATTERN = /\b(breach(ed)?|hack(ed|er|ing)?|cyberattack|cyber[- ]attack|ransomware|malware|spyware|phishing|threat actor|nation[- ]state|espionage|data leak|data breach|compromised|infosec|cybersecurity|cyber security|security incident|intrusion|backdoor|botnet|ddos|denial[- ]of[- ]service|apt\d|threat intelligence|dark web|extortion|credential stuffing|social engineering|supply chain attack|cybercrime|cyber crime|stolen data|hacktivis|state-sponsored)\b/i;
-
-function detectOt(text: string): boolean {
-  const lower = text.toLowerCase();
-  return OT_KEYWORDS.some((k) => lower.includes(k));
-}
-
-function categorize(title: string, body: string): string | null {
-  const text = `${title} ${body}`;
-  if (AI_PATTERN.test(text)) return "ai";
-  if (detectOt(text)) return "ot";
-  if (VULN_PATTERN.test(text)) return "vuln";
-  if (LANDSCAPE_PATTERN.test(text)) return "landscape";
-  return null;
-}
-
-function recencyBonus(dateStr: string, maxBonus: number, decayDays: number): number {
-  const days = (Date.now() - new Date(dateStr).getTime()) / 86_400_000;
-  return Math.max(0, maxBonus * (1 - days / decayDays));
-}
-
-function truncate(s: string, n: number): string {
-  return s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s;
-}
-
+const MIN_RUN_INTERVAL_HOURS = 20; // daily cadence guard, enforced by the job lease
 // KEV_NEWS_LIMIT is deliberately small: this feed is meant to surface a
 // curated handful of genuinely notable exploited-vulnerability items as
 // news-style context, not the full KEV catalog - that's what the dedicated
@@ -143,91 +103,11 @@ async function fetchNvd() {
   return out;
 }
 
-// One decode pass over the entities RSS feeds actually use. &amp; goes
-// LAST, so a double-encoded "&amp;lt;" becomes the literal text "&lt;"
-// rather than cascading all the way into a real "<".
-function decodeEntities(s: string): string {
-  const cp = (n: number) => (n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : "");
-  return s
-    .replace(/&#(\d+);/g, (_, d) => cp(Number(d)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => cp(parseInt(h, 16)))
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&");
-}
-
-// An RSS <title>/<description> is XML text whose content is usually
-// itself entity-encoded HTML ("&lt;p&gt;Patch now&lt;/p&gt;"). The old
-// order - strip tags, THEN decode - turned exactly that encoded markup into
-// live tags in the stored text, and the site rendered news text as HTML: a
-// stored-XSS path fed by any third-party feed (or just an article whose
-// title mentions a tag). Now: unwrap CDATA (raw HTML, not entity-encoded)
-// or decode the XML entities, strip the resulting tags, then decode the
-// HTML's own entities once. What's left is plain text that may still
-// legitimately contain "<" (an article about <script> tags) - correct, and
-// safe, because the site escapes every news field at render
-// (src/ui/html-safety.js).
-function rssText(raw: string): string {
-  const cdata = raw.match(/^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/);
-  const html = cdata ? cdata[1] : decodeEntities(raw.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1"));
-  return decodeEntities(html.replace(/<[^>]*>/g, ""))
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function pickRssField(block: string, tag: string): string {
-  const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
-  return m ? rssText(m[1]) : "";
-}
-
-// source_url is rendered as a link on the site - only http(s) is ever
-// stored, so a feed can't smuggle in a javascript:/data: URL.
-function isHttpUrl(s: string): boolean {
-  try {
-    const u = new URL(s);
-    return u.protocol === "https:" || u.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
-
-function parseRssItems(xml: string, source: string, sourceUrl: string, maxItems: number) {
-  const items: any[] = [];
-  const itemBlocks = xml.match(/<item[\s\S]*?<\/item>/gi) ?? [];
-  for (const block of itemBlocks.slice(0, maxItems)) {
-    const pick = (tag: string) => pickRssField(block, tag);
-    const title = pick("title");
-    const link = pick("link");
-    const pubDate = pick("pubDate");
-    const description = pick("description");
-    if (!title || !link || !pubDate || !isHttpUrl(link)) continue;
-    const published = new Date(pubDate);
-    if (isNaN(published.getTime())) continue;
-    const category = categorize(title, description);
-    if (!category) continue; // not security-relevant - see categorize()'s comment
-    const priority = 35 + recencyBonus(published.toISOString(), 15, 10) + (category === "ai" ? 5 : 0);
-    items.push({
-      external_id: `rss:${link}`,
-      headline: truncate(title, 200),
-      body: truncate(description || title, 500),
-      source,
-      source_url: link,
-      category,
-      published_at: published.toISOString(),
-      priority_score: Math.round(priority),
-    });
-  }
-  return items;
-}
-
 async function fetchRss(feedUrl: string, source: string, maxItems: number) {
   const res = await fetch(feedUrl, { headers: { "User-Agent": "SimplifiedCS-NewsFetch/1.0 (+https://simplifiedcs.net)" } });
   if (!res.ok) throw new Error(`RSS fetch failed for ${source}: ${res.status}`);
   const xml = await res.text();
-  return parseRssItems(xml, source, feedUrl, maxItems);
+  return parseRssItems(xml, source, maxItems);
 }
 
 // CONSOLIDATED-WORK-BRIEF.md §1d, corrected/extended by
@@ -270,33 +150,7 @@ async function fetchRss(feedUrl: string, source: string, maxItems: number) {
 async function fetchOtDedicatedRss(feedUrl: string, source: string, maxItems: number, linkMustInclude?: string, fallbackBody?: string) {
   const res = await fetch(feedUrl, { headers: { "User-Agent": "SimplifiedCS-NewsFetch/1.0 (+https://simplifiedcs.net)" } });
   if (!res.ok) throw new Error(`RSS fetch failed for ${source}: ${res.status}`);
-  const xml = await res.text();
-  const itemBlocks = xml.match(/<item[\s\S]*?<\/item>/gi) ?? [];
-  const items: any[] = [];
-  for (const block of itemBlocks) {
-    if (items.length >= maxItems) break;
-    const pick = (tag: string) => pickRssField(block, tag);
-    const title = pick("title");
-    const link = pick("link");
-    const pubDate = pick("pubDate");
-    const description = pick("description");
-    if (!title || !link || !pubDate || !isHttpUrl(link)) continue;
-    if (linkMustInclude && !link.includes(linkMustInclude)) continue;
-    const published = new Date(pubDate);
-    if (isNaN(published.getTime())) continue;
-    const priority = 40 + recencyBonus(published.toISOString(), 15, 14);
-    items.push({
-      external_id: `rss:${link}`,
-      headline: truncate(title, 200),
-      body: truncate(description || fallbackBody || title, 500),
-      source,
-      source_url: link,
-      category: "ot",
-      published_at: published.toISOString(),
-      priority_score: Math.round(priority),
-    });
-  }
-  return items;
+  return parseOtDedicatedItems(await res.text(), source, maxItems, linkMustInclude, fallbackBody);
 }
 
 // CONSOLIDATED-WORK-BRIEF.md §1d: one specific, real, significant OT
@@ -326,14 +180,22 @@ const MANUAL_OT_BACKFILL = [
   },
 ];
 
-Deno.serve(async (_req) => {
+// POST-only, private scheduler credential, then an atomic lease - see
+// ../_shared/scheduler-auth.ts and ../_shared/job-lease.ts. The lease replaces
+// the old read-then-act "newest fetched_at is recent" check, which two
+// overlapping calls could both pass.
+Deno.serve(async (req) => {
+  const denied = await verifySchedulerRequest(req, Deno.env.get("CRON_SECRET"));
+  if (denied) return denied;
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  return runWithJobLease(
+    supabase,
+    { job: "fetch-news", leaseSeconds: 300, minSinceStartSeconds: 15 * 60, minSinceSuccessSeconds: MIN_RUN_INTERVAL_HOURS * 3600 },
+    () => refreshNews(supabase),
+  );
+});
 
-  const rateLimited = await checkRateLimit(supabase);
-  if (rateLimited) {
-    return Response.json({ skipped: true, reason: "ran within the last day already" });
-  }
-
+async function refreshNews(supabase: ReturnType<typeof createClient>): Promise<JobOutcome> {
   const results = await Promise.allSettled([
     fetchKev(),
     fetchNvd(),
@@ -395,29 +257,16 @@ Deno.serve(async (_req) => {
     }
   }
 
-  return Response.json({
-    fetched: { kev: kev.length, nvd: nvd.length, bleeping: bleeping.length, krebs: krebs.length, cisaIcs: cisaIcs.length, industrialCyber: industrialCyber.length, claroty: claroty.length },
-    upserted: inserted,
-    deleted,
-    errors,
-  });
-});
-
-// Cheap abuse guard: this function is invoked with the project's public
-// anon key (same pattern as the existing keep-alive job - no new secret
-// needed), which is enough to pass verify_jwt but is still a key anyone
-// could extract from this public repo. Real work (4 external fetches) only
-// runs if the most recent fetched_at is more than MIN_RUN_INTERVAL_HOURS
-// old, so repeated/malicious invocations are cheap no-ops instead of
-// hammering CISA/NVD/RSS sources or burning function time.
-async function checkRateLimit(supabase: ReturnType<typeof createClient>): Promise<boolean> {
-  const { data } = await supabase
-    .from("news_items")
-    .select("fetched_at")
-    .order("fetched_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!data) return false;
-  const hoursSince = (Date.now() - new Date(data.fetched_at).getTime()) / 3_600_000;
-  return hoursSince < MIN_RUN_INTERVAL_HOURS;
+  return {
+    // A run that stored nothing at all (every source down, or the upserts
+    // failed) counts as failed, so the lease lets the next run retry
+    // instead of waiting out the daily cadence.
+    ok: inserted > 0,
+    body: {
+      fetched: { kev: kev.length, nvd: nvd.length, bleeping: bleeping.length, krebs: krebs.length, cisaIcs: cisaIcs.length, industrialCyber: industrialCyber.length, claroty: claroty.length },
+      upserted: inserted,
+      deleted,
+      errors,
+    },
+  };
 }

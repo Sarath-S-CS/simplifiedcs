@@ -13,9 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger fetch-case-studies Edge Function
+        # Private scheduler credential checked by the function (see
+        # supabase/functions/_shared/scheduler-auth.ts). The anon key below
+        # only satisfies verify_jwt - it is public and proves nothing alone.
+        env:
+          CRON_SECRET: ${{ secrets.SUPABASE_CRON_SECRET }}
         run: |
           curl -s -w "\nHTTP %{http_code}\n" \
             -X POST "https://xufqgrcxufptlptpwlfi.supabase.co/functions/v1/fetch-case-studies" \
             -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1ZnFncmN4dWZwdGxwdHB3bGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDg0MzIsImV4cCI6MjEwMTUyNDQzMn0.owZP8GssYpD1I3-eIgSgS8pk8rDAIrO_pQYEPAyVeZM" \
             -H "Content-Type: application/json" \
+            -H "x-cron-secret: $CRON_SECRET" \
             --fail-with-body
