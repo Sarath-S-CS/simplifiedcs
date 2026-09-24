@@ -4,8 +4,8 @@ Finding-by-finding evidence matrix for the implementation prompt
 (`claude-code-implementation-prompt.md`, review of commit `97238c9`, 24 Sep 2026).
 
 - **Baseline for this work:** `main` @ `3ac7a24` (includes PRs #111–#114, merged and deployed
-  24 Sep 2026 after the original review). Working branch: `remediation/review-2026-09` (local only,
-  not pushed).
+  24 Sep 2026 after the original review). Work landed as PR #115, squash-merged to `main` as `264ccb2` and deployed on
+  24 Sep 2026 (see "Production verification" below).
 - **Status values:** Already fixed · Partially fixed · Still present · Not applicable / original
   finding not supported · Cannot verify with current access. Rows changed by this branch are
   marked **Changed now** in "Current status" below; the baseline matrix at the end is kept as
@@ -59,12 +59,14 @@ a local server applying the production security headers: Quick and Full assessme
 Full, History and legacy reports, examples, privacy/consent, feeds, keyboard use, and phone width.
 Generated PDFs were rendered to images and inspected.
 
-**Not done / needs you.** Nothing is deployed or merged; production migrations, secrets and
-function deploys are listed in `docs/rollout.md`. See "Unresolved and not verified" below.
+**Live since 24 Sep 2026.** Merged, migrations applied, feed functions redeployed and checked in
+production - see "Production verification". What's still open is under "Unresolved and not
+verified".
 
 ## Current status (after this branch)
 
-Evidence: *S* = source, *L* = local tests / local browser, *D* = deployed (none - not deployed).
+Evidence: *S* = source, *L* = local tests / local browser, *D* = deployed (see "Production
+verification" below; applies to every row unless noted there).
 Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (scoring engine),
 `c0d5594` (UI), `fd4ee97` (privacy/consent/copy), `2004cb6` (build/CI), `ba1713b` (home/SEO),
 `7f63cc0` (main.js split), `2ac595b` (PDF margins), plus the final docs/artifacts commit.
@@ -125,22 +127,38 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
 | FEEDBACK-1 | **Changed now** | Feedback page points to a public GitHub issue or LinkedIn (Netlify Forms isn't enabled); consent-gated minimal events (mode/format only). | Enabling Netlify Forms is a production setting - not changed. |
 | FUTURE-1 | **Changed now** | `docs/future-multi-tenant.md`. | - |
 
+## Production verification (24 Sep 2026)
+
+| Check | Result |
+|---|---|
+| Secrets | `SUPABASE_CRON_SECRET` present in GitHub (name only checked). `CRON_SECRET` present in Supabase, inferred from behaviour: the new functions answer 401 (not 503 "not configured") to requests without the header. |
+| Migrations | Applied through the Supabase connector as `20260924172302` (grants) and `20260924172314` (job leases); repo files renamed to match. `anon`/`authenticated` now hold SELECT only on `news_items`, `exploit_items`, `case_studies` (plus `keepalive` for anon); lease functions executable by `service_role` only. Public reads return 200; a write with the publishable key returns 401. |
+| Merge | PR #115 squash-merged after CI passed (tests, build reproducibility, production audit). Netlify published it; the live page loads `/assets/build/main-IYVA5G2M.js`. |
+| Edge functions | `fetch-news` v8 and `fetch-exploits` v14 deployed with `_shared/` helpers, verify_jwt on. Without the secret: 401; GET: 405. Manual workflow runs through GitHub: fetch-news upserted 79 items (0 errors); fetch-exploits upserted 102 (0 errors). Both lease rows show status ok and released. |
+| Headers | Enforced CSP, HSTS, `X-Frame-Options: DENY` on pages; `/assets/build/*` served with `public, max-age=31536000, immutable`. |
+| AI endpoints | Empty body → 400 `consent_required` from both endpoints, no model call. One smoke test with the fictional IT-services example answers (no real company data): 200 in 22 s, response schema 2, per-product KEV/NVD status for all 6 products, 4 advisories each citing retrieved CISA KEV / NVD records, 3 patterns, nothing dropped by validation, limitation about versions included. |
+| Browser (live) | No console errors; cookie banner shown; before consent the only Google request is Google Fonts - no googletagmanager/google-analytics; News loads 75 items through the on-demand Supabase chunk; example report renders; Quick screening end to end (14 answers) saves to History and keeps the AI button disabled until the visitor agrees. Test data cleared afterwards. |
+
 ## Unresolved and not verified
 
-1. **Nothing is deployed.** Every "Changed now" is verified in source and locally only. Deployed
-   verification is listed in `docs/rollout.md` step 5.
-2. **Screen-reader testing was not performed.** Keyboard operation was tested with real key input.
-3. **Netlify environment-variable scopes and deploy-preview settings** couldn't be read with the
-   available access; check `ANTHROPIC_API_KEY` is Functions-only (rollout step 1.5).
-4. **Live AI smoke test** (authorized, fictional data) needs the new functions deployed.
-5. **`fetch-case-studies`** is still not deployed; its workflow fails until it is deployed or
-   disabled (decision needed: it makes paid AI calls on a schedule).
-6. **IP-hash counter cleanup** runs opportunistically (4% of AI requests), so deletion after a day
-   isn't time-guaranteed if the service is idle; the privacy text says so.
-7. **Product versions** aren't collected, so vulnerability matches are always "potential" and ask
+1. **Screen-reader testing was not performed.** Keyboard operation was tested with real key input.
+2. **Netlify environment-variable scopes:** restricting `ANTHROPIC_API_KEY` to Functions needs a plan
+   upgrade - accepted limitation (no Netlify build command uses it; it never reaches the browser).
+   Whether `RATE_LIMIT_SALT` is set couldn't be read with the available access; without it the code
+   uses a fixed fallback salt.
+3. **The AI panel in the live UI** wasn't exercised with a real request (the smoke test called the
+   endpoint directly, to keep it to one paid request); the panel's rendering is covered by local
+   tests with the same response shape.
+4. **`fetch-case-studies`** is intentionally not deployed (it makes paid AI calls). Its workflow is
+   manual-only and has never run, so nothing is failing; how to enable it is in `docs/rollout.md`.
+5. **IP-hash counter cleanup** now also runs daily as a Netlify Scheduled Function
+   (`netlify/functions/ai-limits-cleanup.mts`, #117), so counters older than a day are deleted even
+   when the site is quiet; the privacy text says so. Not yet observed in production: after the first
+   daily run, Netlify → Logs → Functions → `ai-limits-cleanup` should show a `done` line.
+6. **Product versions** aren't collected, so vulnerability matches are always "potential" and ask
    the reader to confirm their version.
-8. **`src/main.js`** is smaller but still holds all content-page renderers (MAINT-1 partial).
-9. **CI** has not run yet (it runs on push/PR).
+7. ~~**`src/main.js`** still holds all content-page renderers.~~ Resolved: one module per page in
+   `src/pages/` (MAINT-1, #119).
 
 ## Baseline matrix (as found, before changes)
 
