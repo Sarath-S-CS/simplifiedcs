@@ -8,7 +8,7 @@ import { admit, settle, cleanup, estimateTokens, AdmissionUnavailable, type CasS
 import { cachedJson, type JsonKv } from "./public-cache.ts";
 import { callClaudeTool, UpstreamError, upstreamErrorResponseParts } from "./claude.ts";
 import { resolveProduct } from "./product-catalog.ts";
-import { gatherEvidence, parseKevCatalog, parseNvdResponse, parseNvdVersionResponse, type Platform } from "./evidence.ts";
+import { gatherEvidence, parseKevCatalog, parseNvdResponse, parseNvdVersionResponse, isIncompleteNvdPage, type Platform } from "./evidence.ts";
 import { validateInsightsRequest, buildInsightsPrompt, INSIGHTS_TOOL, validateInsightsOutput, assembleInsightsResponse, InvalidOutput, type InsightsRequest } from "./insights.ts";
 import { validateInterpretRequest, buildInterpretPrompt, INTERPRET_TOOL, validateInterpretOutput, InvalidInterpretation, type InterpretRequest } from "./interpret.ts";
 
@@ -129,7 +129,8 @@ export async function handleInsights(req: Request, deps: Deps): Promise<Response
           return parseKevCatalog(await res.json());
         }, nowMs),
       searchNvd: async (term) => {
-        const key = `nvd-v1/${(await sha256Hex(term)).slice(0, 24)}`;
+        // v2: v1 entries may hold an incomplete page cached before isIncompleteNvdPage existed.
+        const key = `nvd-v2/${(await sha256Hex(term)).slice(0, 24)}`;
         return cachedJson(cache, key, 12 * 3600_000, 3 * 24 * 3600_000, async () => {
           const end = new Date(nowMs);
           const start = new Date(nowMs - NVD_LOOKBACK_DAYS * 86_400_000);
@@ -137,19 +138,23 @@ export async function handleInsights(req: Request, deps: Deps): Promise<Response
           const url = `${NVD_URL}?keywordSearch=${encodeURIComponent(term)}&pubStartDate=${iso(start)}&pubEndDate=${iso(end)}&resultsPerPage=20`;
           const res = await fetchWithTimeout(url, 6000, { headers: { accept: "application/json" } }, fetchImpl);
           if (!res.ok) throw new Error(`NVD ${res.status}`);
-          return parseNvdResponse(await res.json());
+          const json = await res.json();
+          if (isIncompleteNvdPage(json, 20)) throw new Error("NVD returned an incomplete page");
+          return parseNvdResponse(json);
         }, nowMs);
       },
       // "Which CVEs does NVD list as affecting this exact version?" One page
       // of up to 200 is ample for a single version (40-90 seen for current
       // firewall releases); the total is kept so a larger set is disclosed.
       lookupNvdVersion: async (cpeName) => {
-        const key = `nvd-version-v1/${(await sha256Hex(cpeName)).slice(0, 24)}`;
+        const key = `nvd-version-v2/${(await sha256Hex(cpeName)).slice(0, 24)}`;
         return cachedJson(cache, key, 12 * 3600_000, 3 * 24 * 3600_000, async () => {
           const url = `${NVD_URL}?cpeName=${encodeURIComponent(cpeName)}&isVulnerable&resultsPerPage=200`;
           const res = await fetchWithTimeout(url, 8000, { headers: { accept: "application/json" } }, fetchImpl);
           if (!res.ok) throw new Error(`NVD ${res.status}`);
-          return parseNvdVersionResponse(await res.json());
+          const json = await res.json();
+          if (isIncompleteNvdPage(json, 200)) throw new Error("NVD returned an incomplete page");
+          return parseNvdVersionResponse(json);
         }, nowMs);
       },
     });
