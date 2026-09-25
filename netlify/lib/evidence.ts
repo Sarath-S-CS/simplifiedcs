@@ -424,6 +424,18 @@ export function parseKevCatalog(json: any): KevEntry[] {
     }));
 }
 
+// NVD sometimes answers with a total but an empty or short page (seen live
+// 25 Sep 2026: totalResults 2, resultsPerPage 0, no records). That is an
+// incomplete answer, not "no results": callers treat it as a failed lookup
+// (so it isn't cached and reads as "source unavailable").
+export function isIncompleteNvdPage(json: any, requested: number): boolean {
+  const total = json?.totalResults;
+  if (!Number.isInteger(total)) return false;
+  const start = Number.isInteger(json?.startIndex) ? json.startIndex : 0;
+  const returned = Array.isArray(json?.vulnerabilities) ? json.vulnerabilities.length : 0;
+  return returned < Math.min(Math.max(total - start, 0), requested);
+}
+
 export function parseNvdVersionResponse(json: any): NvdVersionResult {
   const vulns = parseNvdResponse(json);
   const total = Number.isInteger(json?.totalResults) && json.totalResults >= vulns.length ? json.totalResults : vulns.length;

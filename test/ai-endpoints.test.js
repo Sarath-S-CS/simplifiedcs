@@ -556,3 +556,33 @@ test("interpretation output must cover every item exactly once", async () => {
     assert.equal((await r.json()).error.code, "output_invalid");
   }
 });
+
+// ---------------- NVD returning an incomplete page ----------------
+// Seen live on 25 Sep 2026: NVD intermittently answered with totalResults: 2
+// but an empty page (resultsPerPage: 0). That must read as "source
+// unavailable", never as "NVD lists no vulnerabilities", and mustn't be cached.
+
+const INCOMPLETE = { totalResults: 2, resultsPerPage: 0, startIndex: 0, vulnerabilities: [] };
+const FORTIOS_743 = "cpe:2.3:o:fortinet:fortios:7.4.3:*:*:*:*:*:*:*";
+const fortigate743 = () => validBody({ products: [{ category: "edge device / firewall", name: "Fortinet FortiGate", version: "7.4.3" }] });
+
+test("an incomplete exact-version page is reported as unavailable, not as 'none', and isn't cached", async () => {
+  const cache = kvStore();
+  const first = deps({ cache, model: toolReply({ advisories: [], patterns: [], narrative: "N." }), nvdVersion: { [FORTIOS_743]: INCOMPLETE } });
+  const out = await (await handleInsights(post(fortigate743()), first.d)).json();
+  const status = out.sourceStatus[0];
+  assert.equal(status.nvd, "source-unavailable");
+  assert.ok(!status.notes.some((n) => /lists no vulnerabilities/.test(n)), status.notes.join(" | "));
+
+  const complete = { totalResults: 1, resultsPerPage: 1, startIndex: 0, vulnerabilities: [NVD_PAN_VERSION.vulnerabilities[1]] };
+  const second = deps({ cache, model: toolReply({ advisories: [], patterns: [], narrative: "N." }), nvdVersion: { [FORTIOS_743]: complete } });
+  const again = await (await handleInsights(post(fortigate743()), second.d)).json();
+  assert.ok(second.calls.some((u) => u.includes("cpeName=")), "the incomplete page wasn't cached, so NVD is asked again");
+  assert.equal(again.sourceStatus[0].nvd, "potential-match");
+});
+
+test("an incomplete keyword-search page is reported as unavailable, not as a clean result", async () => {
+  const { d } = deps({ model: toolReply({ advisories: [], patterns: [], narrative: "N." }), nvd: { "defender for endpoint": { totalResults: 3, resultsPerPage: 0, vulnerabilities: [] } } });
+  const out = await (await handleInsights(post(validBody()), d)).json();
+  assert.equal(out.sourceStatus.find((s) => s.name === "Microsoft Defender for Endpoint").nvd, "source-unavailable");
+});
