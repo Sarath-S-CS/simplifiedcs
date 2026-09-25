@@ -38,9 +38,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-<meta name="site-updated" content="September 24, 2026">
+<meta name="site-updated" content="September 25, 2026">
 <link rel="stylesheet" href="/assets/build/app-TH5KBUJL.css">
-<script type="module" src="/assets/build/main-KLD3LNMA.js"></script>
+<script type="module" src="/assets/build/main-BGZ22YHX.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#tabContent">Skip to main content</a>
@@ -174,7 +174,7 @@
       <div class="section-tile">
         <h3 class="section-h">Not verified yet</h3>
         <ul class="tech-highlights-list">
-          <li><b>Screen-reader testing</b> hasn't been done. Keyboard use was tested with real key presses, and an automated audit covers every page; the manual checklist is <a class="inline-link" href="https://github.com/Sarath-S-CS/simplifiedcs/blob/main/docs/screen-reader-check.md" target="_blank" rel="noopener noreferrer">docs/screen-reader-check.md</a>.</li><li><b>The AI panel in the live page</b> wasn't used for a real request - the one paid test called the endpoint directly. The panel's rendering is covered by local tests with the same response shape.</li><li><b>Hosting settings:</b> the Anthropic API key can't be limited to server functions on the site's current Netlify plan. It isn't used by any build step and never reaches the browser.</li><li><b>Version matching:</b> a stated firewall or web server version is checked against NVD's list for that exact version only for FortiOS, PAN-OS, SonicOS, Junos, WatchGuard Fireware, nginx, Apache HTTP Server and Tomcat; other products' matches stay "potential". It hasn't yet been exercised on the live site.</li>
+          <li><b>Screen-reader testing</b> hasn't been done. Keyboard use was tested with real key presses, and an automated audit covers every page; the manual checklist is <a class="inline-link" href="https://github.com/Sarath-S-CS/simplifiedcs/blob/main/docs/screen-reader-check.md" target="_blank" rel="noopener noreferrer">docs/screen-reader-check.md</a>.</li><li><b>The AI panel in the live page</b> wasn't used for a real request - the one paid test called the endpoint directly. The panel's rendering is covered by local tests with the same response shape.</li><li><b>Hosting settings:</b> the Anthropic API key can't be limited to server functions on the site's current Netlify plan. It isn't used by any build step and never reaches the browser.</li><li><b>Version matching</b> checks a stated firewall or web server version against NVD's list for that exact version only for FortiOS, PAN-OS, SonicOS, Junos, WatchGuard Fireware, nginx, Apache HTTP Server and Tomcat; other products' matches stay "potential".</li>
         </ul>
         <p class="body-text">The full finding-by-finding record, with file references, is in <a class="inline-link" href="https://github.com/Sarath-S-CS/simplifiedcs/blob/main/docs/review-remediation-status.md" target="_blank" rel="noopener noreferrer">docs/review-remediation-status.md</a>.</p>
       </div>

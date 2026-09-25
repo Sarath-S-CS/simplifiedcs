@@ -46,7 +46,7 @@ const NOT_VERIFIED = [
   "<b>Screen-reader testing</b> hasn't been done. Keyboard use was tested with real key presses, and an automated audit covers every page; the manual checklist is <a class=\"inline-link\" href=\"" + REPO + "docs/screen-reader-check.md\" target=\"_blank\" rel=\"noopener noreferrer\">docs/screen-reader-check.md</a>.",
   "<b>The AI panel in the live page</b> wasn't used for a real request - the one paid test called the endpoint directly. The panel's rendering is covered by local tests with the same response shape.",
   "<b>Hosting settings:</b> the Anthropic API key can't be limited to server functions on the site's current Netlify plan. It isn't used by any build step and never reaches the browser.",
-  "<b>Version matching:</b> a stated firewall or web server version is checked against NVD's list for that exact version only for FortiOS, PAN-OS, SonicOS, Junos, WatchGuard Fireware, nginx, Apache HTTP Server and Tomcat; other products' matches stay \"potential\". It hasn't yet been exercised on the live site.",
+  "<b>Version matching</b> checks a stated firewall or web server version against NVD's list for that exact version only for FortiOS, PAN-OS, SonicOS, Junos, WatchGuard Fireware, nginx, Apache HTTP Server and Tomcat; other products' matches stay \"potential\".",
 ];
 
 export function renderEngineeringTab(container){

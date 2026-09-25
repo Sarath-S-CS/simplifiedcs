@@ -80,7 +80,7 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
 | SEC-3a | **Changed now** | S: no automatic AI calls; `src/engine/ai-consent.js`, `src/ui/ai-panel.js` (what's sent, preview, processors); server rejects requests without the versioned consent. L: browser check (button disabled until agreed); `test/ai-endpoints.test.js`, `test/ai-payload.test.js`. | - |
 | SEC-3b | **Changed now** | S: `/privacy` (`src/ui/privacy.js`), `assets/gtag-init.js` (Consent Mode v2 defaults denied; gtag.js not loaded before "Allow"), clear-all control (`src/engine/local-data.js`), footer "Cookie settings". L: `test/privacy.test.js` (5); browser: no Google request before consent. | - |
 | SEC-4a | **Changed now** | S: `netlify/lib/http.ts` (streamed byte cap), `schema.ts`. L: endpoint tests for null/wrong types/unknown fields/malformed/oversized/lying Content-Length. | - |
-| SEC-4b | **Changed now** | S: `netlify/lib/insights.ts` / `interpret.ts` output validation; `claude.ts` honest failure codes. L: endpoint tests. | - |
+| SEC-4b | **Changed now** | S: `netlify/lib/insights.ts` / `interpret.ts` output validation; `claude.ts` honest failure codes; strict tool use on both AI tools (#122); an incomplete NVD page counts as unavailable, not "no match" (#123). L: endpoint tests, `test/strict-tools.test.js`. D: see "Follow-up production checks". | - |
 | SEC-5a | **Already fixed; re-validated** | L: local server applies `_headers`; zero CSP errors across pages, lazy chunks, feeds, consent banner. Added immutable caching for `/assets/build/*`. | Re-check live after deploy (step 5). |
 | SEC-5b | **Changed now** | L: `npm audit` 0 (all); CI audits production deps. | - |
 | SEC-6 | **Changed now** (repo side) | S: 7 migrations in `supabase/migrations/`. L: `test/supabase-policies.test.js` (9, PGlite). | Apply 2 new migrations. Netlify env scopes/deploy previews: **cannot verify** with current access. |
@@ -104,7 +104,7 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
 | TRUTH-7 | **Changed now** | Metrics/Methodology/home/report/PDF copy aligned to 2.0; overclaims removed; two unverifiable vendor-note claims reworded. | - |
 | AI-0 | **Already fixed; extended** | Request IDs + metadata-only logs (`netlify/lib/claude.ts`); test that logs carry no answers. | - |
 | AI-1 | **Changed now** | Consent + exact preview; payload validated by the server's own schema in tests. | - |
-| AI-2 | **Changed now** | `netlify/lib/product-catalog.ts` canonical products; optional OS question (`endpointOs`); applicability labels + verification steps. Product versions: optional firewall version question (`edgeDeviceVersion`), web server version read from its answer; for FortiOS, PAN-OS, SonicOS, Junos, WatchGuard Fireware, nginx, Apache HTTP Server and Tomcat the server uses NVD's exact-version lookup (`cpeName` + `isVulnerable`) and labels items "listed by NVD as affecting your version" or, for known-exploited items NVD doesn't list, "confirm with the vendor" (kept visible). Consent notice bumped to `ai-processing-2026-09b`. L: `test/product-versions.test.js`, version cases in `test/ai-endpoints.test.js` and `test/ai-payload.test.js` (fictional CVEs). | Cisco ASA, Check Point, Ubiquiti and IIS versions are sent but not compared (NVD returned nothing for real versions of Cisco ASA and IIS). Not yet exercised through the deployed function. |
+| AI-2 | **Changed now** | `netlify/lib/product-catalog.ts` canonical products; optional OS question (`endpointOs`); applicability labels + verification steps. Product versions: optional firewall version question (`edgeDeviceVersion`), web server version read from its answer; for FortiOS, PAN-OS, SonicOS, Junos, WatchGuard Fireware, nginx, Apache HTTP Server and Tomcat the server uses NVD's exact-version lookup (`cpeName` + `isVulnerable`) and labels items "listed by NVD as affecting your version" or, for known-exploited items NVD doesn't list, "confirm with the vendor" (kept visible). Consent notice bumped to `ai-processing-2026-09b`. L: `test/product-versions.test.js`, version cases in `test/ai-endpoints.test.js` and `test/ai-payload.test.js` (fictional CVEs). | Cisco ASA, Check Point, Ubiquiti and IIS versions are sent but not compared (NVD returned nothing for real versions of Cisco ASA and IIS). D: exercised live 25 Sep 2026 (see "Follow-up production checks"). |
 | AI-3 | **Changed now** | Evidence IDs; uncited / cross-product citations dropped server-side. Tests. | - |
 | AI-4 | **Changed now** | Per-product KEV/NVD status in response, page and PDF. | - |
 | AI-5 | **Changed now** | Prioritised, de-duplicated NVD queries within a budget; unchecked products disclosed; public data cached. Tests. | - |
@@ -139,6 +139,21 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
 | AI endpoints | Empty body → 400 `consent_required` from both endpoints, no model call. One smoke test with the fictional IT-services example answers (no real company data): 200 in 22 s, response schema 2, per-product KEV/NVD status for all 6 products, 4 advisories each citing retrieved CISA KEV / NVD records, 3 patterns, nothing dropped by validation, limitation about versions included. |
 | Browser (live) | No console errors; cookie banner shown; before consent the only Google request is Google Fonts - no googletagmanager/google-analytics; News loads 75 items through the on-demand Supabase chunk; example report renders; Quick screening end to end (14 answers) saves to History and keeps the AI button disabled until the visitor agrees. Test data cleared afterwards. |
 
+## Follow-up production checks (25 Sep 2026)
+
+Read with the Netlify CLI (function logs are metadata only) and one live request at a time, all with
+the fictional IT-services example answers plus a fictional firewall version (FortiGate 7.4.3) and web
+server (nginx 1.24.0 on Ubuntu 22.04). No real company data.
+
+| Check | Result |
+|---|---|
+| Daily counter cleanup (#117) | `ai-limits-cleanup` ran at 00:01 UTC on 25 Sep: `{"event":"done","deleted":{"ai-insights":1,"other-text-interpret":0}}`. |
+| Live AI request after #121 | **Failed: 502 `output_invalid`.** Log: model finished normally (`stopReason: tool_use`, 2,101 output tokens) but "output is missing advisories/patterns arrays", so the answer was discarded. Cause: tool input isn't schema-guaranteed without strict mode. Fixed in #122 (strict tool use; a list sent as JSON text is read; the log now names each field's type). |
+| Live AI request after #122 | 200. FortiGate 7.4.3: 5 items "listed by NVD as affecting your version" (3 known-exploited). But nginx 1.24.0 showed "NVD lists no vulnerabilities" where NVD lists 2: NVD intermittently answered `totalResults: 2` with an empty page, and the code read and cached that as "none". Fixed in #123 (an incomplete page is "source unavailable", never cached; cache keys moved to v2). |
+| Live AI request after #123 | 200 in 23 s, nothing dropped. FortiGate 7.4.3: 5 items affecting the stated version; nginx 1.24.0: its 2 NVD items affecting the stated version; Defender products stay "potential match" (no version given). No "you are vulnerable" wording in summaries or narrative. |
+
+Three paid requests in total, one at a time, no automatic retries.
+
 ## Unresolved and not verified
 
 1. **Screen-reader testing was not performed.** Keyboard operation was tested with real key input.
@@ -151,13 +166,13 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
    tests with the same response shape.
 4. **`fetch-case-studies`** is intentionally not deployed (it makes paid AI calls). Its workflow is
    manual-only and has never run, so nothing is failing; how to enable it is in `docs/rollout.md`.
-5. **IP-hash counter cleanup** now also runs daily as a Netlify Scheduled Function
-   (`netlify/functions/ai-limits-cleanup.mts`, #117), so counters older than a day are deleted even
-   when the site is quiet; the privacy text says so. Not yet observed in production: after the first
-   daily run, Netlify → Logs → Functions → `ai-limits-cleanup` should show a `done` line.
+5. ~~**IP-hash counter cleanup** isn't time-guaranteed.~~ Resolved: a daily Netlify Scheduled Function
+   (`netlify/functions/ai-limits-cleanup.mts`, #117) deletes counters older than a day; its first
+   production run (25 Sep, 00:01 UTC) completed and deleted one expired counter.
 6. **Product versions** are compared only for FortiOS, PAN-OS, SonicOS, Junos, WatchGuard Fireware, nginx, Apache HTTP Server and Tomcat; other products'
-   matches stay "potential". The exact-version lookup hasn't yet been exercised through the deployed
-   function (a stated version changes NVD's answer, so a typo is shown in every label).
+   matches stay "potential" (NVD returned nothing for real Cisco ASA and IIS versions). Exercised live on
+   25 Sep. A stated version changes NVD's answer, so a typo is shown in every label; NVD's own answers
+   can be intermittently incomplete, which now shows as "source unavailable".
 7. ~~**`src/main.js`** still holds all content-page renderers.~~ Resolved: one module per page in
    `src/pages/` (MAINT-1, #119).
 
