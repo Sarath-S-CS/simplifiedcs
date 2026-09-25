@@ -575,10 +575,13 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           ${isOther ? `<label class="other-input"><span class="sr-only">Product or provider name</span><input type="text" data-vendor-other-fid="${id}" data-fkey="${id}:other-text" value="${e(!node.vendorOptions.includes(val) ? val : "")}" placeholder="Please specify"></label>` : ""}
         </div>`;
     }
+    const placeholder = typeof node.placeholder === "function" ? node.placeholder(session.answers) : node.placeholder;
+    const hintId = node.hint ? `h-${id}` : "";
     return `
       <div class="field">
         <label for="t-${id}">${e(node.text)}${optTag(node)}</label>
-        <input type="text" id="t-${id}" data-text-fid="${id}" data-fkey="${id}:text" value="${e(val)}" placeholder="${e(node.placeholder || "")}">
+        ${node.hint ? `<p class="scope-hint" id="${hintId}">${e(node.hint)}</p>` : ""}
+        <input type="text" id="t-${id}" data-text-fid="${id}" data-fkey="${id}:text" value="${e(val)}" placeholder="${e(placeholder || "")}"${node.maxLength ? ` maxlength="${node.maxLength}"` : ""}${hintId ? ` aria-describedby="${hintId}"` : ""}>
       </div>`;
   }
 
@@ -648,6 +651,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     p.querySelectorAll("select[data-vendor-fid]").forEach((el) =>
       el.addEventListener("change", () => {
         const n = node(el.dataset.vendorFid);
+        for (const dependent of n.resets || []) delete session.answers[dependent];
         if (el.value === OTHER_VALUE) {
           session.answers[n.id + "__isOther"] = true;
           recordAnswer(session, n, "");

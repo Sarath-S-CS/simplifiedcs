@@ -11,6 +11,12 @@
 // kevProduct matches KEV `product` for that vendor; an entry for the same
 // vendor that doesn't match is a vendor-only ("product not confirmed") hit.
 // nvdTerm is a keyword search against NVD descriptions.
+// versionCpe (AI-2) is how NVD names the product in CPE form, so a stated
+// version can be looked up exactly (cpeName + isVulnerable: "which CVEs does
+// NVD list as affecting this version?"). Only products whose naming was
+// checked against live NVD lookups (24 Sep 2026) have one. Cisco ASA and IIS
+// are deliberately absent: NVD returned nothing for real versions of both,
+// which would read as a clean result.
 //
 // kind:
 //   software        - a product the organisation runs and patches
@@ -22,15 +28,60 @@
 
 export type ProductKind = "software" | "vendor-family" | "managed-service";
 
+// A stated version split into NVD's CPE "version" and "update" components,
+// or null when the text isn't a version of this product.
+type VersionParse = (v: string) => { version: string; update?: string } | null;
+
+export type VersionCpe = { part: "o" | "a"; vendor: string; product: string; parse: VersionParse };
+
 export type CatalogEntry = {
   label: string;
   kind: ProductKind;
   kevVendors: string[];
   kevProduct?: RegExp;
   nvdTerm?: string;
+  versionCpe?: VersionCpe;
+  // Other ways people write this product in an "Other" edge-device answer.
+  alias?: RegExp;
+  // Count only product-level KEV matches: for a vendor with many unrelated
+  // products (F5 for nginx, the Apache Software Foundation), "same vendor"
+  // hits are noise rather than a prompt worth checking.
+  kevProductOnly?: boolean;
 };
 
 const E = (label: string, kind: ProductKind, kevVendors: string[], kevProduct?: RegExp, nvdTerm?: string): CatalogEntry => ({ label, kind, kevVendors, kevProduct, nvdTerm });
+
+// Strips the product name and "v"/"version" people often type before a
+// version, and anything after it that the parser allows (e.g. a build).
+const bare = (v: string, names: RegExp) => v.trim().replace(names, "").replace(/^(version|ver\.?)\s*/i, "").replace(/^v(?=\d)/i, "").trim();
+const whole = (re: RegExp, v: string) => re.exec(v);
+const VERSION_PARSERS: Record<string, VersionParse> = {
+  fortios: (v) => {
+    const m = whole(/^(\d+\.\d+\.\d+)(?:[\s,]*(?:build|b)\s*\d+)?$/i, bare(v, /^forti(os|gate)\s*/i));
+    return m ? { version: m[1] } : null;
+  },
+  panos: (v) => {
+    const m = whole(/^(\d+\.\d+\.\d+)(?:-(h\d+))?$/i, bare(v, /^pan-?os\s*/i));
+    return m ? { version: m[1], update: m[2]?.toLowerCase() } : null;
+  },
+  sonicos: (v) => {
+    const m = whole(/^(\d+\.\d+\.\d+(?:\.\d+)?(?:-\d+)?)$/, bare(v, /^sonicos\s*/i));
+    return m ? { version: m[1] } : null;
+  },
+  junos: (v) => {
+    const m = whole(/^(\d+\.\d+)R(\d+)(?:-S(\d+))?$/i, bare(v, /^junos(\s+os)?\s*/i));
+    return m ? { version: m[1], update: `r${m[2]}${m[3] ? `-s${m[3]}` : ""}` } : null;
+  },
+  fireware: (v) => {
+    const m = whole(/^(\d+\.\d+(?:\.\d+)?)$/, bare(v, /^fireware(\s+os)?\s*/i));
+    return m ? { version: m[1] } : null;
+  },
+  threePart: (v) => {
+    const m = whole(/^(\d+\.\d+\.\d+)$/, v.trim());
+    return m ? { version: m[1] } : null;
+  },
+};
+const edge = (entry: CatalogEntry, versionCpe: VersionCpe, alias: RegExp): CatalogEntry => ({ ...entry, versionCpe, alias });
 
 export const CATALOG: CatalogEntry[] = [
   // Antivirus
@@ -81,13 +132,13 @@ export const CATALOG: CatalogEntry[] = [
   E("Aryaka", "managed-service", []),
   E("Aruba (HPE) EdgeConnect", "software", ["Hewlett Packard Enterprise (HPE)", "Aruba Networks"], /edgeconnect/i, "Aruba EdgeConnect"),
   // Edge devices (firewall / VPN)
-  E("Fortinet FortiGate", "software", ["Fortinet"], /fortios|fortigate|multiple products/i, "FortiOS"),
-  E("Palo Alto Networks", "software", ["Palo Alto Networks"], /pan-os/i, "PAN-OS"),
+  edge(E("Fortinet FortiGate", "software", ["Fortinet"], /fortios|fortigate|multiple products/i, "FortiOS"), { part: "o", vendor: "fortinet", product: "fortios", parse: VERSION_PARSERS.fortios }, /\bforti(gate|os)\b/i),
+  edge(E("Palo Alto Networks", "software", ["Palo Alto Networks"], /pan-os/i, "PAN-OS"), { part: "o", vendor: "paloaltonetworks", product: "pan-os", parse: VERSION_PARSERS.panos }, /\b(palo alto|pan-?os)\b/i),
   E("Cisco ASA / Firepower", "software", ["Cisco"], /adaptive security appliance|\basa\b|firepower|firewall threat defense|secure firewall/i, "Cisco Adaptive Security Appliance"),
-  E("SonicWall", "vendor-family", ["SonicWall"], /sonicos|sma|firewall/i, "SonicWall"),
+  edge(E("SonicWall", "vendor-family", ["SonicWall"], /sonicos|sma|firewall/i, "SonicWall"), { part: "o", vendor: "sonicwall", product: "sonicos", parse: VERSION_PARSERS.sonicos }, /\bsonic(wall|os)\b/i),
   E("Check Point", "vendor-family", ["Check Point"], /security gateway|quantum|multiple products/i, "Check Point Security Gateway"),
-  E("Juniper Networks SRX", "software", ["Juniper"], /junos/i, "Junos OS SRX"),
-  E("WatchGuard", "software", ["WatchGuard"], /firebox/i, "WatchGuard Firebox"),
+  edge(E("Juniper Networks SRX", "software", ["Juniper"], /junos/i, "Junos OS SRX"), { part: "o", vendor: "juniper", product: "junos", parse: VERSION_PARSERS.junos }, /\b(juniper|junos|srx)\b/i),
+  edge(E("WatchGuard", "software", ["WatchGuard"], /firebox/i, "WatchGuard Firebox"), { part: "o", vendor: "watchguard", product: "fireware", parse: VERSION_PARSERS.fireware }, /\b(watchguard|firebox|fireware)\b/i),
   E("Ubiquiti", "vendor-family", ["Ubiquiti"], undefined, "Ubiquiti UniFi"),
   // Hosting / cloud providers
   E("Amazon Web Services (AWS)", "managed-service", []),
@@ -122,7 +173,22 @@ export const CATALOG: CatalogEntry[] = [
 
 const BY_LABEL = new Map(CATALOG.map((e) => [e.label.toLowerCase(), e]));
 
+// Web servers named in the free-text "web server software" answer, with the
+// version read from the same text (e.g. "nginx 1.24.0 on Ubuntu 22.04").
+// Tomcat is checked before Apache HTTP Server ("Apache Tomcat 9.0.85").
+// NVD now names nginx under F5 (the old nginx:nginx naming returns nothing).
+// kevProductOnly: F5 and Apache have many unrelated products in KEV.
+const WEB_SERVERS: { entry: CatalogEntry; detect: RegExp }[] = [
+  { entry: { ...E("nginx", "software", ["F5", "Nginx"], /nginx/i, "nginx"), kevProductOnly: true, versionCpe: { part: "a", vendor: "f5", product: "nginx", parse: VERSION_PARSERS.threePart } }, detect: /\bnginx\b(?:[\s/v-]*(\d+\.\d+\.\d+)\b)?/i },
+  { entry: { ...E("Apache Tomcat", "software", ["Apache"], /tomcat/i, "Apache Tomcat"), kevProductOnly: true, versionCpe: { part: "a", vendor: "apache", product: "tomcat", parse: VERSION_PARSERS.threePart } }, detect: /\btomcat\b(?:[\s/v-]*(\d+\.\d+\.\d+)\b)?/i },
+  { entry: { ...E("Apache HTTP Server", "software", ["Apache"], /http server|httpd/i, "Apache HTTP Server"), kevProductOnly: true, versionCpe: { part: "a", vendor: "apache", product: "http_server", parse: VERSION_PARSERS.threePart } }, detect: /\b(?:apache(?:\s+http(?:\s+server)?)?|httpd)\b(?:[\s/v-]*(\d+\.\d+\.\d+)\b)?/i },
+];
+
+const EDGE_CATEGORY = "edge device / firewall";
+const WEB_CATEGORY = "web server stack";
+
 export type ResolvedProduct = CatalogEntry & {
+  version?: string; // the version the organisation stated (or read from a web server answer)
   key: string; // stable id used by evidence records and model citations
   category: string;
   name: string; // what the organisation typed/selected
@@ -137,17 +203,29 @@ function slug(s: string): string {
 // don't match the catalog are treated conservatively: a single word is a
 // vendor family (product unknown); longer text is searched as-is but still
 // only ever produces "potential" matches.
-export function resolveProduct(category: string, rawName: string, index: number): ResolvedProduct {
+export function resolveProduct(category: string, rawName: string, index: number, rawVersion?: string): ResolvedProduct {
   const name = rawName.trim().replace(/\s+/g, " ").slice(0, 150);
   const key = `p${index}-${slug(name)}`;
+  const stated = (rawVersion ?? "").trim().replace(/\s+/g, " ").slice(0, 40);
+  const version = stated ? { version: stated } : {};
   const exact = BY_LABEL.get(name.toLowerCase());
-  if (exact) return { ...exact, key, category, name, origin: "catalog" };
+  if (exact) return { ...exact, ...version, key, category, name, origin: "catalog" };
+  if (category === WEB_CATEGORY) {
+    for (const { entry, detect } of WEB_SERVERS) {
+      const m = detect.exec(name);
+      if (m) return { ...entry, ...(m[1] ? { version: m[1] } : {}), key, category, name, origin: "free-text" };
+    }
+  }
+  if (category === EDGE_CATEGORY) {
+    const aliased = CATALOG.find((e) => e.alias && e.alias.test(name));
+    if (aliased) return { ...aliased, ...version, key, category, name, origin: "free-text" };
+  }
   const contained = CATALOG.find((e) => e.kind !== "managed-service" && e.label.length >= 5 && name.toLowerCase().includes(e.label.toLowerCase()));
-  if (contained) return { ...contained, key, category, name, origin: "free-text" };
+  if (contained) return { ...contained, ...version, key, category, name, origin: "free-text" };
   const words = name.split(" ").filter(Boolean);
   const first = words[0] || name;
   if (words.length === 1) {
-    return { label: name, kind: "vendor-family", kevVendors: [first], nvdTerm: first, key, category, name, origin: "free-text" };
+    return { label: name, kind: "vendor-family", kevVendors: [first], nvdTerm: first, ...version, key, category, name, origin: "free-text" };
   }
   const product = words.slice(1).filter((w) => w.length > 2 && !/^(on|the|and|with|for|running)$/i.test(w));
   return {
@@ -156,9 +234,23 @@ export function resolveProduct(category: string, rawName: string, index: number)
     kevVendors: [first],
     kevProduct: product.length ? new RegExp(product.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i") : undefined,
     nvdTerm: words.slice(0, 4).join(" "),
+    ...version,
     key,
     category,
     name,
     origin: "free-text",
   };
+}
+
+// The exact NVD lookup for a product's stated version, or null when there
+// isn't one: no version, a product without verified NVD naming, or text that
+// isn't a version of this product. Null means "not compared" - never "clean".
+export type VersionTarget = { cpeName: string; version: string };
+
+export function versionLookupFor(p: ResolvedProduct): VersionTarget | null {
+  if (!p.version || !p.versionCpe) return null;
+  const parsed = p.versionCpe.parse(p.version);
+  if (!parsed) return null;
+  const { part, vendor, product } = p.versionCpe;
+  return { cpeName: `cpe:2.3:${part}:${vendor}:${product}:${parsed.version}:${parsed.update || "*"}:*:*:*:*:*:*`, version: p.version };
 }

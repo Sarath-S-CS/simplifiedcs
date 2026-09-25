@@ -19,20 +19,35 @@ export const SOURCE_STATUS_TEXT = {
   "not-checked-example": "Not checked (example report)",
 };
 
-const APPLICABILITY_TEXT = {
-  "potential-match": "Potential match - confirm your version",
-  "platform-not-indicated": "Potential match - platform not stated in the record",
-  "vendor-only": "Vendor match only - this product isn't confirmed",
-};
+// How sure the match is, from the server's evidence (never from the model).
+// The two version labels quote the version the visitor typed, so a typo is
+// visible right where it matters.
+export function applicabilityText(a) {
+  const v = a.version ? ` (${a.version})` : "";
+  switch (a.applicability) {
+    case "affects-stated-version":
+      return `Listed by NVD as affecting your version${v}`;
+    case "version-not-listed":
+      return `NVD doesn't list your version${v} as affected - confirm with the vendor`;
+    case "potential-match":
+      return "Potential match - confirm your version";
+    case "platform-not-indicated":
+      return "Potential match - platform not stated in the record";
+    case "vendor-only":
+      return "Vendor match only - this product isn't confirmed";
+    default:
+      return a.applicability;
+  }
+}
 
 export function consentHtml(payload) {
   const remembered = hasAiConsent();
-  const productList = payload.products.length ? payload.products.map((p) => `${e(p.name)} (${e(p.category)})`).join(", ") : "none named";
+  const productList = payload.products.length ? payload.products.map((p) => `${e(p.name)}${p.version ? `, version ${e(p.version)}` : ""} (${e(p.category)})`).join(", ") : "none named";
   return `
     <div class="ai-consent">
       <h4>Before you send anything</h4>
       <ul class="ai-consent-list">
-        <li><b>What's sent:</b> your industry, regions and frameworks; the reading and findings above; each answer (question, option chosen, status); and the products you named: ${productList}. <b>Not sent:</b> company name, "requested by", or anything else you typed on this page.</li>
+        <li><b>What's sent:</b> your industry, regions and frameworks; the reading and findings above; each answer (question, option chosen, status); and the products you named, with a version where you gave one: ${productList}. <b>Not sent:</b> company name, "requested by", or anything else you typed on this page.</li>
         <li><b>Who processes it:</b> SimplifiedCS's server checks the named products against two public sources - CISA's Known Exploited Vulnerabilities catalog and NIST's National Vulnerability Database - then sends the request and those public records to Anthropic's Claude API to write the insights. <a href="https://www.anthropic.com/legal/commercial-terms" target="_blank" rel="noopener noreferrer">Anthropic's commercial terms</a> apply to that processing.</li>
         <li><b>What SimplifiedCS keeps:</b> nothing from the request content. Server logs record only technical details (timing, sizes, error types). For rate limiting, a salted one-way hash of your IP address is kept in a per-day counter; counters are deleted by a daily cleanup job once they are more than a day old. The result is stored only in this browser, with this report. <a href="/privacy" class="inline-link">Privacy details</a></li>
         <li><b>Limits:</b> AI output can be wrong. Vulnerability items only ever come from the public records shown with them; confirm against your vendor before acting.</li>
@@ -85,7 +100,7 @@ function advisoriesHtml(result) {
       .map(
         (a) => `
       <div class="vendor-note-item ai-advisory">
-        <b>${e(a.productName)}</b> <span class="gap-tier gap-tier-2">${e(APPLICABILITY_TEXT[a.applicability] || a.applicability)}</span>
+        <b>${e(a.productName)}</b> <span class="gap-tier ${a.applicability === "affects-stated-version" ? "gap-tier-3" : "gap-tier-2"}">${e(applicabilityText(a))}</span>
         <p>${e(a.summary)}</p>
         <p><b>How to check:</b> ${e(a.verification)}</p>
         <ul class="ai-evidence">

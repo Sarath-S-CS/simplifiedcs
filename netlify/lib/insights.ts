@@ -12,8 +12,11 @@ import { str, num, bool, arr, obj, req, opt, validate } from "./schema.ts";
 import { PLATFORMS, type EvidenceBundle, type EvidenceRecord, type Applicability } from "./evidence.ts";
 import type { ResolvedProduct } from "./product-catalog.ts";
 
-export const PROMPT_VERSION = "insights-2026-09-v2";
-export const CONSENT_VERSION = "ai-processing-2026-09";
+// The prompt changed to handle stated product versions (AI-2).
+export const PROMPT_VERSION = "insights-2026-09-v3";
+// Bumped when what's sent changes (product versions added): an agreement to
+// the earlier notice doesn't cover the new fields, so visitors are asked again.
+export const CONSENT_VERSION = "ai-processing-2026-09b";
 
 export const INSIGHTS_REQUEST = obj({
   consent: req(obj({ version: req(str({ max: 40, oneOf: [CONSENT_VERSION] })), accepted: req(bool) })),
@@ -28,7 +31,7 @@ export const INSIGHTS_REQUEST = obj({
       verdict: req(str({ max: 80 })),
     }),
   ),
-  products: req(arr(obj({ category: req(str({ max: 60, min: 1 })), name: req(str({ max: 150, min: 1 })) }), { max: 20 })),
+  products: req(arr(obj({ category: req(str({ max: 60, min: 1 })), name: req(str({ max: 150, min: 1 })), version: opt(str({ max: 40, min: 1 })) }), { max: 20 })),
   platforms: opt(arr(str({ max: 10, oneOf: PLATFORMS }), { max: PLATFORMS.length })),
   findings: req(
     obj({
@@ -45,7 +48,7 @@ export type InsightsRequest = {
   consent: { version: string; accepted: boolean };
   snapshotId?: string;
   profile: { industry: string; regions: string[]; frameworks: string[]; mode: string; coverage?: number; verdict: string };
-  products: { category: string; name: string }[];
+  products: { category: string; name: string; version?: string }[];
   platforms?: string[];
   findings: { critical: { id: string; text: string }[]; flags: { id: string; text: string }[]; priorities: { id: string; area: string; gap: string }[] };
   profileAnswers: { q: string; a: string }[];
@@ -113,11 +116,11 @@ export const INSIGHTS_TOOL = {
 
 export function buildInsightsPrompt(body: InsightsRequest, products: ResolvedProduct[], bundle: EvidenceBundle): string {
   const productLines = products.length
-    ? products.map((p) => `- key=${p.key} | ${promptText(p.category, 60)}: ${promptText(p.name, 150)} (${p.kind === "managed-service" ? "managed service - not checked" : p.origin === "catalog" ? "recognised product" : "free-text entry - identity uncertain"})`).join("\n")
+    ? products.map((p) => `- key=${p.key} | ${promptText(p.category, 60)}: ${promptText(p.name, 150)}${p.version ? ` | stated version: ${promptText(p.version, 40)}` : ""} (${p.kind === "managed-service" ? "managed service - not checked" : p.origin === "catalog" ? "recognised product" : "free-text entry - identity uncertain"})`).join("\n")
     : "(none named)";
   const evidenceLines = bundle.evidence.length
     ? bundle.evidence
-        .map((e) => `[${e.id}] product=${e.productKey} | ${e.source} | ${e.cveId} | ${promptText(e.title, 200)} | published ${e.publishedAt.slice(0, 10)} | match=${e.match === "product" ? "named product" : "same vendor, product NOT confirmed"} | platforms=${e.platforms.join("/") || "not stated"} | versions=${promptText(e.versionInfo || "not stated", 120)}${e.ransomware ? " | linked to ransomware campaigns" : ""}\n    ${promptText(e.summary, 500)}`)
+        .map((e) => `[${e.id}] product=${e.productKey} | ${e.source} | ${e.cveId} | ${promptText(e.title, 200)} | published ${e.publishedAt.slice(0, 10)} | match=${e.match === "product" ? "named product" : "same vendor, product NOT confirmed"} | platforms=${e.platforms.join("/") || "not stated"} | versions=${promptText(e.versionInfo || "not stated", 120)}${e.applicability === "affects-stated-version" ? " | version check=listed by NVD as affecting the stated version" : e.applicability === "version-not-listed" ? " | version check=NVD does not list the stated version as affected" : ""}${e.ransomware ? " | linked to ransomware campaigns" : ""}\n    ${promptText(e.summary, 500)}`)
         .join("\n")
     : "(no advisories were retrieved)";
   const statusLines = bundle.statuses.map((s) => `- ${s.productKey}: KEV=${s.kev}, NVD=${s.nvd}`).join("\n") || "(none)";
@@ -132,7 +135,7 @@ export function buildInsightsPrompt(body: InsightsRequest, products: ResolvedPro
   return `You are adding an optional, clearly-labelled AI section to a small/medium business's cybersecurity self-assessment report. The deterministic report (scores, critical gaps, findings) is already complete and is NOT yours to change.
 
 Rules:
-1. ADVISORIES: only from the <evidence> list. Cite evidence ids exactly as given, all for one product key. Describe what the advisory says; never state or imply that this organisation is vulnerable or affected - installed versions and configuration are unknown. If match is "same vendor, product NOT confirmed", say the product link is unconfirmed. If an advisory is limited to platforms this organisation hasn't indicated (endpoint platforms: ${platformLine}), say so rather than generalising across platforms or products. Always give one concrete verification step. Do not add CVE ids, URLs or facts that are not in the evidence. An empty list is correct when nothing is worth raising.
+1. ADVISORIES: only from the <evidence> list. Cite evidence ids exactly as given, all for one product key. Describe what the advisory says; never state that this organisation is vulnerable or compromised - configuration and mitigations are unknown. Where version check says "listed by NVD as affecting the stated version", you may say NVD lists that version as affected and that the reader should confirm the fixed version with the vendor. Where it says the stated version is not listed, say NVD doesn't list it and the reader should still confirm with the vendor. Without a version check, installed versions are unknown: frame the item as something to check. If match is "same vendor, product NOT confirmed", say the product link is unconfirmed. If an advisory is limited to platforms this organisation hasn't indicated (endpoint platforms: ${platformLine}), say so rather than generalising across platforms or products. Always give one concrete verification step. Do not add CVE ids, URLs or facts that are not in the evidence. An empty list is correct when nothing is worth raising.
 2. PATTERNS: look across <answers> for a genuinely new combination the <existing_findings> don't cover. Quote the questions you relied on in basedOn. Set repeatsExistingFinding=true if it overlaps an existing finding. Never infer an answer that isn't there; "unknown" answers are unknown, not failures. Empty list if nothing new.
 3. NARRATIVE: always 3-5 sentences, consistent with the answers (a control answered "met" is in place), and it must not contradict the deterministic verdict.
 
@@ -194,12 +197,14 @@ export type ValidatedAdvisory = {
   summary: string;
   verification: string;
   applicability: Applicability;
+  version: string | null; // the version the organisation stated, if any
   evidence: Pick<EvidenceRecord, "id" | "source" | "cveId" | "title" | "url" | "publishedAt" | "match" | "platforms" | "versionInfo" | "ransomware">[];
 };
 export type ValidatedPattern = { finding: string; why: string; basedOn: string[] };
 export type ValidatedInsights = { advisories: ValidatedAdvisory[]; patterns: ValidatedPattern[]; narrative: string; dropped: { advisories: number; patterns: number } };
 
-const APPLICABILITY_RANK: Record<Applicability, number> = { "potential-match": 0, "platform-not-indicated": 1, "vendor-only": 2 };
+// Higher = less certain. The least certain cited record decides the label.
+const APPLICABILITY_RANK: Record<Applicability, number> = { "affects-stated-version": 0, "potential-match": 1, "version-not-listed": 2, "platform-not-indicated": 3, "vendor-only": 4 };
 
 export function validateInsightsOutput(raw: unknown, bundle: EvidenceBundle, products: ResolvedProduct[]): ValidatedInsights {
   if (!raw || typeof raw !== "object") throw new InvalidOutput("output is not an object");
@@ -242,6 +247,7 @@ export function validateInsightsOutput(raw: unknown, bundle: EvidenceBundle, pro
       summary,
       verification,
       applicability,
+      version: product.version ?? null,
       evidence: ev.map(({ id, source, cveId, title, url, publishedAt, match, platforms, versionInfo, ransomware }) => ({ id, source, cveId, title, url, publishedAt, match, platforms, versionInfo, ransomware })),
     });
   }
@@ -259,6 +265,8 @@ export function validateInsightsOutput(raw: unknown, bundle: EvidenceBundle, pro
     }
     patterns.push({ finding, why, basedOn });
   }
+  // Most certain first - e.g. items NVD lists for the stated version - keeping the model's order within a label.
+  advisories.sort((a, b) => APPLICABILITY_RANK[a.applicability] - APPLICABILITY_RANK[b.applicability]);
   return { advisories, patterns, narrative, dropped: { advisories: droppedAdvisories, patterns: droppedPatterns } };
 }
 

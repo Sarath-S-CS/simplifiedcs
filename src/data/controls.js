@@ -315,6 +315,7 @@ export const PROFILE_DESIGNATIONS = {
   networkArch: "control",
   externalDevices: "context",
   edgeDeviceVendor: "vendor",
+  edgeDeviceVersion: "vendor",
   externalWebsite: "context",
   webDb: "context",
   hostingProvider: "vendor",

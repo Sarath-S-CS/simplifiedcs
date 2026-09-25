@@ -79,5 +79,6 @@ checks had run against a local server applying the production security headers.
 **Not verified yet:** screen-reader behaviour (checklist: `docs/screen-reader-check.md`); the AI
 panel in the live page with a real request (the one paid test called the endpoint directly);
 restricting the Anthropic API key to server functions, which the current Netlify plan doesn't
-allow (the key isn't used by any build step and never reaches the browser); and product versions,
-which aren't asked for, so vulnerability matches stay "potential".
+allow (the key isn't used by any build step and never reaches the browser); and version matching,
+which compares a stated version with NVD only for FortiOS, PAN-OS, SonicOS, Junos, WatchGuard Fireware, nginx, Apache HTTP Server and Tomcat (other products' matches stay
+"potential") and hasn't yet been exercised on the live site.

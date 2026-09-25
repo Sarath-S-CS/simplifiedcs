@@ -7,7 +7,7 @@
 // only cite these ids; the response validator (insights.ts) drops anything
 // else. A source outage or an unchecked product is reported as such - never
 // as a clean result.
-import type { ResolvedProduct } from "./product-catalog.ts";
+import { versionLookupFor, type ResolvedProduct } from "./product-catalog.ts";
 import type { Cached } from "./public-cache.ts";
 
 export type KevEntry = {
@@ -48,9 +48,15 @@ export type EvidenceRecord = {
   versionInfo: string | null;
   ransomware: boolean;
   applicability: Applicability;
+  severity: string | null; // NVD severity, used only to order advisories
 };
 
-export type Applicability = "potential-match" | "vendor-only" | "platform-not-indicated";
+// affects-stated-version: NVD's exact-version lookup lists the version the
+//   organisation stated as affected.
+// version-not-listed: a known-exploited item for the product, but NVD's
+//   lookup doesn't list the stated version (NVD can lag, and a mistyped
+//   version changes the answer - so it stays visible, never "safe").
+export type Applicability = "affects-stated-version" | "potential-match" | "version-not-listed" | "vendor-only" | "platform-not-indicated";
 
 export type SourceStatus =
   | "checked-no-match"
@@ -71,6 +77,10 @@ export type ProductStatus = {
 };
 
 export type EvidenceBundle = { evidence: EvidenceRecord[]; statuses: ProductStatus[]; limitations: string[] };
+
+// NVD's answer to one exact-version lookup: every CVE it lists as affecting
+// that version (total may exceed the records returned in one page).
+export type NvdVersionResult = { total: number; vulns: NvdVuln[] };
 
 const CVE_RE = /^CVE-\d{4}-\d{4,}$/;
 const MAX_PER_PRODUCT_PER_SOURCE = 3;
@@ -130,7 +140,8 @@ function kevMatchFor(product: ResolvedProduct, e: KevEntry): Match | null {
   const vp = norm(e.vendorProject);
   if (!vendors.some((v) => v && (vp === v || vp.startsWith(v + " ") || v.startsWith(vp + " ")))) return null;
   if (product.kind === "vendor-family") return "vendor-only";
-  return product.kevProduct && product.kevProduct.test(e.product) ? "product" : "vendor-only";
+  if (product.kevProduct && product.kevProduct.test(e.product)) return "product";
+  return product.kevProductOnly ? null : "vendor-only";
 }
 
 function nvdMatchFor(product: ResolvedProduct, v: NvdVuln): Match | null {
@@ -143,11 +154,18 @@ function nvdMatchFor(product: ResolvedProduct, v: NvdVuln): Match | null {
 
 type Draft = Omit<EvidenceRecord, "id">;
 
+const SEVERITY_ORDER: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+const severityRank = (s: string | null) => (s && s in SEVERITY_ORDER ? SEVERITY_ORDER[s] : 4);
+// Most certain first, for ordering evidence within a source.
+const APPLICABILITY_ORDER: Record<Applicability, number> = { "affects-stated-version": 0, "potential-match": 1, "version-not-listed": 2, "platform-not-indicated": 3, "vendor-only": 4 };
+const VERSION_LABELS: Applicability[] = ["affects-stated-version", "version-not-listed"];
+
 export type GatherInput = {
   products: ResolvedProduct[];
   orgPlatforms: Platform[] | null;
   loadKev: () => Promise<Cached<KevEntry[]>>;
   searchNvd: (term: string) => Promise<Cached<NvdVuln[]>>;
+  lookupNvdVersion: (cpeName: string) => Promise<Cached<NvdVersionResult>>;
   maxNvdQueries: number;
   now?: number;
 };
@@ -169,6 +187,15 @@ export async function gatherEvidence(input: GatherInput): Promise<EvidenceBundle
       nvd: p.kind === "managed-service" ? "not-applicable" : "checked-no-match",
       notes: p.kind === "managed-service" ? ["Managed/cloud service: the provider remediates its own vulnerabilities, so public catalogs rarely list customer-actionable items. Not checked."] : [],
     });
+    if (p.version && p.kind !== "managed-service" && !versionLookupFor(p)) {
+      statuses
+        .get(p.key)!
+        .notes.push(
+          p.versionCpe
+            ? `Version ${p.version} was not compared: it isn't in the form NVD uses for this product.`
+            : `Version ${p.version} was not compared: NVD's exact-version lookup isn't available for this product, so advisories below are prompts to check your version.`,
+        );
+    }
   }
 
   // CISA KEV - one catalog fetch (cached), matched per product.
@@ -200,6 +227,7 @@ export async function gatherEvidence(input: GatherInput): Promise<EvidenceBundle
             versionInfo: null,
             ransomware: e.knownRansomwareCampaignUse === "Known",
             applicability: applicabilityOf(m, [], input.orgPlatforms),
+            severity: null,
           });
         }
         if (hits.length > MAX_PER_PRODUCT_PER_SOURCE) st.notes.push(`CISA KEV: ${hits.length - MAX_PER_PRODUCT_PER_SOURCE} older catalog entries for this vendor not shown.`);
@@ -210,41 +238,104 @@ export async function gatherEvidence(input: GatherInput): Promise<EvidenceBundle
     }
   }
 
-  // NVD - bounded number of keyword queries. Products are prioritised so
-  // input order can't starve specific products: catalog software first,
-  // then free-text software, then vendor families; duplicate terms share a
-  // query. Anything beyond the budget is marked, not silently skipped.
-  const rank = (p: ResolvedProduct) => (p.kind === "software" ? (p.origin === "catalog" ? 0 : 1) : 2);
-  const queue = checkable.filter((p) => p.nvdTerm).sort((a, b) => rank(a) - rank(b));
-  const terms: string[] = [];
+  // NVD - a bounded number of queries per report. A product with a stated,
+  // supported version gets NVD's exact-version lookup instead of a keyword
+  // search (more precise, same cost). Products are prioritised so input
+  // order can't starve specific ones: versioned products first, then catalog
+  // software, free-text software, vendor families; duplicate queries are
+  // shared. Anything beyond the budget is marked, not silently skipped.
+  type Query = { kind: "version"; key: string; version: string } | { kind: "keyword"; key: string };
+  const queryFor = (p: ResolvedProduct): Query | null => {
+    const target = versionLookupFor(p);
+    if (target) return { kind: "version", key: target.cpeName, version: target.version };
+    return p.nvdTerm ? { kind: "keyword", key: norm(p.nvdTerm) } : null;
+  };
+  const rank = (p: ResolvedProduct) => (versionLookupFor(p) ? -1 : p.kind === "software" ? (p.origin === "catalog" ? 0 : 1) : 2);
+  const queue = checkable.filter((p) => queryFor(p)).sort((a, b) => rank(a) - rank(b));
+  const planned = new Map<string, Query>();
   for (const p of queue) {
-    const t = norm(p.nvdTerm!);
-    if (!terms.includes(t) && terms.length < input.maxNvdQueries) terms.push(t);
+    const q = queryFor(p)!;
+    if (!planned.has(q.key) && planned.size < input.maxNvdQueries) planned.set(q.key, q);
   }
-  const results = new Map<string, Cached<NvdVuln[]> | null>();
+  const keywordResults = new Map<string, Cached<NvdVuln[]> | null>();
+  const versionResults = new Map<string, Cached<NvdVersionResult> | null>();
   await Promise.all(
-    terms.map(async (t) => {
+    [...planned.values()].map(async (q) => {
       try {
-        results.set(t, await input.searchNvd(t));
+        if (q.kind === "version") versionResults.set(q.key, await input.lookupNvdVersion(q.key));
+        else keywordResults.set(q.key, await input.searchNvd(q.key));
       } catch {
-        results.set(t, null);
+        (q.kind === "version" ? versionResults : keywordResults).set(q.key, null);
       }
     }),
   );
   let unchecked = 0;
+  const compared: string[] = [];
   for (const p of checkable) {
     const st = statuses.get(p.key)!;
-    if (!p.nvdTerm) {
+    const q = queryFor(p);
+    if (!q) {
       st.nvd = "not-applicable";
       continue;
     }
-    const t = norm(p.nvdTerm);
-    if (!results.has(t)) {
+    if (!planned.has(q.key)) {
       st.nvd = "not-checked-budget";
       unchecked++;
       continue;
     }
-    const r = results.get(t);
+
+    if (q.kind === "version") {
+      const r = versionResults.get(q.key);
+      if (!r) {
+        st.nvd = "source-unavailable";
+        st.notes.push(`NVD: the exact-version lookup for ${q.version} was unavailable, so known-exploited items below aren't matched to your version.`);
+        continue;
+      }
+      if (r.stale) st.notes.push(`NVD: live lookup unavailable; used a cached result from ${r.fetchedAt}.`);
+      compared.push(`${p.name} (${q.version})`);
+      const { total, vulns } = r.data;
+      const listed = new Set(vulns.map((v) => v.id));
+      if (vulns.length) {
+        st.nvd = "potential-match";
+        st.notes.push(`NVD lists ${total} vulnerabilit${total === 1 ? "y" : "ies"} affecting version ${q.version}${total > vulns.length ? ` (${vulns.length} were checked)` : ""}. The most severe are shown.`);
+      } else {
+        st.nvd = "checked-no-match";
+        st.notes.push(`NVD lists no vulnerabilities affecting version ${q.version}. That answer depends on the version being written exactly as the vendor writes it - check it on the device.`);
+      }
+      // Known-exploited items for this product: does NVD list the stated version?
+      for (const d of drafts) {
+        if (d.productKey !== p.key || d.source !== "CISA KEV") continue;
+        if (listed.has(d.cveId)) Object.assign(d, { match: "product", applicability: "affects-stated-version", versionInfo: `NVD lists version ${q.version} as affected` });
+        else if (d.match === "product") Object.assign(d, { applicability: "version-not-listed", versionInfo: `NVD doesn't list version ${q.version} as affected` });
+      }
+      const ordered = vulns
+        .filter((v) => CVE_RE.test(v.id))
+        .sort((a, b) => severityRank(a.severity) - severityRank(b.severity) || b.published.localeCompare(a.published));
+      for (const v of ordered.slice(0, MAX_PER_PRODUCT_PER_SOURCE)) {
+        const platforms = nvdPlatforms(v);
+        const platformMismatch = applicabilityOf("product", platforms, input.orgPlatforms) === "platform-not-indicated";
+        drafts.push({
+          source: "NVD",
+          cveId: v.id,
+          title: `${v.id}${v.severity ? ` (${v.severity})` : ""}`,
+          summary: v.description,
+          url: nvdUrl(v.id),
+          publishedAt: v.published,
+          retrievedAt,
+          productKey: p.key,
+          productName: p.name,
+          match: "product",
+          platforms,
+          versionInfo: `NVD lists version ${q.version} as affected`,
+          ransomware: false,
+          applicability: platformMismatch ? "platform-not-indicated" : "affects-stated-version",
+          severity: v.severity,
+        });
+      }
+      continue;
+    }
+
+    const r = keywordResults.get(q.key);
     if (!r) {
       st.nvd = "source-unavailable";
       continue;
@@ -273,6 +364,7 @@ export async function gatherEvidence(input: GatherInput): Promise<EvidenceBundle
         versionInfo: nvdVersionInfo(v),
         ransomware: false,
         applicability: applicabilityOf(m, platforms, input.orgPlatforms),
+        severity: v.severity,
       });
     }
   }
@@ -280,19 +372,38 @@ export async function gatherEvidence(input: GatherInput): Promise<EvidenceBundle
 
   // One record per (product, CVE); KEV wins over NVD for the same CVE but
   // inherits NVD's platform/version detail. Newest first within each source.
+  // A version-derived label (from the exact-version lookup) is kept over one
+  // recomputed from match and platform alone, unless the platform rules it out.
+  const combine = (kev: Draft, nvd: Draft): Draft => {
+    const platforms = kev.platforms.length ? kev.platforms : nvd.platforms;
+    const base = applicabilityOf(kev.match, platforms, input.orgPlatforms);
+    const label = VERSION_LABELS.includes(kev.applicability) && base !== "platform-not-indicated" ? kev.applicability : base;
+    return { ...kev, platforms, versionInfo: kev.versionInfo ?? nvd.versionInfo, applicability: label, severity: kev.severity ?? nvd.severity };
+  };
   const merged = new Map<string, Draft>();
   for (const d of drafts) {
     const k = `${d.productKey}|${d.cveId}`;
     const prev = merged.get(k);
     if (!prev) merged.set(k, d);
-    else if (prev.source === "NVD" && d.source === "CISA KEV") merged.set(k, { ...d, platforms: prev.platforms, versionInfo: prev.versionInfo, applicability: applicabilityOf(d.match, prev.platforms, input.orgPlatforms) });
-    else if (prev.source === "CISA KEV" && d.source === "NVD" && !prev.platforms.length) merged.set(k, { ...prev, platforms: d.platforms, versionInfo: d.versionInfo, applicability: applicabilityOf(prev.match, d.platforms, input.orgPlatforms) });
+    else if (prev.source === "NVD" && d.source === "CISA KEV") merged.set(k, combine(d, prev));
+    else if (prev.source === "CISA KEV" && d.source === "NVD") merged.set(k, combine(prev, d));
   }
-  const ordered = [...merged.values()].sort((a, b) => (a.source === b.source ? b.publishedAt.localeCompare(a.publishedAt) : a.source === "CISA KEV" ? -1 : 1));
+  // Most certain first (an item NVD lists for the stated version outranks a
+  // same-vendor guess, whatever its source); then KEV before NVD; then, for
+  // version lookups, the most severe; then newest. The report shows at most
+  // six advisories, so this order decides what's in front of the model.
+  const ordered = [...merged.values()].sort(
+    (a, b) =>
+      APPLICABILITY_ORDER[a.applicability] - APPLICABILITY_ORDER[b.applicability] ||
+      (a.source === b.source ? 0 : a.source === "CISA KEV" ? -1 : 1) ||
+      (a.applicability === "affects-stated-version" && b.applicability === "affects-stated-version" ? severityRank(a.severity) - severityRank(b.severity) : 0) ||
+      b.publishedAt.localeCompare(a.publishedAt),
+  );
   if (ordered.length > MAX_EVIDENCE) limitations.push(`${ordered.length - MAX_EVIDENCE} lower-priority advisories were omitted to keep the report focused.`);
   const evidence = ordered.slice(0, MAX_EVIDENCE).map((d, i) => ({ id: `E${i + 1}`, ...d }));
   if (!input.orgPlatforms || !input.orgPlatforms.length) limitations.push("Endpoint operating systems weren't provided, so platform-specific advisories can't be ruled in or out.");
-  limitations.push("Installed versions aren't collected, so every advisory below is a prompt to check your version - not a finding that you are vulnerable.");
+  if (compared.length) limitations.push(`Stated versions were compared with NVD's exact-version lookup for: ${compared.join(", ")}. Other advisories are prompts to check your version - not findings that you are vulnerable.`);
+  else limitations.push("Installed versions aren't collected, so every advisory below is a prompt to check your version - not a finding that you are vulnerable.");
   return { evidence, statuses: [...statuses.values()], limitations };
 }
 
@@ -311,6 +422,12 @@ export function parseKevCatalog(json: any): KevEntry[] {
       shortDescription: String(v.shortDescription || "").slice(0, 600),
       knownRansomwareCampaignUse: v.knownRansomwareCampaignUse,
     }));
+}
+
+export function parseNvdVersionResponse(json: any): NvdVersionResult {
+  const vulns = parseNvdResponse(json);
+  const total = Number.isInteger(json?.totalResults) && json.totalResults >= vulns.length ? json.totalResults : vulns.length;
+  return { total, vulns };
 }
 
 export function parseNvdResponse(json: any): NvdVuln[] {
