@@ -159,8 +159,11 @@ Three paid requests in total, one at a time, no automatic retries.
 1. **Screen-reader testing was not performed.** Keyboard operation was tested with real key input.
 2. **Netlify environment-variable scopes:** restricting `ANTHROPIC_API_KEY` to Functions needs a plan
    upgrade - accepted limitation (no Netlify build command uses it; it never reaches the browser).
-   Whether `RATE_LIMIT_SALT` is set couldn't be read with the available access; without it the code
-   uses a fixed fallback salt.
+   `RATE_LIMIT_SALT` is set as a secret in the production, deploy-preview and branch-deploy contexts.
+   On 25 Sep 2026 it was replaced with a freshly generated random 256-bit value (set straight into
+   Netlify from the CLI, never displayed) and the site redeployed. The Netlify API returns secret
+   values masked (16 `*` plus the last 4 characters), so the previous value's strength couldn't be
+   judged; replacing it only restarted that day's rate-limit counters.
 3. **The AI panel in the live UI** wasn't exercised with a real request (the smoke test called the
    endpoint directly, to keep it to one paid request); the panel's rendering is covered by local
    tests with the same response shape.
