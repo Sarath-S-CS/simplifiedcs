@@ -72,18 +72,24 @@ export function promptText(s: unknown, max: number): string {
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, " ");
 }
 
+// Strict tool use: without it, a live reply (25 Sep 2026) arrived with the
+// arrays in an unusable form and was discarded. Strict mode doesn't support
+// maxItems, so the limits are stated in the descriptions and enforced by
+// validateInsightsOutput (6 advisories, 4 patterns, 4 quotes each).
 export const INSIGHTS_TOOL = {
   name: "provide_ai_insights",
   description: "Return AI insights for this assessment report, following the instructions exactly.",
+  strict: true,
   input_schema: {
     type: "object",
+    additionalProperties: false,
     properties: {
       advisories: {
         type: "array",
-        maxItems: 6,
-        description: "Vulnerability items. Each MUST cite one or more evidence ids from <evidence> for a single product. Empty array when nothing in the evidence is worth raising.",
+        description: "At most 6 vulnerability items. Each MUST cite one or more evidence ids from <evidence> for a single product. Empty array when nothing in the evidence is worth raising.",
         items: {
           type: "object",
+          additionalProperties: false,
           properties: {
             productKey: { type: "string", description: "The product key from <products> the cited evidence belongs to." },
             evidenceIds: { type: "array", items: { type: "string" }, description: "Evidence ids such as E1, E2." },
@@ -95,14 +101,14 @@ export const INSIGHTS_TOOL = {
       },
       patterns: {
         type: "array",
-        maxItems: 4,
-        description: "Patterns in the answers that the deterministic findings do not already cover. Empty array if none.",
+        description: "At most 4 patterns in the answers that the deterministic findings do not already cover. Empty array if none.",
         items: {
           type: "object",
+          additionalProperties: false,
           properties: {
             finding: { type: "string", description: "1 sentence." },
             why: { type: "string", description: "1-2 sentences on why this combination matters." },
-            basedOn: { type: "array", maxItems: 4, items: { type: "string" }, description: "Short quotes of the answers (question text) this is based on." },
+            basedOn: { type: "array", items: { type: "string" }, description: "At most 4 short quotes of the answers (question text) this is based on." },
             repeatsExistingFinding: { type: "boolean", description: "true if this restates a finding already listed in <existing_findings>." },
           },
           required: ["finding", "why", "basedOn", "repeatsExistingFinding"],
@@ -206,10 +212,28 @@ export type ValidatedInsights = { advisories: ValidatedAdvisory[]; patterns: Val
 // Higher = less certain. The least certain cited record decides the label.
 const APPLICABILITY_RANK: Record<Applicability, number> = { "affects-stated-version": 0, "potential-match": 1, "version-not-listed": 2, "platform-not-indicated": 3, "vendor-only": 4 };
 
+const typeName = (v: unknown) => (v === null ? "null" : Array.isArray(v) ? "array" : typeof v);
+function asArray(v: unknown): unknown[] | null {
+  if (Array.isArray(v)) return v;
+  if (typeof v !== "string") return null;
+  try {
+    const parsed = JSON.parse(v);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export function validateInsightsOutput(raw: unknown, bundle: EvidenceBundle, products: ResolvedProduct[]): ValidatedInsights {
   if (!raw || typeof raw !== "object") throw new InvalidOutput("output is not an object");
-  const o = raw as Record<string, unknown>;
-  if (!Array.isArray(o.advisories) || !Array.isArray(o.patterns)) throw new InvalidOutput("output is missing advisories/patterns arrays");
+  const o = { ...(raw as Record<string, unknown>) };
+  // Defence in depth behind strict tool use: a list sent as JSON text is
+  // read as the list (its items are validated like any other). The error
+  // names each field's type only - never its content - for the logs.
+  for (const field of ["advisories", "patterns"]) o[field] = asArray(o[field]) ?? o[field];
+  if (!Array.isArray(o.advisories) || !Array.isArray(o.patterns)) {
+    throw new InvalidOutput(`output is missing advisories/patterns arrays (advisories: ${typeName(o.advisories)}, patterns: ${typeName(o.patterns)})`);
+  }
   const narrative = cleanText(o.narrative, 1500);
   if (!narrative) throw new InvalidOutput("output narrative is missing or invalid");
 

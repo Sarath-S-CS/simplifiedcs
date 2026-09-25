@@ -480,6 +480,44 @@ test("logs carry metadata only - no answers, product names or free text", async 
   assert.ok(!all.includes("Acme Widget Pro"));
 });
 
+test("the model is called with strict tool use", async () => {
+  const { d, calls } = deps({ model: toolReply({ advisories: [], patterns: [], narrative: "N." }) });
+  await handleInsights(post(validBody()), d);
+  assert.equal(calls.modelBodies[0].tools[0].strict, true);
+});
+
+test("a list sent as JSON text is still read, and its items are validated as usual", async () => {
+  const model = (reqBody) => {
+    const p = reqBody.messages[0].content;
+    const [, id, key] = p.match(/\[(E\d+)\] product=(\S+)/);
+    return toolReply({ advisories: JSON.stringify([{ productKey: key, evidenceIds: [id], summary: "What it says.", verification: "Check the version." }, { productKey: key, evidenceIds: ["E99"], summary: "Invented.", verification: "n/a" }]), patterns: "[]", narrative: "N." });
+  };
+  const { d } = deps({ model });
+  const res = await handleInsights(post(validBody()), d);
+  assert.equal(res.status, 200);
+  const out = await res.json();
+  assert.equal(out.advisories.length, 1);
+  assert.equal(out.dropped.advisories, 1, "an invented citation inside the text is still dropped");
+});
+
+test("an unusable shape is refused, and the log says which field had which type - never its content", async () => {
+  const lines = [];
+  const orig = console.log;
+  console.log = (...a) => lines.push(a.join(" "));
+  let res;
+  try {
+    const { d } = deps({ model: toolReply({ advisories: "SECRET-LOOKING TEXT not json", narrative: "N." }) });
+    res = await handleInsights(post(validBody()), d);
+  } finally {
+    console.log = orig;
+  }
+  assert.equal(res.status, 502);
+  const log = lines.find((l) => l.includes("invalid_output"));
+  assert.match(log, /advisories: string/);
+  assert.match(log, /patterns: undefined/);
+  assert.ok(!lines.join("\n").includes("SECRET-LOOKING"));
+});
+
 // ---------------- other-text interpretation ----------------
 
 const interpretReq = (body) => new Request("https://site.test/.netlify/functions/other-text-interpret", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
