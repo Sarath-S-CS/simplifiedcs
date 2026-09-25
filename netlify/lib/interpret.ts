@@ -39,16 +39,20 @@ export function validateInterpretRequest(value: unknown): string | null {
 
 export const RELEVANCE = ["security-relevant", "not-security-relevant", "unclear"] as const;
 
+// Strict tool use, as for insights (see INSIGHTS_TOOL).
 export const INTERPRET_TOOL = {
   name: "provide_interpretations",
   description: "Return exactly one interpretation per input item, in the same order.",
+  strict: true,
   input_schema: {
     type: "object",
+    additionalProperties: false,
     properties: {
       interpretations: {
         type: "array",
         items: {
           type: "object",
+          additionalProperties: false,
           properties: {
             index: { type: "integer", description: "the item's index, matching the input" },
             relevance: { type: "string", enum: [...RELEVANCE] },

@@ -10,7 +10,9 @@ import { fetchWithTimeout, TimeoutError } from "./http.ts";
 
 export const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
-export type ToolSpec = { name: string; description: string; input_schema: Record<string, unknown> };
+// strict: grammar-constrained sampling, so the tool input always matches
+// input_schema (see test/strict-tools.test.js for the schema subset allowed).
+export type ToolSpec = { name: string; description: string; strict?: boolean; input_schema: Record<string, unknown> };
 
 export type ClaudeCall = {
   apiKey: string;
