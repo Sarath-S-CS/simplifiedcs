@@ -166,6 +166,7 @@ Three paid requests in total, one at a time, no automatic retries.
 ## Unresolved and not verified
 
 1. **Screen-reader testing was not performed.** Keyboard operation was tested with real key input.
+   The owner has the NVDA checklist (`docs/screen-reader-check.md`, also shared as an interactive page).
 2. **Netlify environment-variable scopes:** restricting `ANTHROPIC_API_KEY` to Functions needs a plan
    upgrade - accepted limitation (no Netlify build command uses it; it never reaches the browser).
    `RATE_LIMIT_SALT` is set as a secret in the production, deploy-preview and branch-deploy contexts.
@@ -189,14 +190,14 @@ Three paid requests in total, one at a time, no automatic retries.
    can be intermittently incomplete, which now shows as "source unavailable".
 7. ~~**`src/main.js`** still holds all content-page renderers.~~ Resolved: one module per page in
    `src/pages/` (MAINT-1, #119).
-8. **Feedback form delivery** hasn't been tested with a real submission, and email notifications
-   for new submissions are set up by the owner in Netlify (Forms → Form notifications).
+8. ~~**Feedback form delivery** untested.~~ Resolved 2 Oct 2026: the owner set up email notifications
+   in Netlify and sent a test message; Netlify Forms shows it as a received submission.
 9. **Netlify's real-user-monitoring script.** Since 2 Oct 2026, Netlify inserts
    `/.netlify/scripts/rum` into every served page (it isn't in the repository). It runs, but the
    site's Content-Security-Policy blocks it from sending data to
    `ingesteer.services-prod.nsvcs.net`, so the browser console shows errors. Blocking it is
-   consistent with the privacy page (no measurement without consent); the clean fix is to turn the
-   real-user-metrics feature off in Netlify rather than allow it in the CSP.
+   consistent with the privacy page (no measurement without consent). Resolved 2 Oct 2026: the owner
+   turned the feature off in Netlify; served pages no longer include the script.
 
 ## Baseline matrix (as found, before changes)
 
