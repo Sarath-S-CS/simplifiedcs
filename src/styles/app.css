@@ -961,7 +961,7 @@
   .field{ margin-bottom:20px; }
   .field label{ display:block; font-size:13.5px; font-weight:500; margin-bottom:8px; }
   .opt-tag{ font-family:var(--mono); font-size:9.5px; color:var(--text-muted); font-weight:400; text-transform:uppercase; letter-spacing:0.05em; }
-  .field select, .field input[type=text]{
+  .field select, .field input[type=text], .field input[type=email], .field textarea{
     width:100%; background:var(--surface-raised); border:1px solid var(--line); color:var(--text);
     font-family:var(--sans); font-size:14px; padding:11px 12px;
   }
@@ -972,8 +972,16 @@
      on top for exactly those cases; harmless where color-scheme already
      has it covered, since the two agree. */
   .field select option{ background-color:var(--bg); color:var(--text); }
-  .field select:focus, .field input[type=text]:focus{ outline:none; border-color:var(--accent-secure); }
+  .field select:focus, .field input[type=text]:focus, .field input[type=email]:focus, .field textarea:focus{ outline:none; border-color:var(--accent-secure); }
   .field input[type=text]::placeholder{ color:var(--text-muted); }
+  /* Feedback form (src/pages/feedback.js). */
+  .field textarea{ border-radius:var(--radius-input); resize:vertical; min-height:140px; line-height:1.5; }
+  .field input[type=email]{ border-radius:var(--radius-input); }
+  .field .scope-hint{ margin:0 0 8px; }
+  .feedback-count{ text-align:right; margin:6px 0 0 !important; font-variant-numeric:tabular-nums; }
+  .field-error{ margin:6px 0 0; font-size:13px; color:var(--accent-critical-ink); }
+  .field-error:empty{ display:none; }
+  .field [aria-invalid="true"], .feedback-form .option:has(input[aria-invalid="true"]){ border-color:var(--accent-critical); }
 
   /* --- results page: optional report-header metadata (company/requester) --- */
   .report-meta-fields{ display:flex; gap:16px; flex-wrap:wrap; margin:20px 0 28px; }

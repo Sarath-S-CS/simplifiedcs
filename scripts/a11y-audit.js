@@ -28,13 +28,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const PAGES = [
   "/", "/methodology", "/maturity-model", "/metrics", "/core-principles", "/what-is-simplifiedcs",
   "/starter-guide", "/threat-modeling", "/security-tools-repository", "/roadmap", "/runbooks",
-  "/exploits", "/case-studies", "/glossary", "/references", "/about", "/privacy", "/history",
+  "/exploits", "/case-studies", "/glossary", "/references", "/about", "/privacy", "/history", "/feedback",
 ];
 const openFirstAccordion = () => document.querySelector(".acc-head")?.click();
 
 const SCENARIOS = [
   ...PAGES.map((p) => ({ name: p, path: p, steps: [openFirstAccordion] })),
   { name: "/news (live feed)", path: "/news", settle: 3000 },
+  { name: "/feedback (errors shown)", path: "/feedback", steps: [() => document.getElementById("fbSubmit").click()] },
   { name: "/playbooks (accordion open)", path: "/playbooks", steps: [openFirstAccordion] },
   { name: "assessment landing", path: "/assessment" },
   { name: "example report", path: "/assessment/sample", steps: [() => document.querySelector(".action-card .acc-head")?.click()] },

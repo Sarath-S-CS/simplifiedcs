@@ -39,11 +39,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <meta name="site-updated" content="October 1, 2026">
-<link rel="stylesheet" href="/assets/build/app-F2EEY6SZ.css">
-<script type="module" src="/assets/build/main-FWIUMFWY.js"></script>
+<link rel="stylesheet" href="/assets/build/app-5ADDAWQ6.css">
+<script type="module" src="/assets/build/main-F4JK37C5.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#tabContent">Skip to main content</a>
+<!-- Hidden copy of the feedback form so Netlify Forms detects it at deploy time.
+     The visible form is rendered by src/pages/feedback.js and posts here with
+     fetch. Field names must match FEEDBACK_FIELDS in src/engine/feedback.js. -->
+<form name="feedback" data-netlify="true" netlify-honeypot="bot-field" hidden="">
+  <input type="hidden" name="form-name" value="feedback">
+  <input type="text" name="topic">
+  <textarea name="message"></textarea>
+  <input type="email" name="email">
+  <input type="text" name="bot-field">
+</form>
 <div id="bgLayer" aria-hidden="true"><canvas id="bgCanvas" width="800" height="600" style="width: 800px; height: 600px;"></canvas></div>
 <div class="app">
 
@@ -133,12 +143,15 @@
         <p class="scope-hint" id="privacyClearResult" role="status"></p>
 
         <h3 class="section-h">Analytics</h3>
-        <p class="body-text">If you allow it, Google Analytics 4 records page views and a few coarse events (an assessment was started or completed, in which mode; a report was exported, in which format) using cookies. It never receives answers, scores or report content. Google signals and ad personalization are turned off. If you don't allow it, Google's script isn't loaded at all.</p>
+        <p class="body-text">If you allow it, Google Analytics 4 records page views and a few coarse events (an assessment was started or completed, in which mode; a report was exported, in which format; feedback was sent - never its content) using cookies. It never receives answers, scores or report content. Google signals and ad personalization are turned off. If you don't allow it, Google's script isn't loaded at all.</p>
         <p class="body-text">Your analytics choice is currently: <b>not made yet (off)</b>.</p>
         <div class="cta-row">
           <button type="button" class="cta-btn secondary" id="privacyAnalyticsAllow">Allow analytics</button>
           <button type="button" class="cta-btn secondary" id="privacyAnalyticsDeny">Turn analytics off</button>
         </div>
+
+        <h3 class="section-h">Feedback form</h3>
+        <p class="body-text">If you use the form on the <a href="/feedback" class="inline-link">Feedback page</a>, what you choose as the topic, your message and - only if you give one - your email address are sent to Netlify, the site's host, which stores them in Netlify Forms and screens them for spam using Akismet. Only the site's creator reads them, to understand the feedback and to reply if you left an address. Nothing from your assessment is attached. To have a message deleted, get in touch through the <a href="/about" class="inline-link">About page</a>.</p>
 
         <h3 class="section-h">Live feeds</h3>
         <p class="body-text">The News, Exploit Tracker and Case Studies pages read public data from SimplifiedCS's Supabase database. Those requests contain nothing about you beyond what any web request contains.</p>
