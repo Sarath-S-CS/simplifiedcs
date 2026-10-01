@@ -65,6 +65,8 @@ function fakeFetch({ model, kev = "ok", nvd = {}, nvdVersion = {}, calls }) {
       return Response.json(KEV_FIXTURE);
     }
     if (u.startsWith("https://services.nvd.nist.gov/")) {
+      calls.nvdKeys = calls.nvdKeys || [];
+      calls.nvdKeys.push(new Headers(init.headers).get("apiKey"));
       const params = new URL(u).searchParams;
       if (params.has("cpeName")) {
         const fixture = nvdVersion[params.get("cpeName")];
@@ -97,7 +99,7 @@ function deps(overrides = {}) {
     admissionStore,
     cache,
     d: {
-      env: (n) => ({ ANTHROPIC_API_KEY: "test-key", RATE_LIMIT_SALT: "salt" })[n],
+      env: (n) => ({ ANTHROPIC_API_KEY: "test-key", RATE_LIMIT_SALT: "salt", ...(overrides.env || {}) })[n],
       clientIp: overrides.ip ?? "203.0.113.7",
       admissionStore: () => admissionStore,
       cacheStore: () => cache,
@@ -585,4 +587,40 @@ test("an incomplete keyword-search page is reported as unavailable, not as a cle
   const { d } = deps({ model: toolReply({ advisories: [], patterns: [], narrative: "N." }), nvd: { "defender for endpoint": { totalResults: 3, resultsPerPage: 0, vulnerabilities: [] } } });
   const out = await (await handleInsights(post(validBody()), d)).json();
   assert.equal(out.sourceStatus.find((s) => s.name === "Microsoft Defender for Endpoint").nvd, "source-unavailable");
+});
+
+// ---------------- NVD API key ----------------
+
+const manyProducts = () =>
+  ["Siemens", "ABB", "Honeywell", "Emerson", "Yokogawa", "Schneider Electric", "Mitsubishi Electric", "GE Vernova", "Rockwell Automation / Allen-Bradley", "Widget"].map((name) => ({ category: "OT/ICS platform", name }));
+
+test("with an NVD API key, every NVD request carries it and a report may run up to 8 lookups", async () => {
+  const { d, calls } = deps({ env: { NVD_API_KEY: "test-nvd-key-value" }, model: toolReply({ advisories: [], patterns: [], narrative: "N." }) });
+  const out = await (await handleInsights(post(validBody({ products: manyProducts() })), d)).json();
+  assert.equal(calls.nvdKeys.length, 8);
+  assert.ok(calls.nvdKeys.every((k) => k === "test-nvd-key-value"));
+  assert.equal(out.sourceStatus.filter((s) => s.nvd === "not-checked-budget").length, 2);
+});
+
+test("without an NVD API key, no key header is sent and the limit stays at 4", async () => {
+  const { d, calls } = deps({ model: toolReply({ advisories: [], patterns: [], narrative: "N." }) });
+  await handleInsights(post(validBody({ products: manyProducts() })), d);
+  assert.equal(calls.nvdKeys.length, 4);
+  assert.ok(calls.nvdKeys.every((k) => k === null));
+});
+
+test("the NVD API key never appears in logs or responses", async () => {
+  const lines = [];
+  const orig = console.log;
+  console.log = (...a) => lines.push(a.join(" "));
+  let text;
+  try {
+    const { d } = deps({ env: { NVD_API_KEY: "test-nvd-key-value" }, nvd: { "siemens simatic": "down" }, model: toolReply({ advisories: [], patterns: [], narrative: "N." }) });
+    text = await (await handleInsights(post(validBody({ products: manyProducts() })), d)).text();
+  } finally {
+    console.log = orig;
+  }
+  assert.ok(!lines.join("\n").includes("test-nvd-key-value"));
+  assert.ok(!text.includes("test-nvd-key-value"));
+  assert.ok(lines.some((l) => /"nvdKey":true/.test(l)), "the done log says a key was used (yes/no only)");
 });
