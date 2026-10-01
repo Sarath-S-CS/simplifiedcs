@@ -173,9 +173,11 @@ Three paid requests in total, one at a time, no automatic retries.
    Netlify from the CLI, never displayed) and the site redeployed. The Netlify API returns secret
    values masked (16 `*` plus the last 4 characters), so the previous value's strength couldn't be
    judged; replacing it only restarted that day's rate-limit counters.
-3. **The AI panel in the live UI** wasn't exercised with a real request (the smoke test called the
-   endpoint directly, to keep it to one paid request); the panel's rendering is covered by local
-   tests with the same response shape.
+3. ~~**The AI panel in the live UI** wasn't exercised with a real request.~~ Resolved 2 Oct 2026: a
+   Full assessment with fictional answers (FortiGate 7.4.3, nginx 1.24.0) run on simplifiedcs.net in a
+   browser; after ticking the agreement, "Get AI-enhanced insights" returned 6 items, all labelled
+   "Listed by NVD as affecting your version", with the per-product source table, cited CVE links and
+   the "AI-generated - it can be wrong" line. Test data cleared from that browser afterwards.
 4. **`fetch-case-studies`** is intentionally not deployed (it makes paid AI calls). Its workflow is
    manual-only and has never run, so nothing is failing; how to enable it is in `docs/rollout.md`.
 5. ~~**IP-hash counter cleanup** isn't time-guaranteed.~~ Resolved: a daily Netlify Scheduled Function
@@ -189,6 +191,12 @@ Three paid requests in total, one at a time, no automatic retries.
    `src/pages/` (MAINT-1, #119).
 8. **Feedback form delivery** hasn't been tested with a real submission, and email notifications
    for new submissions are set up by the owner in Netlify (Forms → Form notifications).
+9. **Netlify's real-user-monitoring script.** Since 2 Oct 2026, Netlify inserts
+   `/.netlify/scripts/rum` into every served page (it isn't in the repository). It runs, but the
+   site's Content-Security-Policy blocks it from sending data to
+   `ingesteer.services-prod.nsvcs.net`, so the browser console shows errors. Blocking it is
+   consistent with the privacy page (no measurement without consent); the clean fix is to turn the
+   real-user-metrics feature off in Netlify rather than allow it in the CSP.
 
 ## Baseline matrix (as found, before changes)
 
