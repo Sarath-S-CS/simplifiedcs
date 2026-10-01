@@ -154,6 +154,15 @@ server (nginx 1.24.0 on Ubuntu 22.04). No real company data.
 
 Three paid requests in total, one at a time, no automatic retries.
 
+## Follow-up production checks (2 Oct 2026)
+
+| Check | Result |
+|---|---|
+| Engineering page removed (#126) | `/engineering` answers 301 to `/`; no page, footer or About link, and no sitemap entry. `docs/engineering-case-study.md` kept as the record. |
+| NVD API key (#127) | `NVD_API_KEY` set by the owner as a Netlify secret. One live AI request (fictional data, 9 products needing NVD): all 8 permitted lookups returned, the 9th was skipped with "request budget of 8 searches per report" - the higher limit only applies with a key - and no NVD check failed. No "you are vulnerable" wording. |
+| Feedback form (#128) | Netlify Forms lists form `feedback` (fields topic, message, email, honeypot bot-field; 0 submissions). Netlify answers 404 to an unknown form name, so the page shows "sent" only for an accepted submission. Live page validates without sending; no test submission made (left to the owner). |
+| Site-wide | All 23 routes 200; CSP, HSTS, frame, content-type and referrer headers present; hashed assets cached a year; sitemap 21 URLs; consent gate 400 without agreement; live browser: no console errors, no Google request after declining, News loads 75 items. `fetch-news` and `fetch-exploits` ran successfully every day 27 Sep - 1 Oct. |
+
 ## Unresolved and not verified
 
 1. **Screen-reader testing was not performed.** Keyboard operation was tested with real key input.
@@ -178,6 +187,8 @@ Three paid requests in total, one at a time, no automatic retries.
    can be intermittently incomplete, which now shows as "source unavailable".
 7. ~~**`src/main.js`** still holds all content-page renderers.~~ Resolved: one module per page in
    `src/pages/` (MAINT-1, #119).
+8. **Feedback form delivery** hasn't been tested with a real submission, and email notifications
+   for new submissions are set up by the owner in Netlify (Forms → Form notifications).
 
 ## Baseline matrix (as found, before changes)
 
