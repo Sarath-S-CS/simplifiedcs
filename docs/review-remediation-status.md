@@ -123,7 +123,7 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
 | PRODUCT-1 | **Changed now** | Home and assessment landing explain it's a self-assessment, with example/methodology/privacy links next to the call to action. | - |
 | PRODUCT-2 | **Changed now** | Fictional IT-services and SaaS examples through the real engine; tests keep them complete and free of vulnerability claims. | - |
 | SEO-1 | **Changed now** | Per-page descriptions and social metadata; example page title; History `noindex` and removed from sitemap; `/privacy` added. | - |
-| CASE-1 | **Changed now** | `docs/engineering-case-study.md` (facts and tests only; no outcome claims). | Publishing it on the site is your call. |
+| CASE-1 | **Changed now** | `docs/engineering-case-study.md` (facts and tests only; no outcome claims). Published as /engineering in #120, removed from the site on 2 Oct 2026 at the owner's request (`/engineering` now redirects home). | - |
 | FEEDBACK-1 | **Changed now** | Feedback page points to a public GitHub issue or LinkedIn (Netlify Forms isn't enabled); consent-gated minimal events (mode/format only). | Enabling Netlify Forms is a production setting - not changed. |
 | FUTURE-1 | **Changed now** | `docs/future-multi-tenant.md`. | - |
 

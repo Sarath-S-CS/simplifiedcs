@@ -2,9 +2,9 @@
 
 A factual account of what an external review of SimplifiedCS found, what was changed, and how
 each change was checked. The changes went live on 24 September 2026 and were checked in
-production (below). No usage figures or outcomes are claimed. The same account is published on the
-site at [/engineering](https://simplifiedcs.net/engineering) (`src/pages/engineering.js`); keep
-the two in step.
+production (below). No usage figures or outcomes are claimed. It was published on the site at
+/engineering from 24 Sep to 2 Oct 2026 and then removed at the owner's request; this file is the
+record.
 
 ## Starting point
 
