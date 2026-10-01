@@ -3,8 +3,11 @@
 Automated checking (`npm run a11y`, which runs axe-core on every page in both themes) finds
 problems like low contrast, missing labels and broken ARIA. It can't tell whether the site *makes
 sense* when it's read aloud. This is a short manual pass to answer that, written so it can be
-done without development experience. Do it after changes to navigation, the assessment or the
-report, and at least once per release.
+done without development experience. Do it after changes to navigation, the assessment, the
+report or the feedback form, and at least once per release.
+
+An interactive copy of this checklist (Pass / Fail / Skip per step, with a "copy results" button) was
+shared with the owner as a Claude artifact on 2 Oct 2026; this file is the source of truth for it.
 
 ## Set up (once)
 
@@ -86,8 +89,20 @@ what should happen today.
 |---|---|---|
 | 5.1 | In a private window, load the home page. | The cookie banner appears and focus is on "No thanks". NVDA reads the button; Down arrow / Shift+Tab reads the banner text. |
 | 5.2 | Press **Enter** on "No thanks". | The banner closes. |
-| 5.3 | Go to **Privacy** (footer). Press **H** through the page. | Section headings: Your assessment answers, What's stored in this browser, Analytics, Live feeds, Hosting, Questions. |
+| 5.3 | Go to **Privacy** (footer). Press **H** through the page. | Section headings: Your assessment answers, What's stored in this browser, Analytics, Feedback form, Live feeds, Hosting, Questions. |
 | 5.4 | Activate "Clear all data stored by this site", confirm. | NVDA reads the result, e.g. "Removed 3 stored items". |
+
+### 6. Feedback form
+
+You don't need to send anything in this section.
+
+| # | Do this | Expected |
+|---|---|---|
+| 6.1 | Go to **Feedback** (footer). | NVDA reads "Send feedback, heading level 2". |
+| 6.2 | **Tab** into the form. | The group is read as "What's this about?", then "Something's broken, radio button, not checked". Arrow keys move between the four options. |
+| 6.3 | Without choosing anything, **Tab** to "Send feedback" and press **Enter**. | NVDA says "Please fix the highlighted fields", focus moves to the first option, and the error "Choose what this is about" is read. |
+| 6.4 | **Tab** to the Message box. | "Message, edit", followed by the warning not to include anything confidential, the character count and the error "Write a message". |
+| 6.5 | **Tab** to the Email box. | "Email, optional, edit", with "Only if you'd like a reply". |
 
 ## Reporting what you find
 
