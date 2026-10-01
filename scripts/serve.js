@@ -45,6 +45,14 @@ async function readFirstMatch(candidates) {
 }
 
 createServer(async (req, res) => {
+  // Only Netlify accepts form posts (Netlify Forms); it answers 404 when no
+  // form matches. Do the same here, so a local feedback test shows the
+  // "didn't send" path instead of a false "sent".
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    res.writeHead(404, { "content-type": "text/plain" });
+    res.end("No form handling on the local server");
+    return;
+  }
   let reqPath = decodeURIComponent(req.url.split("?")[0]);
   if (reqPath === "/") reqPath = "/index.html";
   const filePath = path.join(root, reqPath);

@@ -88,12 +88,15 @@ export function renderPrivacyPage(container) {
         <p class="scope-hint" id="privacyClearResult" role="status"></p>
 
         <h3 class="section-h">Analytics</h3>
-        <p class="body-text">If you allow it, Google Analytics 4 records page views and a few coarse events (an assessment was started or completed, in which mode; a report was exported, in which format) using cookies. It never receives answers, scores or report content. Google signals and ad personalization are turned off. If you don't allow it, Google's script isn't loaded at all.</p>
+        <p class="body-text">If you allow it, Google Analytics 4 records page views and a few coarse events (an assessment was started or completed, in which mode; a report was exported, in which format; feedback was sent - never its content) using cookies. It never receives answers, scores or report content. Google signals and ad personalization are turned off. If you don't allow it, Google's script isn't loaded at all.</p>
         <p class="body-text">Your analytics choice is currently: <b>${choice === "granted" ? "allowed" : choice === "denied" ? "declined" : "not made yet (off)"}</b>.</p>
         <div class="cta-row">
           <button type="button" class="cta-btn secondary" id="privacyAnalyticsAllow" ${choice === "granted" ? "disabled" : ""}>Allow analytics</button>
           <button type="button" class="cta-btn secondary" id="privacyAnalyticsDeny" ${choice === "denied" ? "disabled" : ""}>Turn analytics off</button>
         </div>
+
+        <h3 class="section-h">Feedback form</h3>
+        <p class="body-text">If you use the form on the <a href="/feedback" class="inline-link">Feedback page</a>, what you choose as the topic, your message and - only if you give one - your email address are sent to Netlify, the site's host, which stores them in Netlify Forms and screens them for spam using Akismet. Only the site's creator reads them, to understand the feedback and to reply if you left an address. Nothing from your assessment is attached. To have a message deleted, get in touch through the <a href="/about" class="inline-link">About page</a>.</p>
 
         <h3 class="section-h">Live feeds</h3>
         <p class="body-text">The News, Exploit Tracker and Case Studies pages read public data from SimplifiedCS's Supabase database. Those requests contain nothing about you beyond what any web request contains.</p>
@@ -125,26 +128,4 @@ export function renderPrivacyPage(container) {
     analytics()?.deny();
     renderPrivacyPage(container);
   });
-}
-
-// ---------- feedback ----------
-// Netlify Forms isn't enabled for this site, so the old form's messages were
-// never delivered. Until it is, feedback goes to places that actually work.
-export function renderFeedbackPage(container) {
-  const issueUrl = "https://github.com/Sarath-S-CS/simplifiedcs/issues/new?title=" + encodeURIComponent("Feedback: ") + "&body=" + encodeURIComponent("What happened, or what would you like to see?\n\n(Please don't include anything confidential - GitHub issues are public.)\n");
-  container.innerHTML = `
-    <div class="page">
-      <div class="page-intro">
-        <div class="page-eyebrow">Feedback</div>
-        <h2 class="page-title" tabindex="-1">Send feedback</h2>
-        <p class="page-lede">Found something broken, confusing or missing? Feedback is read and shapes what gets worked on next.</p>
-      </div>
-      <div class="section-tile">
-        <div class="cta-row">
-          <a class="cta-btn" href="${issueUrl}" target="_blank" rel="noopener noreferrer">Open a GitHub issue →</a>
-          <a class="cta-btn secondary" href="https://www.linkedin.com/in/sarath-surendran/" target="_blank" rel="noopener noreferrer">Message on LinkedIn</a>
-        </div>
-        <p class="scope-hint">GitHub issues are public - please don't include anything confidential, such as your assessment answers. A GitHub account is needed to open an issue.</p>
-      </div>
-    </div>`;
 }

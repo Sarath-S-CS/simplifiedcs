@@ -28,7 +28,7 @@ This site was built entirely inside a Claude.ai chat conversation, iteratively, 
 **Also already built and working, separately from this rewrite:**
 - A Supabase project exists (name `simplifiedcs`, region `eu-west-1`, free tier) — created but **not yet wired into the code**. See §7.
 - A GitHub Actions workflow (`.github/workflows/keep-supabase-alive.yml`) pings it twice a week to prevent free-tier auto-pause.
-- ~~Netlify Forms powers the feedback form on the site~~ — **Update, September 2026:** the Netlify project has Forms **not enabled**, so that form never collected anything. The feedback page now links to a public GitHub issue and LinkedIn instead (`renderFeedbackPage` in `src/ui/privacy.js`). If Forms is enabled later, the previous form (hidden static form in `src/shell-body.html` + `renderFeedbackTab` in `src/main.js`) can be restored from commit `3ac7a24`; update `/privacy` to say what the form collects.
+- **Netlify Forms powers the feedback form** (enabled October 2026). Netlify detects it from the hidden static form in `src/shell-body.html`; `src/pages/feedback.js` renders the visible form and posts it with fetch (field names in `src/engine/feedback.js`, kept in step by `test/feedback.test.js`). "Sent" is shown only when Netlify accepts the submission; /privacy explains what's collected. Submissions and email notifications are managed in Netlify → Forms.
 
 ---
 
