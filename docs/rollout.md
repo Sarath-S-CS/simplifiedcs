@@ -29,6 +29,13 @@ kept as the reference for how it was done and for rollback.
    plan (it requires an upgrade), so this is an accepted limitation. The site has no Netlify build
    command, so the key isn't used during builds, and it is never sent to the browser.
 
+6. **Netlify (optional, set up 2 Oct 2026):** `NVD_API_KEY` - a free key from NVD
+   (nvd.nist.gov/developers/request-an-api-key), marked as a secret, in the production,
+   deploy-preview and branch-deploy contexts. The AI function sends it to NVD as the `apiKey` header,
+   which raises NVD's limit from 5 to 50 requests per 30 seconds; each report may then run 8 NVD
+   lookups instead of 4. Without it everything still works with the lower limit. Changing it needs a
+   redeploy.
+
 If step 2 or 3 is skipped: the redeployed feed functions return 503 (secret not configured) or 401
 (secret missing from the request), and the News / Exploit Tracker feeds stop updating. The site
 keeps showing the last stored items.

@@ -27,6 +27,11 @@ export const MODEL = "claude-sonnet-5";
 const KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
 const NVD_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0";
 const NVD_LOOKBACK_DAYS = 120; // NVD's maximum publish-date window per query
+// NVD lookups per report. NVD allows 5 requests per rolling 30 seconds
+// without a key and 50 with one; at most INSIGHTS_POLICY.maxConcurrent (4)
+// reports run at once, so 8 per report stays under 50 with a key.
+const NVD_QUERIES_WITHOUT_KEY = 4;
+const NVD_QUERIES_WITH_KEY = 8;
 
 export const INSIGHTS_POLICY: Policy = {
   name: "ai-insights",
@@ -117,10 +122,15 @@ export async function handleInsights(req: Request, deps: Deps): Promise<Response
     const fetchImpl = deps.fetchImpl ?? fetch;
     const cache = deps.cacheStore();
     const nowMs = (deps.now ?? Date.now)();
+    // NVD API key (optional secret, NVD_API_KEY): sent as the "apiKey" header,
+    // which raises NVD's limit from 5 to 50 requests per rolling 30 seconds.
+    // Never logged; the done log only says whether one was used.
+    const nvdKey = (deps.env("NVD_API_KEY") || "").trim();
+    const nvdHeaders: Record<string, string> = nvdKey ? { accept: "application/json", apiKey: nvdKey } : { accept: "application/json" };
     const bundle = await gatherEvidence({
       products,
       orgPlatforms: (body.platforms as Platform[] | undefined) ?? null,
-      maxNvdQueries: 4,
+      maxNvdQueries: nvdKey ? NVD_QUERIES_WITH_KEY : NVD_QUERIES_WITHOUT_KEY,
       now: nowMs,
       loadKev: () =>
         cachedJson(cache, "cisa-kev-v1", 6 * 3600_000, 7 * 24 * 3600_000, async () => {
@@ -136,7 +146,7 @@ export async function handleInsights(req: Request, deps: Deps): Promise<Response
           const start = new Date(nowMs - NVD_LOOKBACK_DAYS * 86_400_000);
           const iso = (d: Date) => d.toISOString().replace(/\.\d+Z$/, "Z");
           const url = `${NVD_URL}?keywordSearch=${encodeURIComponent(term)}&pubStartDate=${iso(start)}&pubEndDate=${iso(end)}&resultsPerPage=20`;
-          const res = await fetchWithTimeout(url, 6000, { headers: { accept: "application/json" } }, fetchImpl);
+          const res = await fetchWithTimeout(url, 6000, { headers: nvdHeaders }, fetchImpl);
           if (!res.ok) throw new Error(`NVD ${res.status}`);
           const json = await res.json();
           if (isIncompleteNvdPage(json, 20)) throw new Error("NVD returned an incomplete page");
@@ -150,7 +160,7 @@ export async function handleInsights(req: Request, deps: Deps): Promise<Response
         const key = `nvd-version-v2/${(await sha256Hex(cpeName)).slice(0, 24)}`;
         return cachedJson(cache, key, 12 * 3600_000, 3 * 24 * 3600_000, async () => {
           const url = `${NVD_URL}?cpeName=${encodeURIComponent(cpeName)}&isVulnerable&resultsPerPage=200`;
-          const res = await fetchWithTimeout(url, 8000, { headers: { accept: "application/json" } }, fetchImpl);
+          const res = await fetchWithTimeout(url, 8000, { headers: nvdHeaders }, fetchImpl);
           if (!res.ok) throw new Error(`NVD ${res.status}`);
           const json = await res.json();
           if (isIncompleteNvdPage(json, 200)) throw new Error("NVD returned an incomplete page");
@@ -164,6 +174,7 @@ export async function handleInsights(req: Request, deps: Deps): Promise<Response
     const validated = validateInsightsOutput(result.input, bundle, products);
     log(fn, requestId, {
       event: "done",
+      nvdKey: Boolean(nvdKey),
       evidence: bundle.evidence.length,
       advisories: validated.advisories.length,
       patterns: validated.patterns.length,
