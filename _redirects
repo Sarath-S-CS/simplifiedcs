@@ -1,1 +1,4 @@
+# Removed pages: permanent redirects, listed before the SPA fallback (first match wins).
+/engineering   /   301
+
 /*    /index.html   200
