@@ -91,6 +91,7 @@ const HOME_DROPDOWN = [
   { id:'methodology', label:'Methodology' },
   { id:'roadmap', label:'Roadmap' },
   { id:'about', label:'About' },
+  { id:'feedback', label:'Feedback' },
 ];
 const FRAMEWORK_DROPDOWN = [
   { id:'maturity', label:'Maturity Model' },

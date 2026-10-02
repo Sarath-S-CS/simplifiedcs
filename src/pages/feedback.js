@@ -65,11 +65,11 @@ export function renderFeedbackPage(container) {
 
       <div class="section-tile">
         <h3 class="section-h">Prefer GitHub or LinkedIn?</h3>
+        <p class="scope-hint">GitHub issues are public - please don't include anything confidential. A GitHub account is needed to open an issue.</p>
         <div class="cta-row">
           <a class="cta-btn secondary" href="${ISSUE_URL}" target="_blank" rel="noopener noreferrer">Open a GitHub issue →</a>
           <a class="cta-btn secondary" href="https://www.linkedin.com/in/sarath-surendran/" target="_blank" rel="noopener noreferrer">Message on LinkedIn</a>
         </div>
-        <p class="scope-hint">GitHub issues are public - please don't include anything confidential. A GitHub account is needed to open an issue.</p>
       </div>
     </div>`;
   wireFeedbackForm(container);
