@@ -46,6 +46,14 @@ jobs:
           git status --porcelain -- assets/build
           test -z "$(git status --porcelain -- assets/build)" || { echo "::error::assets/build doesn't match the sources - run npm run build and commit the result"; exit 1; }
 
+      # The committed index.html now points at the freshly built bundle; every
+      # prerendered <route>.html snapshot must point at that same bundle. If a
+      # JS/CSS change was committed without re-running `npm run prerender`, the
+      # snapshots still reference the old (deleted) bundle, so direct deep links
+      # 404 the script and the app never boots. This catches that before deploy.
+      - name: Prerendered pages reference current assets
+        run: npm run check:assets
+
       - name: Dependency audit (production dependencies)
         run: npm audit --omit=dev --audit-level=high
 

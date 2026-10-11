@@ -9,7 +9,8 @@
     "watch": "node scripts/build.js --watch",
     "prerender": "node scripts/prerender.js",
     "a11y": "node scripts/a11y-audit.js",
-    "test": "node --test"
+    "test": "node --test",
+    "check:assets": "node scripts/check-asset-refs.js"
   },
   "dependencies": {
     "@netlify/blobs": "^11.0.1",
