@@ -62,11 +62,11 @@ export function renderHistoryPage({ panel, pathForTab, wireNavLink, openRun, goT
             : '<li class="body-text">No reports saved yet - complete an assessment to start tracking.</li>'
         }
       </ul>
+      <p class="scope-hint">"Clear all data" removes saved reports, any in-progress assessment, action tracking, and your cookie and AI choices from this browser.</p>
       <div class="cta-row">
         <a class="cta-btn" href="${pathForTab("assessment")}" id="backToScope">← Back to Assessment</a>
         <button type="button" class="cta-btn secondary" id="clearAllData">Clear all data stored by this site</button>
       </div>
-      <p class="scope-hint">"Clear all data" removes saved reports, any in-progress assessment, action tracking, and your cookie and AI choices from this browser.</p>
     </div>`;
   wireNavLink(document.getElementById("backToScope"), "assessment");
   panel.querySelectorAll("[data-run]").forEach((btn) =>
