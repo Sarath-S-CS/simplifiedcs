@@ -96,7 +96,6 @@ async function audit(browser, scenario, theme) {
   await page.evaluateOnNewDocument((t) => {
     try {
       localStorage.setItem("simplifiedcs:theme", t);
-      localStorage.setItem("simplifiedcs:consent:analytics", "denied"); // keep the banner out of every page but one
     } catch {}
   }, theme);
   await page.goto(BASE + scenario.path, { waitUntil: "domcontentloaded" });
@@ -145,17 +144,6 @@ async function main() {
         }
       }
     }
-    // The cookie banner, once, in a fresh profile (the runs above stored a
-    // choice, which hides the banner).
-    const context = await browser.createBrowserContext();
-    const page = await context.newPage();
-    await page.setBypassCSP(true);
-    await page.goto(BASE + "/", { waitUntil: "domcontentloaded" });
-    await page.waitForSelector("#cookieBanner", { timeout: 15000 });
-    await page.addScriptTag({ path: AXE_PATH });
-    const bannerViolations = await page.evaluate(async (tags) => (await window.axe.run("#cookieBanner", { runOnly: { type: "tag", values: tags } })).violations.map((v) => `${v.id}: ${v.help}`), TAGS);
-    total += bannerViolations.length;
-    console.log(`${bannerViolations.length ? "FAIL" : "ok  "}  cookie banner${bannerViolations.length ? "\n        " + bannerViolations.join("\n        ") : ""}`);
   } finally {
     await browser.close();
     server.kill();

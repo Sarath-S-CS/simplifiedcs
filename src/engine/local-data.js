@@ -8,7 +8,6 @@ export const LOCAL_DATA = [
   { key: "simplifiedcs:runs:v1", what: "Completed assessments saved before September 2026" },
   { key: "simplifiedcs:action-tracking:v1", what: "Action-plan tracking you entered (owners, dates, status, notes)" },
   { key: "simplifiedcs:hasSeenSaveNotice", what: "Whether you've seen the 'saved in this browser' notice" },
-  { key: "simplifiedcs:consent:analytics", what: "Your analytics cookie choice" },
   { key: "simplifiedcs:consent:ai", what: "Whether you agreed to send assessment details for AI processing, and which notice version" },
   { key: "simplifiedcs:theme", what: "Light or dark theme" },
 ];

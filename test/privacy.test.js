@@ -1,6 +1,7 @@
-// Analytics must stay off until the visitor allows them, and events must
-// never carry assessment content. assets/gtag-init.js is a plain browser
-// script, so it's run here in a small sandbox with stand-in DOM objects.
+// Analytics now load for every visitor (no consent gate), but events must
+// still never carry assessment content and must use analytics-only settings.
+// assets/gtag-init.js is a plain browser script, so it's run here in a small
+// sandbox with stand-in DOM objects.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -8,67 +9,48 @@ import vm from "node:vm";
 
 const GTAG_INIT = readFileSync(new URL("../assets/gtag-init.js", import.meta.url), "utf8");
 
-function sandbox(stored) {
+function runGtagInit() {
   const appended = [];
-  const store = new Map(stored ? [["simplifiedcs:consent:analytics", stored]] : []);
   const ctx = {
     window: {},
-    localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) },
-    document: {
-      cookie: "_ga=GA1.1.123; other=1",
-      head: { appendChild: (el) => appended.push(el) },
-      createElement: () => ({}),
-    },
-    location: { hostname: "simplifiedcs.net", reload: () => (ctx.reloaded = true) },
+    document: { head: { appendChild: (el) => appended.push(el) }, createElement: () => ({}) },
   };
   ctx.window.dataLayer = [];
   vm.createContext(ctx);
   vm.runInContext(GTAG_INIT, ctx);
-  return { ctx, appended, store, dataLayer: ctx.window.dataLayer };
+  return { ctx, appended, dataLayer: ctx.window.dataLayer };
 }
 
-test("no choice yet: Google's script is not loaded and consent defaults are denied", () => {
-  const { appended, dataLayer } = sandbox(null);
-  assert.equal(appended.length, 0);
-  const def = [...dataLayer].find((a) => a[0] === "consent" && a[1] === "default");
-  assert.equal(def[2].analytics_storage, "denied");
-  assert.equal(def[2].ad_storage, "denied");
-});
-
-test("declined: still not loaded", () => {
-  assert.equal(sandbox("denied").appended.length, 0);
-});
-
-test("allowed: loads gtag.js once, with Google signals and ad personalization off", () => {
-  const { appended, dataLayer, ctx } = sandbox("granted");
+test("gtag-init loads Google's analytics script once, for all visitors", () => {
+  const { appended } = runGtagInit();
   assert.equal(appended.length, 1);
   assert.match(appended[0].src, /^https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=G-/);
+});
+
+test("gtag-init pushes js + config and turns Google signals / ad personalization off", () => {
+  const { dataLayer } = runGtagInit();
+  assert.ok([...dataLayer].some((a) => a[0] === "js"), "gtag('js', ...) present");
   const config = [...dataLayer].find((a) => a[0] === "config");
+  assert.ok(config, "gtag('config', ...) present");
+  assert.match(config[1], /^G-/);
   assert.equal(config[2].allow_google_signals, false);
-  ctx.window.scsAnalytics.grant();
-  assert.equal(appended.length, 1, "not loaded twice");
+  assert.equal(config[2].allow_ad_personalization_signals, false);
 });
 
-test("withdrawing consent records it, deletes _ga cookies and reloads to stop the loaded script", () => {
-  const { ctx, store } = sandbox("granted");
-  const writes = [];
-  Object.defineProperty(ctx.document, "cookie", { get: () => "_ga=GA1.1.123; _ga_ABC=x; other=1", set: (v) => writes.push(v) });
-  ctx.window.scsAnalytics.deny();
-  assert.equal(store.get("simplifiedcs:consent:analytics"), "denied");
-  assert.ok(writes.some((w) => w.startsWith("_ga=;") && w.includes("Max-Age=0")));
-  assert.ok(writes.some((w) => w.startsWith("_ga_ABC=;")));
-  assert.ok(!writes.some((w) => w.startsWith("other=")));
-  assert.equal(ctx.reloaded, true);
-});
-
-test("trackEvent sends nothing without consent, and only coarse allow-listed fields with it", async () => {
-  const calls = [];
-  globalThis.window = { gtag: (...a) => calls.push(a), scsAnalytics: { choice: () => null } };
+test("trackEvent forwards only coarse allow-listed fields, nothing without gtag, and returns falsy", async () => {
   const { trackEvent } = await import("../src/ui/privacy.js");
-  trackEvent("assessment_complete", { mode: "full" });
-  assert.equal(calls.length, 0);
-  window.scsAnalytics.choice = () => "granted";
-  trackEvent("assessment_complete", { mode: "full", answers: { mfa: 0 }, verdict: "Critical gaps found", companyName: "Acme" });
+
+  // No gtag available: sends nothing, returns undefined (falsy).
+  globalThis.window = {};
+  assert.equal(trackEvent("assessment_complete", { mode: "full" }), undefined);
+
+  // gtag available: forwards the event, stripping any non-allow-listed field
+  // (answers, verdict, company name must never leave). Still returns falsy so
+  // callers' `trackEvent(...) || download(...)` pattern keeps working.
+  const calls = [];
+  globalThis.window = { gtag: (...a) => calls.push(a) };
+  const r = trackEvent("assessment_complete", { mode: "full", answers: { mfa: 0 }, verdict: "Critical gaps found", companyName: "Acme" });
+  assert.equal(r, undefined);
   assert.deepEqual(calls, [["event", "assessment_complete", { mode: "full" }]]);
   delete globalThis.window;
 });

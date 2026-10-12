@@ -1,78 +1,33 @@
-// Privacy: the /privacy page, the analytics cookie banner, and the one
-// helper that sends analytics events (only after consent, never with
-// answers). Keep the page text in step with what the code actually does -
-// every claim here is checked against: assets/gtag-init.js (analytics),
-// src/engine/local-data.js (browser storage), src/engine/ai-payload.js and
-// netlify/lib/* (AI requests), src/data/supabase-client.js (public feeds).
+// Privacy: the /privacy page and the one helper that sends analytics events.
+// Keep the page text in step with what the code actually does - every claim
+// here is checked against: assets/gtag-init.js (analytics), src/engine/
+// local-data.js (browser storage), src/engine/ai-payload.js and netlify/lib/*
+// (AI requests), src/data/supabase-client.js (public feeds).
 import { LOCAL_DATA, clearAllLocalData } from "../engine/local-data.js";
 import { withdrawAiConsent, hasAiConsent } from "../engine/ai-consent.js";
 import { escapeHtml } from "./html-safety.js";
 
 const e = escapeHtml;
 
-function analytics() {
-  return typeof window !== "undefined" ? window.scsAnalytics : null;
-}
-
-export function analyticsChoice() {
-  return analytics()?.choice() || null;
-}
-
-// Minimal, consent-gated events: what kind of thing happened, never what
-// anyone answered. Nothing is queued before consent (a queued event would
-// be sent later if consent were given).
+// Minimal analytics events: what kind of thing happened, never what anyone
+// answered. Google Analytics loads for everyone (see assets/gtag-init.js), so
+// this just forwards the event once gtag is available. Returns undefined
+// (falsy) by design - callers use `trackEvent(...) || download(...)`.
 export function trackEvent(name, params = {}) {
-  if (analyticsChoice() !== "granted" || typeof window.gtag !== "function") return;
+  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
   const safe = {};
   for (const [k, v] of Object.entries(params)) if (["mode", "format", "page"].includes(k) && typeof v === "string") safe[k] = v.slice(0, 40);
   window.gtag("event", name, safe);
 }
 
-// ---------- cookie banner ----------
-export function showCookieBanner({ force = false } = {}) {
-  if (typeof document === "undefined" || !analytics()) return;
-  if (!force && analyticsChoice()) return;
-  if (document.getElementById("cookieBanner")) return;
-  const bar = document.createElement("section");
-  bar.id = "cookieBanner";
-  bar.className = "cookie-banner";
-  bar.setAttribute("aria-label", "Analytics cookies");
-  bar.innerHTML = `
-    <p><b>Analytics cookies?</b> With your permission, SimplifiedCS uses Google Analytics to count visits and see which pages are used. It never receives your assessment answers. Nothing is sent to Google unless you allow it. <a href="/privacy" class="inline-link">Privacy</a></p>
-    <div class="cookie-actions">
-      <button type="button" id="cookieDeny">No thanks</button>
-      <button type="button" class="primary" id="cookieAllow">Allow analytics</button>
-    </div>`;
-  document.body.appendChild(bar);
-  const close = () => bar.remove();
-  document.getElementById("cookieAllow").addEventListener("click", () => {
-    analytics().grant();
-    close();
-  });
-  document.getElementById("cookieDeny").addEventListener("click", () => {
-    close();
-    analytics().deny();
-  });
-  document.getElementById("cookieDeny").focus({ preventScroll: true });
-}
-
-export function wireCookieSettingsButton() {
-  const btn = typeof document !== "undefined" ? document.getElementById("cookieSettingsBtn") : null;
-  if (btn && !btn.dataset.wired) {
-    btn.dataset.wired = "1";
-    btn.addEventListener("click", () => showCookieBanner({ force: true }));
-  }
-}
-
 // ---------- page ----------
 export function renderPrivacyPage(container) {
-  const choice = analyticsChoice();
   container.innerHTML = `
     <div class="page">
       <div class="page-intro">
         <div class="page-eyebrow">Privacy</div>
         <h2 class="page-title" tabindex="-1">Privacy and your data</h2>
-        <p class="page-lede">Short version: the assessment runs in your browser. Your answers stay in this browser unless you choose to send them for AI insights. Analytics only run if you allow them.</p>
+        <p class="page-lede">Short version: the assessment runs in your browser and your answers stay in this browser unless you choose to send them for AI insights. The site uses Google Analytics to understand overall usage.</p>
       </div>
 
       <div class="section-tile privacy-page">
@@ -88,12 +43,8 @@ export function renderPrivacyPage(container) {
         <p class="scope-hint" id="privacyClearResult" role="status"></p>
 
         <h3 class="section-h">Analytics</h3>
-        <p class="body-text">If you allow it, Google Analytics 4 records page views and a few coarse events (an assessment was started or completed, in which mode; a report was exported, in which format; feedback was sent - never its content) using cookies. It never receives answers, scores or report content. Google signals and ad personalization are turned off. If you don't allow it, Google's script isn't loaded at all.</p>
-        <p class="body-text">Your analytics choice is currently: <b>${choice === "granted" ? "allowed" : choice === "denied" ? "declined" : "not made yet (off)"}</b>.</p>
-        <div class="cta-row">
-          <button type="button" class="cta-btn secondary" id="privacyAnalyticsAllow" ${choice === "granted" ? "disabled" : ""}>Allow analytics</button>
-          <button type="button" class="cta-btn secondary" id="privacyAnalyticsDeny" ${choice === "denied" ? "disabled" : ""}>Turn analytics off</button>
-        </div>
+        <p class="body-text">The site uses Google Analytics 4 to understand overall usage. It records page views and a few coarse events (an assessment was started or completed, in which mode; a report was exported, in which format; feedback was sent - never its content), and sets Google Analytics cookies. It never receives your answers, scores or report content. Google Signals and ad personalization are turned off, so the data is used for analytics only, not advertising.</p>
+        <p class="body-text">Analytics runs for all visitors. To opt out, use your browser's privacy settings or an ad/analytics blocker, which this site does not try to defeat.</p>
 
         <h3 class="section-h">Feedback form</h3>
         <p class="body-text">If you use the form on the <a href="/feedback" class="inline-link">Feedback page</a>, what you choose as the topic, your message and - only if you give one - your email address are sent to Netlify, the site's host, which stores them in Netlify Forms and screens them for spam using Akismet. Only the site's creator reads them, to understand the feedback and to reply if you left an address. Nothing from your assessment is attached. To have a message deleted, get in touch through the <a href="/about" class="inline-link">About page</a>.</p>
@@ -110,7 +61,7 @@ export function renderPrivacyPage(container) {
     </div>`;
   const clearBtn = container.querySelector("#privacyClearAll");
   clearBtn.addEventListener("click", () => {
-    if (!confirm("Remove everything SimplifiedCS has stored in this browser - saved reports, in-progress answers, action tracking, and your cookie and AI choices? This can't be undone.")) return;
+    if (!confirm("Remove everything SimplifiedCS has stored in this browser - saved reports, in-progress answers, action tracking, and your AI choice? This can't be undone.")) return;
     const n = clearAllLocalData();
     container.querySelector("#privacyClearResult").textContent = n ? `Removed ${n} stored item${n === 1 ? "" : "s"}.` : "There was nothing stored to remove.";
   });
@@ -120,12 +71,4 @@ export function renderPrivacyPage(container) {
       withdrawAiConsent();
       renderPrivacyPage(container);
     });
-  container.querySelector("#privacyAnalyticsAllow").addEventListener("click", () => {
-    analytics()?.grant();
-    renderPrivacyPage(container);
-  });
-  container.querySelector("#privacyAnalyticsDeny").addEventListener("click", () => {
-    analytics()?.deny();
-    renderPrivacyPage(container);
-  });
 }

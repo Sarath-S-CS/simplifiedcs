@@ -9,7 +9,7 @@ import { CASE_STUDIES } from "./content/case-studies.js";
 import { PHASES } from "./content/maturity.js";
 import { GLOSSARY } from "./content/learning.js";
 import { applyPageMeta } from "./ui/page-meta.js";
-import { renderPrivacyPage, showCookieBanner, wireCookieSettingsButton } from "./ui/privacy.js";
+import { renderPrivacyPage } from "./ui/privacy.js";
 import { renderFeedbackPage } from "./pages/feedback.js";
 import { FRAMEWORKS } from "./data/frameworks.js";
 import { pathForTab, tabForPath, wireNavLink, wireNavLinksByDataset, activeTab, pendingAnchor, scrollToPendingAnchor, setActiveTab, setPendingAnchor, setNavigationHandler } from "./router.js";
@@ -664,9 +664,7 @@ function initAnimatedBackground(){
     e.preventDefault();
     focusPageHeading({ scroll:true });
   });
-  // Analytics are off until the visitor chooses (assets/gtag-init.js).
-  showCookieBanner();
-  wireCookieSettingsButton();
+  // Analytics load for all visitors (assets/gtag-init.js); no banner to show.
   // Back/forward: the URL has already changed by the time this fires, so
   // just read it and re-render - no pushState here, goToTab() already
   // handles the forward-navigation case.
