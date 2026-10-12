@@ -46,8 +46,8 @@ On the security side: feed content is sanitized at ingestion and render; the AI 
 after an explicit agreement that shows exactly what will be sent, are protected by atomic rate
 limits and a daily budget that fail closed, and can only cite public vulnerability records the
 server itself retrieved; scheduled jobs need a private secret and can't overlap; the database's
-browser roles lose write privileges; Google Analytics loads only if the visitor allows it; and
-there's a privacy page with a "clear all my data" control. The site loads faster (initial script
+browser roles lose write privileges; analytics is Cloudflare's cookieless beacon, which sets no
+cookies and builds no visitor profile; and there's a privacy page with a "clear all my data" control. The site loads faster (initial script
 543 KB minified instead of 3 MB unminified, with the PDF and feed libraries loaded on demand) and
 has CI.
 
@@ -78,7 +78,7 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
 | SEC-2b | **Changed now** | S: `_shared/scheduler-auth.ts`, `_shared/job-lease.ts`, migration `20260924172314`, workflows. L: `test/scheduled-jobs.test.js` (8). | Secrets + migration + deploy (steps 1, 2, 4). |
 | SEC-2c | **Changed now** | S: only public KEV/NVD data is cached (`netlify/lib/public-cache.ts`); duplicate-request keys derived server-side. L: endpoint tests. | - |
 | SEC-3a | **Changed now** | S: no automatic AI calls; `src/engine/ai-consent.js`, `src/ui/ai-panel.js` (what's sent, preview, processors); server rejects requests without the versioned consent. L: browser check (button disabled until agreed); `test/ai-endpoints.test.js`, `test/ai-payload.test.js`. | - |
-| SEC-3b | **Changed now** | S: `/privacy` (`src/ui/privacy.js`), `assets/gtag-init.js` (Consent Mode v2 defaults denied; gtag.js not loaded before "Allow"), clear-all control (`src/engine/local-data.js`), footer "Cookie settings". L: `test/privacy.test.js` (5); browser: no Google request before consent. | - |
+| SEC-3b | **Changed now** | S: `/privacy` (`src/ui/privacy.js`), cookieless Cloudflare Web Analytics beacon (`src/head.html`) - no cookies, no consent banner needed - and a clear-all control (`src/engine/local-data.js`). L: `test/privacy.test.js` (beacon present, no Google Analytics reference in head or CSP). | - |
 | SEC-4a | **Changed now** | S: `netlify/lib/http.ts` (streamed byte cap), `schema.ts`. L: endpoint tests for null/wrong types/unknown fields/malformed/oversized/lying Content-Length. | - |
 | SEC-4b | **Changed now** | S: `netlify/lib/insights.ts` / `interpret.ts` output validation; `claude.ts` honest failure codes; strict tool use on both AI tools (#122); an incomplete NVD page counts as unavailable, not "no match" (#123). L: endpoint tests, `test/strict-tools.test.js`. D: see "Follow-up production checks". | - |
 | SEC-5a | **Already fixed; re-validated** | L: local server applies `_headers`; zero CSP errors across pages, lazy chunks, feeds, consent banner. Added immutable caching for `/assets/build/*`. | Re-check live after deploy (step 5). |
@@ -137,7 +137,7 @@ Commits: `ae5653e` (feeds/jobs/grants), `4332d02` (AI endpoints), `35dfcbe` (sco
 | Edge functions | `fetch-news` v8 and `fetch-exploits` v14 deployed with `_shared/` helpers, verify_jwt on. Without the secret: 401; GET: 405. Manual workflow runs through GitHub: fetch-news upserted 79 items (0 errors); fetch-exploits upserted 102 (0 errors). Both lease rows show status ok and released. |
 | Headers | Enforced CSP, HSTS, `X-Frame-Options: DENY` on pages; `/assets/build/*` served with `public, max-age=31536000, immutable`. |
 | AI endpoints | Empty body → 400 `consent_required` from both endpoints, no model call. One smoke test with the fictional IT-services example answers (no real company data): 200 in 22 s, response schema 2, per-product KEV/NVD status for all 6 products, 4 advisories each citing retrieved CISA KEV / NVD records, 3 patterns, nothing dropped by validation, limitation about versions included. |
-| Browser (live) | No console errors; cookie banner shown; before consent the only Google request is Google Fonts - no googletagmanager/google-analytics; News loads 75 items through the on-demand Supabase chunk; example report renders; Quick screening end to end (14 answers) saves to History and keeps the AI button disabled until the visitor agrees. Test data cleared afterwards. |
+| Browser (live) | No console errors; no cookie banner (analytics is Cloudflare's cookieless beacon, loaded from static.cloudflareinsights.com - no Google Analytics request); News loads 75 items through the on-demand Supabase chunk; example report renders; Quick screening end to end (14 answers) saves to History and keeps the AI button disabled until the visitor agrees. Test data cleared afterwards. |
 
 ## Follow-up production checks (25 Sep 2026)
 
