@@ -33,7 +33,6 @@ import { escapeHtml } from "./html-safety.js";
 import { reportBodyHtml } from "./report-view.js";
 import { consentHtml, aiResultHtml, aiErrorText } from "./ai-panel.js";
 import { wireAccordions, preserveFocus, announce } from "./a11y.js";
-import { trackEvent } from "./privacy.js";
 
 const e = escapeHtml;
 
@@ -243,7 +242,6 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     resetSession();
     clearProgress();
     session.quickMode = quickMode;
-    trackEvent("assessment_start", { mode: quickMode ? "quick" : "full" });
     ui.phase = "scope";
     renderRail();
     renderScope();
@@ -843,7 +841,6 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     report.snapshotId = id;
     run.summary = summarizeReport(report);
     const saved = saveRun(run);
-    trackEvent("assessment_complete", { mode: report.mode });
     return { run: saved.ok ? run : null, saved };
   }
 
@@ -1080,11 +1077,10 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     const hist = document.getElementById("viewHistoryBtn");
     if (hist) wireNavLink(hist, "history");
     document.getElementById("exportPdfBtn").addEventListener("click", () => {
-      trackEvent("report_export", { format: "pdf" });
       downloadPdf(report, { aiInsights: current.ai || null });
     });
-    document.getElementById("exportCsvBtn").addEventListener("click", () => trackEvent("report_export", { format: "csv" }) || download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.csv`, actionsToCsv(report.actions, loadTracking()), "text/csv;charset=utf-8"));
-    document.getElementById("exportJsonBtn").addEventListener("click", () => trackEvent("report_export", { format: "json" }) || download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.json`, actionsToJson(report, loadTracking()), "application/json"));
+    document.getElementById("exportCsvBtn").addEventListener("click", () => download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.csv`, actionsToCsv(report.actions, loadTracking()), "text/csv;charset=utf-8"));
+    document.getElementById("exportJsonBtn").addEventListener("click", () => download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.json`, actionsToJson(report, loadTracking()), "application/json"));
     const cont = document.getElementById("continueFullBtn");
     if (cont)
       cont.addEventListener("click", () => {

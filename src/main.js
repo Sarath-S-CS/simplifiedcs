@@ -664,7 +664,8 @@ function initAnimatedBackground(){
     e.preventDefault();
     focusPageHeading({ scroll:true });
   });
-  // Analytics load for all visitors (assets/gtag-init.js); no banner to show.
+  // Analytics is Cloudflare's cookieless beacon (src/head.html); it loads
+  // itself, needs no app code, and shows no banner.
   // Back/forward: the URL has already changed by the time this fires, so
   // just read it and re-render - no pushState here, goToTab() already
   // handles the forward-navigation case.

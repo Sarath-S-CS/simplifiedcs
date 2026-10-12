@@ -5,7 +5,6 @@
 // submission - a failure keeps the message on screen. What it sends and why
 // is in src/engine/feedback.js; /privacy explains it to visitors.
 import { FEEDBACK_TOPICS, MESSAGE_MAX, validateFeedback, encodeFeedback } from "../engine/feedback.js";
-import { trackEvent } from "../ui/privacy.js";
 import { escapeHtml } from "../ui/html-safety.js";
 import { wireNavLinksByDataset } from "../router.js";
 
@@ -139,7 +138,6 @@ function wireFeedbackForm(container) {
       status.textContent = `Your feedback didn't send (${detail}). Your message is still here - try again in a moment, or open a GitHub issue instead.`;
       return;
     }
-    trackEvent("feedback_sent");
     const tile = container.querySelector("#fbTile");
     tile.innerHTML = `
       <div id="fbDone" tabindex="-1" role="status">

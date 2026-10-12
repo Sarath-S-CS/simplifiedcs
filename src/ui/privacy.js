@@ -1,24 +1,13 @@
-// Privacy: the /privacy page and the one helper that sends analytics events.
-// Keep the page text in step with what the code actually does - every claim
-// here is checked against: assets/gtag-init.js (analytics), src/engine/
-// local-data.js (browser storage), src/engine/ai-payload.js and netlify/lib/*
-// (AI requests), src/data/supabase-client.js (public feeds).
+// Privacy: the /privacy page. Keep the page text in step with what the code
+// actually does - every claim here is checked against: src/head.html
+// (Cloudflare Web Analytics), src/engine/local-data.js (browser storage),
+// src/engine/ai-payload.js and netlify/lib/* (AI requests),
+// src/data/supabase-client.js (public feeds).
 import { LOCAL_DATA, clearAllLocalData } from "../engine/local-data.js";
 import { withdrawAiConsent, hasAiConsent } from "../engine/ai-consent.js";
 import { escapeHtml } from "./html-safety.js";
 
 const e = escapeHtml;
-
-// Minimal analytics events: what kind of thing happened, never what anyone
-// answered. Google Analytics loads for everyone (see assets/gtag-init.js), so
-// this just forwards the event once gtag is available. Returns undefined
-// (falsy) by design - callers use `trackEvent(...) || download(...)`.
-export function trackEvent(name, params = {}) {
-  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
-  const safe = {};
-  for (const [k, v] of Object.entries(params)) if (["mode", "format", "page"].includes(k) && typeof v === "string") safe[k] = v.slice(0, 40);
-  window.gtag("event", name, safe);
-}
 
 // ---------- page ----------
 export function renderPrivacyPage(container) {
@@ -27,7 +16,7 @@ export function renderPrivacyPage(container) {
       <div class="page-intro">
         <div class="page-eyebrow">Privacy</div>
         <h2 class="page-title" tabindex="-1">Privacy and your data</h2>
-        <p class="page-lede">Short version: the assessment runs in your browser and your answers stay in this browser unless you choose to send them for AI insights. The site uses Google Analytics to understand overall usage.</p>
+        <p class="page-lede">Short version: the assessment runs in your browser and your answers stay in this browser unless you choose to send them for AI insights. The site uses cookieless analytics to understand overall usage.</p>
       </div>
 
       <div class="section-tile privacy-page">
@@ -43,8 +32,8 @@ export function renderPrivacyPage(container) {
         <p class="scope-hint" id="privacyClearResult" role="status"></p>
 
         <h3 class="section-h">Analytics</h3>
-        <p class="body-text">The site uses Google Analytics 4 to understand overall usage. It records page views and a few coarse events (an assessment was started or completed, in which mode; a report was exported, in which format; feedback was sent - never its content), and sets Google Analytics cookies. It never receives your answers, scores or report content. Google Signals and ad personalization are turned off, so the data is used for analytics only, not advertising.</p>
-        <p class="body-text">Analytics runs for all visitors. To opt out, use your browser's privacy settings or an ad/analytics blocker, which this site does not try to defeat.</p>
+        <p class="body-text">The site uses Cloudflare Web Analytics to understand overall usage - page views, referrers, and coarse browser and country information. It is cookieless: it sets no cookies, stores nothing on your device, and uses no fingerprinting, so there is no cross-site tracking and no personal profile. It never receives your answers, scores or report content.</p>
+        <p class="body-text">Because it stores nothing on your device and builds no profile of you, no cookie or consent banner is needed. To opt out entirely, use your browser's privacy settings or an analytics blocker, which this site does not try to defeat.</p>
 
         <h3 class="section-h">Feedback form</h3>
         <p class="body-text">If you use the form on the <a href="/feedback" class="inline-link">Feedback page</a>, what you choose as the topic, your message and - only if you give one - your email address are sent to Netlify, the site's host, which stores them in Netlify Forms and screens them for spam using Akismet. Only the site's creator reads them, to understand the feedback and to reply if you left an address. Nothing from your assessment is attached. To have a message deleted, get in touch through the <a href="/about" class="inline-link">About page</a>.</p>

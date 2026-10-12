@@ -8,7 +8,7 @@ kept as the reference for how it was done and for rollback.
 
 | Where | Change | Needs |
 |---|---|---|
-| Site (Netlify, static files in the repo) | New assessment, report, privacy page, analytics consent, hashed build output | Merge to `main` (Netlify deploys the committed files; no build step) |
+| Site (Netlify, static files in the repo) | New assessment, report, privacy page, cookieless analytics, hashed build output | Merge to `main` (Netlify deploys the committed files; no build step) |
 | Netlify Functions (`netlify/functions/`) | Rebuilt `ai-insights` and `other-text-interpret`: consent required, atomic limits, evidence-bound output | `ANTHROPIC_API_KEY` (already set), optional `RATE_LIMIT_SALT` (new) |
 | Supabase database | 2 new migrations: least-privilege table grants; job-lease table + functions | `supabase db push` (or SQL editor) |
 | Supabase Edge Functions | `fetch-news`, `fetch-exploits` (and optionally `fetch-case-studies`) require a scheduler secret and take a lease | `CRON_SECRET` function secret; redeploy |
@@ -102,8 +102,8 @@ functions before the merge would make scheduled runs fail with 401 until the mer
 1. Security headers: `curl -sI https://simplifiedcs.net/ | grep -i content-security-policy` and
    `curl -sI https://simplifiedcs.net/assets/build/<main file>` shows
    `cache-control: public, max-age=31536000, immutable`.
-2. Browser console on `/`, `/assessment`, `/news`, `/privacy`: no CSP violations. The cookie banner
-   appears; before choosing, no request goes to googletagmanager.com.
+2. Browser console on `/`, `/assessment`, `/news`, `/privacy`: no CSP violations. The cookieless
+   Cloudflare Web Analytics beacon loads from static.cloudflareinsights.com; there is no cookie banner.
 3. Quick screening end to end; Full assessment end to end; PDF download; CSV/JSON export;
    History shows the report; example reports at `/assessment/sample`.
 4. AI endpoint, fictional data only (authorized small smoke test): run the IT-services example

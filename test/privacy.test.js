@@ -1,56 +1,38 @@
-// Analytics now load for every visitor (no consent gate), but events must
-// still never carry assessment content and must use analytics-only settings.
-// assets/gtag-init.js is a plain browser script, so it's run here in a small
-// sandbox with stand-in DOM objects.
+// The site uses Cloudflare Web Analytics: a single cookieless beacon loaded
+// from head.html, with no app-side analytics code and no consent gate. These
+// checks pin that down against the static files so a stray Google Analytics
+// reference (script, CSP host, or tracking code) can't creep back in.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import vm from "node:vm";
+import { readFileSync, existsSync } from "node:fs";
 
-const GTAG_INIT = readFileSync(new URL("../assets/gtag-init.js", import.meta.url), "utf8");
+const read = (rel) => readFileSync(new URL(rel, import.meta.url), "utf8");
+const HEAD = read("../src/head.html");
+const HEADERS = read("../_headers");
 
-function runGtagInit() {
-  const appended = [];
-  const ctx = {
-    window: {},
-    document: { head: { appendChild: (el) => appended.push(el) }, createElement: () => ({}) },
-  };
-  ctx.window.dataLayer = [];
-  vm.createContext(ctx);
-  vm.runInContext(GTAG_INIT, ctx);
-  return { ctx, appended, dataLayer: ctx.window.dataLayer };
-}
+// Anything Google-Analytics-shaped. If any of these turn up in the shipped
+// head or CSP, the swap to Cloudflare has regressed.
+const GA_MARKERS = [/gtag/i, /googletagmanager/i, /google-analytics/i, /analytics\.google/i, /G-M10MSC9BG2/];
 
-test("gtag-init loads Google's analytics script once, for all visitors", () => {
-  const { appended } = runGtagInit();
-  assert.equal(appended.length, 1);
-  assert.match(appended[0].src, /^https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=G-/);
+test("head loads the Cloudflare Web Analytics beacon, once, with its token", () => {
+  const beacons = HEAD.match(/static\.cloudflareinsights\.com\/beacon\.min\.js/g) || [];
+  assert.equal(beacons.length, 1, "exactly one Cloudflare beacon script");
+  assert.match(HEAD, /data-cf-beacon=/, "beacon carries its data-cf-beacon config");
+  assert.match(HEAD, /"token":\s*"1d7d0ef244814887b570a1f2754e0d8b"/, "configured with the site token");
 });
 
-test("gtag-init pushes js + config and turns Google signals / ad personalization off", () => {
-  const { dataLayer } = runGtagInit();
-  assert.ok([...dataLayer].some((a) => a[0] === "js"), "gtag('js', ...) present");
-  const config = [...dataLayer].find((a) => a[0] === "config");
-  assert.ok(config, "gtag('config', ...) present");
-  assert.match(config[1], /^G-/);
-  assert.equal(config[2].allow_google_signals, false);
-  assert.equal(config[2].allow_ad_personalization_signals, false);
+test("head has no Google Analytics references", () => {
+  for (const re of GA_MARKERS) assert.ok(!re.test(HEAD), `head.html must not reference ${re}`);
 });
 
-test("trackEvent forwards only coarse allow-listed fields, nothing without gtag, and returns falsy", async () => {
-  const { trackEvent } = await import("../src/ui/privacy.js");
+test("the old gtag-init loader is gone", () => {
+  assert.equal(existsSync(new URL("../assets/gtag-init.js", import.meta.url)), false);
+});
 
-  // No gtag available: sends nothing, returns undefined (falsy).
-  globalThis.window = {};
-  assert.equal(trackEvent("assessment_complete", { mode: "full" }), undefined);
-
-  // gtag available: forwards the event, stripping any non-allow-listed field
-  // (answers, verdict, company name must never leave). Still returns falsy so
-  // callers' `trackEvent(...) || download(...)` pattern keeps working.
-  const calls = [];
-  globalThis.window = { gtag: (...a) => calls.push(a) };
-  const r = trackEvent("assessment_complete", { mode: "full", answers: { mfa: 0 }, verdict: "Critical gaps found", companyName: "Acme" });
-  assert.equal(r, undefined);
-  assert.deepEqual(calls, [["event", "assessment_complete", { mode: "full" }]]);
-  delete globalThis.window;
+test("CSP allows the Cloudflare beacon and its reporting endpoint, and no Google hosts", () => {
+  const csp = (HEADERS.match(/Content-Security-Policy:[^\n]*/) || [""])[0];
+  assert.ok(csp, "a Content-Security-Policy line exists");
+  assert.match(csp, /script-src[^;]*https:\/\/static\.cloudflareinsights\.com/, "beacon host allowed in script-src");
+  assert.match(csp, /connect-src[^;]*https:\/\/cloudflareinsights\.com/, "reporting host allowed in connect-src");
+  for (const re of GA_MARKERS) assert.ok(!re.test(csp), `CSP must not reference ${re}`);
 });

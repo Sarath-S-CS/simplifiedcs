@@ -125,11 +125,11 @@ function externalizeBundle(html) {
 
 async function snapshotRoute(browser, routePath) {
   const page = await browser.newPage();
-  // Not networkidle0: head.html's gtag.js keeps a connection alive past the
-  // first page load, so "0 network connections" never actually happens
-  // again after that and navigation just times out. domcontentloaded is
-  // enough - the readiness check below is what actually waits for real
-  // content, including the async Supabase-backed tabs.
+  // Not networkidle0: the Cloudflare Analytics beacon in head.html keeps a
+  // connection alive past the first page load, so "0 network connections"
+  // never actually happens again after that and navigation just times out.
+  // domcontentloaded is enough - the readiness check below is what actually
+  // waits for real content, including the async Supabase-backed tabs.
   await page.goto(`http://localhost:${PORT}${routePath}`, { waitUntil: "domcontentloaded", timeout: 30000 });
   // news/exploits/case-studies render a synchronous "Loading the latest…"
   // placeholder into #tabContent *before* their Supabase fetch resolves
