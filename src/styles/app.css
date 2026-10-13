@@ -984,8 +984,12 @@
   .field [aria-invalid="true"], .feedback-form .option:has(input[aria-invalid="true"]){ border-color:var(--accent-critical); }
 
   /* --- results page: optional report-header metadata (company/requester) --- */
-  .report-meta-fields{ display:flex; gap:16px; flex-wrap:wrap; margin:20px 0 28px; }
-  .report-meta-fields .field{ flex:1 1 220px; margin-bottom:0; }
+  .report-meta-fields{ display:flex; gap:16px; flex-wrap:wrap; margin:20px 0 28px; align-items:stretch; }
+  /* Column layout + input pinned to the bottom keeps the two input boxes on a
+     shared baseline even when one label wraps to two lines (the left label's
+     longer "never sent anywhere" tag) and the other stays on one. */
+  .report-meta-fields .field{ flex:1 1 220px; margin-bottom:0; display:flex; flex-direction:column; }
+  .report-meta-fields .field input{ margin-top:auto; }
 
   /* --- infrastructure snapshot --- */
   .snapshot{ margin-bottom:28px; }
