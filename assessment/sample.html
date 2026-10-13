@@ -40,7 +40,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <meta name="site-updated" content="October 13, 2026">
 <link rel="stylesheet" href="/assets/build/app-XEO66XMK.css">
-<script type="module" src="/assets/build/main-PFHTTC4O.js"></script>
+<script type="module" src="/assets/build/main-ES7U4HV3.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#tabContent">Skip to main content</a>
@@ -494,7 +494,7 @@
       </div>
       <div class="acc-body" id="acc-body-12">
         <ul>
-          <li><b>Why it ranks here:</b> Your answer: "Partially - e.g. DMARC set to "none"" · High-impact control</li><li><b>What could go wrong:</b> Without SPF/DKIM/DMARC enforced, attackers can send mail that appears to come from your own domain, to your own employees, customers, or partners.</li><li><b>Attack technique:</b> MITRE ATT&amp;CK T1566 - Phishing</li><li><b>Interim step:</b> As a fast interim step, move DMARC to quarantine (not reject yet) - it filters spoofed mail without the risk of legitimate mail bouncing while it's tuned.</li><li><b>Durable fix:</b> Publish SPF and DKIM records and move DMARC to full enforcement (reject) once you've confirmed legitimate mail flows aren't affected during a quarantine period.</li><li><b>Suggested owner:</b> IT lead</li><li><b>Evidence it's done:</b> DNS records and DMARC policy set to quarantine or reject</li><li><b>Framework references:</b> CIS Controls v8.1: 9.5</li>
+          <li><b>Why it ranks here:</b> Your answer: "Partially - e.g. DMARC set to "none"" · High-impact control</li><li><b>What could go wrong:</b> Without SPF/DKIM/DMARC enforced, attackers can send mail that appears to come from your own domain, to your own employees, customers, or partners.</li><li><b>Attack technique:</b> MITRE ATT&amp;CK T1566 - Phishing</li><li><b>Interim step:</b> As a fast interim step, start DMARC at p=none with aggregate (RUA) reports on - it stays non-blocking while it reveals every source sending as your domain, which is what you need before enforcing.</li><li><b>Durable fix:</b> Publish SPF and DKIM records, then enforce DMARC in stages - p=none with aggregate reports to inventory senders and fix SPF/DKIM alignment (third-party senders included), then quarantine, then reject - monitoring the reports and keeping a rollback ready at each step, since misaligned legitimate mail is quarantined until its alignment is corrected.</li><li><b>Suggested owner:</b> IT lead</li><li><b>Evidence it's done:</b> DNS records and DMARC policy set to quarantine or reject</li><li><b>Framework references:</b> CIS Controls v8.1: 9.5</li>
           
           
         </ul>
@@ -1060,7 +1060,7 @@
         <div class="priority-rank" aria-label="Rank 35">35</div>
         <div class="action-head-text">
           <h4><button type="button" class="acc-toggle" aria-controls="acc-body-35" aria-expanded="false">Enforce a strong password policy</button></h4>
-          <div class="acc-sub">Access &amp; Identity · What is the organization's password policy for length, complexity, and rotation? - your answer: "Basic complexity requirements enforced"</div>
+          <div class="acc-sub">Access &amp; Identity · What is the organization's password policy for length, screening, and rotation? - your answer: "Basic rules enforced (e.g. a minimum length or complexity requirements)"</div>
           <div class="action-chips">
             <span class="gap-tier gap-tier-1">Standard</span>
             
@@ -1073,9 +1073,9 @@
       </div>
       <div class="acc-body" id="acc-body-35">
         <ul>
-          <li><b>Why it ranks here:</b> Your answer: "Basic complexity requirements enforced"</li><li><b>What could go wrong:</b> Weak or default password requirements make automated password-guessing and credential-stuffing attacks meaningfully more likely to succeed.</li><li><b>Attack technique:</b> MITRE ATT&amp;CK T1110 - Brute Force</li><li><b>Interim step:</b> MFA is at least partially enforced, which limits what a guessed password alone can do - as an interim step, set a minimum length requirement (length matters more than complexity rules) even before a full policy is formalized.</li><li><b>Durable fix:</b> Adopt a length-focused password policy (12+ characters, no forced periodic rotation, which NIST no longer recommends since it drives weaker password reuse patterns) and pair it with MFA.</li><li><b>Suggested owner:</b> IT lead</li><li><b>Evidence it's done:</b> Identity-provider password settings</li><li><b>Framework references:</b> NIST CSF 2.0: PR.AA-01 · CIS Controls v8.1: 5.2</li>
+          <li><b>Why it ranks here:</b> Your answer: "Basic rules enforced (e.g. a minimum length or complexity requirements)"</li><li><b>What could go wrong:</b> Weak or default password requirements make automated password-guessing and credential-stuffing attacks meaningfully more likely to succeed.</li><li><b>Attack technique:</b> MITRE ATT&amp;CK T1110 - Brute Force</li><li><b>Interim step:</b> MFA is at least partially enforced, which limits what a guessed password alone can do - as an interim step, set a minimum length requirement (length matters more than complexity rules) even before a full policy is formalized.</li><li><b>Durable fix:</b> Adopt a length-based password policy aligned with NIST SP 800-63B-4: require at least 15 characters where the password is the only factor (8 or more is acceptable when it is paired with MFA), screen new passwords against known-compromised and common-password lists, and drop forced periodic rotation and character-composition rules - both push people toward weaker, reused patterns. Keep this about human passwords; machine and service secrets are managed separately. Pair it with MFA.</li><li><b>Suggested owner:</b> IT lead</li><li><b>Evidence it's done:</b> Identity-provider password settings</li><li><b>Framework references:</b> NIST CSF 2.0: PR.AA-01 · CIS Controls v8.1: 5.2</li>
           
-          <li><b>Reference:</b> <a href="https://pages.nist.gov/800-63-3/sp800-63b.html" target="_blank" rel="noopener noreferrer">NIST SP 800-63B: Digital Identity Guidelines - Authentication</a></li>
+          <li><b>Reference:</b> <a href="https://pages.nist.gov/800-63-4/sp800-63b.html" target="_blank" rel="noopener noreferrer">NIST SP 800-63B-4: Digital Identity Guidelines - Authentication and Authenticator Management</a></li>
         </ul>
         
       </div>

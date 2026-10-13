@@ -6,6 +6,12 @@
 // shown so "nothing found" is never implied when nothing was checked.
 import { escapeHtml, safeHttpUrl } from "./html-safety.js";
 import { hasAiConsent } from "../engine/ai-consent.js";
+import { applicabilityText } from "../engine/applicability.js";
+
+// Re-exported so existing importers (and tests) can keep importing it from
+// here; the canonical definition now lives in ../engine/applicability.js so
+// the PDF export shares exactly the same wording.
+export { applicabilityText };
 
 const e = escapeHtml;
 
@@ -18,27 +24,6 @@ export const SOURCE_STATUS_TEXT = {
   "not-applicable": "Not checked - managed service",
   "not-checked-example": "Not checked (example report)",
 };
-
-// How sure the match is, from the server's evidence (never from the model).
-// The two version labels quote the version the visitor typed, so a typo is
-// visible right where it matters.
-export function applicabilityText(a) {
-  const v = a.version ? ` (${a.version})` : "";
-  switch (a.applicability) {
-    case "affects-stated-version":
-      return `Listed by NVD as affecting your version${v}`;
-    case "version-not-listed":
-      return `NVD doesn't list your version${v} as affected - confirm with the vendor`;
-    case "potential-match":
-      return "Potential match - confirm your version";
-    case "platform-not-indicated":
-      return "Potential match - platform not stated in the record";
-    case "vendor-only":
-      return "Vendor match only - this product isn't confirmed";
-    default:
-      return a.applicability;
-  }
-}
 
 export function consentHtml(payload) {
   const remembered = hasAiConsent();

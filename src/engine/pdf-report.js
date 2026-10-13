@@ -13,6 +13,7 @@
 import { jsPDF } from "jspdf";
 import { FUNCTIONS, FUNC_DISPLAY } from "../data/categories.js";
 import { WEIGHT_LABELS } from "../data/controls.js";
+import { applicabilityText } from "./applicability.js";
 
 const PAGE_W = 612; // US Letter, pt
 const PAGE_H = 792;
@@ -371,7 +372,7 @@ function drawAi(w, ai, error, report) {
     for (const a of ai.advisories) {
       const ev = a.evidence.map((e) => `${e.cveId} (${e.source}${e.ransomware ? ", known ransomware use" : ""}) ${e.url}`).join("; ");
       w.keep(LINE_H * 5);
-      w.text(`${a.productName} - ${a.applicability === "potential-match" ? "potential match" : a.applicability === "vendor-only" ? "vendor match only - product not confirmed" : "platform not indicated"}`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9.5, style: "bold" });
+      w.text(`${a.productName} - ${applicabilityText(a)}`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9.5, style: "bold" });
       w.text(a.summary, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9 });
       w.text(`Verify: ${a.verification}`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 9 });
       w.text(`Sources: ${ev}`, { x: MARGIN + 14, width: CONTENT_W - 14, fontSize: 8.5, color: COLOR_MUTED, after: 6 });

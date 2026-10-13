@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page not found - SimplifiedCS</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Standalone by design: this page does not load the app bundle, so an
+     unknown URL returns a genuine 404 (see _redirects) instead of booting the
+     SPA under an invented path. No /assets/build references, so it never goes
+     stale against the content-hashed bundle. -->
+<style>
+  :root{
+    --bg:#000000; --surface:rgba(255,255,255,0.035); --line:#243B2C;
+    --text:#E6F3EA; --text-muted:#6FA083; --accent:#01A982;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#FFFFFF; --surface:rgba(0,0,0,0.035); --line:#D2E1D7; --text:#132018; --text-muted:#52665B; --accent:#01A982; }
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ width:100%; max-width:560px; text-align:left; }
+  .code{ font-family:var(--mono); font-size:13px; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); margin:0 0 14px; }
+  h1{ font-size:clamp(28px,6vw,44px); line-height:1.1; margin:0 0 14px; text-wrap:balance; }
+  p{ font-size:16px; line-height:1.6; color:var(--text-muted); margin:0 0 28px; max-width:46ch; }
+  .actions{ display:flex; flex-wrap:wrap; gap:12px; }
+  a.btn{
+    display:inline-block; font-family:var(--mono); font-size:13px; font-weight:500;
+    text-decoration:none; padding:11px 18px; border:1px solid var(--line); border-radius:2px;
+    color:var(--text); background:var(--surface);
+  }
+  a.btn.primary{ border-color:var(--accent); color:var(--accent); }
+  a.btn:hover{ border-color:var(--accent); }
+  a.btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <p class="code">Error 404</p>
+    <h1>This page doesn't exist</h1>
+    <p>The address you followed isn't a page on SimplifiedCS - it may have moved, or the link may be mistyped. Everything is reachable from the home page.</p>
+    <div class="actions">
+      <a class="btn primary" href="/">Go to the home page</a>
+      <a class="btn" href="/assessment">Start an assessment</a>
+    </div>
+  </main>
+</body>
+</html>

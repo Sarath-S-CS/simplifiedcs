@@ -1,4 +1,10 @@
-# Removed pages: permanent redirects, listed before the SPA fallback (first match wins).
+# Removed pages: permanent redirects, listed first (first match wins).
 /engineering   /   301
 
-/*    /index.html   200
+# Every valid route is a static file: index.html for "/", a flat <route>.html
+# per content route, and assessment/sample.html - all written by
+# scripts/prerender.js (static files take precedence over this rule, so they
+# serve 200). Anything with no matching file - an unknown route or a missing
+# asset - gets a genuine 404 via the standalone 404.html instead of the old
+# "/* /index.html 200" fallback that rendered the homepage under any URL.
+/*    /404.html   404

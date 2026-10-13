@@ -37,8 +37,16 @@ import path from "node:path";
 import puppeteer from "puppeteer";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const ROOT = path.resolve(root);
 const SITE_ORIGIN = "https://simplifiedcs.net";
 const PORT = 5299;
+
+// Only serve files inside the repo root (blocks "/../x" and similar); returns
+// null when the resolved path escapes the root.
+function resolveWithinRoot(reqPath) {
+  const resolved = path.resolve(ROOT, "." + reqPath.replace(/\\/g, "/"));
+  return resolved === ROOT || resolved.startsWith(ROOT + path.sep) ? resolved : null;
+}
 
 // Mirrors the ROUTES map in src/router.js - kept in sync by hand since this script
 // runs outside the esbuild bundle and can't import app code directly.
@@ -68,25 +76,40 @@ const ROUTES = {
   // deterministic sample data, so unlike the wizard itself it's a real
   // shareable page worth a snapshot.
   "/assessment/sample": "assessment",
-  // /feedback and bare /assessment deliberately excluded - a feedback form
-  // and a stateful in-progress wizard have nothing crawlable to gain from a
-  // frozen snapshot, same reasoning that already excluded /feedback from
-  // sitemap.xml.
+  // /assessment (the mode-select landing) and /feedback are prerendered too -
+  // not for crawl value but so that a direct load of either gets its own
+  // static file with the correct self-canonical, and so unknown routes can
+  // return a genuine 404 (see _redirects) without these two valid routes
+  // falling through to it. The snapshots capture the deterministic landing
+  // state (no localStorage), then the SPA hydrates as usual.
+  "/assessment": "assessment",
+  "/feedback": "feedback",
 };
 
 const MIME = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".txt": "text/plain", ".xml": "application/xml" };
 
 function startServer() {
   const server = createServer(async (req, res) => {
-    let reqPath = decodeURIComponent(req.url.split("?")[0]);
-    if (reqPath === "/") reqPath = "/index.html";
+    let reqPath;
     try {
-      const data = await readFile(path.join(root, reqPath));
+      reqPath = decodeURIComponent(req.url.split("?")[0]);
+    } catch {
+      res.writeHead(400);
+      res.end("Bad request");
+      return;
+    }
+    if (reqPath === "/") reqPath = "/index.html";
+    const filePath = reqPath === "/index.html" ? path.join(ROOT, "index.html") : resolveWithinRoot(reqPath);
+    try {
+      if (!filePath) throw new Error("outside root");
+      const data = await readFile(filePath);
       res.writeHead(200, { "Content-Type": MIME[path.extname(reqPath)] || "application/octet-stream" });
       res.end(data);
     } catch {
+      // During prerender the route files don't exist yet, so unmatched paths
+      // serve the SPA shell and the browser renders the route for capture.
       try {
-        const data = await readFile(path.join(root, "index.html"));
+        const data = await readFile(path.join(ROOT, "index.html"));
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end(data);
       } catch {
@@ -95,7 +118,8 @@ function startServer() {
       }
     }
   });
-  return new Promise((resolve) => server.listen(PORT, () => resolve(server)));
+  // Loopback only - a local build helper has no reason to listen on the network.
+  return new Promise((resolve) => server.listen(PORT, "127.0.0.1", () => resolve(server)));
 }
 
 // Rewrites <title> (belt-and-suspenders - main.js already sets the right
@@ -175,10 +199,9 @@ async function writeRoute(routePath, html) {
     return "index.html";
   }
   // e.g. "/methodology" -> "methodology.html" (flat, at the repo root);
-  // "/assessment/sample" -> "assessment/sample.html" (flat file inside the
-  // assessment/ directory - that directory has no index.html of its own,
-  // so bare /assessment still correctly falls through to the SPA shell,
-  // unaffected by this route's own snapshot existing one level down).
+  // "/assessment" -> "assessment.html"; "/assessment/sample" ->
+  // "assessment/sample.html" (a named file inside the assessment/ directory,
+  // which has no index.html of its own - the two snapshots don't collide).
   const relPath = `${routePath.slice(1)}.html`;
   const dir = path.dirname(path.join(root, relPath));
   await mkdir(dir, { recursive: true });

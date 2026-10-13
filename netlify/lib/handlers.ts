@@ -71,7 +71,15 @@ function canonical(v: unknown): string {
 
 type Admitted = { store: CasStore; ticket: Ticket };
 async function admitOrRespond(fn: string, deps: Deps, policy: Policy, body: unknown, estimated: number, requestId: string): Promise<{ response: Response } | Admitted> {
-  const salt = deps.env("RATE_LIMIT_SALT") || "simplifiedcs-rate-limit";
+  // Fail closed without a private salt: a public fallback would make the
+  // per-IP hashes guessable/reversible, defeating the whole reason the IP is
+  // hashed rather than stored. If RATE_LIMIT_SALT is missing we refuse the
+  // metered call rather than silently dropping that privacy protection.
+  const salt = deps.env("RATE_LIMIT_SALT");
+  if (!salt) {
+    log(fn, requestId, { event: "admission_unavailable", reason: "missing_salt" });
+    return { response: errorResponse(503, "limits_unavailable", "AI features are temporarily unavailable because usage limits can't be checked. The rest of your report is unaffected.", requestId, 30) };
+  }
   const clientHash = await hashClient(deps.clientIp || "unknown", salt);
   const requestHash = (await sha256Hex(canonical(body))).slice(0, 32);
   let store: CasStore;

@@ -45,6 +45,18 @@ export function applyPageMeta(tab, title, path) {
   setMeta('meta[property="og:url"]', "content", url);
   setMeta('meta[name="twitter:title"]', "content", title);
   setMeta('meta[name="twitter:description"]', "content", description);
+  // Self-canonical per route. Without this, client-side navigation (and the
+  // two routes that aren't prerendered) leave the homepage canonical in the
+  // <head>, telling search engines every page is a duplicate of "/". The
+  // prerendered snapshots already carry the right canonical statically (see
+  // scripts/prerender.js); this keeps it correct once the SPA takes over.
+  let canonical = document.head.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement("link");
+    canonical.setAttribute("rel", "canonical");
+    document.head.appendChild(canonical);
+  }
+  canonical.setAttribute("href", url);
   // History only ever shows data from the visitor's own browser - nothing
   // there is worth indexing.
   let robots = document.head.querySelector('meta[name="robots"]');

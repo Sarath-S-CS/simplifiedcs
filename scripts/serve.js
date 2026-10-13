@@ -6,7 +6,22 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const ROOT = path.resolve(root);
 const port = process.env.PORT || 5173;
+// Loopback only: this preview server has no auth and serves repo files, so it
+// must not be reachable from other machines on the network. Overridable for
+// the rare container case, but never 0.0.0.0 by default.
+const host = process.env.HOST || "127.0.0.1";
+
+// Resolves a decoded request path to an absolute path, but only if it stays
+// inside the repo root - blocks "/../x", encoded "..%2f" (already decoded by
+// the caller), absolute-path and Windows-separator traversal. Returns null if
+// the path escapes the root.
+function resolveWithinRoot(reqPath) {
+  const resolved = path.resolve(ROOT, "." + reqPath.replace(/\\/g, "/"));
+  if (resolved !== ROOT && !resolved.startsWith(ROOT + path.sep)) return null;
+  return resolved;
+}
 
 const MIME = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".txt": "text/plain" };
 
@@ -53,13 +68,36 @@ createServer(async (req, res) => {
     res.end("No form handling on the local server");
     return;
   }
-  let reqPath = decodeURIComponent(req.url.split("?")[0]);
+  let reqPath;
+  try {
+    reqPath = decodeURIComponent(req.url.split("?")[0]);
+  } catch {
+    // Malformed percent-encoding (e.g. a lone "%"): reject rather than guess.
+    res.writeHead(400, { "content-type": "text/plain" });
+    res.end("Bad request");
+    return;
+  }
   if (reqPath === "/") reqPath = "/index.html";
-  const filePath = path.join(root, reqPath);
+  const filePath = resolveWithinRoot(reqPath);
+  const serve404 = async () => {
+    // Mirrors the repo's _redirects catch-all (/* /404.html 404): any path
+    // with no matching file - an unknown route or a missing asset - gets a
+    // genuine 404 and the standalone 404.html, same as on Netlify.
+    try {
+      const data = await readFile(path.join(ROOT, "404.html"));
+      res.writeHead(404, { ...siteHeaders, "Content-Type": "text/html", "Cache-Control": "no-store" });
+      res.end(data);
+    } catch {
+      res.writeHead(404, { "content-type": "text/plain" });
+      res.end("Not found");
+    }
+  };
+  // Path escaped the repo root (traversal attempt): 404, don't read it.
+  if (!filePath) return serve404();
   try {
     // Netlify's own resolution order for a request with no matching file
     // extension: the exact path, then path.html, then path/index.html -
-    // e.g. /methodology resolves to methodology/index.html, the prerendered
+    // e.g. /methodology resolves to methodology.html, the prerendered
     // snapshot scripts/prerender.js writes there. Only tried when reqPath
     // has no extension, same as Netlify only applies this to "pretty" URLs.
     const hasExt = path.extname(reqPath) !== "";
@@ -67,22 +105,11 @@ createServer(async (req, res) => {
       ? [filePath]
       : [filePath, `${filePath}.html`, path.join(filePath, "index.html")];
     const found = await readFirstMatch(candidates);
-    if (!found) throw new Error("not found");
+    if (!found) return serve404();
     const ext = path.extname(found.filePath);
     res.writeHead(200, { ...siteHeaders, "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": "no-store" });
     res.end(found.data);
   } catch {
-    // Mirrors the repo's _redirects catch-all (/* /index.html 200): any
-    // path with no matching file - a client-side route like /exploits,
-    // hit via direct load, refresh, or a real href in a new tab - falls
-    // through to index.html instead of a bare 404, same as on Netlify.
-    try {
-      const data = await readFile(path.join(root, "index.html"));
-      res.writeHead(200, { ...siteHeaders, "Content-Type": "text/html", "Cache-Control": "no-store" });
-      res.end(data);
-    } catch {
-      res.writeHead(404);
-      res.end("Not found");
-    }
+    return serve404();
   }
-}).listen(port, () => console.log(`Serving on http://localhost:${port}`));
+}).listen(port, host, () => console.log(`Serving on http://${host}:${port}`));

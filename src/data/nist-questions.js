@@ -185,10 +185,10 @@ export const NIST_QUESTIONS = [
     { v: 1, t: "Individually assigned, but not regularly reviewed" },
     { v: 2, t: "Individually assigned, regularly reviewed/rotated, least-privilege enforced" },
   ]),
-  scored("Protect", "passwordPolicy", "What is the organization's password policy for length, complexity, and rotation?", [
+  scored("Protect", "passwordPolicy", "What is the organization's password policy for length, screening, and rotation?", [
     { v: 0, t: "No formal policy / weak defaults" },
-    { v: 1, t: "Basic complexity requirements enforced" },
-    { v: 2, t: "Strong length/complexity policy enforced organization-wide" },
+    { v: 1, t: "Basic rules enforced (e.g. a minimum length or complexity requirements)" },
+    { v: 2, t: "Length-based policy enforced org-wide, new passwords screened against known-compromised lists, no forced routine rotation" },
   ]),
   scored("Protect", "passwordManager", "Do administrators and/or employees use a password management tool?", [
     { v: 0, t: "No" },

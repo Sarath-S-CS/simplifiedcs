@@ -212,10 +212,10 @@ export const FLAG_GUIDANCE = {
       "Without SPF/DKIM/DMARC enforced, attackers can send email that appears to come from your own domain - to your employees, or to your customers and partners. Without training, the people receiving it are less equipped to catch what technical filtering alone won't.",
     compensatingControl: (a) =>
       hasSome(a.phishingSim)
-        ? "Simulated phishing tests are already happening, which helps build detection reflexes even without formal training - as a fast, low-disruption interim step, move DMARC from monitoring to quarantine (not straight to reject) to start blocking spoofed mail without risking legitimate mail getting dropped."
-        : "As a fast, low-disruption interim step, set DMARC to quarantine (not reject yet) - it starts filtering spoofed mail claiming to be from your domain without the risk of legitimate mail bouncing while you're still tuning it.",
+        ? "Simulated phishing tests are already happening, which helps build detection reflexes even without formal training - as a fast, low-disruption interim step, start DMARC at p=none with aggregate (RUA) reports turned on, so you can see which senders are failing alignment before anything is blocked."
+        : "As a fast, low-disruption interim step, start DMARC at p=none with aggregate (RUA) reports turned on - it stays non-blocking while it shows you every source sending as your domain, which is what you need before enforcing.",
     remediation: () =>
-      "Publish SPF and DKIM records and move DMARC to enforcement (quarantine, then reject once confident) - most mail providers document this as a guided setup, not custom engineering. Pair it with recurring security awareness training, since technical filtering alone won't stop every spoofed message.",
+      "Publish SPF and DKIM records, then enforce DMARC in stages: start at p=none with aggregate reports, inventory your legitimate senders and fix their SPF/DKIM alignment (including third-party senders like your mail provider and marketing tools), then move to quarantine and finally reject - watching the reports at each step and keeping a rollback ready, since misaligned legitimate mail will be quarantined until its alignment is fixed. Pair it with recurring security awareness training, since technical filtering alone won't stop every spoofed message.",
   },
   "training-no-phishing-sim": {
     technique: t("T1566", "Phishing"),
@@ -451,7 +451,7 @@ export const QUESTION_GUIDANCE = {
   },
   dbEncryption: {
     technique: t("T1005", "Data from Local System"),
-    explain: "An unencrypted database means a stolen backup, a misconfigured storage bucket, or a leaked credential exposes the data in plain, immediately-usable form - encryption at rest is what makes a stolen copy alone insufficient.",
+    explain: "An unencrypted database means a stolen backup, a lost disk, or a misconfigured storage bucket exposes the data in plain, immediately-usable form - encryption at rest is what makes a stolen copy alone insufficient. (It does not stop access through a valid credential, which reads the data decrypted like the application does - that's what database access control covers.)",
     compensatingControl: () => "As an interim step, confirm at minimum that any database backups or exports are encrypted, even if the live database itself isn't yet.",
     remediation: () => "Enable at-rest encryption - a native, typically low-effort setting on every major database engine and managed cloud database service, not a migration project.",
   },
@@ -505,9 +505,9 @@ export const QUESTION_GUIDANCE = {
     explain: "Without SPF/DKIM/DMARC enforced, attackers can send mail that appears to come from your own domain, to your own employees, customers, or partners.",
     compensatingControl: (a) =>
       hasSome(a.phishingSim)
-        ? "Simulated phishing tests are already running, which helps independent of this gap - as a fast interim step, move DMARC to quarantine (not reject yet) to start filtering spoofed mail without risking legitimate mail bouncing."
-        : "As a fast interim step, move DMARC to quarantine (not reject yet) - it filters spoofed mail without the risk of legitimate mail bouncing while it's tuned.",
-    remediation: () => "Publish SPF and DKIM records and move DMARC to full enforcement (reject) once you've confirmed legitimate mail flows aren't affected during a quarantine period.",
+        ? "Simulated phishing tests are already running, which helps independent of this gap - as a fast interim step, start DMARC at p=none with aggregate (RUA) reports on, so you can see which senders fail alignment before anything is filtered."
+        : "As a fast interim step, start DMARC at p=none with aggregate (RUA) reports on - it stays non-blocking while it reveals every source sending as your domain, which is what you need before enforcing.",
+    remediation: () => "Publish SPF and DKIM records, then enforce DMARC in stages - p=none with aggregate reports to inventory senders and fix SPF/DKIM alignment (third-party senders included), then quarantine, then reject - monitoring the reports and keeping a rollback ready at each step, since misaligned legitimate mail is quarantined until its alignment is corrected.",
   },
   privSeparation: {
     technique: t("T1078", "Valid Accounts"),
@@ -537,8 +537,8 @@ export const QUESTION_GUIDANCE = {
       hasSome(a.mfa)
         ? "MFA is at least partially enforced, which limits what a guessed password alone can do - as an interim step, set a minimum length requirement (length matters more than complexity rules) even before a full policy is formalized."
         : "As an interim step, set a minimum length requirement organization-wide (length matters more than complexity rules) - it's a five-minute setting change, not a program.",
-    remediation: () => "Adopt a length-focused password policy (12+ characters, no forced periodic rotation, which NIST no longer recommends since it drives weaker password reuse patterns) and pair it with MFA.",
-    reference: ref("NIST SP 800-63B: Digital Identity Guidelines - Authentication", "https://pages.nist.gov/800-63-3/sp800-63b.html"),
+    remediation: () => "Adopt a length-based password policy aligned with NIST SP 800-63B-4: require at least 15 characters where the password is the only factor (8 or more is acceptable when it is paired with MFA), screen new passwords against known-compromised and common-password lists, and drop forced periodic rotation and character-composition rules - both push people toward weaker, reused patterns. Keep this about human passwords; machine and service secrets are managed separately. Pair it with MFA.",
+    reference: ref("NIST SP 800-63B-4: Digital Identity Guidelines - Authentication and Authenticator Management", "https://pages.nist.gov/800-63-4/sp800-63b.html"),
   },
   passwordManager: {
     technique: t("T1110", "Brute Force"),

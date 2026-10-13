@@ -145,13 +145,35 @@ test("AI section: absent unless requested; success cites evidence; failure is st
   const text = allText(checkLayout(buildAssessmentPdfDoc(report, { aiInsights: ai }).doc));
   assert.match(text, /AI-ENHANCED INSIGHTS/);
   assert.match(text, /CVE-2099-0001 \(CISA KEV, known ransomware use\)/);
-  assert.match(text, /vendor match only - product not confirmed/);
+  assert.match(text, /Vendor match only - this product isn't confirmed/);
   assert.match(text, /A fictional test advisory - check the firmware -> now\./);
   assert.match(text, /A "pattern"/);
   assert.match(text, /NVD - source unavailable/);
 
   const failed = allText(checkLayout(buildAssessmentPdfDoc(report, { aiError: "the AI service didn't respond in time" }).doc));
   assert.match(failed, /AI insights were requested but not produced: the AI service didn't respond in time/);
+});
+
+test("PDF applicability labels match the web formatter for every state (regression: affects-stated-version was mislabelled 'platform not indicated')", () => {
+  const mkAi = (applicability, version) => ({
+    schemaVersion: 2,
+    generatedAt: "2026-09-24T12:05:00.000Z",
+    model: "claude-sonnet-5",
+    promptVersion: "insights-2026-09-v2",
+    sourceStatus: [],
+    advisories: [{ productKey: "p0", productName: "FortiGate", version, applicability, summary: "s", verification: "v", evidence: [{ id: "E1", source: "NVD", cveId: "CVE-2099-0002", title: "T", url: "https://nvd.nist.gov/vuln/detail/CVE-2099-0002", publishedAt: "2099-01-01", match: applicability, platforms: [], versionInfo: null, ransomware: false }] }],
+    patterns: [],
+    limitations: [],
+  });
+  const labelIn = (applicability, version) => allText(pages(buildAssessmentPdfDoc(weakReport(), { aiInsights: mkAi(applicability, version) }).doc));
+
+  const affects = labelIn("affects-stated-version", "7.2.1");
+  assert.match(affects, /FortiGate - Listed by NVD as affecting your version \(7\.2\.1\)/);
+  assert.doesNotMatch(affects, /platform not indicated/);
+  assert.match(labelIn("version-not-listed", "7.2.1"), /NVD doesn't list your version \(7\.2\.1\) as affected/);
+  assert.match(labelIn("potential-match"), /Potential match - confirm your version/);
+  assert.match(labelIn("platform-not-indicated"), /platform not stated in the record/);
+  assert.match(labelIn("vendor-only"), /Vendor match only - this product isn't confirmed/);
 });
 
 test("example reports are labelled as fictional in the PDF", () => {
