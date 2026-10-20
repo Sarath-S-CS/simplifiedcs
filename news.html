@@ -39,8 +39,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <meta name="site-updated" content="October 20, 2026">
-<link rel="stylesheet" href="/assets/build/app-4C4ZXQ3R.css">
-<script type="module" src="/assets/build/main-JRNFVNFD.js"></script>
+<link rel="stylesheet" href="/assets/build/app-6EJRQQF4.css">
+<script type="module" src="/assets/build/main-ASXPNB7W.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#tabContent">Skip to main content</a>
@@ -124,7 +124,11 @@
       </div>
 
       <div class="section-tile revealed">
-        <p class="news-freshness">Refreshed daily from CISA's KEV catalog, NVD, and security RSS feeds, ranked by exploitation status/severity/recency - not just "newest first."</p>
+        <p class="news-freshness">Refreshed daily from CISA's KEV catalog, NVD, and security RSS feeds. Sort <b>By priority</b> (ranked by exploitation status, severity and recency) or by <b>Latest</b> to see the most recently published first.</p>
+        <div class="feed-sort" role="group" aria-label="Sort order">
+    <span class="feed-sort-label">Sort</span>
+    <button class="filter-pill active" data-sort="priority" data-fkey="feed-sort-priority" aria-pressed="true">By priority</button><button class="filter-pill " data-sort="latest" data-fkey="feed-sort-latest" aria-pressed="false">Latest</button>
+  </div>
         <div class="news-filters">
           <button class="filter-pill active" data-cat="all" data-fkey="news-filter-all">All</button><button class="filter-pill " data-cat="ai" data-fkey="news-filter-ai">AI &amp; Security</button><button class="filter-pill " data-cat="vuln" data-fkey="news-filter-vuln">Vulnerabilities</button><button class="filter-pill " data-cat="ot" data-fkey="news-filter-ot">OT / Industrial</button><button class="filter-pill " data-cat="landscape" data-fkey="news-filter-landscape">Threat Landscape</button>
         </div>

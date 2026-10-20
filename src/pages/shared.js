@@ -53,6 +53,22 @@ export const STAGE_META = {
     blurb:'The program runs continuously - monitored, tested, and adjusted as the environment and threat landscape change, rather than declared "done."' },
 };
 
+// Sort toggle shared by the News and Exploits feeds: "By priority" (the
+// computed severity / exploitation-likelihood / recency ranking) vs "Latest"
+// (most recently published or added first). Reuses .filter-pill so it inherits
+// the feed pages' existing styling, and is labelled so it reads as a separate
+// control from the category filters beside it.
+export const FEED_SORTS = [
+  { id: "priority", label: "By priority" },
+  { id: "latest", label: "Latest" },
+];
+export function sortToggleHtml(current) {
+  return `<div class="feed-sort" role="group" aria-label="Sort order">
+    <span class="feed-sort-label">Sort</span>
+    ${FEED_SORTS.map((s) => `<button class="filter-pill ${current === s.id ? "active" : ""}" data-sort="${s.id}" data-fkey="feed-sort-${s.id}" aria-pressed="${current === s.id}">${s.label}</button>`).join("")}
+  </div>`;
+}
+
 export function observeReveals(){
   const els = document.querySelectorAll('.section-tile, .page-intro');
   if(!('IntersectionObserver' in window)){

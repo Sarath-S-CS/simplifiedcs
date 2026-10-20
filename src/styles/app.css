@@ -1159,6 +1159,11 @@
   .tier-body h4{ font-size:14.5px; margin:0 0 6px; }
   .tier-body p{ font-size:13px; color:var(--text-muted); line-height:1.6; margin:0; }
 
+  /* Sort toggle (By priority / Latest) above the category filters on the
+     News and Exploits feeds - reuses .filter-pill, with a label so it reads
+     as a distinct control. */
+  .feed-sort{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .feed-sort-label{ font-family:var(--mono); font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); }
   .news-filters{ display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; }
   .filter-pill{
     font-family:var(--mono); font-size:11px; letter-spacing:0.04em; text-transform:uppercase;

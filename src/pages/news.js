@@ -5,10 +5,20 @@ import { NEWS_ITEMS } from "../content/news.js";
 import { keepFocusAcrossRedraw } from "../ui/a11y.js";
 import { getSupabase } from "../data/supabase-client.js";
 import { pathForTab, wireNavClick, activeTab } from "../router.js";
-import { observeReveals } from "./shared.js";
+import { observeReveals, sortToggleHtml } from "./shared.js";
 
 let newsFilter = 'all';
+let newsSort = 'priority'; // 'priority' (ranked, the fetch order) | 'latest' (newest first)
 let newsCache = null; // { items, live } - loaded once per session, filter clicks just re-render from this
+
+// 'priority' keeps the order the query returned (priority_score desc); 'latest'
+// re-sorts a copy by publish date (an ISO string, so a string compare works).
+function sortNews(items){
+  if(newsSort === 'latest'){
+    return items.slice().sort((a,b)=> (b.publishedAt||'').localeCompare(a.publishedAt||''));
+  }
+  return items;
+}
 
 // §1 Phase 2: news_items is fetched by a daily Edge Function (see
 // supabase/functions/fetch-news) from CISA KEV, NVD, and security RSS,
@@ -84,9 +94,9 @@ function renderNewsList(container, newsData){
   // headline/body/source/source_url come from third-party RSS feeds and
   // catalogs via fetch-news - every one is escaped (and the link
   // scheme-checked) here at render, see src/ui/html-safety.js.
-  const items = newsData.items.filter(n => newsFilter==='all' || n.cat===newsFilter);
+  const items = sortNews(newsData.items.filter(n => newsFilter==='all' || n.cat===newsFilter));
   const freshness = newsData.live
-    ? `Refreshed daily from CISA's KEV catalog, NVD, and security RSS feeds, ranked by exploitation status/severity/recency - not just "newest first."`
+    ? `Refreshed daily from CISA's KEV catalog, NVD, and security RSS feeds. Sort <b>By priority</b> (ranked by exploitation status, severity and recency) or by <b>Latest</b> to see the most recently published first.`
     : `Showing a curated snapshot - the live feed didn't return anything this time, so nothing's lost, just not current. Refresh in a bit.`;
   const restoreFocus = keepFocusAcrossRedraw(container);
   container.innerHTML = `
@@ -99,6 +109,7 @@ function renderNewsList(container, newsData){
 
       <div class="section-tile">
         <p class="news-freshness">${freshness}</p>
+        ${newsData.live ? sortToggleHtml(newsSort) : ''}
         <div class="news-filters">
           ${NEWS_CATS.map(c=>`<button class="filter-pill ${newsFilter===c.id?'active':''}" data-cat="${c.id}" data-fkey="news-filter-${c.id}">${c.label}</button>`).join('')}
         </div>
@@ -141,7 +152,14 @@ function renderNewsList(container, newsData){
   container.querySelectorAll('[data-goto-exploit]').forEach(btn=>{
     wireNavClick(btn, ()=> ({ tab:'exploits', anchor:`exploit-${btn.dataset.gotoExploit}` }));
   });
-  container.querySelectorAll('.filter-pill').forEach(btn=>{
+  container.querySelectorAll('[data-sort]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      newsSort = btn.dataset.sort;
+      renderNewsList(container, newsData);
+      observeReveals();
+    });
+  });
+  container.querySelectorAll('[data-cat]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       newsFilter = btn.dataset.cat;
       renderNewsList(container, newsData);
