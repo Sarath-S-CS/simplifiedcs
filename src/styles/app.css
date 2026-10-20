@@ -111,7 +111,7 @@
   /* --- global rounded-corner treatment for all card/tile/section elements --- */
   .section-tile, .page-intro, .hero-banner, .fw-card, .acc-card, .case-card,
   .industry-card, .region-chip, .site-tile, .start-link, .phase-card,
-  .rubric-card, .toc-list, .delta-box, .info-box, .note-box,
+  .rubric-card, .toc-list, .info-box, .note-box,
   .news-card, .tier-row, .phase-row, .stage-band, .resource-group, .osint-item,
   .footer-social-icon, .region-note, .ot-skip-note, .ot-likely-note,
   .exploit-card, .exploit-score-box, .exploit-safety{
@@ -136,14 +136,14 @@
      own display (e.g. .tab-btn's display:flex) still wins for that
      property specifically. --- */
   .tab-btn, .dropdown-link, .mobile-nav-link, .mobile-nav-sublink,
-  .search-result, .site-tile, .cta-btn, .history-link{
+  .search-result, .site-tile, .cta-btn{
     display:block; text-decoration:none; color:inherit;
   }
   /* --- genuine glass (not flat color) for the larger --surface-raised
      containers; small decorative elements and form/table chrome are
      deliberately excluded --- */
   .phase-card, .rubric-card, .fw-card, .industry-card, .region-chip,
-  .acc-card, .stage-band, .info-box, .delta-box, .filter-pill, .toc-list{
+  .acc-card, .stage-band, .info-box, .filter-pill, .toc-list{
     backdrop-filter:blur(14px);
     -webkit-backdrop-filter:blur(14px);
   }
@@ -1036,24 +1036,6 @@
     font-family:var(--mono); font-size:11px; letter-spacing:0.03em; color:var(--accent-secure-ink);
   }
   .ot-override-label input{ cursor:pointer; }
-
-  .history-link{ font-size:12.5px; color:var(--accent-secure-ink); margin:-16px 0 24px; cursor:pointer; }
-  .history-list{ margin:20px 0 8px; }
-  .history-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px 14px; padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
-  .history-row:last-child{ border-bottom:none; }
-  .history-row-actions{ display:flex; align-items:center; gap:14px; }
-  .history-score{ font-family:var(--mono); color:var(--accent-secure-ink); font-weight:600; }
-  .history-view-btn{ padding:6px 12px; font-size:12.5px; }
-  .trend-chart{ width:100%; height:auto; margin-bottom:24px; display:block; }
-  .delta-box{ border:1px solid var(--line); background:var(--surface-raised); padding:16px 18px; margin-bottom:28px; }
-  .delta-box h3{ font-family:var(--mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 10px; font-weight:500; }
-  .delta-score{ font-family:var(--mono); font-size:20px; font-weight:600; margin-bottom:8px; }
-  .delta-score.up{ color:var(--accent-secure-ink); }
-  .delta-score.down{ color:var(--accent-critical); }
-  .delta-resolved{ font-size:13px; color:var(--accent-secure-ink); margin-bottom:4px; }
-  .delta-resolved b{ color:var(--accent-secure-ink); }
-  .delta-new{ font-size:13px; color:var(--accent-signal-ink); }
-  .delta-new b{ color:var(--accent-signal-ink); }
 
   /* --- content pages (Home / Methodology / Maturity / News) --- */
   .page{ display:flex; flex-direction:column; gap:36px; }
@@ -2011,9 +1993,7 @@
   .mode-card-title{ display:block; font-size:16px; font-weight:600; }
   .mode-card-body{ display:block; font-size:13px; color:var(--text-muted); line-height:1.55; font-weight:400; }
 
-  /* Rail and history are lists. */
   ol.rail-dots{ list-style:none; margin:0; padding:0; }
-  ul.history-list{ list-style:none; padding:0; }
 
   details.acc-details{ margin:10px 0; border:1px solid var(--line); background:var(--surface-raised); padding:10px 14px; }
   details.acc-details > summary{ cursor:pointer; font-size:13.5px; font-weight:500; }
@@ -2065,12 +2045,6 @@
   .action-card .acc-body{ padding:0 18px 18px 52px; }
   @media (max-width:560px){ .action-card .acc-body{ padding:0 12px 14px 12px; } }
   .gap-tier-verify{ color:var(--text-muted); border-style:dashed; }
-  .gap-tier-track{ color:var(--accent-secure-ink); border-color:var(--accent-secure); }
-  .track-form{ border:1px dashed var(--line); padding:12px 14px; margin:14px 0 0; min-width:0; }
-  .track-form legend{ font-size:12.5px; font-weight:600; padding:0 6px; }
-  .track-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
-  .track-field{ display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--text-muted); margin-top:8px; min-width:0; }
-  .track-field input, .track-field select{ font:inherit; font-size:13px; padding:7px 9px; border:1px solid var(--line); background:var(--surface); color:var(--text); min-width:0; }
 
   .limitations{ margin:8px 0; padding-left:18px; }
   .limitations li{ margin-bottom:6px; }
