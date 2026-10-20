@@ -75,19 +75,17 @@ export const OUTSOURCED_FUNCTION_OPTIONS = [
   { id: "email-security", label: "Email security" },
 ];
 
-// Maps a selected-functions answer to socOwnership's own vocabulary, only
-// when SOC/monitoring specifically was selected - returning undefined for
-// every other case leaves socOwnership's dedupeKey unset, so it's still
-// asked normally when this answer doesn't actually resolve it. "Hybrid" is
-// the correct mapping regardless of which node this fires from: all three
-// reuse this same helper, and in every one of their branches the user has
-// already told us *some* functions are in-house and others are outsourced
-// (that's what put them on this branch in the first place) - so SOC being
-// among the outsourced ones is a hybrid arrangement by definition, not a
-// guess at what "Same MSP"-style wording would map to.
-function outsourcedFunctionsDedupeValue(selected) {
-  const ids = Array.isArray(selected) ? selected : [];
-  return ids.includes("soc-monitoring") ? "Hybrid - some in-house, some third-party" : undefined;
+// Intentionally never resolves socOwnership from the outsourced-functions
+// list (always returns undefined, so socOwnership is asked explicitly).
+// Knowing SOC/monitoring is among the outsourced functions does NOT tell us
+// whether it's *fully* third-party or a genuine hybrid (some monitoring kept
+// in-house): a business can run IT in-house and fully outsource monitoring,
+// which is "Fully third-party" for SOC, not "Hybrid". Inferring "Hybrid" here
+// put words in the user's mouth, so we ask them directly instead of
+// pre-deciding the value. (Review finding 9.) The wiring stays so the node
+// still records which functions are outsourced.
+function outsourcedFunctionsDedupeValue() {
+  return undefined;
 }
 
 // A vendor "Other" field's dedupeKey shouldn't resolve to an empty string

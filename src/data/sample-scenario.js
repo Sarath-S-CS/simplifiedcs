@@ -24,6 +24,9 @@ const IT_SERVICES = {
   combinedHeadcount: "3–10",
   dayToDay: ["partial-outsource"],
   partialOutsourceFunctions: ["soc-monitoring", "backup-dr"],
+  // SOC/monitoring is partly outsourced here, so socOwnership is now asked
+  // explicitly rather than inferred from the checkbox (review finding 9).
+  socOwnership: "Hybrid - some in-house, some third-party",
   cyberInsurance: "Yes",
   incidentRecoveryOwner: "Internal team",
   vendorCount: "6 or more",

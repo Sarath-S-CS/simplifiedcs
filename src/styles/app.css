@@ -593,6 +593,25 @@
   }
   .node.active .label{ color:var(--text); }
   .node.done .label{ color:var(--text-muted); }
+  /* "Start over" - clears every answer and returns to the landing. Kept
+     visually quiet (it's destructive and rarely wanted) but always reachable
+     below the progress rail. */
+  .rail-restart{
+    margin-top:18px;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    background:none;
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:7px 12px;
+    cursor:pointer;
+    transition:color .2s ease, border-color .2s ease;
+  }
+  .rail-restart:hover{ color:var(--text); border-color:var(--text-muted); }
+  .rail-restart:focus-visible{ outline:2px solid var(--accent-signal); outline-offset:2px; }
   /* Current-step readout for the horizontal mobile rail below - hidden here
      since the desktop vertical rail already shows every label in place. */
   .rail-active-label{ display:none; }

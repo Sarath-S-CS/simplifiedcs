@@ -24,6 +24,7 @@ export function renderPrivacyPage(container) {
         <p class="body-text">Questions are scored in your browser. Answers are not sent to SimplifiedCS or anyone else, with one exception you control: if you ask for <b>AI-enhanced insights</b> on a report (or AI interpretation of your "Other" answers), the details listed next to that button are sent - after you tick the agreement - to SimplifiedCS's server function, which looks up the products you named (with their versions, if you gave them) in two public sources (CISA's Known Exploited Vulnerabilities catalog and NIST's National Vulnerability Database) and sends the request and those public records to Anthropic's Claude API to generate the text. Company name and "report requested by" are never included. You can see exactly what will be sent before sending it.</p>
         <p class="body-text">SimplifiedCS doesn't store the content of AI requests. Server logs record technical details only (timing, sizes, error types). To prevent abuse, a salted one-way hash of your IP address is counted in a per-day rate-limit counter; counters are deleted by a daily cleanup job once they are more than a day old. Anthropic processes the request under <a href="https://www.anthropic.com/legal/commercial-terms" target="_blank" rel="noopener noreferrer">its commercial terms</a> and <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer">privacy policy</a>.</p>
         <p class="body-text">Your AI choice is currently: <b>${hasAiConsent() ? "agreed (for the current notice)" : "not given"}</b>. ${hasAiConsent() ? `<button type="button" id="withdrawAi" class="link-btn">Withdraw it</button> - you'll be asked again before any future request.` : "You'll be asked on the report page before anything is sent."}</p>
+        <p class="body-text">A finished report isn't saved - it's shown only for that visit and is gone once you leave or start over. Download the PDF or action plan to keep a copy. Your answers are saved in this browser only while an assessment is in progress, so you can resume it; starting over clears them.</p>
 
         <h3 class="section-h">What's stored in this browser</h3>
         <p class="body-text">These are kept in your browser's local storage for this site only. They are never sent to a server by SimplifiedCS. On a shared computer, clear them when you're done.</p>
@@ -50,7 +51,7 @@ export function renderPrivacyPage(container) {
     </div>`;
   const clearBtn = container.querySelector("#privacyClearAll");
   clearBtn.addEventListener("click", () => {
-    if (!confirm("Remove everything SimplifiedCS has stored in this browser - saved reports, in-progress answers, action tracking, and your AI choice? This can't be undone.")) return;
+    if (!confirm("Remove everything SimplifiedCS has stored in this browser - your in-progress assessment, your AI choice and your theme? This can't be undone.")) return;
     const n = clearAllLocalData();
     container.querySelector("#privacyClearResult").textContent = n ? `Removed ${n} stored item${n === 1 ? "" : "s"}.` : "There was nothing stored to remove.";
   });

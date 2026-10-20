@@ -33,7 +33,6 @@ const ROUTES = {
   feedback: '/feedback',
   privacy: '/privacy',
   assessment: '/assessment',
-  history: '/history',
 };
 const PATH_TO_TAB = Object.fromEntries(Object.entries(ROUTES).map(([id, path]) => [path, id]));
 

@@ -38,9 +38,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-<meta name="site-updated" content="October 13, 2026">
-<link rel="stylesheet" href="/assets/build/app-XEO66XMK.css">
-<script type="module" src="/assets/build/main-ES7U4HV3.js"></script>
+<meta name="site-updated" content="October 20, 2026">
+<link rel="stylesheet" href="/assets/build/app-EYSEXOKU.css">
+<script type="module" src="/assets/build/main-JRNFVNFD.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#tabContent">Skip to main content</a>
@@ -98,14 +98,7 @@
             <a class="dropdown-link " href="/news" data-tab="news">Trends &amp; News</a><a class="dropdown-link " href="/exploits" data-tab="exploits">Exploits</a><a class="dropdown-link " href="/case-studies" data-tab="casestudy">Case Studies</a>
           </div>
         </div>
-      
-        <div class="tab-item has-dropdown">
-          <a class="tab-btn " href="/assessment" data-tab="assessment">Assessment <span class="tab-caret" data-toggle="1">▾</span></a>
-          <div class="tab-dropdown">
-            <a class="dropdown-link " href="/assessment" data-tab="assessment">Take Assessment</a><a class="dropdown-link " href="/history" data-tab="history">History</a>
-          </div>
-        </div>
-      </div>
+      <a class="tab-btn " href="/assessment" data-tab="assessment">Assessment</a></div>
     <div class="masthead-right">
       <div class="search-widget" id="searchWidget">
     <button class="search-toggle-btn" id="searchToggleBtn" aria-label="Search" type="button"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M20 20l-4.8-4.8"></path><path d="M7.5 10.5h6M10.5 7.5v6"></path></svg></button>
@@ -135,10 +128,11 @@
         <p class="body-text">Questions are scored in your browser. Answers are not sent to SimplifiedCS or anyone else, with one exception you control: if you ask for <b>AI-enhanced insights</b> on a report (or AI interpretation of your "Other" answers), the details listed next to that button are sent - after you tick the agreement - to SimplifiedCS's server function, which looks up the products you named (with their versions, if you gave them) in two public sources (CISA's Known Exploited Vulnerabilities catalog and NIST's National Vulnerability Database) and sends the request and those public records to Anthropic's Claude API to generate the text. Company name and "report requested by" are never included. You can see exactly what will be sent before sending it.</p>
         <p class="body-text">SimplifiedCS doesn't store the content of AI requests. Server logs record technical details only (timing, sizes, error types). To prevent abuse, a salted one-way hash of your IP address is counted in a per-day rate-limit counter; counters are deleted by a daily cleanup job once they are more than a day old. Anthropic processes the request under <a href="https://www.anthropic.com/legal/commercial-terms" target="_blank" rel="noopener noreferrer">its commercial terms</a> and <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer">privacy policy</a>.</p>
         <p class="body-text">Your AI choice is currently: <b>not given</b>. You'll be asked on the report page before anything is sent.</p>
+        <p class="body-text">A finished report isn't saved - it's shown only for that visit and is gone once you leave or start over. Download the PDF or action plan to keep a copy. Your answers are saved in this browser only while an assessment is in progress, so you can resume it; starting over clears them.</p>
 
         <h3 class="section-h">What's stored in this browser</h3>
         <p class="body-text">These are kept in your browser's local storage for this site only. They are never sent to a server by SimplifiedCS. On a shared computer, clear them when you're done.</p>
-        <ul class="privacy-list"><li><b>Your in-progress assessment answers, so you can resume</b></li><li><b>Completed assessments: answers, a summary of each report, and any AI insights you requested</b></li><li><b>Completed assessments saved before September 2026</b></li><li><b>Action-plan tracking you entered (owners, dates, status, notes)</b></li><li><b>Whether you've seen the 'saved in this browser' notice</b></li><li><b>Whether you agreed to send assessment details for AI processing, and which notice version</b></li><li><b>Light or dark theme</b></li></ul>
+        <ul class="privacy-list"><li><b>Your in-progress assessment answers, so you can resume</b></li><li><b>Whether you've seen the 'saved in this browser' notice</b></li><li><b>Whether you agreed to send assessment details for AI processing, and which notice version</b></li><li><b>Light or dark theme</b></li></ul>
         <div class="cta-row"><button type="button" class="cta-btn secondary" id="privacyClearAll">Clear all data stored by this site</button></div>
         <p class="scope-hint" id="privacyClearResult" role="status"></p>
 

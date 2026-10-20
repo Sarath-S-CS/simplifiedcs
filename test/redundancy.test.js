@@ -429,30 +429,27 @@ const SOC_DEDUPE_PATHS = [
   },
 ];
 
-test("§1 regression: SOC ownership is never asked twice via any of the three checkbox paths, but IS still asked when SOC wasn't among the selections", () => {
+test("finding 9: SOC ownership is asked explicitly (never inferred from the outsourced-functions checkbox), and only ever once", () => {
+  // Review finding 9: knowing SOC/monitoring is among the outsourced functions
+  // does not tell us whether it's *fully* third-party or a genuine hybrid, so
+  // we no longer auto-fill socOwnership from the checkbox - the user is asked.
+  // It must still never be duplicated (the original §1 concern).
   for (const { nodeId, setup } of SOC_DEDUPE_PATHS) {
-    // SOC selected -> socOwnership must be suppressed and carry a real answer forward
-    {
+    for (const selection of [["soc-monitoring", "patch-management"], ["patch-management"]]) {
       const f = buildFlow(TEAM_STRUCTURE_ORDER, TEAM_STRUCTURE_NODES);
       const state = createSessionState();
       setup(state, f);
-      answer(state, f, nodeId, ["soc-monitoring", "patch-management"]);
+      answer(state, f, nodeId, selection);
       const ids = visibleNodes(f, state).map((n) => n.id);
-      assert.ok(!ids.includes("socOwnership"), `${nodeId}: socOwnership should be suppressed once SOC/monitoring is checked here`);
       assert.equal(
-        state.answers.socOwnership,
-        "Hybrid - some in-house, some third-party",
-        `${nodeId}: the deduped answer should still be carried forward into scoring/results, not left blank`
+        ids.filter((id) => id === "socOwnership").length,
+        1,
+        `${nodeId} with ${JSON.stringify(selection)}: socOwnership must be asked exactly once`
       );
-    }
-    // SOC NOT selected -> socOwnership must still be asked (proves this isn't just suppressing the question unconditionally)
-    {
-      const f = buildFlow(TEAM_STRUCTURE_ORDER, TEAM_STRUCTURE_NODES);
-      const state = createSessionState();
-      setup(state, f);
-      answer(state, f, nodeId, ["patch-management"]);
-      const ids = visibleNodes(f, state).map((n) => n.id);
-      assert.ok(ids.includes("socOwnership"), `${nodeId}: socOwnership must still be asked when SOC/monitoring wasn't one of the selected functions`);
+      assert.ok(
+        !state.answers.socOwnership,
+        `${nodeId} with ${JSON.stringify(selection)}: socOwnership must not be pre-filled from the checkbox - the user answers it`
+      );
     }
   }
 });

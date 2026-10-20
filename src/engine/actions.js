@@ -5,9 +5,9 @@
 // guidance text (mitre-guidance.js). Pure data - exported as CSV/JSON and
 // rendered by the web report and the PDF alike.
 //
-// Action ids are stable across runs ("A-" + control id), so progress a
-// visitor tracks in this browser (./action-tracking.js) follows the same
-// control from one assessment to the next.
+// The CSV includes blank Owner / Due date / Status / Evidence / Retest
+// columns so it doubles as a ready-to-fill remediation-tracking template -
+// the app itself keeps no per-action progress.
 import { CONTROL_META, PROFILE_CONTROLS, FINDING_ITEMS, EFFORT_LABELS } from "../data/controls.js";
 import { guidanceForGapItem } from "./mitre-guidance.js";
 

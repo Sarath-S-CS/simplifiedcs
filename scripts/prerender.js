@@ -70,7 +70,6 @@ const ROUTES = {
   "/references": "references",
   "/about": "about",
   "/privacy": "privacy",
-  "/history": "history",
   // /assessment/sample is the one sub-state of the assessment tab with a
   // real URL (src/ui/assessment.js's currentPathIsSample()) - fixed,
   // deterministic sample data, so unlike the wizard itself it's a real

@@ -4,9 +4,6 @@
 // that leaves the browser is an AI request the visitor explicitly sends.
 export const LOCAL_DATA = [
   { key: "simplifiedcs:assessment:v1", what: "Your in-progress assessment answers, so you can resume" },
-  { key: "simplifiedcs:runs:v2", what: "Completed assessments: answers, a summary of each report, and any AI insights you requested" },
-  { key: "simplifiedcs:runs:v1", what: "Completed assessments saved before September 2026" },
-  { key: "simplifiedcs:action-tracking:v1", what: "Action-plan tracking you entered (owners, dates, status, notes)" },
   { key: "simplifiedcs:hasSeenSaveNotice", what: "Whether you've seen the 'saved in this browser' notice" },
   { key: "simplifiedcs:consent:ai", what: "Whether you agreed to send assessment details for AI processing, and which notice version" },
   { key: "simplifiedcs:theme", what: "Light or dark theme" },
@@ -14,6 +11,29 @@ export const LOCAL_DATA = [
 
 export const LOCAL_DATA_KEYS = LOCAL_DATA.map((d) => d.key);
 const PREFIX = "simplifiedcs:";
+
+// Keys written by features that no longer exist (completed-assessment history
+// and action-plan tracking). The site no longer keeps completed reports, so
+// any of these left over from an earlier version are purged on load - nothing
+// reads them, and leaving them would contradict "nothing is kept".
+const REMOVED_KEYS = ["simplifiedcs:runs:v2", "simplifiedcs:runs:v1", "simplifiedcs:action-tracking:v1"];
+
+export function purgeRemovedFeatureData() {
+  let s;
+  try {
+    s = typeof localStorage === "undefined" ? null : localStorage;
+  } catch {
+    s = null;
+  }
+  if (!s) return;
+  for (const k of REMOVED_KEYS) {
+    try {
+      s.removeItem(k);
+    } catch {
+      /* best-effort */
+    }
+  }
+}
 
 // Removes every key this site stored (anything under the "simplifiedcs:"
 // prefix, including keys from older versions). Returns how many were removed.

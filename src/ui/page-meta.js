@@ -27,7 +27,6 @@ export const PAGE_DESCRIPTIONS = {
   feedback: "Send feedback about SimplifiedCS: report something broken, suggest an idea or ask a question.",
   privacy: "What SimplifiedCS stores, what an optional AI request sends and to whom, and how analytics work only with your permission.",
   assessment: "Take a 14-question Quick screening or a Full cybersecurity assessment, or view example reports for two fictional organizations.",
-  history: "Assessments you've completed, saved in this browser only.",
 };
 
 function setMeta(selector, attr, value) {
@@ -45,11 +44,11 @@ export function applyPageMeta(tab, title, path) {
   setMeta('meta[property="og:url"]', "content", url);
   setMeta('meta[name="twitter:title"]', "content", title);
   setMeta('meta[name="twitter:description"]', "content", description);
-  // Self-canonical per route. Without this, client-side navigation (and the
-  // two routes that aren't prerendered) leave the homepage canonical in the
-  // <head>, telling search engines every page is a duplicate of "/". The
-  // prerendered snapshots already carry the right canonical statically (see
-  // scripts/prerender.js); this keeps it correct once the SPA takes over.
+  // Self-canonical per route. Without this, client-side navigation would
+  // leave the homepage canonical in the <head>, telling search engines every
+  // page is a duplicate of "/". The prerendered snapshots already carry the
+  // right canonical statically (see scripts/prerender.js); this keeps it
+  // correct once the SPA takes over.
   let canonical = document.head.querySelector('link[rel="canonical"]');
   if (!canonical) {
     canonical = document.createElement("link");
@@ -57,17 +56,4 @@ export function applyPageMeta(tab, title, path) {
     document.head.appendChild(canonical);
   }
   canonical.setAttribute("href", url);
-  // History only ever shows data from the visitor's own browser - nothing
-  // there is worth indexing.
-  let robots = document.head.querySelector('meta[name="robots"]');
-  if (tab === "history") {
-    if (!robots) {
-      robots = document.createElement("meta");
-      robots.setAttribute("name", "robots");
-      document.head.appendChild(robots);
-    }
-    robots.setAttribute("content", "noindex");
-  } else if (robots) {
-    robots.remove();
-  }
 }

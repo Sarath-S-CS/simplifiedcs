@@ -20,11 +20,8 @@ import { OTHER as OTHER_VALUE } from "../data/vendors.js";
 import { SAMPLE_SCENARIOS, DEFAULT_SAMPLE } from "../data/sample-scenario.js";
 import { buildReport } from "../engine/report-model.js";
 import { effectiveState, isAnswered } from "../engine/answers.js";
-import { migrateAnswers } from "../engine/migrate.js";
 import { actionsToCsv, actionsToJson } from "../engine/actions.js";
-import { loadTracking, updateTracking } from "../engine/action-tracking.js";
 import { saveProgress, loadProgress, clearProgress, hasSeenSaveNotice, markSaveNoticeSeen, watchExternalChanges } from "../engine/local-save.js";
-import { listRuns, getRun, saveRun, attachAiResult, sameAnswers, summarizeReport, newRunId } from "../engine/run-history.js";
 import { buildInsightsPayload } from "../engine/ai-payload.js";
 import { AI_CONSENT_VERSION, hasAiConsent, recordAiConsent } from "../engine/ai-consent.js";
 import { matchOtherText } from "../engine/other-text-match.js";
@@ -88,21 +85,38 @@ function download(filename, text, type) {
 
 export function createAssessmentController({ getPanel, getRail, icon, pathForTab, wireNavLink }) {
   const session = createSessionState();
-  const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null, resultRunId: null, sampleId: DEFAULT_SAMPLE };
-  // The report on screen (results or example) and its AI state.
-  let current = null; // { report, run, ai, aiError, migrationNotes, recalculated }
-  let lastAi = null; // most recent AI result this visit, to show as out of date after edits
+  const ui = { phase: "landing", screenIndex: 0, categoryIndex: 0, transitionNote: null, sampleId: DEFAULT_SAMPLE };
+  // The report on screen (results or example) and its AI state. Nothing here
+  // is persisted - a completed report lives only for this visit (no history).
+  let current = null; // { report, ai, aiError, interpretations }
+  // The most recent AI result this visit and the answers it was generated for,
+  // so navigating back to review answers and forward again (without editing)
+  // doesn't throw away a paid AI result and force a re-request.
+  let lastAi = null;
+  let lastAiAnswers = null;
   let saveWarningShown = false;
   let autosavePaused = false;
 
   const panel = () => getPanel();
+
+  // Answers that actually define the assessment (company name / requested-by
+  // are cosmetic PDF-cover fields, never part of the result).
+  function assessmentAnswers(answers) {
+    const out = {};
+    for (const k of Object.keys(answers || {}).sort()) {
+      if (k !== "companyName" && k !== "reportRequestedBy") out[k] = answers[k];
+    }
+    return out;
+  }
+  function sameAnswers(a, b) {
+    return JSON.stringify(assessmentAnswers(a)) === JSON.stringify(assessmentAnswers(b));
+  }
 
   function resetSession() {
     Object.keys(session.answers).forEach((k) => delete session.answers[k]);
     session.asked = [];
     session.dedupe = {};
     session.quickMode = false;
-    ui.resultRunId = null;
     autosavePaused = false;
   }
 
@@ -117,7 +131,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       }
     } else if (!saveWarningShown) {
       saveWarningShown = true;
-      showToast(result.reason === "quota" ? "Your progress can't be saved: this browser's storage for the site is full. Clear old reports in History to free space." : "Your progress isn't being saved (private browsing or site storage turned off). Finish in this tab, or it will be lost.");
+      showToast(result.reason === "quota" ? "Your progress can't be saved: this browser's storage for the site is full. Clear this site's data in your browser to free space." : "Your progress isn't being saved (private browsing or site storage turned off). Finish in this tab, or it will be lost.");
     }
   }
 
@@ -234,7 +248,26 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
         .map((label, i) => `<li class="node${i < activeIdx ? " done" : ""}${i === activeIdx ? " active" : ""}"${i === activeIdx ? ' aria-current="step"' : ""}><div class="dot" aria-hidden="true"></div><div class="label">${e(label)}</div></li>`)
         .join("") +
       "</ol>" +
-      `<div class="rail-active-label" aria-hidden="true">${e(items[activeIdx])}</div>`;
+      `<div class="rail-active-label" aria-hidden="true">${e(items[activeIdx])}</div>` +
+      '<button type="button" class="rail-restart" id="startOverBtn">Start over</button>';
+    const startOverBtn = document.getElementById("startOverBtn");
+    if (startOverBtn) startOverBtn.addEventListener("click", startOver);
+  }
+
+  // Clears every selected answer and the saved draft, then returns to the
+  // landing to choose how to start again.
+  function startOver() {
+    if (Object.keys(session.answers).length > 0 && !confirm("Start over? This clears every answer you've selected so far and returns you to the start. This can't be undone.")) return;
+    resetSession();
+    clearProgress();
+    if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
+    ui.phase = "landing";
+    ui.screenIndex = 0;
+    ui.categoryIndex = 0;
+    ui.transitionNote = null;
+    renderRail();
+    renderLanding();
+    focusHeading();
   }
 
   // ---------- landing ----------
@@ -278,15 +311,9 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     return true;
   }
 
-  function lastReportRun() {
-    return listRuns().filter((r) => r.answers).pop() || null;
-  }
-
   function renderLanding() {
     const p = panel();
     const saved = loadProgress();
-    const lastRun = saved ? null : lastReportRun();
-    const lastLabel = lastRun ? (lastRun.summary ? `${lastRun.summary.verdict.label}${lastRun.summary.coverage !== null && lastRun.mode === "full" ? `, ${lastRun.summary.coverage}% coverage` : ""}` : `${lastRun.legacyOverall}% under the earlier method`) : "";
     p.innerHTML = `
       <div class="step-eyebrow">Assessment</div>
       <h2 class="step-title" tabindex="-1">Choose how to start</h2>
@@ -300,12 +327,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
                  <button type="button" class="primary" id="resumeBtn">Resume →</button>
                </div>
              </div>`
-          : lastRun
-            ? `<div class="resume-banner">
-                 <div class="resume-banner-text">Your <b>last report</b> (${e(new Date(lastRun.ts).toLocaleDateString())}, ${e(lastLabel)}) is saved in this browser.</div>
-                 <div class="resume-banner-actions"><button type="button" class="primary" id="viewLastReportBtn">View report →</button></div>
-               </div>`
-            : ""
+          : ""
       }
       <div class="mode-grid">
         <button type="button" class="mode-card" id="modeQuick">
@@ -337,8 +359,6 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     });
     const resumeBtn = document.getElementById("resumeBtn");
     if (resumeBtn) resumeBtn.addEventListener("click", () => resumeFromSave(saved));
-    const viewLastBtn = document.getElementById("viewLastReportBtn");
-    if (viewLastBtn) viewLastBtn.addEventListener("click", () => openRun(lastRun.id) && (renderRail(), dispatchPhase()));
     const discardBtn = document.getElementById("discardResumeBtn");
     if (discardBtn)
       discardBtn.addEventListener("click", () => {
@@ -825,60 +845,16 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     return { playbook: (ref) => pathForTab("playbooks", ref) };
   }
 
-  // Saves the current answers as a run (or finds the identical last one), and
-  // returns { run, saved: {ok, reason, evicted} }.
-  function saveCurrentRun(report) {
-    const answers = effectiveState(session).answers;
-    const runs = listRuns();
-    let run = ui.resultRunId ? runs.find((r) => r.id === ui.resultRunId) : null;
-    if (run) return { run, saved: { ok: true, evicted: 0, existing: true } };
-    const latest = runs.filter((r) => !r.legacy).pop();
-    if (latest && latest.answers && latest.mode === report.mode && latest.methodologyVersion === report.methodologyVersion && sameAnswers(latest.answers, answers)) {
-      return { run: latest, saved: { ok: true, evicted: 0, existing: true } };
-    }
-    const id = newRunId();
-    run = { id, ts: Date.now(), mode: report.mode, methodologyVersion: report.methodologyVersion, industry: answers.industry || null, answers, summary: null, ai: null };
-    report.snapshotId = id;
-    run.summary = summarizeReport(report);
-    const saved = saveRun(run);
-    return { run: saved.ok ? run : null, saved };
-  }
-
+  // The report is never saved - it exists only for this visit. If AI insights
+  // were already fetched for these exact answers (before a back-and-forward),
+  // restore them so a paid lookup isn't thrown away; otherwise start clean.
   function renderResults() {
     clearProgress();
     const report = buildReport(session);
-    const { run, saved } = saveCurrentRun(report);
-    if (run) {
-      ui.resultRunId = run.id;
-      report.snapshotId = run.id;
-    }
-    const staleAi = lastAi && run && lastAi.snapshotId !== run.id ? lastAi : null;
-    current = { report, run, ai: run?.ai?.result || null, aiError: null, staleAi, saved, migrationNotes: [], recalculated: null, interpretations: run?.otherInterpretations || null };
+    const answers = effectiveState(session).answers;
+    const keepAi = lastAi && lastAiAnswers && sameAnswers(lastAiAnswers, answers) ? lastAi : null;
+    current = { report, ai: keepAi, aiError: null, interpretations: null };
     renderReportPage();
-  }
-
-  // Opens a saved run (History, or the landing banner). Legacy runs and runs
-  // from another methodology are rebuilt from their answers and clearly
-  // labelled as recalculated, alongside the original result.
-  function openRun(id) {
-    const run = getRun(id);
-    if (!run || !run.answers) return false;
-    resetSession();
-    const { answers, notes } = migrateAnswers(run.answers, run.answerSchema || (run.legacy ? 1 : 2));
-    Object.assign(session.answers, answers);
-    session.quickMode = run.mode === "quick";
-    ui.phase = "results";
-    ui.resultRunId = run.id;
-    if (currentPathIsSample()) history.pushState({}, "", ASSESSMENT_PATH);
-    const report = buildReport(session, { generatedAt: new Date(run.ts).toISOString() });
-    report.snapshotId = run.id;
-    const original = run.legacy
-      ? { label: `${run.legacyOverall}% overall`, methodology: "1.x" }
-      : run.summary && run.summary.methodologyVersion !== METHODOLOGY_VERSION
-        ? { label: `${run.summary.verdict.label}${run.summary.coverage !== null ? `, ${run.summary.coverage}% coverage` : ""}`, methodology: run.summary.methodologyVersion }
-        : null;
-    current = { report, run, ai: run.ai?.result || null, aiError: null, staleAi: null, saved: { ok: true, existing: true }, migrationNotes: notes, recalculated: original, interpretations: run.otherInterpretations || null };
-    return true;
   }
 
   function reportHeaderHtml(report) {
@@ -889,43 +865,9 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       <p class="step-sub">Measured against NIST CSF 2.0 and CIS Controls v8.1${report.context.frameworks.map((f) => " + " + e(f)).join("")}${report.context.industry ? " · " + e(report.context.industry) : ""}</p>`;
   }
 
-  function savedNoticeHtml() {
-    const { saved, recalculated, migrationNotes, report } = current;
-    const notes = [];
-    if (recalculated)
-      notes.push(`<div class="stale-banner" role="note"><b>Recalculated.</b> This report was originally produced under methodology ${e(recalculated.methodology)} (result: ${e(recalculated.label)}). It's shown here rebuilt from your saved answers under methodology ${e(report.methodologyVersion)}, which scores differently - the two aren't directly comparable.</div>`);
-    if (migrationNotes?.length) notes.push(`<div class="stale-banner" role="note">${migrationNotes.map(e).join(" ")}</div>`);
-    if (saved && !saved.ok)
-      notes.push(`<div class="stale-banner" role="alert"><b>Not saved.</b> ${saved.reason === "quota" ? "This browser's storage for the site is full." : "This browser isn't allowing the site to store data (private browsing, or site data blocked)."} Download the PDF or JSON below to keep a copy.</div>`);
-    else if (saved?.evicted) notes.push(`<p class="scope-hint">Saved in this browser. To make room, the ${saved.evicted} oldest saved report${saved.evicted === 1 ? " was" : "s were"} removed from History.</p>`);
-    return notes.join("");
-  }
-
-  // Change since the previous report - only against one produced by the same
-  // methodology and mode, since anything else would compare different
-  // scales. Findings are matched by stable control id.
-  function deltaHtml() {
-    const { run, report } = current;
-    if (!run) return "";
-    const prev = listRuns()
-      .filter((r) => !r.legacy && r.id !== run.id && r.ts < run.ts && r.summary && r.summary.methodologyVersion === report.methodologyVersion && r.summary.mode === report.mode)
-      .pop();
-    if (!prev) return "";
-    const before = new Map(prev.summary.findings.map((f) => [f.id, f]));
-    const now = new Map(report.findings.map((f) => [f.id, f]));
-    const resolved = [...before.keys()].filter((id) => !now.has(id));
-    const added = [...now.keys()].filter((id) => !before.has(id));
-    const cov = report.overall.coverage !== null && prev.summary.coverage !== null ? report.overall.coverage - prev.summary.coverage : null;
-    const titleOf = (id) => e((now.get(id) || before.get(id)).title);
-    return `
-      <section class="delta-box" aria-labelledby="deltaTitle">
-        <h3 id="deltaTitle">Change since your last ${report.mode === "quick" ? "screening" : "assessment"} (${e(new Date(prev.ts).toLocaleDateString())})</h3>
-        ${cov !== null && report.mode === "full" ? `<div class="delta-score ${cov >= 0 ? "up" : "down"}">${cov >= 0 ? "+" : ""}${cov} points coverage</div>` : ""}
-        <div>Reading then: <b>${e(prev.summary.verdict.label)}</b> · now: <b>${e(report.verdict.label)}</b></div>
-        ${resolved.length ? `<div class="delta-resolved"><b>Resolved (${resolved.length}):</b> ${resolved.slice(0, 8).map(titleOf).join("; ")}${resolved.length > 8 ? " …" : ""}</div>` : ""}
-        ${added.length ? `<div class="delta-new"><b>New (${added.length}):</b> ${added.slice(0, 8).map(titleOf).join("; ")}${added.length > 8 ? " …" : ""}</div>` : ""}
-        ${!resolved.length && !added.length ? "<div>The same findings as last time.</div>" : ""}
-      </section>`;
+  // This report isn't kept anywhere - remind the visitor to download it.
+  function ephemeralNoticeHtml() {
+    return `<p class="scope-hint report-ephemeral-note">This report isn't saved - it's gone once you leave or start over. Download the PDF or the action plan below to keep a copy.</p>`;
   }
 
   function quickFooterHtml(report) {
@@ -1006,11 +948,10 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
   function renderReportPage() {
     const p = panel();
     const { report } = current;
-    const tracking = loadTracking();
     const others = unresolvedOtherTexts(effectiveState(session).answers);
     p.innerHTML = `
       ${reportHeaderHtml(report)}
-      ${savedNoticeHtml()}
+      ${ephemeralNoticeHtml()}
       <div class="report-meta-fields">
         <div class="field">
           <label for="reportCompanyName">Company / organization name <span class="opt-tag">optional - PDF only, never sent anywhere</span></label>
@@ -1021,8 +962,7 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
           <input type="text" id="reportRequestedBy" placeholder="Name and role" value="${e(session.answers.reportRequestedBy || "")}">
         </div>
       </div>
-      ${deltaHtml()}
-      <div id="reportBody">${reportBodyHtml(report, { tracking, interactive: true, links: linksForReport() })}</div>
+      <div id="reportBody">${reportBodyHtml(report, { links: linksForReport() })}</div>
       ${otherTextHtml(others, current.interpretations)}
       ${quickFooterHtml(report)}
       <div class="export-row" role="group" aria-label="Download this report">
@@ -1033,7 +973,6 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       ${aiSectionHtml()}
       <div class="nav">
         <button type="button" id="backBtn2">← Review answers</button>
-        <a id="viewHistoryBtn" href="${pathForTab("history")}">History (${listRuns().length}) →</a>
       </div>`;
     wireReportPage();
   }
@@ -1050,42 +989,22 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
       session.answers.reportRequestedBy = ev.target.value;
       report.context.requestedBy = ev.target.value;
     });
-    p.querySelectorAll("[data-track]").forEach((el) =>
-      el.addEventListener("change", () => {
-        const result = updateTracking(el.dataset.track, { [el.dataset.field]: el.value });
-        if (!result.ok) showToast("Couldn't save tracking in this browser.");
-        else announce("Saved");
-        if (el.dataset.field === "status") {
-          const restore = preserveFocus(p);
-          document.getElementById("reportBody").innerHTML = reportBodyHtml(report, { tracking: loadTracking(), interactive: true, links: linksForReport() });
-          wireReportPage();
-          const card = document.getElementById(el.dataset.track);
-          if (card) card.classList.add("open");
-          restore();
-        }
-      })
-    );
     document.getElementById("backBtn2").addEventListener("click", () => {
-      ui.resultRunId = null;
-      if (current.ai) lastAi = { ...current.ai, snapshotId: current.run?.id };
       ui.phase = "wizard";
       ui.categoryIndex = prevCategoryIndex(FUNCTIONS.length);
       renderRail();
       renderAssessmentCategory();
       focusHeading();
     });
-    const hist = document.getElementById("viewHistoryBtn");
-    if (hist) wireNavLink(hist, "history");
     document.getElementById("exportPdfBtn").addEventListener("click", () => {
       downloadPdf(report, { aiInsights: current.ai || null });
     });
-    document.getElementById("exportCsvBtn").addEventListener("click", () => download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.csv`, actionsToCsv(report.actions, loadTracking()), "text/csv;charset=utf-8"));
-    document.getElementById("exportJsonBtn").addEventListener("click", () => download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.json`, actionsToJson(report, loadTracking()), "application/json"));
+    document.getElementById("exportCsvBtn").addEventListener("click", () => download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.csv`, actionsToCsv(report.actions), "text/csv;charset=utf-8"));
+    document.getElementById("exportJsonBtn").addEventListener("click", () => download(`SimplifiedCS-action-plan-${report.generatedAt.slice(0, 10)}.json`, actionsToJson(report), "application/json"));
     const cont = document.getElementById("continueFullBtn");
     if (cont)
       cont.addEventListener("click", () => {
         session.quickMode = false;
-        ui.resultRunId = null;
         ui.phase = "scope";
         renderRail();
         renderScope();
@@ -1134,20 +1053,19 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     btn.disabled = true;
     btn.textContent = "Checking sources and generating…";
     recordAiConsent();
-    const { report, run } = current;
-    const payload = buildInsightsPayload(session, report, { snapshotId: run?.id, consentVersion: AI_CONSENT_VERSION });
+    const { report } = current;
+    const payload = buildInsightsPayload(session, report, { consentVersion: AI_CONSENT_VERSION });
     // Longer than the server's own worst case (lookups plus its model
     // timeout), so its own error message arrives before the browser gives up.
     const res = await postJson("/.netlify/functions/ai-insights", payload, 45_000);
     if (res.ok && res.json && res.json.schemaVersion === 2) {
       current.ai = res.json;
       current.aiError = null;
-      current.staleAi = null;
-      lastAi = { ...res.json, snapshotId: run?.id };
-      if (run) {
-        const stored = attachAiResult(run.id, { snapshotId: run.id, generatedAt: res.json.generatedAt, promptVersion: res.json.promptVersion, model: res.json.model, result: res.json });
-        if (!stored.ok) showToast("AI insights are shown, but couldn't be saved with this report in this browser.");
-      }
+      // Hold the result (and the answers it was for) in memory only, so a
+      // back-and-forward through the report doesn't throw away this paid
+      // lookup - see renderResults. Nothing is persisted.
+      lastAi = res.json;
+      lastAiAnswers = { ...effectiveState(session).answers };
       announce("AI insights ready");
     } else {
       current.aiError = aiErrorText(res.status, res.json);
@@ -1171,7 +1089,6 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     const res = await postJson("/.netlify/functions/other-text-interpret", { consent: { version: AI_CONSENT_VERSION, accepted: true }, items }, 25_000);
     if (res.ok && Array.isArray(res.json?.interpretations)) {
       current.interpretations = res.json.interpretations;
-      if (current.run) saveRun({ ...getRun(current.run.id), otherInterpretations: res.json.interpretations });
       renderReportPage();
       announce("Interpretations added");
     } else {
@@ -1240,7 +1157,6 @@ export function createAssessmentController({ getPanel, getRail, icon, pathForTab
     session,
     renderRail,
     requestLanding,
-    openRun,
     renderCurrentPhase() {
       if (currentPathIsSample() && ui.phase !== "sample") ui.phase = "sample";
       else if (!currentPathIsSample() && ui.phase === "sample") ui.phase = "landing";

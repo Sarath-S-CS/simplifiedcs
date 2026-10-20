@@ -1,11 +1,11 @@
 // Renders the shared report model (../engine/report-model.js) as HTML for
 // the results page and the example reports. Every value that can contain
-// visitor text (answers, company name, "Other" text, tracking notes) goes
-// through escapeHtml; links go through safeHttpUrl.
+// visitor text (answers, company name, "Other" text) goes through
+// escapeHtml; links go through safeHttpUrl. The report is read-only - the
+// site keeps no per-action progress.
 import { escapeHtml, safeHttpUrl } from "./html-safety.js";
 import { FUNC_COLORS } from "../data/categories.js";
 import { WEIGHT_LABELS, STATUS_LABELS } from "../data/controls.js";
-import { TRACKING_STATUSES, TRACKING_STATUS_LABELS } from "../engine/action-tracking.js";
 
 const e = escapeHtml;
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -100,30 +100,7 @@ function chip(text, cls) {
   return `<span class="gap-tier ${cls}">${e(text)}</span>`;
 }
 
-function trackingForm(a, t = {}) {
-  const id = e(a.id);
-  const field = (name, label, type = "text", extra = "") =>
-    `<label class="track-field"><span>${label}</span><input type="${type}" data-track="${id}" data-field="${name}" data-fkey="${id}-${name}" value="${e(t[name] || "")}" ${extra}></label>`;
-  return `
-    <fieldset class="track-form">
-      <legend>Track this action <span class="opt-tag">saved in this browser only - doesn't change your score</span></legend>
-      <div class="track-grid">
-        <label class="track-field"><span>Status</span>
-          <select data-track="${id}" data-field="status" data-fkey="${id}-status">
-            ${TRACKING_STATUSES.map((s) => `<option value="${s}" ${(t.status || "open") === s ? "selected" : ""}>${e(TRACKING_STATUS_LABELS[s])}</option>`).join("")}
-          </select>
-        </label>
-        ${field("owner", "Owner", "text", 'maxlength="500" placeholder="Name or role"')}
-        ${field("due", "Due date", "date")}
-        ${field("retest", "Retest date", "date")}
-      </div>
-      ${field("evidenceNote", "Evidence notes", "text", 'maxlength="500" placeholder="Where the evidence is kept"')}
-      ${t.status === "risk-accepted" || t.riskAcceptance ? field("riskAcceptance", "Risk acceptance (who accepted it, why, until when)", "text", 'maxlength="500"') : ""}
-    </fieldset>`;
-}
-
-function actionHtml(a, { tracking, interactive, links }) {
-  const t = tracking[a.id] || {};
+function actionHtml(a, { links }) {
   const rows = [
     a.criticalReason ? ["Why it's critical", a.criticalReason] : null,
     ["Why it ranks here", a.reasons.join(" · ")],
@@ -137,7 +114,6 @@ function actionHtml(a, { tracking, interactive, links }) {
   ].filter(Boolean);
   const ref = a.reference && safeHttpUrl(a.reference.url);
   const owasp = a.owasp && links?.playbook ? `<li><b>OWASP Top 10:</b> <a href="${e(links.playbook(a.owasp.ref))}" class="inline-link">${e(a.owasp.ref)} - ${e(a.owasp.title)}, with the matching Playbook</a></li>` : "";
-  const statusChip = t.status && t.status !== "open" ? chip(TRACKING_STATUS_LABELS[t.status], "gap-tier-track") : "";
   return `
     <div class="acc-card action-card${a.critical ? " action-critical" : ""}" id="${e(a.id)}">
       <div class="acc-head">
@@ -150,7 +126,6 @@ function actionHtml(a, { tracking, interactive, links }) {
             ${a.kind === "verify" ? chip("Verify", "gap-tier-verify") : ""}
             ${chip(`Effort: ${a.effortLabel}`, "gap-tier-1")}
             ${chip(`Target: ${a.timeframeDays} days`, "gap-tier-1")}
-            ${statusChip}
           </div>
         </div>
         <div class="acc-chevron" aria-hidden="true">▸</div>
@@ -161,12 +136,11 @@ function actionHtml(a, { tracking, interactive, links }) {
           ${owasp}
           ${ref ? `<li><b>Reference:</b> <a href="${ref}" target="_blank" rel="noopener noreferrer">${e(a.reference.label)}</a></li>` : ""}
         </ul>
-        ${interactive ? trackingForm(a, t) : ""}
       </div>
     </div>`;
 }
 
-export function actionPlanHtml(report, { tracking = {}, interactive = false, links = null } = {}) {
+export function actionPlanHtml(report, { links = null } = {}) {
   if (!report.actions.length) {
     return `<section class="action-plan" aria-labelledby="planTitle"><h3 id="planTitle">Action plan</h3><p class="body-text">No actions - every applicable control you answered is in place.</p></section>`;
   }
@@ -181,7 +155,7 @@ export function actionPlanHtml(report, { tracking = {}, interactive = false, lin
           (g) => `
         <div class="plan-group">
           <h4 class="plan-heading">Within ${g.d} days <span class="plan-count">${plural(g.items.length, "action")}</span></h4>
-          ${g.items.map((a) => actionHtml(a, { tracking, interactive, links })).join("")}
+          ${g.items.map((a) => actionHtml(a, { links })).join("")}
         </div>`
         )
         .join("")}

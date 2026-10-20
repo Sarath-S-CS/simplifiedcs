@@ -1,7 +1,6 @@
 // Brings answers saved by an earlier question set up to the current one.
-// Used for in-progress saves (local-save.js) and saved reports opened from
-// History (run-history.js). Each change is reported back as a plain-language
-// note, shown with the report, so nothing is reinterpreted silently.
+// Used when resuming an in-progress save (local-save.js). Each change is
+// reported back as a plain-language note so nothing is reinterpreted silently.
 //
 // Answer schema versions:
 //   1 - methodology 1.x (before 2026-09). No "Not sure" option; some options

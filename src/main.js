@@ -1,15 +1,15 @@
 // Entry point: the app shell (masthead navigation, search, theme, mobile
-// menu, animated background), the tab switcher, and the assessment and
-// history tabs. Each content page lives in its own module under ./pages/,
-// routes and link wiring in ./router.js.
+// menu, animated background), the tab switcher, and the assessment tab.
+// Each content page lives in its own module under ./pages/, routes and link
+// wiring in ./router.js.
 import { createAssessmentController } from "./ui/assessment.js";
-import { renderHistoryPage } from "./ui/history-view.js";
 import { PLAYBOOKS } from "./content/playbooks.js";
 import { CASE_STUDIES } from "./content/case-studies.js";
 import { PHASES } from "./content/maturity.js";
 import { GLOSSARY } from "./content/learning.js";
 import { applyPageMeta } from "./ui/page-meta.js";
 import { renderPrivacyPage } from "./ui/privacy.js";
+import { purgeRemovedFeatureData } from "./engine/local-data.js";
 import { renderFeedbackPage } from "./pages/feedback.js";
 import { FRAMEWORKS } from "./data/frameworks.js";
 import { pathForTab, tabForPath, wireNavLink, wireNavLinksByDataset, activeTab, pendingAnchor, scrollToPendingAnchor, setActiveTab, setPendingAnchor, setNavigationHandler } from "./router.js";
@@ -67,7 +67,6 @@ const TAB_TITLES = {
   feedback: 'Feedback - SimplifiedCS',
   privacy: 'Privacy - SimplifiedCS',
   assessment: 'Assessment - SimplifiedCS',
-  history: 'History - SimplifiedCS',
 };
 
 export let theme = 'dark';
@@ -113,17 +112,12 @@ const INSIGHTS_DROPDOWN = [
   { id:'exploits', label:'Exploits' },
   { id:'casestudy', label:'Case Studies' },
 ];
-const ASSESSMENT_DROPDOWN = [
-  { id:'assessment', label:'Take Assessment' },
-  { id:'history', label:'History' },
-];
 const NAV_DROPDOWN_MAP = {
   home: HOME_DROPDOWN,
   framework: FRAMEWORK_DROPDOWN,
   learn: LEARN_DROPDOWN,
   resources: RESOURCES_DROPDOWN,
   insights: INSIGHTS_DROPDOWN,
-  assessment: ASSESSMENT_DROPDOWN,
 };
 
 // False until the first render: the first page load keeps the browser's
@@ -499,10 +493,6 @@ function renderActiveTab(){
   else if(activeTab === 'feedback') renderFeedbackPage(container);
   else if(activeTab === 'privacy') renderPrivacyPage(container);
   else if(activeTab === 'assessment') renderAssessmentTab(container);
-  else if(activeTab === 'history'){
-    container.innerHTML = `<div class="page" id="panel"></div>`;
-    renderHistory();
-  }
 }
 
 function renderAssessmentTab(container){
@@ -516,18 +506,6 @@ function renderAssessmentTab(container){
   assessmentController.renderCurrentPhase();
 }
 
-// Completed assessments saved in this browser - see ./ui/history-view.js.
-function renderHistory(){
-  renderHistoryPage({
-    panel: document.getElementById('panel'),
-    pathForTab,
-    wireNavLink,
-    openRun: (id) => assessmentController.openRun(id),
-    goToAssessment: () => goToTab('assessment'),
-    onChange: () => renderHistory(),
-  });
-  observeReveals();
-}
 
 function initAnimatedBackground(){
   const canvas = document.getElementById('bgCanvas');
@@ -657,6 +635,7 @@ function initAnimatedBackground(){
   renderSearchWidget();
   renderHamburgerMenu();
   setNavigationHandler(goToTab);
+  purgeRemovedFeatureData();
   renderApp();
   // The link's own #tabContent jump would go through the router (popstate)
   // and re-render the page, so move focus directly instead.
