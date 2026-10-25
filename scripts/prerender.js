@@ -64,6 +64,7 @@ const ROUTES = {
   "/runbooks": "runbook",
   "/news": "news",
   "/exploits": "exploits",
+  "/exploited-in-the-wild": "exploited",
   "/case-studies": "casestudy",
   "/playbooks": "playbooks",
   "/glossary": "glossary",

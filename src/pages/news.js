@@ -35,7 +35,7 @@ async function loadNewsData(){
       .select('external_id, headline, body, source, source_url, category, published_at')
       .order('priority_score', { ascending:false })
       .order('published_at', { ascending:false })
-      .limit(100);
+      .limit(150);
     if(error) throw error;
     if(data && data.length){
       newsCache = {

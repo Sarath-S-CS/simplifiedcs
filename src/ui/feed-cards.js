@@ -46,17 +46,30 @@ export function newsCardHtml(n, { categoryLabel, exploitHref }) {
 }
 
 // item: an exploit_items row as returned by Supabase.
-export function exploitCardHtml(item) {
+export function exploitCardHtml(item, opts = {}) {
   const sourceHref = safeHttpUrl(item.source_url);
   const epssPct = percent(item.epss_score);
   const percentilePct = percent(item.epss_percentile);
   const dateAdded = formatDate(item.date_added);
   const dueDate = item.due_date ? formatDate(item.due_date) : "";
+  // Fix-status treatment is opt-in (the "Exploited in the Wild" page). An
+  // entry is "urgent" until a vendor fix is confirmed available (fix_available
+  // true); false/null both read as not-yet-fixed, so a zero-day under active
+  // exploitation stays highlighted.
+  const showFix = opts.fixStatus === true;
+  const fixed = item.fix_available === true;
+  const urgent = showFix && !fixed;
+  const fixBadge = showFix
+    ? fixed
+      ? '<span class="exploit-fix-badge fix-yes">Fix available</span>'
+      : '<span class="exploit-fix-badge fix-no">No fix confirmed yet</span>'
+    : "";
   return `
-                <div class="exploit-card" id="exploit-${escapeHtml(item.cve_id)}">
+                <div class="exploit-card${urgent ? " exploit-urgent" : ""}" id="exploit-${escapeHtml(item.cve_id)}">
                   <div class="exploit-meta">
                     <span class="exploit-cve">${escapeHtml(item.cve_id)}</span>
                     ${item.is_ransomware === true ? '<span class="exploit-ransomware-badge">Ransomware-Linked</span>' : ""}
+                    ${fixBadge}
                   </div>
                   <h4>${escapeHtml(item.headline)}</h4>
                   <div class="exploit-vendor">${escapeHtml(item.vendor)} · ${escapeHtml(item.product)}</div>

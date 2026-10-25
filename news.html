@@ -38,9 +38,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-<meta name="site-updated" content="October 20, 2026">
-<link rel="stylesheet" href="/assets/build/app-6EJRQQF4.css">
-<script type="module" src="/assets/build/main-ASXPNB7W.js"></script>
+<meta name="site-updated" content="October 25, 2026">
+<link rel="stylesheet" href="/assets/build/app-B6EPEPMC.css">
+<script type="module" src="/assets/build/main-QNN6YAGH.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#tabContent">Skip to main content</a>
@@ -95,7 +95,7 @@
         <div class="tab-item has-dropdown">
           <button type="button" class="tab-btn active" data-toggle="1">Insights <span class="tab-caret">▾</span></button>
           <div class="tab-dropdown">
-            <a class="dropdown-link active" href="/news" data-tab="news">Trends &amp; News</a><a class="dropdown-link " href="/exploits" data-tab="exploits">Exploits</a><a class="dropdown-link " href="/case-studies" data-tab="casestudy">Case Studies</a>
+            <a class="dropdown-link active" href="/news" data-tab="news">Trends &amp; News</a><a class="dropdown-link " href="/exploits" data-tab="exploits">Exploits</a><a class="dropdown-link " href="/exploited-in-the-wild" data-tab="exploited">Exploited in the Wild</a><a class="dropdown-link " href="/case-studies" data-tab="casestudy">Case Studies</a>
           </div>
         </div>
       <a class="tab-btn " href="/assessment" data-tab="assessment">Assessment</a></div>
@@ -205,6 +205,20 @@
             </div>
           
             <div class="news-card">
+              <div class="news-meta"><span>Oct 23, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Arista VeloCloud Orchestrator SQL Injection Vulnerability</h4>
+              <p>Arista VeloCloud Orchestrator on-prem contains a SQL injection vulnerability that may allow a remote attacker to access privileged internal functionality and impact the VCO host. Successful exploitation may compromise the confidentiality, integrity, and availability of the orchestrator and data managed by the orchestrator.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-114625" data-goto-exploit="CVE-2026-114625">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Oct 23, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Collabora Online – Built-in CODE Server OS Command Injection Vulnerability</h4>
+              <p>Collabora Collabora Online – Built-in CODE Server when used within the NextCloud platform contains an OS command injection vulnerability that allows for remote code execution when the CODE server isn't running.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-110447" data-goto-exploit="CVE-2026-110447">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
               <div class="news-meta"><span>Aug 25, 2026</span><span class="news-cat">Vulnerabilities</span></div>
               <h4>Gitea Code Injection Vulnerability</h4>
               <p>Gitea contains a code injection vulnerability that allows an attacker with repository write access to send a malicious patch to the diffpatch API endpoint to plant an executable Git hook and run shell commands as the Gitea service account.</p>
@@ -219,6 +233,48 @@
             </div>
           
             <div class="news-card">
+              <div class="news-meta"><span>Oct 20, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>Siemens Software Center Uncontrolled Search Path Element Vulnerability</h4>
+              <p>Siemens Software Center contains an uncontrolled search path element vulnerability that could allow an authenticated local attacker to place a specially crafted DLL in a directory that the application searches, leading to arbitrary code execution with the privileges of the affected application.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-110936" data-goto-exploit="CVE-2026-110936">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Oct 20, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>EG Secure Solutions SiteGuard Server Edition OS Command Injection Vulnerability</h4>
+              <p>EG Secure Solutions SiteGuard Server Edition contains an OS command injection vulnerability which may allow an attacker to execute arbitrary OS commands with root or SYSTEM privileges on the system running the affected product.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-106931" data-goto-exploit="CVE-2026-106931">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Oct 20, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Plex Media Server External Control of File Name or Path Vulnerability</h4>
+              <p>Plex Media Server contains an external control of file name or path vulnerability which can allow an admin user to write arbitrary files that may be executed on load. This vulnerability can be chained with CVE-2026-96652, CVE-2026-96654, and CVE-2026-96655.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-96656" data-goto-exploit="CVE-2026-96656">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Oct 20, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Plex Media Server Server-Side Request Forgery (SSRF) Vulnerability</h4>
+              <p>Plex Media Server contains a server-side request forgery (SSRF) vulnerability that could allow an authenticated user to request arbitrary internal or external addresses via the '/video/:/transcode/universal' path parameter. This vulnerability can be chained with CVE-2026-96652, CVE-2026-96654, and CVE-2026-96656.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-96655" data-goto-exploit="CVE-2026-96655">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Oct 20, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Plex Media Server Improper Neutralization of Encoded URI Schemes in a Web Page Vulnerability</h4>
+              <p>Plex Media Server contains an improper neutralization of encoded URI schemes in a web page vulnerability that could allow an attacker to call other plugins' functions and supply their own parameters. This vulnerability can be chained with CVE-2026-96652, CVE-2026-96655, and CVE-2026-96656.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-96654" data-goto-exploit="CVE-2026-96654">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Oct 20, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Plex Media Server Server-Side Request Forgery (SSRF) Vulnerability</h4>
+              <p>Plex Media Server contains a server-side request forgery (SSRF) vulnerability which could allow an attacker using any X-Plex-Token value to include a full URL in the 'protocol' parameter and force the Plex server to POST to the attacker's chosen destination. This vulnerability can be chained with CVE-2026-96654, CVE-2026-96655, and CVE-2026-96656. </p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-96652" data-goto-exploit="CVE-2026-96652">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
               <div class="news-meta"><span>Oct 13, 2026</span><span class="news-cat">Vulnerabilities</span></div>
               <h4>Microsoft Windows Command Injection Vulnerability</h4>
               <p>Microsoft Windows Shell contains a command injection vulnerability that allows an unauthorized attacker to bypass a security feature over a network.</p>
@@ -227,16 +283,16 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 22, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Check Point Multiple Products Improper Certificate Validation Vulnerability</h4>
-              <p>Check Point Security Gateway and Check Point Spark Firewall using Site to Site VPN or Remote Access VPN contain an improper certificate validation vulnerability which could allow an unauthenticated remote attacker to execute arbitrary code on the Gateway.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-85102" data-goto-exploit="CVE-2026-85102">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>Check Point Multiple Products Path Traversal Vulnerability</h4>
+              <p>Check Point Security Management Server, Multi-Domain Security Management Server, Log Server, Multi-Domain Log Server, and SmartEvent contain a path traversal vulnerability that allows an unauthenticated attacker to upload and execute arbitrary scripts.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-93616" data-goto-exploit="CVE-2026-93616">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 22, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Check Point Multiple Products Path Traversal Vulnerability</h4>
-              <p>Check Point Security Management Server, Multi-Domain Security Management Server, Log Server, Multi-Domain Log Server, and SmartEvent contain a path traversal vulnerability that allows an unauthenticated attacker to upload and execute arbitrary scripts.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-93616" data-goto-exploit="CVE-2026-93616">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>Check Point Multiple Products Improper Certificate Validation Vulnerability</h4>
+              <p>Check Point Security Gateway and Check Point Spark Firewall using Site to Site VPN or Remote Access VPN contain an improper certificate validation vulnerability which could allow an unauthenticated remote attacker to execute arbitrary code on the Gateway.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-85102" data-goto-exploit="CVE-2026-85102">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -248,9 +304,9 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 9, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Google Chromium V8 Out of Bounds Write Vulnerability</h4>
-              <p>Google Chromium V8 contains an out of bounds write vulnerability that allows a remote attacker to execute arbitrary code inside the sandbox via a crafted HTML page. This vulnerability could affect multiple web browsers that utilize Chromium, including, but not limited to, Google Chrome, Microsoft Edge, and Opera.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-87491" data-goto-exploit="CVE-2026-87491">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>Citrix NetScaler Authentication Bypass Using an Alternate Path or Channel Vulnerability</h4>
+              <p>Citrix NetScaler ADC and NetScaler Gateway contain an authentication-bypass vulnerability involving an alternate path or channel. When the NetScaler appliance is configured as an AAA virtual server or as a Gateway (SSL VPN, ICA Proxy, CVPN, or RDP Proxy), an unauthenticated remote threat actor may be able to bypass authentication.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-19490" data-goto-exploit="CVE-2026-19490">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -262,23 +318,23 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 9, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Google Chromium V8 Out of Bounds Write Vulnerability</h4>
+              <p>Google Chromium V8 contains an out of bounds write vulnerability that allows a remote attacker to execute arbitrary code inside the sandbox via a crafted HTML page. This vulnerability could affect multiple web browsers that utilize Chromium, including, but not limited to, Google Chrome, Microsoft Edge, and Opera.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-87491" data-goto-exploit="CVE-2026-87491">CISA KEV Catalog - full detail on Exploits →</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Sep 9, 2026</span><span class="news-cat">Vulnerabilities</span></div>
               <h4>Fortinet Multiple Products Heap-based Buffer Overflow Vulnerability</h4>
               <p>Fortinet FortiOS, FortiSwitchManager, and FortiSASE contain a heap-based buffer overflow vulnerability that allows an attacker to execute unauthorized code or commands via specially crafted packets.</p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2025-25249" data-goto-exploit="CVE-2025-25249">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Sep 9, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Citrix NetScaler Authentication Bypass Using an Alternate Path or Channel Vulnerability</h4>
-              <p>Citrix NetScaler ADC and NetScaler Gateway contain an authentication-bypass vulnerability involving an alternate path or channel. When the NetScaler appliance is configured as an AAA virtual server or as a Gateway (SSL VPN, ICA Proxy, CVPN, or RDP Proxy), an unauthenticated remote threat actor may be able to bypass authentication.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-19490" data-goto-exploit="CVE-2026-19490">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
               <div class="news-meta"><span>Sep 8, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Microsoft Windows Heap-Based Buffer Overflow Vulnerability</h4>
-              <p>Microsoft Windows Advanced Local Procedure Call contains a heap-based buffer overflow vulnerability that allows an attacker to elevate privileges locally.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-85880" data-goto-exploit="CVE-2026-85880">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>Microsoft Windows Link Following Vulnerability</h4>
+              <p>Microsoft Windows Update Stack contains a link following vulnerability that allows a local attacker to escalate privileges locally up to SYSTEM.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-81963" data-goto-exploit="CVE-2026-81963">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -290,9 +346,9 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Sep 8, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Microsoft Windows Link Following Vulnerability</h4>
-              <p>Microsoft Windows Update Stack contains a link following vulnerability that allows a local attacker to escalate privileges locally up to SYSTEM.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-81963" data-goto-exploit="CVE-2026-81963">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>Microsoft Windows Heap-Based Buffer Overflow Vulnerability</h4>
+              <p>Microsoft Windows Advanced Local Procedure Call contains a heap-based buffer overflow vulnerability that allows an attacker to elevate privileges locally.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-85880" data-goto-exploit="CVE-2026-85880">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -359,31 +415,10 @@
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Oct 16, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Fortinet Multiple Products Path Traversal Vulnerability</h4>
-              <p>FortiOS, FortiPAM, FortiProxy, and FortiSwitchManager contain a path traversal vulnerability that may allow an authenticated attacker with admin profile and at least read-write permissions to write or delete arbitrary files via specific CLI commands.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2025-61624" data-goto-exploit="CVE-2025-61624">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Oct 16, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>BeyondTrust Remote Support Authentication Bypass by Spoofing Vulnerability</h4>
-              <p>BeyondTrust Remote Support contains an authentication bypass by spoofing vulnerability that could allow a remote attacker to perform file operations on the appliance.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-102764" data-goto-exploit="CVE-2026-102764">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
               <div class="news-meta"><span>Oct 15, 2026</span><span class="news-cat">Vulnerabilities</span></div>
               <h4>Atlassian Multiple Products Files or Directories Accessible to External Parties Vulnerability</h4>
               <p>Multiple Atlassian products (Bitbucket Data Center ,Confluence Data Center, Jira Service Management Data Center, Jira Software Data Center, Bamboo Data Center, Crowd Data Center, Crucible and Fisheye) contain a files or directories accessible to external parties vulnerability which could allow an unauthenticated attacker to access specific files within the web application root directory in affected versions.</p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-21589" data-goto-exploit="CVE-2026-21589">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Oct 14, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Palo Alto Networks PAN-OS Code Injection Vulnerability</h4>
-              <p>Palo Alto Networks PAN-OS contains a code injection vulnerability that could allow an authenticated attacker with network access to execute arbitrary code with root privileges on the firewall.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-0322" data-goto-exploit="CVE-2026-0322">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -395,9 +430,9 @@
           
             <div class="news-card">
               <div class="news-meta"><span>Oct 14, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Ahsay AhsayCBS Improper Authentication Vulnerability</h4>
-              <p>Ahsay AhsayCBS contains an improper authentication vulnerability that could allow a remote attacker to bypass authentication via manipulation of the random parameter in the API component’s checkSysPwd function. This vulnerability can be chained with CVE-2026-105134.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-105133" data-goto-exploit="CVE-2026-105133">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <h4>Palo Alto Networks PAN-OS Code Injection Vulnerability</h4>
+              <p>Palo Alto Networks PAN-OS contains a code injection vulnerability that could allow an authenticated attacker with network access to execute arbitrary code with root privileges on the firewall.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-0322" data-goto-exploit="CVE-2026-0322">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -408,10 +443,10 @@
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Oct 8, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>ProFTPD Improper Access Control Vulnerability</h4>
-              <p>ProFTPD contains an improper access control vulnerability that could allow remote attackers to read and write to arbitrary files via the site cpfr and site cpto commands.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2015-3306" data-goto-exploit="CVE-2015-3306">CISA KEV Catalog - full detail on Exploits →</a></div>
+              <div class="news-meta"><span>Oct 14, 2026</span><span class="news-cat">Vulnerabilities</span></div>
+              <h4>Ahsay AhsayCBS Improper Authentication Vulnerability</h4>
+              <p>Ahsay AhsayCBS contains an improper authentication vulnerability that could allow a remote attacker to bypass authentication via manipulation of the random parameter in the API component’s checkSysPwd function. This vulnerability can be chained with CVE-2026-105134.</p>
+              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-105133" data-goto-exploit="CVE-2026-105133">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -419,34 +454,6 @@
               <h4>Strapi Cleartext Storage of Sensitive Information Vulnerability</h4>
               <p>Strapi contains a cleartext storage of sensitive information vulnerability that could allow attackers with access to the admin panel to discover sensitive user details via the query filter. The impacted product(s) could be end-of-life (EoL) and/or end-of-service (EoS). Users are advised to discontinue use and/or transition to a supported version. This vulnerability can be chained with CVE-2023-22621 to achieve remote code execution. </p>
               <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2023-22894" data-goto-exploit="CVE-2023-22894">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Oct 8, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>ONLYOFFICE Docs Server Path Traversal Vulnerability</h4>
-              <p>ONLYOFFICE Docs contains a path traversal vulnerability that can occur when JWT is used, via a /.. sequence in an image upload parameter and could allow for remote code execution.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2021-3199" data-goto-exploit="CVE-2021-3199">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 24, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Adobe Commerce and Magento Incorrect Authorization Vulnerability </h4>
-              <p>Adobe Commerce and Magento contains an incorrect authorization vulnerability that could allow an attacker to leverage this vulnerability to gain elevated access to sensitive resources without any user interaction. </p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-71362" data-goto-exploit="CVE-2026-71362">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Sep 22, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Arista VeloCloud Orchestrator Improper Input Validation Vulnerability</h4>
-              <p>Arista VeloCloud Orchestrator (VCO) on-prem contains an improper input validation vulnerability that may allow a remote attacker to access privileged internal functionality and impact the VCO host. Successful exploitation may compromise the confidentiality, integrity, and availability of the orchestrator and data managed by the orchestrator.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-93952" data-goto-exploit="CVE-2026-93952">CISA KEV Catalog - full detail on Exploits →</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Oct 13, 2026</span><span class="news-cat">Vulnerabilities</span></div>
-              <h4>Ivanti Connect Secure Authentication Bypass by Spoofing Vulnerability</h4>
-              <p>Ivanti Connect Secure contains an authentication bypass by spoofing vulnerability that allows a remote unauthenticated attacker to execute arbitrary commands.</p>
-              <div class="news-source"><a class="news-source-exploit-link" href="/exploits#exploit-CVE-2026-104935" data-goto-exploit="CVE-2026-104935">CISA KEV Catalog - full detail on Exploits →</a></div>
             </div>
           
             <div class="news-card">
@@ -464,59 +471,52 @@
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Oct 19, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>Need for enforceable AI accountability, zero-trust security as AI-driven cyber risks threaten critical infrastructure</h4>
-              <p>As artificial intelligence introduces new cybersecurity risks, traditional frameworks must evolve to address AI-enabled cybercrime, models escaping their... The post Need for enforceable AI accountability, zero-trust security as AI-driven cyber risks threaten critical infrastructure appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/zero-trust/need-for-enforceable-ai-accountability-zero-trust-security-as-ai-driven-cyber-risks-threaten-critical-infrastructure/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
+              <div class="news-meta"><span>Oct 23, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>Indurex secures €7 million to unify engineering intelligence, OT security and process safety</h4>
+              <p>Indurex, a company developing artificial intelligence (AI) for cyber-physical systems (CPS) security, has raised €7 million in a... The post Indurex secures €7 million to unify engineering intelligence, OT security and process safety appeared first on Industrial Cyber.</p>
+              <div class="news-source"><a href="https://industrialcyber.co/news/indurex-secures-e7-million-to-unify-engineering-intelligence-ot-security-and-process-safety/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Oct 19, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>Claroty Team82 shows AI can rebuild Danfoss controller exploits in 28 minutes, putting Internet-facing OT at risk</h4>
-              <p>Claroty’s Team82 research team reproduced three previously disclosed vulnerabilities in Danfoss AK-SM 800A refrigeration controllers using an artificial... The post Claroty Team82 shows AI can rebuild Danfoss controller exploits in 28 minutes, putting Internet-facing OT at risk appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/ai/claroty-team82-shows-ai-can-rebuild-danfoss-controller-exploits-in-28-minutes-putting-internet-facing-ot-at-risk/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
+              <div class="news-meta"><span>Oct 23, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>NineTenths joins ISASecure to support industrial cybersecurity across energy, water and manufacturing</h4>
+              <p>Professional society for automation, the International Society of Automation (ISA), announced that NineTenths Company has officially joined ISASecure,... The post NineTenths joins ISASecure to support industrial cybersecurity across energy, water and manufacturing appeared first on Industrial Cyber.</p>
+              <div class="news-source"><a href="https://industrialcyber.co/news/ninetenths-joins-isasecure-to-support-industrial-cybersecurity-across-energy-water-and-manufacturing/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Oct 19, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>Unit 42 traces Peerstitch malware deployment to FortiOS vulnerability exploited after FortiManager compromise</h4>
-              <p>Palo Alto Networks’ Unit 42 threat intelligence team uncovered a multistage cyber intrusion against a telecommunications managed service... The post Unit 42 traces Peerstitch malware deployment to FortiOS vulnerability exploited after FortiManager compromise appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/ransomware/unit-42-traces-peerstitch-malware-deployment-to-fortios-vulnerability-exploited-after-fortimanager-compromise/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
+              <div class="news-meta"><span>Oct 22, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>SafePay ransomware compromised 600 critical organizations worldwide; urge patching and network defenses</h4>
+              <p>The U.S. Cybersecurity and Infrastructure Security Agency (CISA), the Federal Bureau of Investigation (FBI), the U.S. Secret Service... The post SafePay ransomware compromised 600 critical organizations worldwide; urge patching and network defenses appeared first on Industrial Cyber.</p>
+              <div class="news-source"><a href="https://industrialcyber.co/threats-attacks/safepay-ransomware-compromised-600-critical-organizations-worldwide-urge-patching-and-network-defenses/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Oct 19, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>Nozomi outlines IT and OT security priorities ahead of India’s April 2027 CEA power sector cybersecurity deadline</h4>
-              <p>Following the July move by India’s Central Electricity Authority (CEA) that notified the Central Electricity Authority (Cyber Security... The post Nozomi outlines IT and OT security priorities ahead of India’s April 2027 CEA power sector cybersecurity deadline appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/utilities-energy-power-water-waste/nozomi-outlines-it-and-ot-security-priorities-ahead-of-indias-april-2027-cea-power-sector-cybersecurity-deadline/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
+              <div class="news-meta"><span>Oct 22, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>Black Kite debuts Quantum Readiness controls to assess post-quantum security across vendor ecosystems</h4>
+              <p>Black Kite, provider of third-party cyber risk management solutions, announced the release of Quantum Readiness, a new set... The post Black Kite debuts Quantum Readiness controls to assess post-quantum security across vendor ecosystems appeared first on Industrial Cyber.</p>
+              <div class="news-source"><a href="https://industrialcyber.co/news/black-kite-debuts-quantum-readiness-controls-to-assess-post-quantum-security-across-vendor-ecosystems/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Oct 16, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>Singapore prioritizes critical infrastructure in quantum-safe push, funds cryptographic discovery, legacy OT migration</h4>
-              <p>The Cyber Security Agency of Singapore (CSA) issued quantum-safe migration guidance recommending that organizations exposed to quantum-related cybersecurity... The post Singapore prioritizes critical infrastructure in quantum-safe push, funds cryptographic discovery, legacy OT migration appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/critical-infrastructure/singapore-prioritizes-critical-infrastructure-in-quantum-safe-push-funds-cryptographic-discovery-legacy-ot-migration/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
+              <div class="news-meta"><span>Oct 22, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>Corsha launches Folio to automate OT network mapping and industrial system documentation</h4>
+              <p>Corsha, a provider of industrial identity security solutions, announced on Wednesday Folio, a new module on the Corsha... The post Corsha launches Folio to automate OT network mapping and industrial system documentation appeared first on Industrial Cyber.</p>
+              <div class="news-source"><a href="https://industrialcyber.co/news/corsha-launches-folio-to-automate-ot-network-mapping-and-industrial-system-documentation/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Oct 16, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>MITRE ATT&amp;CK v20 expands critical infrastructure threat coverage with new IT and OT attack techniques</h4>
-              <p>Not-for-profit organization MITRE has released details of version 20 of its ATT&amp;CK framework, expanding its coverage of critical... The post MITRE ATT&amp;CK v20 expands critical infrastructure threat coverage with new IT and OT attack techniques appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/industrial-cyber-attacks/mitre-attck-v20-expands-critical-infrastructure-threat-coverage-with-new-it-and-ot-attack-techniques/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
+              <div class="news-meta"><span>Oct 21, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>Nozomi Networks, SEL integrate OT SDN visibility with AI-powered cybersecurity for critical infrastructure</h4>
+              <p>Nozomi Networks, vendor of OT, IoT and CPS security solutions, and Schweitzer Engineering Laboratories (SEL) announced an expansion... The post Nozomi Networks, SEL integrate OT SDN visibility with AI-powered cybersecurity for critical infrastructure appeared first on Industrial Cyber.</p>
+              <div class="news-source"><a href="https://industrialcyber.co/news/nozomi-networks-sel-integrate-ot-sdn-visibility-with-ai-powered-cybersecurity-for-critical-infrastructure/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
             </div>
           
             <div class="news-card">
-              <div class="news-meta"><span>Oct 16, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>French supermarket cyberattack exposes risks of unsecured remote access and legacy refrigeration systems</h4>
-              <p>Following reports of cyberattacks on French supermarket refrigeration systems that disrupted hundreds of stores overnight from Oct. 11... The post French supermarket cyberattack exposes risks of unsecured remote access and legacy refrigeration systems appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/control-device-security/french-supermarket-cyberattack-exposes-risks-of-unsecured-remote-access-and-legacy-refrigeration-systems/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Oct 16, 2026</span><span class="news-cat">OT / Industrial</span></div>
-              <h4>Ampyx Cyber examines FERC 2026 CIP audit findings on generator registration, shared control and AI access risks</h4>
-              <p>Ampyx Cyber highlighted gaps in generator registration, cyber risk categorization and artificial intelligence (AI) access controls in the... The post Ampyx Cyber examines FERC 2026 CIP audit findings on generator registration, shared control and AI access risks appeared first on Industrial Cyber.</p>
-              <div class="news-source"><a href="https://industrialcyber.co/utilities-energy-power-water-waste/ampyx-cyber-examines-ferc-2026-cip-audit-findings-on-generator-registration-shared-control-and-ai-access-risks/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
+              <div class="news-meta"><span>Oct 21, 2026</span><span class="news-cat">OT / Industrial</span></div>
+              <h4>Dispel, Tenable integrate OT asset intelligence with zero-trust remote access controls to boost industrial cybersecurity</h4>
+              <p>Dispel announced an integration with exposure management company Tenable Holdings that combines Tenable One OT Exposure with the... The post Dispel, Tenable integrate OT asset intelligence with zero-trust remote access controls to boost industrial cybersecurity appeared first on Industrial Cyber.</p>
+              <div class="news-source"><a href="https://industrialcyber.co/news/dispel-tenable-integrate-ot-asset-intelligence-with-zero-trust-remote-access-controls-to-boost-industrial-cybersecurity/" target="_blank" rel="noopener noreferrer">Industrial Cyber</a></div>
             </div>
           
             <div class="news-card">
@@ -590,6 +590,20 @@
             </div>
           
             <div class="news-card">
+              <div class="news-meta"><span>Oct 22, 2026</span><span class="news-cat">Threat Landscape</span></div>
+              <h4>Authorities disrupt nearly 11,000 cybercrime networks in Africa</h4>
+              <p>Law enforcement agencies have disrupted nearly 11,000 cybercriminal networks and arrested more than 1,400 people in Operation Serengeti III, which targeted business email compromise, ransomware, and online scams. [...]</p>
+              <div class="news-source"><a href="https://www.bleepingcomputer.com/news/security/authorities-disrupt-nearly-11-000-cybercrime-networks-in-africa/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
+            </div>
+          
+            <div class="news-card">
+              <div class="news-meta"><span>Oct 21, 2026</span><span class="news-cat">Threat Landscape</span></div>
+              <h4>CISA: SafePay ransomware hit over 600 critical infrastructure orgs</h4>
+              <p>The Cybersecurity and Infrastructure Security Agency (CISA) says the SafePay ransomware gang has breached over 600 critical infrastructure organizations worldwide since 2024. [...]</p>
+              <div class="news-source"><a href="https://www.bleepingcomputer.com/news/security/cisa-and-fbi-safepay-ransomware-has-hit-over-600-critical-infrastructure-organizations/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
+            </div>
+          
+            <div class="news-card">
               <div class="news-meta"><span>Oct 20, 2026</span><span class="news-cat">Threat Landscape</span></div>
               <h4>OVHcloud CLI releases backdoored on GitHub to steal developer secrets</h4>
               <p>French cloud and hosting provider OVHcloud is warning users that attackers compromised its open-source command-line interface (CLI) tool to distribute information-stealing malware. [...]</p>
@@ -643,20 +657,6 @@
               <h4>Inside AvisLoader: A Windows Malware Loader Built to Resist Disruption</h4>
               <p>A new Windows malware loader called AvisLoader uses encrypted peer-to-peer communications to make command-and-control infrastructure harder to disrupt. Varonis researchers explain how the malware uses ClickFix delivery, shortcut-based persistence, and remote command execution capabilities. [...]</p>
               <div class="news-source"><a href="https://www.bleepingcomputer.com/news/security/inside-avisloader-a-windows-malware-loader-built-to-resist-disruption/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Oct 12, 2026</span><span class="news-cat">Threat Landscape</span></div>
-              <h4>Retail giant Ahold Delhaize takes systems offline after cyberattack</h4>
-              <p>Retail giant Ahold Delhaize, one of the world's largest food retail chains, confirmed today that it had to take some systems offline in response to a "cybersecurity incident" affecting its network. [...]</p>
-              <div class="news-source"><a href="https://www.bleepingcomputer.com/news/security/retail-giant-ahold-delhaize-takes-systems-offline-after-cyberattack/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
-            </div>
-          
-            <div class="news-card">
-              <div class="news-meta"><span>Oct 8, 2026</span><span class="news-cat">Threat Landscape</span></div>
-              <h4>Uranium crypto exchange hacker convicted for stealing $53 million</h4>
-              <p>A Maryland man was found guilty of stealing more than $53 million after hacking the decentralized crypto exchange Uranium Finance twice in April 2021. [...]</p>
-              <div class="news-source"><a href="https://www.bleepingcomputer.com/news/security/uranium-crypto-exchange-hacker-found-guilty-of-53-million-theft/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></div>
             </div>
           
         </div>

@@ -19,6 +19,7 @@ export const PAGE_DESCRIPTIONS = {
   runbook: "Step-by-step incident runbooks for common security incidents, written for small teams.",
   news: "Recent cybersecurity news and vulnerability updates, curated and categorized.",
   exploits: "Actively exploited vulnerabilities from public sources, with exploitation likelihood and practical guidance.",
+  exploited: "Vulnerabilities being exploited in the wild right now, highlighting those still awaiting a vendor fix - including zero-days - until a patch is available.",
   casestudy: "Real-world security incidents and what small and medium organizations can learn from them.",
   playbooks: "Security playbooks mapped to OWASP Top 10 and MITRE ATT&CK techniques, with prevention and response steps.",
   glossary: "Plain-language definitions of common cybersecurity terms.",

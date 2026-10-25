@@ -35,6 +35,7 @@ const openFirstAccordion = () => document.querySelector(".acc-head")?.click();
 const SCENARIOS = [
   ...PAGES.map((p) => ({ name: p, path: p, steps: [openFirstAccordion] })),
   { name: "/news (live feed)", path: "/news", settle: 3000 },
+  { name: "/exploited-in-the-wild (live feed)", path: "/exploited-in-the-wild", settle: 3000 },
   { name: "/feedback (errors shown)", path: "/feedback", steps: [() => document.getElementById("fbSubmit").click()] },
   { name: "/playbooks (accordion open)", path: "/playbooks", steps: [openFirstAccordion] },
   { name: "assessment landing", path: "/assessment" },

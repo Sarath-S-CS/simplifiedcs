@@ -1193,6 +1193,14 @@
   .exploit-meta{ display:flex; gap:10px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
   .exploit-cve{ font-family:var(--mono); font-size:11px; letter-spacing:0.04em; color:var(--accent-signal-ink); }
   .exploit-ransomware-badge{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--accent-critical); border:1px solid var(--accent-critical); padding:2px 8px; }
+  /* Fix-status badges + urgent highlight, "Exploited in the Wild" page only. */
+  .exploit-fix-badge{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.05em; text-transform:uppercase; padding:2px 8px; border:1px solid currentColor; border-radius:var(--radius-pill); }
+  .exploit-fix-badge.fix-no{ color:var(--accent-critical); }
+  .exploit-fix-badge.fix-yes{ color:var(--accent-secure-ink); }
+  .exploit-card.exploit-urgent{ border-color:var(--accent-critical); border-left-width:4px; background:color-mix(in srgb, var(--accent-critical) 8%, var(--tile-bg)); }
+  /* Vendor dropdown on the Exploits page - matches the feed-sort control. */
+  .vendor-select{ font-family:var(--mono); font-size:11px; letter-spacing:0.03em; color:var(--text); background:var(--surface-raised); border:1px solid var(--line); border-radius:2px; padding:6px 10px; max-width:240px; cursor:pointer; }
+  .vendor-select:focus-visible{ outline:2px solid var(--accent-signal); outline-offset:2px; }
   .exploit-card h4{ font-size:15.5px; margin:0 0 6px; }
   .exploit-vendor{ font-size:12.5px; color:var(--text-muted); margin-bottom:14px; }
   .exploit-scores{ display:flex; gap:14px; margin-bottom:16px; flex-wrap:wrap; }

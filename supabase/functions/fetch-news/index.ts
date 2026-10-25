@@ -16,8 +16,8 @@ import { CATEGORIES, detectOt, recencyBonus, truncate, parseRssItems, parseOtDed
 import { verifySchedulerRequest } from "../_shared/scheduler-auth.ts";
 import { runWithJobLease, type JobOutcome } from "../_shared/job-lease.ts";
 
-const RETENTION_CAP = 75;
-const CATEGORY_FLOOR = 10; // reserve up to this many of each category before filling remaining slots by pure priority - otherwise high-CVSS vuln items (which score far higher than narrative RSS content) crowd out ai/ot/landscape entirely
+const RETENTION_CAP = 120; // raised from 75: CISA KEV advisories (priority ~90) dominate the cap, so a bigger window keeps narrative stories (a widely-reported PHP/Node RCE from an RSS source scores far lower) from being evicted within a day or two
+const CATEGORY_FLOOR = 14; // reserve up to this many of each category before filling remaining slots by pure priority - otherwise high-CVSS vuln items (which score far higher than narrative RSS content) crowd out ai/ot/landscape entirely
 const MIN_RUN_INTERVAL_HOURS = 20; // daily cadence guard, enforced by the job lease
 // KEV_NEWS_LIMIT is deliberately small: this feed is meant to surface a
 // curated handful of genuinely notable exploited-vulnerability items as
@@ -71,27 +71,35 @@ async function fetchKev() {
   });
 }
 
+// Recently *published* HIGH/CRITICAL CVEs. The previous version pulled the
+// first 50 CVEs *modified* in the last 3 days with no ordering - an arbitrary
+// slice dominated by routine re-analysis of old CVEs, so genuinely new
+// critical flaws (a fresh PHP/Node RCE) almost never landed in it. Now it
+// queries by publish date over a wider window, pulls a full page, filters to
+// CVSS>=7, and keeps the newest ones - so brand-new critical CVEs actually
+// reach the feed. NVD's own API key (NVD_API_KEY) lifts the rate limit.
 async function fetchNvd() {
   const end = new Date();
-  const start = new Date(end.getTime() - 3 * 86_400_000); // last 3 days, overlap covers scheduling drift
+  const start = new Date(end.getTime() - 7 * 86_400_000); // last 7 days by publish date
   const url = new URL("https://services.nvd.nist.gov/rest/json/cves/2.0");
-  url.searchParams.set("lastModStartDate", start.toISOString());
-  url.searchParams.set("lastModEndDate", end.toISOString());
-  url.searchParams.set("resultsPerPage", "50");
-  const res = await fetch(url);
+  url.searchParams.set("pubStartDate", start.toISOString());
+  url.searchParams.set("pubEndDate", end.toISOString());
+  url.searchParams.set("resultsPerPage", "2000");
+  const apiKey = Deno.env.get("NVD_API_KEY");
+  const res = await fetch(url, apiKey ? { headers: { apiKey } } : undefined);
   if (!res.ok) throw new Error(`NVD fetch failed: ${res.status}`);
   const data = await res.json();
   const out = [];
   for (const entry of data.vulnerabilities ?? []) {
     const cve = entry.cve;
-    const metrics = cve.metrics?.cvssMetricV31?.[0] ?? cve.metrics?.cvssMetricV30?.[0] ?? cve.metrics?.cvssMetricV2?.[0];
+    const metrics = cve.metrics?.cvssMetricV40?.[0] ?? cve.metrics?.cvssMetricV31?.[0] ?? cve.metrics?.cvssMetricV30?.[0] ?? cve.metrics?.cvssMetricV2?.[0];
     const score = metrics?.cvssData?.baseScore;
     if (!score || score < 7.0) continue; // HIGH/CRITICAL only - keep signal high
     const desc = cve.descriptions?.find((d: any) => d.lang === "en")?.value ?? "No description available.";
-    const priority = score * 7 + recencyBonus(cve.published, 10, 14);
+    const priority = score * 7 + recencyBonus(cve.published, 12, 14);
     out.push({
       external_id: `cve:${cve.id}`,
-      headline: `${cve.id}: CVSS ${score.toFixed(1)} vulnerability disclosed`,
+      headline: `${cve.id}: CVSS ${score.toFixed(1)} ${score >= 9 ? "critical" : "high-severity"} vulnerability disclosed`,
       body: truncate(desc, 500),
       source: "NVD",
       source_url: `https://nvd.nist.gov/vuln/detail/${cve.id}`,
@@ -100,7 +108,10 @@ async function fetchNvd() {
       priority_score: Math.round(priority),
     });
   }
-  return out;
+  // Newest first, then cap - so a week of critical CVEs contributes its most
+  // recent entries rather than an arbitrary slice.
+  out.sort((a, b) => b.published_at.localeCompare(a.published_at));
+  return out.slice(0, 40);
 }
 
 async function fetchRss(feedUrl: string, source: string, maxItems: number) {
@@ -201,13 +212,21 @@ async function refreshNews(supabase: ReturnType<typeof createClient>): Promise<J
     fetchNvd(),
     fetchRss("https://www.bleepingcomputer.com/feed/", "BleepingComputer", 15),
     fetchRss("https://krebsonsecurity.com/feed/", "Krebs on Security", 15),
+    // Broad application/runtime-security coverage - The Hacker News and
+    // SecurityWeek report language/framework vulnerabilities (PHP, Node.js,
+    // etc.) that CISA KEV and the OT feeds miss, which is exactly the gap that
+    // let PHP2Shell slip past this feed. Both are high-volume general feeds,
+    // so they go through fetchRss's categorize() relevance gate like the
+    // others.
+    fetchRss("https://feeds.feedburner.com/TheHackersNews", "The Hacker News", 20),
+    fetchRss("https://www.securityweek.com/feed/", "SecurityWeek", 20),
     fetchOtDedicatedRss("https://www.cisa.gov/cybersecurity-advisories/all.xml", "CISA ICS Advisories", 10, "/news-events/ics-advisories/"),
     fetchOtDedicatedRss("https://industrialcyber.co/feed/", "Industrial Cyber", 10),
     fetchOtDedicatedRss("https://claroty.com/team82/disclosure-dashboard/feed", "Claroty Team82", 8, undefined, "A new XIoT/OT vulnerability disclosed by Claroty's Team82 research team."),
   ]);
 
   const errors: string[] = [];
-  const [kev, nvd, bleeping, krebs, cisaIcs, industrialCyber, claroty] = results.map((r, i) => {
+  const [kev, nvd, bleeping, krebs, hackerNews, securityWeek, cisaIcs, industrialCyber, claroty] = results.map((r, i) => {
     if (r.status === "rejected") {
       errors.push(`source ${i}: ${r.reason}`);
       return [];
@@ -223,7 +242,7 @@ async function refreshNews(supabase: ReturnType<typeof createClient>): Promise<J
     if (error) errors.push(`kev upsert: ${error.message}`);
     else inserted += kev.length;
   }
-  const rest = [...nvd, ...bleeping, ...krebs, ...cisaIcs, ...industrialCyber, ...claroty, ...MANUAL_OT_BACKFILL];
+  const rest = [...nvd, ...bleeping, ...krebs, ...hackerNews, ...securityWeek, ...cisaIcs, ...industrialCyber, ...claroty, ...MANUAL_OT_BACKFILL];
   if (rest.length) {
     const { error } = await supabase.from("news_items").upsert(rest, { onConflict: "external_id", ignoreDuplicates: true });
     if (error) errors.push(`rest upsert: ${error.message}`);

@@ -25,6 +25,7 @@ const ROUTES = {
   runbook: '/runbooks',
   news: '/news',
   exploits: '/exploits',
+  exploited: '/exploited-in-the-wild',
   casestudy: '/case-studies',
   playbooks: '/playbooks',
   glossary: '/glossary',

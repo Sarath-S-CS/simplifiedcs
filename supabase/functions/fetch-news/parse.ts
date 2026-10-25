@@ -62,7 +62,11 @@ export function parseRssItems(xml: string, source: string, maxItems: number) {
     if (isNaN(published.getTime())) continue;
     const category = categorize(title, description);
     if (!category) continue; // not security-relevant - see categorize()'s comment
-    const priority = 35 + recencyBonus(published.toISOString(), 15, 10) + (category === "ai" ? 5 : 0);
+    // Base raised (35->42) and vuln stories get an extra bump so a widely
+    // reported critical flaw (PHP/Node RCE, a fresh zero-day) ranks well above
+    // routine narrative items and survives the daily retention churn. Still
+    // below CISA KEV advisories (~90) by design - those are confirmed-exploited.
+    const priority = 42 + recencyBonus(published.toISOString(), 20, 10) + (category === "ai" ? 5 : 0) + (category === "vuln" ? 10 : 0);
     items.push({
       external_id: `rss:${link}`,
       headline: truncate(title, 200),

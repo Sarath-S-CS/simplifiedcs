@@ -25,6 +25,7 @@ import { renderStarterGuideTab } from "./pages/starter-guide.js";
 import { renderThreatModelingTab } from "./pages/threat-modeling.js";
 import { renderNewsTab } from "./pages/news.js";
 import { renderExploitsTab } from "./pages/exploits.js";
+import { renderExploitedTab } from "./pages/exploited.js";
 import { renderGlossaryTab } from "./pages/glossary.js";
 import { renderReferencesTab } from "./pages/references.js";
 import { renderAboutTab } from "./pages/about.js";
@@ -59,6 +60,7 @@ const TAB_TITLES = {
   runbook: 'Runbooks - SimplifiedCS',
   news: 'Cybersecurity News - SimplifiedCS',
   exploits: 'Exploit Tracker - SimplifiedCS',
+  exploited: 'Exploited in the Wild - SimplifiedCS',
   casestudy: 'Case Studies - SimplifiedCS',
   playbooks: 'Playbooks - SimplifiedCS',
   glossary: 'Glossary - SimplifiedCS',
@@ -110,6 +112,7 @@ const RESOURCES_DROPDOWN = [
 const INSIGHTS_DROPDOWN = [
   { id:'news', label:'Trends & News' },
   { id:'exploits', label:'Exploits' },
+  { id:'exploited', label:'Exploited in the Wild' },
   { id:'casestudy', label:'Case Studies' },
 ];
 const NAV_DROPDOWN_MAP = {
@@ -485,6 +488,7 @@ function renderActiveTab(){
   else if(activeTab === 'runbook') renderRunbookTab(container);
   else if(activeTab === 'news') renderNewsTab(container);
   else if(activeTab === 'exploits') renderExploitsTab(container);
+  else if(activeTab === 'exploited') renderExploitedTab(container);
   else if(activeTab === 'casestudy') renderCaseStudyTab(container);
   else if(activeTab === 'playbooks') renderPlaybooksTab(container);
   else if(activeTab === 'glossary') renderGlossaryTab(container);
