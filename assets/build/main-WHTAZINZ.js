@@ -580,12 +580,11 @@ import{a as Ja}from"./chunk-6BRCHMVN.js";import{a as Z,b as yt,c as ge,d as Ut,e
       <div class="hero-banner">
         <div class="hero-banner-inner">
           <h2 class="page-title">Cybersecurity posture assessment, made simple.</h2>
-          <p class="page-lede">Answer adaptive questions about how your organization is set up. Get a prioritized reading of your cybersecurity, referenced to NIST CSF 2.0 and CIS Controls, and a ranked action plan. A 14-question Quick screening or a Full assessment - it runs in your browser, and your answers stay there unless you choose otherwise.</p>
+          <p class="page-lede">Answer adaptive questions about how your organization is set up. Get a prioritized reading of your cybersecurity, referenced to NIST CSF 2.0 and CIS Controls, and a ranked action plan.</p>
           <div class="hero-links">
             <a href="${y("assessment")}" id="heroTakeAssessment" class="link-pill"><span class="link-pill-icon">${N("checklist")}</span>Take the assessment</a>
             <a href="#how-it-works" class="link-pill secondary"><span class="link-pill-icon">${N("route")}</span>How it works</a>
           </div>
-          <p class="hero-trust">It's a structured self-assessment from your own answers - not a scan, audit or certification. <a href="/assessment/sample" class="inline-link">See example reports</a> \xB7 <a href="/methodology" class="inline-link">How scoring works</a> \xB7 <a href="/privacy" class="inline-link">Privacy</a></p>
         </div>
         ${cr()}
       </div>
