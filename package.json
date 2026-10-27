@@ -15,7 +15,7 @@
   "dependencies": {
     "@netlify/blobs": "^11.0.1",
     "@supabase/supabase-js": "^2.45.0",
-    "dompurify": "^3.4.16",
+    "dompurify": "^3.4.17",
     "jspdf": "^4.2.1"
   },
   "devDependencies": {
