@@ -307,8 +307,6 @@
   .tab-btn.active{ border-radius:var(--radius-pill); }
   .tab-btn.active{ background:var(--accent-signal); color:var(--text-on-accent); }
   .tab-caret{ font-size:9px; opacity:0.8; padding:4px; margin:-4px; }
-  .tab-btn-icon{ display:flex; align-items:center; }
-  .tab-btn-icon svg{ width:17px; height:17px; }
   .tab-dropdown{
     position:absolute;
     top:100%;
@@ -751,55 +749,8 @@
   /* --- results --- */
   .results{ display:none; }
   .results.show{ display:block; }
-  /* ASSESSMENT-REPORT-DEPTH-BRIEF.md §9: a one-time, prominent legend
-     clarifying score direction - not repeated next to every bar. */
-  .score-direction-legend{ font-size:13px; color:var(--text-muted); background:var(--surface-raised); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin:0 0 20px; }
-  .score-direction-legend b{ color:var(--text); }
-  .gauge-row{
-    display:grid;
-    grid-template-columns:200px 1fr;
-    gap:36px;
-    align-items:center;
-    margin-bottom:36px;
-  }
-  .gauge{
-    width:180px;height:180px;border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    position:relative;
-  }
-  .gauge::before{
-    content:'';
-    position:absolute; inset:14px;
-    background:var(--surface);
-    border-radius:50%;
-  }
-  .gauge-inner{
-    position:relative; z-index:1; text-align:center;
-  }
-  .gauge-inner .pct{
-    font-family:var(--mono); font-size:32px; font-weight:600;
-  }
-  .gauge-inner .verdict{
-    font-family:var(--mono); font-size:10px; letter-spacing:0.08em;
-    color:var(--text-muted); text-transform:uppercase; margin-top:4px;
-  }
-  .func-bars{ display:flex; flex-direction:column; gap:10px; }
-  .func-bar-row{ display:grid; grid-template-columns:90px 1fr 40px; align-items:center; gap:12px; font-size:12px; }
-  .func-bar-row .fname{ font-family:var(--mono); color:var(--text-muted); letter-spacing:0.04em; }
   .func-bar-track{ height:6px; background:var(--surface-raised); position:relative; }
   .func-bar-fill{ height:100%; transition:width .6s ease; }
-  .func-bar-row .fpct{ font-family:var(--mono); text-align:right; color:var(--text-muted); }
-
-  /* .gauge-row's fixed 200px gauge column + func-bars' own min-content
-     (func-bar-row's fixed 90px/40px columns put a ~154px floor under the
-     1fr column) don't fit together once the available width drops below
-     ~200+36+154=390px plus card padding - confirmed via live testing to
-     overflow starting around 420px wide. Stack to one column below 480px
-     (an existing breakpoint used elsewhere in this file) so the gauge and
-     func-bars each get the full row width instead of splitting it. */
-  @media (max-width:480px){
-    .gauge-row{ grid-template-columns:minmax(0,1fr); }
-  }
 
   .flags{ margin-bottom:28px; }
   .flags h3, .priorities h3, .snapshot h3{
@@ -818,11 +769,6 @@
     padding:12px 16px; margin-bottom:10px; font-size:13.5px;
   }
   .vendor-note-item b{ color:var(--accent-signal-ink); }
-  .priority-item{
-    display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--line);
-    font-size:13.5px;
-  }
-  .priority-item:last-child{ border-bottom:none; }
   .priority-rank{
     font-family:var(--mono); color:var(--accent-signal-ink); font-weight:600; flex-shrink:0; width:20px;
   }
@@ -836,23 +782,6 @@
   }
   .gap-tier-3{ color:var(--accent-critical); border-color:var(--accent-critical); }
   .gap-tier-2{ color:var(--accent-amber-ink); border-color:var(--accent-amber); }
-  /* Full gap register - one row per gap inside each area's accordion. These
-     accordions have no icon badge, so the body doesn't need .acc-body's
-     74px icon-aligned left inset - on a phone that inset alone would eat
-     most of the row. */
-  .gap-register .acc-body{ padding:4px 18px 14px; }
-  @media (max-width:480px){
-    .gap-register .acc-body{ padding:4px 12px 12px; }
-    .gap-row{ gap:10px; }
-  }
-  .gap-row{
-    display:flex; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); font-size:13.5px;
-  }
-  .gap-row:last-child{ border-bottom:none; }
-  .gap-row-body{ min-width:0; overflow-wrap:break-word; }
-  .gap-row-answer{ font-size:12.5px; color:var(--text-muted); margin-top:4px; }
-  .gap-row-fix{ font-size:12.5px; margin-top:6px; line-height:1.55; }
-  .gap-row-fix b{ color:var(--accent-signal-ink); font-weight:600; }
   .note-box{
     margin-top:32px; padding:16px 18px; border:1px dashed var(--line);
     font-size:12.5px; color:var(--text-muted); font-family:var(--mono); line-height:1.6;
@@ -877,7 +806,6 @@
     color:var(--text-muted); margin:18px 0 10px; font-weight:500;
   }
   .ai-insights-section h4:first-child{ margin-top:0; }
-  .ai-source{ font-size:12px; color:var(--text-muted); }
 
   /* --- scope screen --- */
   .industry-grid{
@@ -949,7 +877,6 @@
     display:inline-block; font-family:var(--mono); font-size:9.5px; color:var(--accent-signal-ink); letter-spacing:0.04em; text-transform:uppercase;
     border:1px solid var(--accent-signal); padding:2px 7px; margin:4px 6px 0 0; background:var(--tint-signal-soft);
   }
-  .fw-card.fw-top-priority{ border-color:var(--accent-signal); background:var(--tint-signal-soft); }
   .q-badge{
     display:inline-block; font-family:var(--mono); font-size:9px; letter-spacing:0.05em;
     text-transform:uppercase; color:var(--text-muted); border:1px solid var(--line);
@@ -1132,12 +1059,6 @@
   .cta-btn.secondary{ background:transparent; color:var(--text); border-color:var(--line); }
   .cta-btn.secondary:hover{ border-color:var(--accent-signal); color:var(--accent-signal-ink); }
 
-  .value-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:24px 0 36px; }
-  @media (max-width:720px){ .value-grid{ grid-template-columns:1fr; } }
-  .value-card{ background:var(--tile-bg); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--line); padding:22px; }
-  .value-card .vnum{ font-family:var(--mono); color:var(--accent-signal-ink); font-size:12px; margin-bottom:10px; }
-  .value-card h4{ font-size:14.5px; margin:0 0 8px; }
-  .value-card p{ font-size:13px; color:var(--text-muted); line-height:1.6; margin:0; }
 
   .func-legend{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px 24px; margin:20px 0 32px; }
   @media (max-width:640px){ .func-legend{ grid-template-columns:1fr; } }
@@ -1333,7 +1254,6 @@
     .assembly-logo, .assembly-fragment{ animation:none; opacity:1; }
     .assembly-fragment{ display:none; }
   }
-  .fb-error{ color:var(--accent-critical); font-size:12.5px; margin-bottom:14px; }
   .roadmap-loop svg{ flex-shrink:0; animation:spin 6s linear infinite; }
   @keyframes spin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
   @media (prefers-reduced-motion: reduce){
@@ -1938,20 +1858,7 @@
   .ref-list{ list-style:none; margin:0; padding:0; }
   .ref-list li{ padding:14px 0; border-bottom:1px solid var(--line); font-size:13px; color:var(--text-muted); }
   .ref-list li:last-child{ border-bottom:none; }
-  /* --- §5.1: standalone Global region toggle + country checklist --- */
-  .region-global-standalone{
-    display:flex; align-items:center; gap:10px; padding:13px 16px; border:1.5px dashed var(--line);
-    background:var(--surface-raised); cursor:pointer; font-size:13.5px; margin:14px 0 10px;
-    transition:border-color .15s ease, background .15s ease;
-  }
-  .region-global-standalone:hover{ border-color:var(--accent-signal); }
-  .region-global-standalone.selected{ border-style:solid; border-color:var(--accent-secure); background:var(--tint-secure); }
-  .region-global-standalone .checkbox{ flex-shrink:0; width:16px; height:16px; border:1.5px solid var(--text-muted); position:relative; }
-  .region-global-standalone.selected .checkbox{ border-color:var(--accent-secure); background:var(--accent-secure); }
-  .region-global-standalone.selected .checkbox::after{
-    content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-size:11px; color:var(--text-on-accent); font-weight:700;
-  }
+  /* --- §5.1: region country checklist --- */
   .country-checklist{ display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:4px 12px; max-height:280px; overflow-y:auto; }
   .country-check-item{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-muted); padding:4px 2px; cursor:pointer; }
   .country-check-item:hover{ color:var(--text); }

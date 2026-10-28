@@ -45,7 +45,3 @@ export const FUNC_REF = {
   Respond: "NIST CSF 2.0 · RS.MA / RS.CO",
   Recover: "NIST CSF 2.0 · RC.RP",
 };
-
-export function displayLabel(fn) {
-  return FUNC_DISPLAY[fn] || fn;
-}

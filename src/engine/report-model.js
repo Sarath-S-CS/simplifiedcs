@@ -7,7 +7,6 @@
 import { FRAMEWORKS } from "../data/frameworks.js";
 import { INDUSTRIES } from "../data/industries.js";
 import { REGIONS } from "../data/regions.js";
-import { FUNC_DISPLAY } from "../data/categories.js";
 import { ASSESSMENT_FLOW } from "../data/assessment-flow.js";
 import { METHODOLOGY_VERSION, QUESTION_SET_VERSION, INFORMATIONAL_NOTES, STATUS } from "../data/controls.js";
 import { effectiveState, staleAnswerIds } from "./answers.js";
@@ -104,8 +103,4 @@ export function buildReport(state, { generatedAt = new Date().toISOString(), sam
 // "change since last time" comparison at all.
 export function comparable(a, b) {
   return Boolean(a && b && a.methodologyVersion === b.methodologyVersion && a.mode === b.mode);
-}
-
-export function areaLabel(fn) {
-  return FUNC_DISPLAY[fn] || fn;
 }

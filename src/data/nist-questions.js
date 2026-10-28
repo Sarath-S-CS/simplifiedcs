@@ -9,15 +9,6 @@ import { FUNC_DISPLAY, FUNC_REF } from "./categories.js";
 import { usesAiDevOrCicd } from "./ai-governance.js";
 import { CONTROL_META, UNKNOWN, NOT_APPLICABLE } from "./controls.js";
 
-export const SECTION_META = {
-  Govern: { sub: "The mandate and oversight that make everything else more than good intentions." },
-  Identify: { sub: "What you have, and what depends on it." },
-  Protect: { sub: "The safeguards standing between an attacker and your systems." },
-  Detect: { sub: "How you'd learn something is wrong - and how fast." },
-  Respond: { sub: "What happens in the first hour of a confirmed incident." },
-  Recover: { sub: "How you get back to operating - and how sure you are it'll work." },
-};
-
 // Every scored question offers "Not sure" (stored as UNKNOWN), so nobody has
 // to pick a graded answer they can't vouch for - and "don't know" is never
 // silently treated as "no". `na` adds a justified "Not applicable" option
@@ -319,9 +310,5 @@ export const NIST_QUESTIONS = [
     { v: 0, t: "No" }, { v: 2, t: "Yes" },
   ]),
 ];
-
-export function nistQuestionsFor(fn) {
-  return NIST_QUESTIONS.filter((q) => q.fn === fn);
-}
 
 export { FUNC_DISPLAY, FUNC_REF };

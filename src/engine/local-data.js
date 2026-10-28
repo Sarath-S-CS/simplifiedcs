@@ -9,7 +9,6 @@ export const LOCAL_DATA = [
   { key: "simplifiedcs:theme", what: "Light or dark theme" },
 ];
 
-export const LOCAL_DATA_KEYS = LOCAL_DATA.map((d) => d.key);
 const PREFIX = "simplifiedcs:";
 
 // Keys written by features that no longer exist (completed-assessment history
